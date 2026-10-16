@@ -1,0 +1,1842 @@
+{% extends "base.html" %}
+{% load checklist_filters %}
+
+{% block title %}Checklist - {{ checklist.site_id }}{% endblock %}
+
+{% block content %}
+<style>
+    .section-card {
+        display: none;
+    }
+
+    .section-card.active {
+        display: block;
+    }
+
+    .section-nav {
+        position: sticky;
+        top: 80px;
+        z-index: 100;
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        overflow-x: auto;
+    }
+
+    .section-btn {
+        white-space: nowrap;
+        min-width: max-content;
+    }
+
+    .image-preview {
+        position: relative;
+        display: inline-block;
+        margin: 0.5rem;
+    }
+
+    .image-preview img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid var(--gray-300);
+    }
+
+    .image-preview .remove-img {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--danger);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
+
+    .dynamic-row {
+        background: rgba(99, 102, 241, 0.05);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 3px solid var(--primary);
+    }
+
+    .auto-save-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--success);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        box-shadow: var(--shadow-lg);
+        display: none;
+        z-index: 1000;
+    }
+
+    .auto-save-indicator.show {
+        display: block;
+        animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+
+        0%,
+        100% {
+            opacity: 0;
+        }
+
+        10%,
+        90% {
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="dashboard-page">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="dashboard-card shadow mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><i class="fa-solid fa-clipboard-list me-2"></i>Site Checklist</h3>
+                    <p class="text-muted mb-0">Site ID: <strong>{{ checklist.site_id }}</strong> | Project: <strong>{{ checklist.project.name }}</strong></p>
+                </div>
+                <div>
+                    <span class="badge bg-{{ checklist.status|lower }}">{{ checklist.get_status_display }}</span>
+                    {% if not can_edit %}
+                    <span class="badge bg-warning text-dark ms-2"><i class="fa-solid fa-lock me-1"></i>View Only</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Navigation -->
+        <div class="section-nav">
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-primary section-btn active" data-section="general">General <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="civil">CIVIL & SITE
+                    GENERAL <span class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn"
+                    data-section="electromechanical">ELECTROMECHANICAL <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="powersupply">PowerSupply <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="dgsg">DG/SG <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="hybrid">Hybrid AC/DC <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="solar">Solar <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="transformer">Transformer <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="service">Service
+                    Disconnect <span class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="shareable">SHAREABLE
+                    MDB/LDB <span class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="shelter">SHELTER/ODU <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="extra">Extra <span
+                        class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="dcpower">DC Power
+                    System <span class="section-count badge bg-light text-dark ms-2">0/0</span></button>
+                <button class="btn btn-sm btn-outline-primary section-btn" data-section="tower">Tower Equipment <span
+                        </div>
+            </div>
+
+            <!-- Sections -->
+            <div id="sections-container">
+                <!-- Section 1: General (rows 4-18) -->
+                <div class="section-card active" data-section="general">
+                    <div class="dashboard-card shadow">
+                        <h4 class="mb-4"><i class="fa-solid fa-info-circle me-2"></i>General Information</h4>
+                        {% for q in section_questions.general %}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ q.row }}. {{ q.text }}</label>
+                            <input type="text" class="form-control" data-row="{{ q.row }}" data-section="general"
+                                value="{{ q.value }}" oninput="autoSaveAnswer(this)" {% if not can_edit %}readonly disabled{% endif %}>
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-end mt-4">
+                            <button class="btn btn-primary next-section">Next Section <i
+                                    class="fa-solid fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: CIVIL & SITE GENERAL (rows 22-70) -->
+                <div class="section-card" data-section="civil">
+                    <div class="dashboard-card shadow">
+                        <h4 class="mb-4"><i class="fa-solid fa-building me-2"></i>CIVIL & SITE GENERAL</h4>
+                        {% for q in section_questions.civil %}
+                        <div class="mb-4 border-bottom pb-3">
+                            <label class="form-label fw-bold">{{ q.row }}. {{ q.text }}</label>
+                            <textarea class="form-control mb-2" data-row="{{ q.row }}" data-section="civil"
+                                data-type="remark" rows="2" placeholder="Remarks" oninput="autoSaveRemark(this)" {% if not can_edit %}readonly disabled{% endif %}>{{ q.remark }}</textarea>
+                            <div class="d-flex gap-2 align-items-center">
+                                <label
+                                    class="btn btn-sm btn-outline-primary mb-0 {% if not can_edit %}disabled{% endif %}">
+                                    <i class="fa-solid fa-upload me-1"></i> Upload Images
+                                    <input type="file" class="d-none" accept="image/*" multiple data-row="{{ q.row }}"
+                                        onchange="uploadImages(this)" {% if not can_edit %}disabled{% endif %}>
+                                </label>
+                                <button class="btn btn-sm btn-outline-success mb-0 open-camera-btn"
+                                    data-row="{{ q.row }}" {% if not can_edit %}disabled{% endif %}>
+                                    <i class="fa-solid fa-camera me-1"></i> Camera
+                                </button>
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-2" id="images-{{ q.row }}">
+                                {% for img in q.images %}
+                                <div class="image-preview">
+                                    <img src="{{ img }}" alt="Image" style="cursor: pointer;"
+                                        onclick="viewImage('{{ img }}')">
+                                    <span class="remove-img" onclick="removeImage('{{ img }}', {{ q.row }})">×</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-outline-secondary prev-section"><i
+                                    class="fa-solid fa-arrow-left me-2"></i>Previous</button>
+                            <button class="btn btn-primary next-section">Next Section <i
+                                    class="fa-solid fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: ELECTROMECHANICAL -->
+                <div class="section-card" data-section="electromechanical">
+                    <div class="dashboard-card shadow">
+                        <h4 class="mb-4"><i class="fa-solid fa-bolt me-2"></i>ELECTROMECHANICAL</h4>
+                        {% for q in section_questions.electromechanical %}
+                        <div class="mb-4 border-bottom pb-3">
+                            <label class="form-label fw-bold">{{ q.row }}. {{ q.text }}</label>
+                            <textarea class="form-control mb-2" data-row="{{ q.row }}" data-type="remark" rows="2"
+                                placeholder="Remarks" oninput="autoSaveRemark(this)" {% if not can_edit %}readonly disabled{% endif %}>{{ q.remark }}</textarea>
+                            <div class="d-flex gap-2">
+                                <label
+                                    class="btn btn-sm btn-outline-primary mb-0 {% if not can_edit %}disabled{% endif %}">
+                                    <i class="fa-solid fa-upload me-1"></i> Upload
+                                    <input type="file" class="d-none" accept="image/*" multiple data-row="{{ q.row }}"
+                                        onchange="uploadImages(this)" {% if not can_edit %}disabled{% endif %}>
+                                </label>
+                                <button class="btn btn-sm btn-outline-success mb-0 open-camera-btn"
+                                    data-row="{{ q.row }}" {% if not can_edit %}disabled{% endif %}>
+                                    <i class="fa-solid fa-camera me-1"></i> Camera
+                                </button>
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-2" id="images-{{ q.row }}">
+                                {% for img in q.images %}
+                                <div class="image-preview"><img src="{{ img }}" style="cursor: pointer;"
+                                        onclick="viewImage('{{ img }}')"><span class="remove-img"
+                                        onclick="removeImage('{{ img }}', {{ q.row }})">×</span></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-outline-secondary prev-section"><i
+                                    class="fa-solid fa-arrow-left me-2"></i>Previous</button>
+                            <button class="btn btn-primary next-section">Next Section <i
+                                    class="fa-solid fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remaining sections with same pattern -->
+                {% for section_key, section_title in section_list %}
+                <div class="section-card" data-section="{{ section_key }}">
+                    <div class="dashboard-card shadow">
+                        <h4 class="mb-4">{{ section_title }}</h4>
+                        {% for q in section_questions|get_item:section_key %}
+                        <div class="mb-4 border-bottom pb-3">
+                            <label class="form-label fw-bold">{{ q.row }}. {{ q.text }}</label>
+                            {% if section_key == 'dcpower' %}
+                            <input type="text" class="form-control" data-row="{{ q.row }}" value="{{ q.value }}"
+                                data-section="dcpower" oninput="autoSaveAnswer(this)" {% if not can_edit %}readonly disabled{% endif %}>
+                            {% else %}
+                            <textarea class="form-control mb-2" data-row="{{ q.row }}" data-type="remark" rows="2"
+                                placeholder="Remarks" oninput="autoSaveRemark(this)" {% if not can_edit %}readonly disabled{% endif %}>{{ q.remark }}</textarea>
+                            <div class="d-flex gap-2">
+                                <label
+                                    class="btn btn-sm btn-outline-primary mb-0 {% if not can_edit %}disabled{% endif %}"><i
+                                        class="fa-solid fa-upload me-1"></i> Upload<input type="file" class="d-none"
+                                        accept="image/*" multiple data-row="{{ q.row }}" onchange="uploadImages(this)"
+                                        {% if not can_edit %}disabled{% endif %}></label>
+                                <button class="btn btn-sm btn-outline-success mb-0 open-camera-btn"
+                                    data-row="{{ q.row }}" {% if not can_edit %}disabled{% endif %}>
+                                    <i class="fa-solid fa-camera me-1"></i>Camera
+                                </button>
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-2" id="images-{{ q.row }}">
+                                {% for img in q.images %}
+                                <div class="image-preview"><img src="{{ img }}" style="cursor: pointer;"
+                                        onclick="viewImage('{{ img }}')"><span class="remove-img"
+                                        onclick="removeImage('{{ img }}', {{ q.row }})">×</span></div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-outline-secondary prev-section"><i
+                                    class="fa-solid fa-arrow-left me-2"></i>Previous</button>
+                            <button class="btn btn-primary next-section">Next Section <i
+                                    class="fa-solid fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Tower Equipment Section -->
+                <div class="section-card" data-section="tower">
+                    <div class="dashboard-card shadow">
+                        <h4 class="mb-4"><i class="fa-solid fa-tower-broadcast me-2"></i>Tower Equipment Details</h4>
+
+                        <!-- STC Section -->
+                        <div class="mb-5">
+                            <h5 class="mb-3">STC</h5>
+
+                            <!-- Antenna Models -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Antenna Models</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="STC"
+                                        data-equipment="ANTENNA">
+                                        <i class="fa-solid fa-plus me-1"></i>Add Antenna
+                                    </button>
+                                </div>
+                                <div id="stc-antenna-container"></div>
+                            </div>
+
+                            <!-- Radio Models -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Radio Models</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="STC"
+                                        data-equipment="RADIO">
+                                        <i class="fa-solid fa-plus me-1"></i>Add Radio
+                                    </button>
+                                </div>
+                                <div id="stc-radio-container"></div>
+                            </div>
+
+                            <!-- FPFH -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>FPFH</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="STC"
+                                        data-equipment="FPFH">
+                                        <i class="fa-solid fa-plus me-1"></i>Add FPFH
+                                    </button>
+                                </div>
+                                <div id="stc-fpfh-container"></div>
+                            </div>
+
+                            <!-- Microwave -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Microwave Models</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="STC"
+                                        data-equipment="MICROWAVE">
+                                        <i class="fa-solid fa-plus me-1"></i>Add Microwave
+                                    </button>
+                                </div>
+                                <div id="stc-microwave-container"></div>
+                            </div>
+                        </div>
+
+                        <!-- Other Operator Section -->
+                        <div class="mb-5">
+                            <h5 class="mb-3">Other Operator on Tower</h5>
+
+                            <!-- Antenna Models -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Antenna Models</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="OTHER"
+                                        data-equipment="ANTENNA">
+                                        <i class="fa-solid fa-plus me-1"></i>Add Antenna
+                                    </button>
+                                </div>
+                                <div id="other-antenna-container"></div>
+                            </div>
+
+                            <!-- Radio Models -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Radio Models</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="OTHER"
+                                        data-equipment="RADIO">
+                                        <i class="fa-solid fa-plus me-1"></i>Add Radio
+                                    </button>
+                                </div>
+                                <div id="other-radio-container"></div>
+                            </div>
+
+                            <!-- FPFH -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>FPFH</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="OTHER"
+                                        data-equipment="FPFH">
+                                        <i class="fa-solid fa-plus me-1"></i>Add FPFH
+                                    </button>
+                                </div>
+                                <div id="other-fpfh-container"></div>
+                            </div>
+
+                            <!-- Microwave -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>Microwave Models</h6>
+                                    <button class="btn btn-sm btn-success add-equipment" data-operator="OTHER"
+                                        data-equipment="MICROWAVE">
+                                        <i class="fa-solid fa-plus me-1"></i>Add Microwave
+                                    </button>
+                                </div>
+                                <div id="other-microwave-container"></div>
+                            </div>
+                        </div>
+
+                        <!-- Electrical Data (rows 261-263) -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6>Other Operator Electrical Details(Rows 261-263)</h6>
+                                <button class="btn btn-sm btn-success add-electrical">
+                                    <i class="fa-solid fa-plus me-1"></i>Add Row
+                                </button>
+                            </div>
+                            <div id="electrical-container"></div>
+                        </div>
+
+                        <!-- ZIP Upload -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Upload ZIP (Any Size)</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <label class="btn btn-sm btn-outline-primary mb-0">
+                                        <i class="fa-solid fa-file-zipper me-1"></i> Choose ZIP
+                                        <input type="file" class="d-none" accept=".zip" id="zipUploadInput">
+                                    </label>
+                                    <span class="text-muted" id="zipUploadStatus">No ZIP uploaded</span>
+                                </div>
+                                <div class="progress" style="max-width: 320px; height: 10px;">
+                                    <div class="progress-bar" id="zipUploadProgress" role="progressbar"
+                                        style="width: 0%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-outline-secondary prev-section"><i
+                                    class="fa-solid fa-arrow-left me-2"></i>Previous</button>
+                            <button class="btn btn-success" onclick="submitChecklist()" {% if not can_edit %}disabled{% endif %}>
+                                <i class="fa-solid fa-save me-2"></i>Save & Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-save indicator -->
+            <div class="auto-save-indicator" id="autoSaveIndicator">
+                <i class="fa-solid fa-check-circle me-2"></i>Saved
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 JavaScript started loading...');
+
+        const checklistId = {{ checklist.id }};
+        const siteId = '{{ checklist.site_id }}';
+        console.log('✅ Checklist ID:', checklistId);
+        console.log('✅ Site ID:', siteId);
+
+        let autoSaveTimeout;
+        let cameraStream = null;
+        let currentRow = null;
+        let compassHeading = 0;
+        let coords = { lat: null, lng: null };
+        let compassInterval = null;
+
+        console.log('✅ Variables initialized');
+
+        // Restore last active section on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedSection = localStorage.getItem('checklist_current_section');
+            if (savedSection) {
+                const sectionExists = document.querySelector(`[data-section="${savedSection}"].section-card`);
+                if (sectionExists) {
+                    showSection(savedSection);
+                    console.log('✅ Restored section:', savedSection);
+                }
+            }
+        });
+
+        // Section navigation
+        document.querySelectorAll('.section-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const section = this.dataset.section;
+                showSection(section);
+            });
+        });
+
+        document.querySelectorAll('.next-section').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const currentSection = document.querySelector('.section-card.active');
+                const nextSection = currentSection.nextElementSibling;
+                if (nextSection && nextSection.classList.contains('section-card')) {
+                    const sectionName = nextSection.dataset.section;
+                    showSection(sectionName);
+                }
+            });
+        });
+
+        document.querySelectorAll('.prev-section').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const currentSection = document.querySelector('.section-card.active');
+                const prevSection = currentSection.previousElementSibling;
+                if (prevSection && prevSection.classList.contains('section-card')) {
+                    const sectionName = prevSection.dataset.section;
+                    showSection(sectionName);
+                }
+            });
+        });
+
+        function showSection(sectionName) {
+            document.querySelectorAll('.section-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('.section-btn').forEach(btn => {
+                btn.classList.remove('btn-primary', 'active');
+                btn.classList.add('btn-outline-primary');
+            });
+
+            document.querySelector(`[data-section="${sectionName}"].section-card`).classList.add('active');
+            const btn = document.querySelector(`[data-section="${sectionName}"].section-btn`);
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary', 'active');
+
+            // Save current section to localStorage
+            localStorage.setItem('checklist_current_section', sectionName);
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Auto-save functions
+        function autoSaveAnswer(input) {
+            const row = input.dataset.row;
+            const value = input.value;
+            const section = input.dataset.section;
+
+            autoSave({
+                section: section,
+                row: row,
+                answer: value
+            });
+        }
+
+        function autoSaveRemark(textarea) {
+            const row = textarea.dataset.row;
+            const value = textarea.value;
+
+            autoSave({
+                row: row,
+                remark: value
+            });
+        }
+
+        function autoSave(data) {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                fetch(`/checklist/${checklistId}/autosave/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                }).then(response => {
+                    if (response.ok) {
+                        showSaveIndicator();
+                    }
+                });
+            }, 100); // Save after 100ms for near-instant save
+        }
+
+        function uploadImages(input) {
+            const row = input.dataset.row;
+            const files = input.files;
+
+            if (!files.length) return;
+
+            console.log('📤 Uploading', files.length, 'images for row', row);
+
+            const formData = new FormData();
+            formData.append('row', row);
+            for (let i = 0; i < files.length; i++) {
+                formData.append('images', files[i]);
+            }
+
+            fetch(`/checklist/${checklistId}/upload-image/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Upload response:', data);
+                    if (data.status === 'success') {
+                        // Dynamically add new images to the display
+                        const container = document.getElementById(`images-${row}`);
+                        if (container && data.new_images) {
+                            console.log('Adding', data.new_images.length, 'new images to display');
+                            data.new_images.forEach(imgPath => {
+                                const fullPath = imgPath.startsWith('/media') ? imgPath : '/media/' + imgPath;
+                                console.log('Creating image element for:', fullPath);
+
+                                // Create image preview div
+                                const imgDiv = document.createElement('div');
+                                imgDiv.className = 'image-preview';
+
+                                // Create img element with click handler
+                                const img = document.createElement('img');
+                                img.src = fullPath;
+                                img.alt = 'Image';
+                                img.style.cursor = 'pointer';
+                                img.onclick = function () {
+                                    console.log('Uploaded image clicked:', fullPath);
+                                    viewImage(fullPath);
+                                };
+
+                                // Create remove button
+                                const removeBtn = document.createElement('span');
+                                removeBtn.className = 'remove-img';
+                                removeBtn.textContent = '×';
+                                removeBtn.onclick = function () {
+                                    removeImage(imgPath, row);
+                                };
+
+                                // Append elements
+                                imgDiv.appendChild(img);
+                                imgDiv.appendChild(removeBtn);
+                                container.appendChild(imgDiv);
+
+                                console.log('✅ Image added to display');
+                            });
+                        }
+                        // Clear the file input
+                        input.value = '';
+                        updateSectionCounts();
+                        showSaveIndicator();
+                        console.log('✅ Upload complete');
+                    } else {
+                        console.error('❌ Upload failed:', data.message);
+                        alert('Upload failed: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Upload error:', error);
+                    alert('Error uploading images: ' + error.message);
+                });
+        }
+
+        function removeImage(imagePath, row) {
+            console.log('🗑️ Remove image clicked');
+            console.log('Image path:', imagePath);
+            console.log('Row:', row);
+
+            if (!confirm('Remove this image?')) {
+                console.log('User cancelled');
+                return;
+            }
+
+            console.log('Sending delete request...');
+            fetch(`/checklist/image/delete/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    checklist_id: checklistId,
+                    image_path: imagePath,
+                    row: row
+                })
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.status === 'success') {
+                        console.log('✅ Image deleted, reloading...');
+                        location.reload();
+                    } else {
+                        alert('Failed to delete image: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    alert('Error deleting image: ' + error.message);
+                });
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('autoSaveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 2000);
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes && bytes !== 0) return '';
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            if (bytes === 0) return '0 B';
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+        }
+
+        function updateZipStatus(text, percent = null) {
+            const statusEl = document.getElementById('zipUploadStatus');
+            const progressEl = document.getElementById('zipUploadProgress');
+            if (statusEl) statusEl.textContent = text;
+            if (progressEl && percent !== null) progressEl.style.width = `${percent}%`;
+        }
+
+        function uploadZipFile(file) {
+            const formData = new FormData();
+            formData.append('zip_file', file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/checklist/${checklistId}/upload-zip/`);
+            xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    updateZipStatus(`Uploading: ${formatBytes(event.loaded)} / ${formatBytes(event.total)}`, percent);
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.status === 'success') {
+                            const zip = response.zip || {};
+                            const sizeText = zip.size ? formatBytes(zip.size) : '';
+                            updateZipStatus(`Uploaded: ${zip.name || file.name} ${sizeText ? '(' + sizeText + ')' : ''}`, 100);
+                            showSaveIndicator();
+                            return;
+                        }
+                    } catch (e) {
+                        // fallthrough
+                    }
+                }
+                updateZipStatus('Upload failed. Please try again.', 0);
+            };
+
+            xhr.onerror = function () {
+                updateZipStatus('Upload failed. Please try again.', 0);
+            };
+
+            updateZipStatus(`Uploading: 0 / ${formatBytes(file.size)}`, 0);
+            xhr.send(formData);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Tower Equipment Dynamic Rows (STATIC EXCEL ROWS)
+        // let equipmentCounter = 0; // No longer needed
+        let electricalCounter = 0;
+        const equipmentConfig = {
+            STC: {
+                ANTENNA: { max: 15, fields: ['model', 'dimension', 'height', 'azimuth', 'sector'] },
+                RADIO: { max: 15, fields: ['model', 'dimension', 'height', 'sector'] },
+                FPFH: { max: 15, fields: ['model', 'dimension', 'height', 'empty_port', 'sector'] },
+                MICROWAVE: { max: 9, fields: ['model', 'dimension', 'height', 'azimuth', 'sector'] }
+            },
+            OTHER: {
+                ANTENNA: { max: 18, fields: ['model', 'dimension', 'height', 'azimuth', 'sector'] },
+                RADIO: { max: 18, fields: ['model', 'dimension', 'height', 'sector'] },
+                FPFH: { max: 18, fields: ['model', 'dimension', 'height', 'empty_port', 'sector'] },
+                MICROWAVE: { max: 9, fields: ['model', 'dimension', 'height', 'azimuth', 'sector'] }
+            }
+        };
+        const electricalConfig = { startRow: 261, max: 3 };
+
+        document.querySelectorAll('.add-equipment').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const operator = this.dataset.operator;
+                const equipment = this.dataset.equipment;
+                addEquipmentRow(operator, equipment);
+            });
+        });
+
+        document.querySelectorAll('.add-electrical').forEach(btn => {
+            btn.addEventListener('click', function () {
+                addElectricalRow();
+            });
+        });
+
+        function addEquipmentRow(operator, equipmentType, positionIndex = null) {
+            const config = equipmentConfig?.[operator]?.[equipmentType];
+            if (!config) return null;
+
+            const containerId = `${operator.toLowerCase()}-${equipmentType.toLowerCase()}-container`;
+            const container = document.getElementById(containerId);
+            if (!container) return null;
+
+            const currentCount = container.querySelectorAll('.dynamic-row').length;
+            const position = positionIndex || (currentCount + 1);
+
+            if (position > config.max) {
+                alert(`Limit reached. Max ${config.max} ${equipmentType} rows for ${operator}.`);
+                return null;
+            }
+
+            const uniqueId = `${operator}_${equipmentType}_${position}`;
+            const rowId = `equipment-${uniqueId}`;
+
+            const fieldLabels = {
+                model: 'Model Name',
+                dimension: 'Dimension (m)',
+                height: 'Height (m)',
+                azimuth: 'Azimuth',
+                empty_port: 'Empty Port',
+                sector: 'Sector / Leg'
+            };
+
+            const fieldsNoModel = config.fields.filter(field => field !== 'model');
+            const fieldCols = fieldsNoModel.map(field => {
+                return `
+                <div class="col-md-2">
+                    <label class="form-label">${fieldLabels[field]}</label>
+                    <input type="text" class="form-control form-control-sm" 
+                        data-operator="${operator}" 
+                        data-equipment="${equipmentType}"
+                        data-field="${field}"
+                        data-unique-id="${uniqueId}"
+                        data-position-index="${position}"
+                        oninput="saveEquipmentData(this)">
+                </div>
+            `;
+            }).join('');
+
+            const rowHtml = `
+            <div class="dynamic-row mb-3" id="${rowId}" data-unique-id="${uniqueId}" data-position-index="${position}">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label">Model Name</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    data-operator="${operator}" 
+                                    data-equipment="${equipmentType}"
+                                    data-field="model"
+                                    data-unique-id="${uniqueId}"
+                                    data-position-index="${position}"
+                                    oninput="saveEquipmentData(this)">
+                            </div>
+                            ${fieldCols}
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-sm btn-danger w-100" onclick="removeEquipmentRow('${rowId}')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            container.insertAdjacentHTML('beforeend', rowHtml);
+            return uniqueId;
+        }
+
+        function removeEquipmentRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        function saveEquipmentData(input) {
+            const operator = input.dataset.operator;
+            const equipmentType = input.dataset.equipment;
+            const uniqueId = input.dataset.uniqueId;
+            const field = input.dataset.field;
+            const value = input.value;
+
+            // Get all data from this row
+            const row = input.closest('.dynamic-row');
+            const inputs = row.querySelectorAll('input');
+            const equipmentData = {};
+            const positionIndex = row.dataset.positionIndex;
+            inputs.forEach(inp => {
+                equipmentData[inp.dataset.field] = inp.value;
+            });
+            equipmentData.position_index = positionIndex;
+
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                fetch(`/checklist/${checklistId}/autosave/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        save_type: 'tower_equipment',
+                        operator: operator,
+                        equipment_type: equipmentType,
+                        unique_id: uniqueId,
+                        equipment_data: equipmentData
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        showSaveIndicator();
+                    }
+                });
+            }, 100);
+        }
+
+        function addElectricalRow(positionIndex = null) {
+            const container = document.getElementById('electrical-container');
+            if (!container) return;
+
+            const currentCount = container.querySelectorAll('.dynamic-row').length;
+            const position = positionIndex || (currentCount + 1);
+            if (position > electricalConfig.max) {
+                alert(`Limit reached. Max ${electricalConfig.max} electrical rows.`);
+                return;
+            }
+
+            electricalCounter++;
+            const rowNumber = electricalConfig.startRow + position - 1;
+
+            const rowHtml = `
+            <div class="dynamic-row mb-3" id="electrical-${electricalCounter}" data-position-index="${position}">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <label class="form-label">Voltage (AB)</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    data-field="voltage"
+                                    data-row="${rowNumber}"
+                                    oninput="saveElectricalData(this)">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Current R (C)</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    data-field="current_r"
+                                    data-row="${rowNumber}"
+                                    oninput="saveElectricalData(this)">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Current Y (D)</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    data-field="current_y"
+                                    data-row="${rowNumber}"
+                                    oninput="saveElectricalData(this)">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Current B (E)</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    data-field="current_b"
+                                    data-row="${rowNumber}"
+                                    oninput="saveElectricalData(this)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Other Operator Name</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                    data-field="remarks"
+                                    data-row="${rowNumber}"
+                                    oninput="saveElectricalData(this)">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-sm btn-danger w-100" onclick="removeEquipmentRow('electrical-${electricalCounter}')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function saveElectricalData(input) {
+            const row = input.closest('.dynamic-row');
+            const inputs = row.querySelectorAll('input');
+            const rowNumber = input.dataset.row;
+            const electricalData = {
+                row: rowNumber
+            };
+
+            inputs.forEach(inp => {
+                const field = inp.dataset.field;
+                electricalData[field] = inp.value;
+            });
+
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                fetch(`/checklist/${checklistId}/autosave/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        save_type: 'electrical_data',
+                        row: rowNumber,
+                        electrical_data: electricalData
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        showSaveIndicator();
+                    }
+                });
+            }, 100);
+        }
+
+        function submitChecklist() {
+            // Force save any pending data
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+            }
+
+            // Show loading message
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Saving...';
+
+            // Wait a moment for any pending saves, then redirect
+            setTimeout(() => {
+                window.location.href = `/checklist/${checklistId}/submit/`;
+            }, 300);
+        }
+
+        // Save before leaving page
+        window.addEventListener('beforeunload', function (e) {
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+                // Force immediate save
+                navigator.sendBeacon(`/checklist/${checklistId}/autosave/`,
+                    JSON.stringify({ row: 'sync', answer: 'sync' }));
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadChecklistData();
+
+            const zipInput = document.getElementById('zipUploadInput');
+            if (zipInput) {
+                zipInput.addEventListener('change', function () {
+                    const file = this.files && this.files[0];
+                    if (!file) return;
+                    uploadZipFile(file);
+                    this.value = '';
+                });
+            }
+
+            document.querySelectorAll('#sections-container input, #sections-container textarea').forEach((field) => {
+                field.addEventListener('input', updateSectionCounts);
+                field.addEventListener('change', updateSectionCounts);
+            });
+
+            updateSectionCounts();
+        });
+
+        function loadChecklistData() {
+            // Load existing checklist data via AJAX
+            fetch(`/checklist/${checklistId}/data/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate tower equipment forms
+                    if (data.tower_equipment) {
+                        Object.keys(data.tower_equipment).forEach(key => {
+                            const [operator, equipType] = key.split('_', 2);
+                            const equipments = data.tower_equipment[key] || [];
+                            const sortedEquipments = equipments.sort((a, b) => (a.position_index || 0) - (b.position_index || 0));
+
+                            sortedEquipments.forEach(equipData => {
+                                const position = equipData.position_index || null;
+                                addEquipmentRow(operator, equipType, position);
+                                // Find the last added row and populate it
+                                const containerId = `${operator.toLowerCase()}-${equipType.toLowerCase()}-container`;
+                                const container = document.getElementById(containerId);
+                                if (container) {
+                                    const lastRow = container.lastElementChild;
+                                    if (lastRow) {
+                                        const inputs = lastRow.querySelectorAll('input');
+                                        inputs.forEach(input => {
+                                            const field = input.dataset.field;
+                                            if (equipData[field]) {
+                                                input.value = equipData[field];
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    }
+
+                    // Populate electrical data forms
+                    if (data.electrical) {
+                        Object.keys(data.electrical).forEach(rowNum => {
+                            const elecData = data.electrical[rowNum];
+                            const position = (parseInt(rowNum, 10) - electricalConfig.startRow) + 1;
+                            if (position >= 1 && position <= electricalConfig.max) {
+                                addElectricalRow(position);
+                            }
+                            // Find the last added row and populate it
+                            const container = document.getElementById('electrical-container');
+                            if (container) {
+                                const lastRow = container.lastElementChild;
+                                if (lastRow) {
+                                    const inputs = lastRow.querySelectorAll('input');
+                                    inputs.forEach(input => {
+                                        const field = input.dataset.field;
+                                        if (elecData[field]) {
+                                            input.value = elecData[field];
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+
+                    if (data.zip_upload) {
+                        const zip = data.zip_upload || {};
+                        const sizeText = zip.size ? formatBytes(zip.size) : '';
+                        updateZipStatus(`Uploaded: ${zip.name || 'ZIP'} ${sizeText ? '(' + sizeText + ')' : ''}`, 100);
+                    }
+
+                    console.log('Checklist data loaded and populated', data);
+                    updateSectionCounts();
+                });
+        }
+
+        function updateSectionCounts() {
+            document.querySelectorAll('.section-card').forEach((section) => {
+                const sectionName = section.dataset.section;
+                const btn = document.querySelector(`.section-btn[data-section="${sectionName}"]`);
+                if (!btn) return;
+
+                // Count text/textarea fields
+                const fields = section.querySelectorAll('input[data-row]:not([type="hidden"]):not([type="file"]), textarea[data-row]');
+                
+                // Count image containers (rows with at least one image)
+                const imageContainers = section.querySelectorAll('[id^="images-"]');
+                let imageFieldsWithImages = 0;
+                imageContainers.forEach(container => {
+                    const images = container.querySelectorAll('.image-preview');
+                    if (images.length > 0) {
+                        imageFieldsWithImages += 1;
+                    }
+                });
+
+                const total = fields.length + imageContainers.length;
+                let filled = 0;
+                
+                // Count filled text fields
+                fields.forEach((field) => {
+                    if ((field.value || '').trim() !== '') {
+                        filled += 1;
+                    }
+                });
+                
+                // Add image rows that have at least one image
+                filled += imageFieldsWithImages;
+
+                const badge = btn.querySelector('.section-count');
+                if (badge) {
+                    badge.textContent = `${filled}/${total}`;
+                }
+            });
+        }
+
+        // Camera functionality
+        // Open camera modal
+        document.querySelectorAll('.open-camera-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                currentRow = btn.getAttribute('data-row');
+                const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+                modal.show();
+                startCamera();
+                getLocation();
+                
+                // Request compass permission (for iOS 13+) and start compass
+                requestOrientationPermission();
+                
+                if (!compassInterval) {
+                    compassInterval = setInterval(() => {
+                        drawOverlay();
+                        // Update heading display with better formatting
+                        const headingDegrees = Math.round(compassHeading);
+                        const headingText = `${headingDegrees}°`;
+                        const cardinalDirection = getCardinalDirection(compassHeading);
+                        
+                        document.getElementById('compassParams').innerHTML =
+                            `<div style="font-size:1.2rem;font-weight:bold;color:#FFD700;text-shadow:2px 2px 4px rgba(0,0,0,0.8);">${headingText} ${cardinalDirection}</div>`;
+
+                        // Update info display - site ID, date, time, heading, GPS coordinates
+                        const now = new Date();
+                        const latText = coords.lat !== null ? coords.lat.toFixed(6) : 'Getting...';
+                        const lngText = coords.lng !== null ? coords.lng.toFixed(6) : 'Getting...';
+
+                        document.getElementById('cameraInfo').innerHTML =
+                            `<div style="font-size:0.9rem;line-height:1.5;">
+                                <div><b>Site ID:</b> ${siteId}</div>
+                                <div><b>Date:</b> ${now.toLocaleDateString()}</div>
+                                <div><b>Time:</b> ${now.toLocaleTimeString()}</div>
+                                <div><b>Heading:</b> ${headingText} ${cardinalDirection}</div>
+                                <div><b>GPS:</b> ${latText}, ${lngText}</div>
+                            </div>`;
+                    }, 300);
+                }
+            });
+        });
+
+        // Start camera
+        async function startCamera() {
+            const video = document.getElementById('cameraVideo');
+            const captureBtn = document.getElementById('capturePhotoBtn');
+
+            try {
+                // Disable capture button until camera is ready
+                captureBtn.disabled = true;
+                captureBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Starting Camera...';
+
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                });
+                video.srcObject = cameraStream;
+
+                // Wait for video to be ready
+                video.onloadedmetadata = () => {
+                    video.play();
+                    console.log('Camera ready, video dimensions:', video.videoWidth, 'x', video.videoHeight);
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = 'Capture Photo';
+                };
+            } catch (e) {
+                console.error('Camera error:', e);
+                alert('Camera access denied or not available: ' + e.message);
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = 'Capture Photo';
+            }
+        }
+
+        // Stop camera when modal closes
+        document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            if (compassInterval) {
+                clearInterval(compassInterval);
+                compassInterval = null;
+            }
+        });
+
+        // Get geolocation
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        coords.lat = position.coords.latitude;
+                        coords.lng = position.coords.longitude;
+                        console.log('Location obtained:', coords);
+                    },
+                    function (error) {
+                        console.error('Geolocation error:', error);
+                        coords.lat = null;
+                        coords.lng = null;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                console.error('Geolocation not supported');
+            }
+        }
+
+        // Helper function to get cardinal direction
+        function getCardinalDirection(degrees) {
+            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            const index = Math.round(degrees / 45) % 8;
+            return directions[index];
+        }
+
+        // Compass (DeviceOrientation) - Request permission for iOS 13+
+        async function requestOrientationPermission() {
+            console.log('🧭 Requesting compass permission...');
+            
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ requires explicit permission
+                try {
+                    console.log('📱 iOS device detected - requesting permission...');
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('✅ Compass permission granted');
+                        startCompass();
+                    } else {
+                        console.warn('⚠️ Compass permission denied');
+                        alert('Compass access denied. Heading will not be available.');
+                    }
+                } catch (error) {
+                    console.error('❌ Error requesting compass permission:', error);
+                    alert('Error accessing compass: ' + error.message);
+                }
+            } else {
+                // Android/older iOS - no permission needed
+                console.log('📱 Android/older iOS detected - starting compass directly');
+                startCompass();
+            }
+        }
+
+        function startCompass() {
+            console.log('🧭 Starting compass listener...');
+            
+            const handleOrientation = (event) => {
+                // iOS uses webkitCompassHeading (0-360, true heading)
+                if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+                    compassHeading = event.webkitCompassHeading;
+                    console.log('🧭 iOS Compass:', compassHeading.toFixed(1) + '°');
+                }
+                // Android/other devices use alpha (0-360, needs conversion)
+                else if (event.alpha !== undefined && event.alpha !== null) {
+                    compassHeading = 360 - event.alpha;
+                    console.log('🧭 Android Compass:', compassHeading.toFixed(1) + '° (from alpha:', event.alpha.toFixed(1) + ')');
+                }
+                else {
+                    console.warn('⚠️ No compass data available');
+                }
+            };
+            
+            // Try deviceorientationabsolute first (more accurate)
+            if ('ondeviceorientationabsolute' in window) {
+                window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                console.log('✅ Using deviceorientationabsolute');
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation, true);
+                console.log('✅ Using deviceorientation');
+            }
+        }
+
+        // Overlay drawing - Small compass at top left
+        function drawOverlay() {
+            const canvas = document.getElementById('compassOverlay');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = canvas.offsetHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            // Compass position - top left, smaller size
+            const compassX = 60;
+            const compassY = 60;
+            const compassRadius = 35;
+
+            // Draw outer circle with gradient
+            ctx.save();
+            const gradient = ctx.createRadialGradient(compassX, compassY, 0, compassX, compassY, compassRadius);
+            gradient.addColorStop(0, 'rgba(255, 255, 0, 0.2)');
+            gradient.addColorStop(1, 'rgba(255, 255, 0, 0.05)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(compassX, compassY, compassRadius, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw compass ring
+            ctx.beginPath();
+            ctx.arc(compassX, compassY, compassRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw inner circle
+            ctx.beginPath();
+            ctx.arc(compassX, compassY, compassRadius - 8, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Draw heading needle (red for north)
+            ctx.save();
+            ctx.translate(compassX, compassY);
+            ctx.rotate((-compassHeading) * Math.PI / 180);
+
+            // North arrow (red)
+            ctx.beginPath();
+            ctx.moveTo(0, -compassRadius + 10);
+            ctx.lineTo(-5, -6);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(5, -6);
+            ctx.closePath();
+            ctx.fillStyle = '#FF3333';
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // South arrow (white)
+            ctx.beginPath();
+            ctx.moveTo(0, compassRadius - 10);
+            ctx.lineTo(-4, 6);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(4, 6);
+            ctx.closePath();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Draw cardinal directions - smaller text
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // N (top)
+            ctx.fillStyle = '#FF3333';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeText('N', compassX, compassY - compassRadius - 10);
+            ctx.fillText('N', compassX, compassY - compassRadius - 10);
+
+            // S (bottom)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeText('S', compassX, compassY + compassRadius + 10);
+            ctx.fillText('S', compassX, compassY + compassRadius + 10);
+
+            // E (right)
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeText('E', compassX + compassRadius + 10, compassY);
+            ctx.fillText('E', compassX + compassRadius + 10, compassY);
+
+            // W (left)
+            ctx.strokeText('W', compassX - compassRadius - 10, compassY);
+            ctx.fillText('W', compassX - compassRadius - 10, compassY);
+
+            ctx.restore();
+        }
+
+        // Capture photo function
+        function capturePhoto() {
+            console.log('=== CAPTURE PHOTO CLICKED ===');
+
+            const video = document.getElementById('cameraVideo');
+
+            if (!currentRow) {
+                alert('Error: No row selected. Please close and reopen the camera.');
+                console.error('❌ No row selected');
+                return;
+            }
+
+            if (!video || !video.videoWidth || !video.videoHeight) {
+                alert('Camera not ready. Please wait a moment.');
+                console.error('❌ Video not ready');
+                return;
+            }
+
+            console.log('✅ Starting capture. Row:', currentRow, 'Video:', video.videoWidth + 'x' + video.videoHeight);
+
+            const captureBtn = document.getElementById('capturePhotoBtn');
+            captureBtn.disabled = true;
+            captureBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Capturing...';
+
+            console.log('📸 Creating capture canvas with overlays...');
+
+            // Create canvas for capture
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Draw the video frame
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // 2. Draw compass overlay on captured image
+            const compassRadius = 35;
+            const compassX = 50;
+            const compassY = 50;
+
+            // Outer compass circle
+            ctx.beginPath();
+            ctx.arc(compassX, compassY, compassRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Inner circle
+            ctx.beginPath();
+            ctx.arc(compassX, compassY, compassRadius - 8, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Draw compass needle
+            ctx.save();
+            ctx.translate(compassX, compassY);
+            ctx.rotate((-compassHeading) * Math.PI / 180);
+
+            // North arrow (red)
+            ctx.beginPath();
+            ctx.moveTo(0, -compassRadius + 10);
+            ctx.lineTo(-5, -6);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(5, -6);
+            ctx.closePath();
+            ctx.fillStyle = '#FF3333';
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // South arrow (white)
+            ctx.beginPath();
+            ctx.moveTo(0, compassRadius - 10);
+            ctx.lineTo(-4, 6);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(4, 6);
+            ctx.closePath();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Draw cardinal directions
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // N
+            ctx.fillStyle = '#FF3333';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeText('N', compassX, compassY - compassRadius - 10);
+            ctx.fillText('N', compassX, compassY - compassRadius - 10);
+
+            // S
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeText('S', compassX, compassY + compassRadius + 10);
+            ctx.fillText('S', compassX, compassY + compassRadius + 10);
+
+            // E
+            ctx.strokeText('E', compassX + compassRadius + 10, compassY);
+            ctx.fillText('E', compassX + compassRadius + 10, compassY);
+
+            // W
+            ctx.strokeText('W', compassX - compassRadius - 10, compassY);
+            ctx.fillText('W', compassX - compassRadius - 10, compassY);
+
+            // 3. Draw heading text next to compass
+            const headingText = `${Math.round(compassHeading)}°`;
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.strokeText(headingText, compassX + 80, compassY);
+            ctx.fillText(headingText, compassX + 80, compassY);
+
+            // 4. Draw info box at bottom right
+            const now = new Date();
+            const latText = coords.lat !== null ? coords.lat.toFixed(6) : 'N/A';
+            const lngText = coords.lng !== null ? coords.lng.toFixed(6) : 'N/A';
+            const infoLines = [
+                `Site ID: ${siteId}`,
+                `Date: ${now.toLocaleDateString()}`,
+                `Time: ${now.toLocaleTimeString()}`,
+                `Heading: ${headingText}`,
+                `GPS: ${latText}, ${lngText}`
+            ];
+
+            const padding = 12;
+            const lineHeight = 20;
+            const boxWidth = 280;
+            const boxHeight = (infoLines.length * lineHeight) + (padding * 2);
+            const boxX = canvas.width - boxWidth - 10;
+            const boxY = canvas.height - boxHeight - 10;
+
+            // Draw semi-transparent background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+            // Draw border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+            // Draw text
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            infoLines.forEach((line, index) => {
+                ctx.fillText(line, boxX + padding, boxY + padding + (index * lineHeight));
+            });
+
+            console.log('✅ Video captured with compass and info overlays');
+
+            // Convert to blob and upload
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    alert('Failed to capture image');
+                    console.error('❌ Blob creation failed');
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = 'Capture Photo';
+                    return;
+                }
+
+                console.log('✅ Blob created:', blob.size, 'bytes');
+
+                const formData = new FormData();
+                formData.append('row', currentRow);
+                formData.append('images', blob, 'photo_' + Date.now() + '.jpg');
+
+                const url = '/checklist/' + checklistId + '/upload-image/';
+                console.log('🚀 Uploading to:', url);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: formData
+                })
+                    .then(function (response) {
+                        console.log('📥 Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        console.log('📦 Response data:', data);
+
+                        if (data.status === 'success') {
+                            console.log('✅ Upload successful!');
+
+                            const container = document.getElementById('images-' + currentRow);
+                            if (container && data.new_images && data.new_images.length > 0) {
+                                data.new_images.forEach(function (imgPath) {
+                                    const fullPath = imgPath.startsWith('/media/') ? imgPath : '/media/' + imgPath;
+                                    console.log('🖼️ Adding image:', fullPath);
+
+                                    const imgDiv = document.createElement('div');
+                                    imgDiv.className = 'image-preview';
+
+                                    const img = document.createElement('img');
+                                    img.src = fullPath;
+                                    img.style.cursor = 'pointer';
+                                    img.onclick = function () { viewImage(fullPath); };
+
+                                    const removeBtn = document.createElement('span');
+                                    removeBtn.className = 'remove-img';
+                                    removeBtn.innerHTML = '×';
+                                    removeBtn.onclick = function () { removeImage(imgPath, currentRow); };
+
+                                    imgDiv.appendChild(img);
+                                    imgDiv.appendChild(removeBtn);
+                                    container.appendChild(imgDiv);
+                                });
+
+                                // Auto-close modal after successful capture
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('cameraModal'));
+                                if (modal) modal.hide();
+                                updateSectionCounts();
+                                showSaveIndicator();
+                            } else {
+                                alert('Photo saved but display failed. Please refresh.');
+                            }
+                        } else {
+                            alert('Upload failed: ' + (data.message || 'Unknown error'));
+                            console.error('❌ Upload failed:', data.message);
+                        }
+
+                        captureBtn.disabled = false;
+                        captureBtn.innerHTML = 'Capture Photo';
+                    })
+                    .catch(function (error) {
+                        alert('Error: ' + error.message);
+                        console.error('❌ Error:', error);
+                        captureBtn.disabled = false;
+                        captureBtn.innerHTML = 'Capture Photo';
+                    });
+            }, 'image/jpeg', 0.9);
+        }
+
+        console.log('✅ Capture photo function defined');
+
+        // View image in fullscreen
+        function viewImage(imageSrc) {
+            console.log('📷 viewImage function called');
+            console.log('Image source:', imageSrc);
+
+            const viewerImg = document.getElementById('viewerImage');
+            console.log('Viewer img element:', viewerImg);
+
+            if (!viewerImg) {
+                console.error('❌ viewerImage element not found!');
+                alert('Error: Image viewer not initialized');
+                return;
+            }
+
+            viewerImg.src = imageSrc;
+            console.log('Image src set to:', viewerImg.src);
+
+            const modalElement = document.getElementById('imageViewerModal');
+            console.log('Modal element:', modalElement);
+
+            if (!modalElement) {
+                console.error('❌ imageViewerModal element not found!');
+                alert('Error: Modal not found');
+                return;
+            }
+
+            try {
+                const modal = new bootstrap.Modal(modalElement);
+                console.log('Modal object created:', modal);
+                modal.show();
+                console.log('✅ Modal show() called');
+            } catch (error) {
+                console.error('❌ Error showing modal:', error);
+                alert('Error opening viewer: ' + error.message);
+            }
+        }
+
+        // Make existing images clickable - run immediately and on DOMContentLoaded
+        function makeImagesClickable() {
+            console.log('🖼️ Making images clickable...');
+            const images = document.querySelectorAll('.image-preview img');
+            console.log('Found', images.length, 'images');
+
+            // Log each image's src
+            images.forEach(function (img, index) {
+                console.log(`  Image ${index + 1}: ${img.src}`);
+                img.style.cursor = 'pointer';
+                img.onclick = function () {
+                    console.log('Image clicked:', this.src);
+                    viewImage(this.src);
+                };
+            });
+
+            if (images.length === 0) {
+                console.warn('⚠️ No images found! Check if images are in the HTML.');
+            }
+        }
+
+        // Run immediately (in case DOM is already ready)
+        makeImagesClickable();
+
+        // Also run on DOMContentLoaded (in case DOM is not ready yet)
+        document.addEventListener('DOMContentLoaded', makeImagesClickable);
+
+        // Check if Bootstrap is loaded
+        if (typeof bootstrap === 'undefined') {
+            console.error('❌ Bootstrap is not loaded!');
+        } else {
+            console.log('✅ Bootstrap is loaded:', bootstrap);
+        }
+
+        console.log('✅ JavaScript fully loaded and ready!');
+    </script>
+
+    <!-- Camera Modal -->
+    <div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cameraModalLabel">Camera with Compass</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 position-relative" style="background:#000;height:calc(100vh - 120px);">
+                    <video id="cameraVideo" autoplay playsinline
+                        style="width:100%;height:100%;object-fit:cover;"></video>
+                    <canvas id="compassOverlay"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                    <!-- Compass heading display - top left next to compass -->
+                    <div id="compassParams"
+                        style="position:absolute;top:30px;left:130px;color:#FFD700;background:rgba(0,0,0,0.4);padding:6px 12px;border-radius:6px;font-size:1rem;font-weight:bold;z-index:3;border:1px solid rgba(255,215,0,0.5);">
+                    </div>
+                    <!-- Camera info - bottom right with transparent background -->
+                    <div id="cameraInfo"
+                        style="position:absolute;bottom:10px;right:10px;color:#fff;background:rgba(0,0,0,0.4);padding:8px 12px;border-radius:8px;font-size:0.9rem;z-index:2;text-align:left;border:1px solid rgba(255,255,255,0.2);">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="capturePhotoBtn" onclick="capturePhoto()">Capture
+                        Photo</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div class="modal fade" id="imageViewerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: rgba(0,0,0,0.95);">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-white">Image Viewer</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body d-flex align-items-center justify-content-center p-3" style="cursor: pointer;"
+                    onclick="document.getElementById('imageViewerModal').querySelector('.btn-close').click()">
+                    <img id="viewerImage" src="" style="max-width: 100%; max-height: 90vh; object-fit: contain;"
+                        onclick="event.stopPropagation()">
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endblock %}

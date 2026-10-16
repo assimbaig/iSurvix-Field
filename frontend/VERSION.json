@@ -1,0 +1,8 @@
+{
+  "name": "iSurvix Survey Preview",
+  "saved_date": "2026-10-16",
+  "source_commit": "2e3e77d6acf21724e30c72167a1138413462654b",
+  "live_preview": "https://isurvix-survey-redesign.mirza-assim.chatgpt.site/",
+  "scope": "Static frontend preview; Django integration pending",
+  "entrypoint": "dist/index.html"
+}

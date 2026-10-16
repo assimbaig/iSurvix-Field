@@ -1,0 +1,110 @@
+iSurvix — Custom Checklist & Client Branding Update
+====================================================
+
+WHAT THIS UPDATE ADDS
+- Admin-only checklist designer: duplicate the original FDED checklist or start blank.
+- Original import retains all 172 fixed information/inspection rows.
+- Inventory retains four categories for each of STC and other operators, plus electrical readings.
+- Add, rename, remove, and reorder sections and fields; editable group/parent headings.
+- Supported field types: text, long text, number, date, dropdown, inspection result,
+  repeating table, and photo evidence. Configure required fields, choices and units.
+- Editable Client logos area: replace/remove Nokia and TAWAL logos and names.
+- Publish a revision, assign it to a project, and use it for new surveys.
+- Existing and approved surveys retain their original schema and branding snapshots.
+- Assignment, submission, review, final approval, comments, and work-status updates continue.
+- Fresh Excel reports use the saved revision and latest answers, with client branding.
+- Typed values validated server-side; inspection N/A requires a reason.
+- Versioned evidence uploads support up to 200 images per checklist, batches up to 20,
+  maximum 5 MB each; actual image bytes validated and normalized.
+
+PACKAGE CONTENTS
+backend/ : Django application source with migration 0014_checklist_template_builder.
+preview/ : Updated standalone interactive front-end (open dist/index.html).
+preview/check-preview.cjs : Lightweight rendering and interaction checks.
+README.txt : This document.
+
+THE LIVE PREVIEW
+https://isurvix-survey-redesign.mirza-assim.chatgpt.site/#builder
+Choose Admin > Checklist templates if the builder is not already open.
+1. Select the imported FDED template.
+2. Click Edit as new revision.
+3. Edit Sections & fields or Client logos.
+4. Publish revision.
+5. Assign to project, or choose Try sample survey.
+All preview records are sample data, stored in the browser on that device.
+Role switching is a preview feature, not authentication.
+The preview does not connect to your Hostinger database.
+
+DJANGO ADMIN WORKFLOW
+1. Sign into the existing Admin account.
+2. Open Admin Control Panel > Checklist templates & client logos.
+3. Choose Copy original FDED checklist or New blank checklist.
+4. Edit the draft. Expand a section to edit, add, remove, and reorder its fields.
+5. Open Client logos to replace or remove either client image and name.
+6. Save draft or Publish revision.
+7. Select the project and choose Use for new project surveys.
+Existing checklists remain on their old revision. Do not migrate their answers into a
+new schema automatically. Published revisions are immutable; duplicate before editing.
+The linked Site ID remains text and is displayed consistently with the assignment.
+A manually created survey asks for Site ID before opening the checklist.
+Original required flags are not invented: the Admin chooses which additional fields
+must be completed before submission. An inspection marked N/A always needs a reason.
+
+STAGING DEPLOYMENT (FOR THE DEVELOPER)
+1. Back up application code, database, and media. Keep the current live service running.
+2. Merge backend changes into a separate staging checkout; preserve server paths,
+   existing environment variables, and production database/media files.
+   The package intentionally contains no accounts, passwords, database, or user uploads.
+3. Use Python 3.12+ and an isolated virtual environment. Install requirements.txt.
+4. Set DJANGO_SECRET_KEY, DJANGO_ALLOWED_HOSTS, and DEBUG in the service environment.
+   .env.example is a reference only; settings.py does not auto-load .env files.
+   Use DEBUG=True and localhost for local testing. Use DEBUG=False behind HTTPS in production.
+   Example secret generation: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+5. Run:
+   python manage.py check
+   python manage.py migrate --plan
+   python manage.py migrate
+   python manage.py test core.test_template_builder
+   python manage.py collectstatic --noinput
+6. Merge the two media protection locations from nginx_config.conf into the actual server:
+   location ^~ /media/custom_evidence/ { return 404; }
+   location ^~ /media/client_logos/ { return 404; }
+   Keep these assets behind the authenticated Django views, not the public media alias.
+   Allow sufficient request size for upload batches; sample config uses 120M.
+   SECURE_PROXY_SSL_HEADER trusts X-Forwarded-Proto; the reverse proxy must overwrite it.
+7. Test admin template create/edit/publish/assign; logo replacement; engineer survey;
+   uploads; Excel download; reviewer comments; final approval; locked records;
+   cross-project access denial; and an existing legacy survey.
+8. Schedule the rollout, apply the same migration to production, restart the existing
+   application service, and retain the tested rollback copy and backups.
+
+REPORT COMPATIBILITY
+Legacy checklists retain the existing FDED Excel export path.
+Custom-template checklists generate a clean report from the configured sections;
+custom reports do not keep the original workbook's fixed row positions.
+For a contractual client-specific Excel layout, add a separately tested export mapping.
+Client logos appear on the custom form, custom Excel report, and preview print report.
+
+VALIDATION COMPLETED
+- Django system check: no issues.
+- Migration drift check: no changes detected.
+- 19 backend tests passed: original import, authorization, add/remove sections and fields,
+  client logos, immutable revisions, frozen old records, new project assignment,
+  typed values, N/A reasons, evidence, Excel freshness, manual creation, and approvals.
+- 61 preview screen-render checks plus persistence, template editing, branding,
+  version binding, required fields, and approval interactions passed.
+- Test runtime: bundled Django 6.0.1, openpyxl 3.1.5, and the installed Pillow runtime.
+- Browser visual layout testing and your actual Hostinger deployment were unavailable.
+  The local DOM/render checks are not a substitute for a real-browser staging review.
+
+SCOPE AND OPERATIONS
+This is the checklist-builder update, not a complete remediation of every issue in the
+legacy application audit. New custom-template endpoints enforce identity, project access,
+validation, and final-record protection. Previously identified legacy endpoint issues still
+need remediation before public production use. The old deployment scripts/guides are not
+included; merge the provided source and relevant configuration into your existing setup.
+The existing SQLite storage remains the default. For concurrent production survey teams,
+configure PostgreSQL and run concurrent-save tests before rollout. Image bytes removed from
+an evidence list are retained for recovery; plan a retention/cleanup policy with backups.
+Backend security defaults now require an environment-provided secret; the original hardcoded
+key and original database were not copied into this package.
