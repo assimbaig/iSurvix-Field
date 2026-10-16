@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Engineer Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="container-fluid px-0 px-md-4 py-3 py-md-5">
+        <div class="dashboard-card shadow-large">
+            <!-- Header Section -->
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center mb-4 gap-2">
+                <div class="dashboard-icon me-md-3">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <div class="flex-grow-1" style="min-width: 0;">
+                    <h2 class="mb-1 h3 text-gradient">Engineer Dashboard</h2>
+                    <p class="text-muted mb-0 small" style="word-break: break-word;">
+                        <i class="fa-solid fa-route me-1"></i><span class="d-inline-block">{{ path }}</span>
+                        <span class="mx-2 d-none d-md-inline">•</span><br class="d-md-none">
+                        <i class="fa-solid fa-folder me-1"></i><span class="d-inline-block">{{ project.name }}</span>
+                    </p>
+                </div>
+                <div class="d-flex gap-2 mt-2 mt-md-0 w-100 w-md-auto">
+                    <button class="btn btn-sm btn-outline-primary flex-grow-1 flex-md-grow-0"
+                        onclick="location.reload()">
+                        <i class="fa-solid fa-rotate me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} d-flex align-items-center shadow-soft" role="alert">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    <div>{{ message }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4 border-0" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="checklists-tab" data-bs-toggle="tab"
+                        data-bs-target="#checklists" type="button" role="tab">
+                        <i class="fa-solid fa-clipboard-list me-2"></i>Checklists
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="my-work-tab" data-bs-toggle="tab" data-bs-target="#my-work"
+                        type="button" role="tab">
+                        <i class="fa-solid fa-briefcase me-2"></i>My Work
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Checklists Tab -->
+                <div class="tab-pane fade show active" id="checklists" role="tabpanel">
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-auto">
+                            <div class="alert alert-info mb-0">
+                                <i class="fa-solid fa-info-circle me-2"></i>Checklists are created automatically from
+                                assigned work.
+                            </div>
+                        </div>
+                        <!-- Removed View Previous button for engineer -->
+                    </div>
+
+                    <div id="previous">
+                        <div class="card border-0 shadow-soft mb-4">
+                            <div class="card-body">
+                                <div
+                                    class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 gap-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="fa-solid fa-history me-2 text-primary"></i>Previous Checklists
+                                    </h5>
+                                    <form method="get" class="d-flex gap-2 w-100 w-md-auto">
+                                        <input class="form-control" name="q" placeholder="Search Site ID..."
+                                            value="{{ query }}" style="min-width: 200px;">
+                                        <button class="btn btn-outline-secondary" type="submit">
+                                            <i class="fa-solid fa-search"></i>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th><i class="fa-solid fa-hashtag me-1"></i>Site ID</th>
+                                                <th><i class="fa-solid fa-signal me-1"></i>Status</th>
+                                                <th><i class="fa-solid fa-clock me-1"></i>Updated</th>
+                                                <th class="text-end"><i class="fa-solid fa-bolt me-1"></i>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for checklist in checklists %}
+                                            <tr>
+                                                <td data-label="Site ID">
+                                                    <strong class="text-primary">{{ checklist.site_id }}</strong>
+                                                </td>
+                                                <td data-label="Status">
+                                                    {% if checklist.status == "DRAFT" %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fa-solid fa-file-lines me-1"></i>Draft
+                                                    </span>
+                                                    {% elif checklist.status == "SUBMITTED" %}
+                                                    <span class="badge bg-primary">
+                                                        <i class="fa-solid fa-paper-plane me-1"></i>Submitted
+                                                    </span>
+                                                    {% elif checklist.status == "REVIEW" %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fa-solid fa-magnifying-glass me-1"></i>Review
+                                                    </span>
+                                                    {% else %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fa-solid fa-check-circle me-1"></i>Final
+                                                    </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td data-label="Updated">
+                                                    <small class="text-muted">
+                                                        <i class="fa-solid fa-calendar-day me-1"></i>{{ checklist.updated_at|date:"Y-m-d H:i" }}
+                                                    </small>
+                                                </td>
+                                                <td data-label="Actions" class="text-md-end">
+                                                    <div
+                                                        class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+                                                        <a class="btn btn-sm btn-primary"
+                                                            href="{% url 'checklist_detail' checklist.id %}">
+                                                            <i class="fa-solid fa-pen-to-square me-1"></i>Open
+                                                        </a>
+                                                        <div class="btn-group download-menu" data-bs-auto-close="outside" data-bs-display="static" data-bs-offset="0,4">
+                                                            <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                <i class="fa-solid fa-download me-1"></i>Download
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="{% url 'engineer_checklist_download' path checklist.id %}">Excel</a></li>
+                                                                {% if checklist.has_zip %}
+                                                                <li><a class="dropdown-item" href="{% url 'checklist_download_zip' checklist.id %}">ZIP</a></li>
+                                                                {% endif %}
+                                                            </ul>
+                                                        </div>
+                                                        <!-- Engineers cannot delete checklists -->
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center py-5">
+                                                    <div class="empty-state">
+                                                        <i class="fa-solid fa-folder-open"></i>
+                                                        <p class="mb-0 mt-2">No checklists found</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="my-work" role="tabpanel" style="animation: fadeInUp 0.5s ease-out;">
+                    <div class="card border-0 shadow-soft">
+                        <div class="card-body">
+                            <div
+                                class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+                                <h5 class="mb-0 fw-bold">
+                                    <i class="fa-solid fa-briefcase me-2 text-primary"></i>My Assigned Work
+                                </h5>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary work-filter-btn active"
+                                        data-status="all">
+                                        <i class="fa-solid fa-layer-group me-1"></i>All
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary work-filter-btn"
+                                        data-status="DRAFT">
+                                        <i class="fa-solid fa-file-lines me-1"></i>Draft
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning work-filter-btn"
+                                        data-status="REVIEW">
+                                        <i class="fa-solid fa-magnifying-glass me-1"></i>Review
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary work-filter-btn"
+                                        data-status="SUBMITTED">
+                                        <i class="fa-solid fa-paper-plane me-1"></i>Submitted
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success work-filter-btn"
+                                        data-status="FINAL">
+                                        <i class="fa-solid fa-check-circle me-1"></i>Final
+                                    </button>
+                                </div>
+                            </div>
+
+                            {% if my_work %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle" id="workTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><i class="fa-solid fa-hashtag me-1"></i>Site ID</th>
+                                            <th><i class="fa-solid fa-map-marker-alt me-1"></i>Location</th>
+                                            <th><i class="fa-solid fa-signal me-1"></i>Status</th>
+                                            <th><i class="fa-solid fa-calendar me-1"></i>Assigned</th>
+                                            <th class="text-end"><i class="fa-solid fa-bolt me-1"></i>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for work in my_work %}
+                                        <tr class="work-row"
+                                            data-checklist-status="{% if work.checklist %}{{ work.checklist.status }}{% else %}NO_CHECKLIST{% endif %}">
+                                            <td data-label="Site ID">
+                                                <div>
+                                                    <strong class="text-primary d-block">{{ work.site_id }}</strong>
+                                                    <small class="text-muted d-block">
+                                                        {{ work.project.name }}
+                                                    </small>
+                                                </div>
+                                            </td>
+                                            <td data-label="Location">
+                                                <div>
+                                                    <a href="https://www.google.com/maps?q={{ work.latitude }},{{ work.longitude }}"
+                                                        target="_blank" class="btn btn-sm btn-outline-primary mb-2"
+                                                        onclick="if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) { this.href='geo:{{ work.latitude }},{{ work.longitude }}?q={{ work.latitude }},{{ work.longitude }}({{ work.site_id|urlencode }})'; }">
+                                                        <i class="fa-solid fa-map-marker-alt me-1"></i>View on Map
+                                                    </a>
+                                                    <small class="text-muted d-block">
+                                                        {{ work.latitude|floatformat:4 }}, {{ work.longitude|floatformat:4 }}
+                                                    </small>
+                                                </div>
+                                            </td>
+                                            <td data-label="Status">
+                                                {% if work.checklist %}
+                                                {% if work.checklist.status == 'DRAFT' %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fa-solid fa-file-lines me-1"></i>Draft
+                                                </span>
+                                                {% elif work.checklist.status == 'SUBMITTED' %}
+                                                <span class="badge bg-primary">
+                                                    <i class="fa-solid fa-paper-plane me-1"></i>Submitted
+                                                </span>
+                                                {% elif work.checklist.status == 'REVIEW' %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fa-solid fa-magnifying-glass me-1"></i>Review
+                                                </span>
+                                                {% else %}
+                                                <span class="badge bg-success">
+                                                    <i class="fa-solid fa-check-circle me-1"></i>Final
+                                                </span>
+                                                {% endif %}
+                                                {% else %}
+                                                <span class="text-muted">
+                                                    <i class="fa-solid fa-minus me-1"></i>No Checklist
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            <td data-label="Assigned">
+                                                <div>
+                                                    <small class="d-block">{{ work.created_at|date:"Y-m-d" }}</small>
+                                                    <small class="text-muted d-block">by {{ work.assigned_by.username }}</small>
+                                                </div>
+                                            </td>
+                                            <td data-label="Actions">
+                                                <div>
+                                                    {% if work.checklist %}
+                                                    <a href="{% url 'engineer_checklist_edit' path work.checklist.id %}"
+                                                        class="btn btn-sm btn-primary">
+                                                        <i class="fa-solid fa-clipboard-check me-1"></i>Open Checklist
+                                                    </a>
+                                                    {% else %}
+                                                    <span class="text-muted">Preparing checklist...</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="empty-state py-5">
+                                <i class="fa-solid fa-briefcase"></i>
+                                <p class="mb-0 mt-3">No work assigned yet</p>
+                                <small class="text-muted">Check back later for new assignments!</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab persistence for engineer dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        var activeTab = localStorage.getItem('engineerActiveTab');
+        if (activeTab) {
+            var tab = document.querySelector('button[data-bs-target="' + activeTab + '"]');
+            if (tab) {
+                var bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+
+        var tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabButtons.forEach(function (button) {
+            button.addEventListener('shown.bs.tab', function (event) {
+                var targetTab = event.target.getAttribute('data-bs-target');
+                localStorage.setItem('engineerActiveTab', targetTab);
+            });
+        });
+
+        // Work filter functionality
+        var filterButtons = document.querySelectorAll('.work-filter-btn');
+        filterButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                var status = this.getAttribute('data-status');
+
+                // Update active button
+                filterButtons.forEach(function (btn) {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                // Filter rows
+                var rows = document.querySelectorAll('.work-row');
+                rows.forEach(function (row) {
+                    var rowStatus = row.getAttribute('data-checklist-status');
+                    if (status === 'all' || rowStatus === status) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Tab persistence - remember active tab on refresh
+        var activeTab = localStorage.getItem('engineerActiveTab');
+        if (activeTab) {
+            var tab = document.querySelector('button[data-bs-target="' + activeTab + '"]');
+            if (tab) {
+                var bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+
+        // Save active tab to localStorage when changed
+        var tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabButtons.forEach(function (button) {
+            button.addEventListener('shown.bs.tab', function (event) {
+                var targetTab = event.target.getAttribute('data-bs-target');
+                localStorage.setItem('engineerActiveTab', targetTab);
+            });
+        });
+    });
+</script>
+{% endblock %}

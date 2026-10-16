@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Team Leader Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="container py-5">
+        <div class="dashboard-card shadow">
+            <div class="d-flex align-items-center mb-3">
+                <div class="dashboard-icon me-3">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Team Leader Area</h2>
+                    <p class="text-muted mb-0">Path: {{ path }} · Project: {{ project.name }}</p>
+                </div>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="works-tab" data-bs-toggle="tab" data-bs-target="#works"
+                        type="button" role="tab">User Works</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="assign-work-tab" data-bs-toggle="tab" data-bs-target="#assign-work"
+                        type="button" role="tab"><i class="fa-solid fa-tasks me-1"></i>Assign Work</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="geolocation-tab" data-bs-toggle="tab" data-bs-target="#geolocation"
+                        type="button" role="tab"><i class="fa-solid fa-map-location-dot me-1"></i>GeoLocation</button>
+                </li>
+            </ul>
+
+            <div class="tab-content pt-4">
+                <div class="tab-pane fade show active" id="works" role="tabpanel">
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-2">Completed Checklists by User</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for stat in user_stats %}
+                                <span class="badge text-bg-light">{{ stat.user__username }}: {{ stat.total }}</span>
+                                {% empty %}
+                                <span class="text-muted">No completed checklists yet.</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="mb-3">
+                                <i class="fa-solid fa-filter me-2"></i>Filters & Search
+                            </h6>
+                            <form method="get" class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" name="status">
+                                        <option value="">All Status</option>
+                                        <option value="DRAFT" {% if status_filter == "DRAFT" %}selected{% endif %}>Draft
+                                        </option>
+                                        <option value="SUBMITTED" {% if status_filter == "SUBMITTED" %}selected{% endif %}>Submitted</option>
+                                        <option value="REVIEW" {% if status_filter == "REVIEW" %}selected{% endif %}>
+                                            Review</option>
+                                        <option value="FINAL" {% if status_filter == "FINAL" %}selected{% endif %}>Final
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Engineer</label>
+                                    <select class="form-select" name="user">
+                                        <option value="">All Engineers</option>
+                                        {% for user in project_users %}
+                                        <option value="{{ user.id }}" {% if user_filter == user.id|stringformat:"s" %}selected{% endif %}>{{ user.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Search Site ID</label>
+                                    <input type="text" class="form-control" name="q" placeholder="Search by Site ID"
+                                        value="{{ search_query }}">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button class="btn btn-primary me-2" type="submit">
+                                        <i class="fa-solid fa-magnifying-glass me-1"></i>Filter
+                                    </button>
+                                    <a href="?" class="btn btn-outline-secondary">Clear</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Site ID</th>
+                                    <th>Status</th>
+                                    <th>Comment</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for checklist in checklists %}
+                                <tr
+                                    class="{% if checklist.status == 'FINAL' %}table-success{% elif checklist.status == 'REVIEW' %}table-warning{% elif checklist.status == 'DRAFT' %}table-light{% elif checklist.status == 'SUBMITTED' %}table-info{% endif %}">
+                                    <td>{{ checklist.user.username }}</td>
+                                    <td>{{ checklist.site_id|default:checklist.id }}</td>
+                                    <td>{{ checklist.get_status_display }}</td>
+                                    <td>
+                                        {% if checklist.comment %}
+                                        {{ checklist.comment }}
+                                        {% if checklist.comment_by %}
+                                        <br><small class="text-muted">- by {{ checklist.comment_by.username }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#commentModal{{ checklist.id }}">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i>Action
+                                        </button>
+                                        {% if checklist.user.profile.path %}
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                            href="{% url 'checklist_detail' checklist.id %}">
+                                            <i class="fa-solid fa-eye me-1"></i>View
+                                        </a>
+                                        <div class="btn-group download-menu" data-bs-auto-close="outside" data-bs-display="static" data-bs-offset="0,4">
+                                            <button type="button" class="btn btn-sm btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fa-solid fa-download me-1"></i>Download
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="{% url 'engineer_checklist_download' checklist.user.profile.path checklist.id %}">Excel</a></li>
+                                                {% if checklist.has_zip %}
+                                                <li><a class="dropdown-item" href="{% url 'checklist_download_zip' checklist.id %}">ZIP</a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted small">No path assigned</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No checklists found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% include "dashboards/_assign_work_tab.html" %}
+
+                {% include "dashboards/_geolocation_tab.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Work Assignment Modals (placed outside tabs for proper display) -->
+{% for work in work_assignments %}
+<div class="modal fade" id="workDetailModal{{ work.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-briefcase me-2"></i>Work Details - {{ work.site_id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <strong>Site ID:</strong> {{ work.site_id }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        <span class="badge bg-{{ work.status|lower }}">{{ work.get_status_display }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Assigned To:</strong> {{ work.assigned_to.username }} ({{ work.assigned_to.profile.path }})
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Assigned By:</strong> {{ work.assigned_by.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Project:</strong> {{ work.project.name }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Coordinates:</strong>
+                        <a href="https://www.google.com/maps?q={{ work.latitude }},{{ work.longitude }}" target="_blank"
+                            class="text-primary">
+                            {{ work.latitude }}, {{ work.longitude }}
+                            <i class="fa-solid fa-external-link-alt ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="col-12">
+                        <strong>Description:</strong>
+                        <p class="mt-2">{{ work.description }}</p>
+                    </div>
+                    {% if work.engineer_notes %}
+                    <div class="col-12">
+                        <strong>Engineer Notes:</strong>
+                        <p class="mt-2 text-muted">{{ work.engineer_notes }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="col-12">
+                        <hr>
+                        <h6>Timeline:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fa-solid fa-plus-circle text-primary me-2"></i>
+                                Created: {{ work.created_at|date:"Y-m-d H:i" }}
+                            </li>
+                            {% if work.started_at %}
+                            <li><i class="fa-solid fa-play-circle text-info me-2"></i>
+                                Started: {{ work.started_at|date:"Y-m-d H:i" }}
+                            </li>
+                            {% endif %}
+                            {% if work.submitted_at %}
+                            <li><i class="fa-solid fa-check-circle text-success me-2"></i>
+                                Submitted: {{ work.submitted_at|date:"Y-m-d H:i" }}
+                            </li>
+                            {% endif %}
+                            {% if work.completed_at %}
+                            <li><i class="fa-solid fa-flag-checkered text-success me-2"></i>
+                                Completed: {{ work.completed_at|date:"Y-m-d H:i" }}
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modals for all checklists (placed outside tabs for proper display) -->
+{% for checklist in checklists %}
+<div class="modal fade" id="commentModal{{ checklist.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Checklist</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'checklist_review_update' checklist.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="DRAFT" {% if checklist.status == "DRAFT" %}selected{% endif %}>Draft</option>
+                            <option value="SUBMITTED" {% if checklist.status == "SUBMITTED" %}selected{% endif %}>
+                                Submitted</option>
+                            <option value="REVIEW" {% if checklist.status == "REVIEW" %}selected{% endif %}>Review
+                            </option>
+                            <option value="FINAL" {% if checklist.status == "FINAL" %}selected{% endif %}>Final</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comment</label>
+                        <textarea class="form-control" name="comment" rows="3"
+                            placeholder="Add your comment here">{{ checklist.comment }}</textarea>
+                    </div>
+                    <div class="text-muted small">
+                        <strong>Site ID:</strong> {{ checklist.site_id|default:checklist.id }}<br>
+                        <strong>Engineer:</strong> {{ checklist.user.username }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+    // Tab persistence - remember active tab on refresh
+    document.addEventListener('DOMContentLoaded', function () {
+        // Restore active tab from localStorage
+        var activeTab = localStorage.getItem('teamLeadActiveTab');
+        if (activeTab) {
+            var tab = document.querySelector('button[data-bs-target="' + activeTab + '"]');
+            if (tab) {
+                var bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+
+        // Save active tab to localStorage when changed
+        var tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabButtons.forEach(function (button) {
+            button.addEventListener('shown.bs.tab', function (event) {
+                var targetTab = event.target.getAttribute('data-bs-target');
+                localStorage.setItem('teamLeadActiveTab', targetTab);
+            });
+        });
+    });
+</script>
+{% endblock %}

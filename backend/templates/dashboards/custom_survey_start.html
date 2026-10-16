@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}Start site survey{% endblock %}
+{% block content %}<main class="container py-5" style="max-width:650px"><h1 class="h3 mb-3">Start a site survey</h1><p class="text-muted">{{ project.name }} · {{ project.checklist_template }}</p>{% for message in messages %}<div class="alert alert-info">{{ message }}</div>{% endfor %}<form method="post" class="card card-body">{% csrf_token %}<label class="form-label" for="site-id">Site ID</label><input class="form-control mb-3" id="site-id" name="site_id" maxlength="120" required><p class="small text-muted">The Site ID stays linked to the survey and exported report. Assigned work already includes its Site ID.</p><button class="btn btn-success">Open checklist</button></form></main>{% endblock %}

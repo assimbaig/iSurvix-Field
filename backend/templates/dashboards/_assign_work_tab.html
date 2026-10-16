@@ -1,0 +1,267 @@
+<div class="tab-pane fade" id="assign-work" role="tabpanel" style="animation: fadeInUp 0.5s ease-out;">
+    <div class="card mb-4" style="animation: slideInUp 0.6s ease-out;">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-tasks me-2"></i>Assign New Work</h5>
+            <form method="post" action="{% url 'assign_work' %}">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Site ID <span class="text-danger">*</span></label>
+                        <select class="form-select" name="site_id" id="assign-site-id" required style="width:100%">
+                            {% for location in locations %}
+                            <option value="{{ location.name }}" data-lat="{{ location.latitude }}"
+                                data-lng="{{ location.longitude }}">
+                                {{ location.name }} ({{ location.latitude }}, {{ location.longitude }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+                            rel="stylesheet" />
+                        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+                        <script>
+                            $(function () {
+                                setTimeout(function () {
+                                    $('#assign-site-id').select2({
+                                        placeholder: 'Type or select Site ID...',
+                                        allowClear: true,
+                                        width: 'resolve',
+                                        minimumResultsForSearch: 0 // Always show search box
+                                    });
+                                    // Listen for Select2 selection event
+                                    $('#assign-site-id').on('select2:select', function (e) {
+                                        var selectedOption = $(this).find('option[value="' + e.params.data.id + '"]');
+                                        var lat = selectedOption.data('lat') || '';
+                                        var lng = selectedOption.data('lng') || '';
+                                        $('#work-latitude').val(lat);
+                                        $('#work-longitude').val(lng);
+                                    });
+                                    // Also clear lat/lng if cleared
+                                    $('#assign-site-id').on('select2:clear', function (e) {
+                                        $('#work-latitude').val('');
+                                        $('#work-longitude').val('');
+                                    });
+                                }, 200);
+                            });
+                        </script>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Assign to Engineer <span class="text-danger">*</span></label>
+                        <select class="form-select" name="engineer_id" required>
+                            <option value="">Select Engineer...</option>
+                            {% for engineer in engineers %}
+                            <option value="{{ engineer.id }}">{{ engineer.username }} - {{ engineer.profile.path }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Latitude <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="latitude" id="work-latitude" required
+                            placeholder="e.g., 24.7136" step="any" readonly>
+                        <small class="text-muted">Auto-filled from selected Site ID</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Longitude <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="longitude" id="work-longitude" required
+                            placeholder="e.g., 46.6753" step="any" readonly>
+                        <script>
+                            // Auto-fill latitude/longitude when Site ID is selected
+                            // ...existing code...
+                        </script>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Project <span class="text-danger">*</span></label>
+                        {% if project %}
+                        <input type="hidden" name="project_id" value="{{ project.id }}">
+                        <input type="text" class="form-control" value="{{ project.name }}" disabled>
+                        {% else %}
+                        <select class="form-select" name="project_id" required>
+                            <option value="">Select Project...</option>
+                            {% for proj in projects %}
+                            <option value="{{ proj.id }}">{{ proj.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Work Description</label>
+                        <textarea class="form-control" name="description" rows="3"
+                            placeholder="Describe the work to be done (optional)..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-paper-plane me-1"></i>Assign Work
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-list me-2"></i>All Work Assignments</h5>
+
+            {% if work_assignments %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="fa-solid fa-hashtag me-1"></i>Site ID</th>
+                            <th><i class="fa-solid fa-user me-1"></i>Engineer</th>
+                            <th><i class="fa-solid fa-map-marker-alt me-1"></i>Coordinates</th>
+                            <th><i class="fa-solid fa-clipboard-list me-1"></i>Checklist</th>
+                            <th><i class="fa-solid fa-signal me-1"></i>Work Status</th>
+                            <th><i class="fa-solid fa-calendar me-1"></i>Created</th>
+                            <th class="text-end"><i class="fa-solid fa-bolt me-1"></i>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for work in work_assignments %}
+                        <tr>
+                            <td data-label="Site ID">
+                                <div>
+                                    <strong class="text-primary d-block">{{ work.site_id }}</strong>
+                                    <small class="text-muted d-block">{{ work.project.name }}</small>
+                                </div>
+                            </td>
+                            <td data-label="Engineer">
+                                <div>
+                                    <span class="d-block"><i class="fa-solid fa-user me-1"></i>{{ work.assigned_to.username }}</span>
+                                    <small class="text-muted d-block">Path: {{ work.assigned_to.profile.path }}</small>
+                                </div>
+                            </td>
+                            <td data-label="Coordinates">
+                                <a href="https://www.google.com/maps?q={{ work.latitude }},{{ work.longitude }}"
+                                    target="_blank" class="btn btn-sm btn-outline-primary" title="Open in Google Maps">
+                                    <i class="fa-solid fa-map-marker-alt me-1"></i>
+                                    View Map
+                                </a>
+                                <small class="text-muted d-block mt-1">{{ work.latitude|floatformat:4 }}, {{ work.longitude|floatformat:4 }}</small>
+                            </td>
+                            <td data-label="Checklist">
+                                {% if work.checklist %}
+                                <span
+                                    class="badge {% if work.checklist.status == 'DRAFT' %}bg-secondary{% elif work.checklist.status == 'SUBMITTED' %}bg-primary{% elif work.checklist.status == 'REVIEW' %}bg-warning{% else %}bg-success{% endif %}">
+                                    <i class="fa-solid fa-clipboard-check me-1"></i>{{ work.checklist.get_status_display }}</span>
+                                </span>
+                                {% else %}
+                                <span class="text-muted"><i class="fa-solid fa-minus me-1"></i>No checklist</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Work Status">
+                                {% if work.status == "PENDING" %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fa-solid fa-clock me-1"></i>Pending
+                                </span>
+                                {% elif work.status == "IN_PROGRESS" %}
+                                <span class="badge bg-info">
+                                    <i class="fa-solid fa-spinner me-1"></i>In Progress
+                                </span>
+                                {% elif work.status == "SUBMITTED" %}
+                                <span class="badge bg-primary">
+                                    <i class="fa-solid fa-check me-1"></i>Submitted
+                                </span>
+                                {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fa-solid fa-check-double me-1"></i>Completed
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Created">
+                                <div>
+                                    <small class="d-block">{{ work.created_at|date:"Y-m-d H:i" }}</small>
+                                    <small class="text-muted d-block">by {{ work.assigned_by.username }}</small>
+                                </div>
+                            </td>
+                            <td data-label="Actions">
+                                <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#workDetailModal{{ work.id }}">
+                                        <i class="fa-solid fa-eye me-1"></i>View
+                                    </button>
+                                    {% if request.session.is_dev_admin or request.user.profile.role == "TEAM_LEAD" %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#workEditModal{{ work.id }}">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                    </button>
+                                    {% endif %}
+                                    {% if request.session.is_dev_admin %}
+                                    <form method="post" action="{% url 'work_delete' work.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Delete this assigned work?')">
+                                            <i class="fa-solid fa-trash me-1"></i>Delete
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state py-5">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <p class="mb-0 mt-3">No work assignments yet</p>
+                <small class="text-muted">Use the form above to assign work to engineers</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% for work in work_assignments %}
+<div class="modal fade" id="workEditModal{{ work.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Work Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'work_edit' work.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Site ID</label>
+                        <input type="text" class="form-control" name="site_id" value="{{ work.site_id }}" required>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitude</label>
+                            <input type="text" class="form-control" name="latitude" value="{{ work.latitude }}"
+                                required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitude</label>
+                            <input type="text" class="form-control" name="longitude" value="{{ work.longitude }}"
+                                required>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Assign to Engineer</label>
+                        <select class="form-select" name="engineer_id" required>
+                            {% for engineer in engineers %}
+                            <option value="{{ engineer.id }}" {% if engineer.id == work.assigned_to.id %}selected{% endif %}>
+                                {{ engineer.username }} - {{ engineer.profile.path }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Work Description</label>
+                        <textarea class="form-control" name="description" rows="3">{{ work.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}

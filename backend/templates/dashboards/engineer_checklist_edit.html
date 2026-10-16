@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Checklist{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="container py-5">
+        <div class="dashboard-card shadow">
+            <div class="d-flex align-items-center mb-3">
+                <div class="dashboard-icon me-3">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Checklist</h2>
+                    <p class="text-muted mb-0">Project: {{ project.name }} · Site ID: {{ checklist.site_id|default:checklist.id }}</p>
+                </div>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-info d-flex align-items-center justify-content-between">
+                <span>Auto-save is enabled. Your progress is saved automatically.</span>
+                <span id="autosave-status" class="text-muted small">Not saved yet</span>
+            </div>
+
+            {% if not can_edit %}
+            <div class="alert alert-warning">
+                This checklist is locked (Final). Engineers cannot edit it.
+            </div>
+            {% endif %}
+
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-secondary">Status: {{ checklist.get_status_display }}</span>
+                {% if checklist.comment %}
+                <span class="text-muted">
+                    Comment: {{ checklist.comment }}
+                    {% if checklist.comment_by %}
+                    <small>(by {{ checklist.comment_by.username }})</small>
+                    {% endif %}
+                </span>
+                {% endif %}
+            </div>
+
+            <form id="checklist-form" class="row g-3 checklist-scroll" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="checklist_id" value="{{ checklist.id }}">
+
+                <h5 class="mt-3">Questions</h5>
+
+                {% for q in questions %}
+                <div class="col-12 checklist-item section-block" data-section-row="{{ q.row }}">
+                    <div class="d-flex align-items-center mb-1">
+                        <label class="form-label mb-0 flex-grow-1">{{ q.text|default:"Question" }}</label>
+                        <div class="form-check form-check-inline ms-2">
+                            <input class="form-check-input available-check" type="radio" name="available_{{ q.row }}"
+                                id="available_{{ q.row }}_yes" value="available" checked>
+                            <label class="form-check-label" for="available_{{ q.row }}_yes">Available</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input available-check" type="radio" name="available_{{ q.row }}"
+                                id="available_{{ q.row }}_no" value="not_available">
+                            <label class="form-check-label" for="available_{{ q.row }}_no">Not Available</label>
+                        </div>
+                    </div>
+                    <input class="form-control answer-field" name="answer_{{ q.row }}" value="{{ q.value }}" {% if not can_edit %}disabled{% endif %} required>
+                </div>
+                {% endfor %}
+
+                <h5 class="mt-4">Images & Remarks</h5>
+
+                {% for q in image_questions %}
+                <div class="col-12 checklist-item">
+                    <label class="form-label">{{ q.text|default:"Image Question" }}</label>
+                    <textarea class="form-control mb-3" name="remark_{{ q.row }}" rows="2" placeholder="Remarks" {% if not can_edit %}disabled{% endif %}>{{ q.remark }}</textarea>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-primary mb-0 open-camera-btn"
+                            data-row="{{ q.row }}" {% if not can_edit %}disabled{% endif %}>
+                            <i class="fa-solid fa-camera me-1"></i> Open Camera
+                        </button>
+                    </div>
+                    {% if q.images %}
+                    <div class="image-grid mt-3">
+                        {% for img in q.images %}
+                        <div class="image-tile">
+                            <img src="/media/{{ img }}" alt="Uploaded">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <!-- Camera Modal -->
+                <div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-fullscreen">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cameraModalLabel">Camera with Compass</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-0 position-relative"
+                                style="background:#000;height:calc(100vh - 120px);">
+                                <video id="cameraVideo" autoplay playsinline
+                                    style="width:100%;height:100%;object-fit:cover;"></video>
+                                <canvas id="compassOverlay"
+                                    style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                                <div id="compassParams"
+                                    style="position:absolute;top:10px;left:10px;color:#fff;background:rgba(0,0,0,0.7);padding:8px 12px;border-radius:8px;min-width:120px;font-size:1rem;z-index:2;">
+                                </div>
+                                <div id="cameraInfo"
+                                    style="position:absolute;bottom:10px;right:10px;color:#fff;background:rgba(0,0,0,0.7);padding:8px 12px;border-radius:8px;min-width:180px;font-size:1rem;z-index:2;text-align:right;">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" id="capturePhotoBtn">Capture
+                                    Photo</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                {% if can_edit %}
+                <button id="save-button" class="btn btn-success" type="button">Save Checklist</button>
+                {% endif %}
+                {% if access_role == "ENGINEER" and checklist.status != "FINAL" %}
+                <form method="post" action="{% url 'engineer_checklist_submit' path checklist.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-primary">Submit for Review</button>
+                </form>
+                {% endif %}
+                {% if back_name and back_path %}
+                <a class="btn btn-outline-secondary" href="{% url back_url path=back_path %}">Back</a>
+                {% elif back_url %}
+                <a class="btn btn-outline-secondary" href="{% url back_url %}">Back</a>
+                {% else %}
+                <a class="btn btn-outline-secondary" href="{% url 'user_dashboard' path %}">Back</a>
+                {% endif %}
+                <div class="btn-group download-menu" data-bs-auto-close="outside" data-bs-display="static"
+                    data-bs-offset="0,4">
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fa-solid fa-download me-1"></i>Download
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item"
+                                href="{% url 'engineer_checklist_download' path checklist.id %}">Excel</a></li>
+                        {% if checklist.has_zip %}
+                        <li><a class="dropdown-item" href="{% url 'checklist_download_zip' checklist.id %}">ZIP</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {# Engineers cannot delete checklists #}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const form = document.getElementById('checklist-form');
+    const statusEl = document.getElementById('autosave-status');
+    const saveButton = document.getElementById('save-button');
+    let timeoutId = null;
+
+    const autosaveUrl = "{% url 'engineer_checklist_autosave' path checklist.id %}";
+
+    const updateStatus = (text, tone) => {
+        statusEl.textContent = text;
+        statusEl.className = `text-${tone} small`;
+    };
+
+    const sendAutosave = () => {
+        const formData = new FormData(form);
+        return fetch(autosaveUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        }).then((response) => response.json())
+            .then(() => {
+                updateStatus('Saved', 'success');
+            })
+            .catch(() => {
+                updateStatus('Save failed', 'danger');
+            });
+    };
+
+    const debounceSave = () => {
+        updateStatus('Saving...', 'warning');
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(sendAutosave, 100);
+    };
+
+    if (saveButton) {
+        // Add event listeners for all input, textarea, and available-check radios
+        form.querySelectorAll('input, textarea').forEach((input) => {
+            input.addEventListener('input', debounceSave);
+            input.addEventListener('change', debounceSave);
+        });
+
+        // Listen for available/not available radio changes
+        form.querySelectorAll('.available-check').forEach((radio) => {
+            radio.addEventListener('change', function (e) {
+                const sectionDiv = e.target.closest('.section-block');
+                const answerField = sectionDiv.querySelector('.answer-field');
+                if (e.target.value === 'not_available') {
+                    answerField.value = 'not available';
+                    answerField.setAttribute('readonly', 'readonly');
+                    answerField.style.backgroundColor = '#f0f0f0';
+                } else {
+                    if (answerField.value === 'not available' || answerField.value === 'Not Available') answerField.value = '';
+                    answerField.removeAttribute('readonly');
+                    answerField.style.backgroundColor = '';
+                }
+                debounceSave();
+            });
+        });
+
+        saveButton.addEventListener('click', () => {
+            updateStatus('Saving...', 'warning');
+            sendAutosave();
+        });
+
+        document.querySelectorAll('.download-menu .dropdown-item').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const href = link.getAttribute('href');
+                updateStatus('Saving...', 'warning');
+                sendAutosave().finally(() => {
+                    window.location.href = href;
+                });
+            });
+        });
+    }
+    // Camera, Compass, and Overlay Logic
+    let cameraStream = null;
+    let currentRow = null;
+    let compassHeading = 0;
+    let coords = { lat: null, lng: null };
+    let compassInterval = null;
+
+    // Open camera modal
+    document.querySelectorAll('.open-camera-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            currentRow = btn.getAttribute('data-row');
+            const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+            modal.show();
+            startCamera();
+            getLocation();
+            // Start updating compass and info
+            if (!compassInterval) {
+                compassInterval = setInterval(() => {
+                    drawOverlay();
+                    document.getElementById('compassParams').innerHTML = `<b>Heading:</b> ${compassHeading.toFixed(1)}°`;
+                    const now = new Date();
+                    document.getElementById('cameraInfo').innerHTML = `<b>Date:</b> ${now.toLocaleDateString()}<br><b>Time:</b> ${now.toLocaleTimeString()}<br><b>Angle:</b> ${compassHeading.toFixed(1)}°<br><b>Lat:</b> ${coords.lat ? coords.lat.toFixed(6) : '--'}<br><b>Lng:</b> ${coords.lng ? coords.lng.toFixed(6) : '--'}`;
+                }, 300);
+            }
+        });
+    });
+
+    // Start camera
+    async function startCamera() {
+        const video = document.getElementById('cameraVideo');
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = cameraStream;
+        } catch (e) {
+            alert('Camera access denied or not available.');
+        }
+    }
+
+    // Stop camera when modal closes
+    document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        if (compassInterval) {
+            clearInterval(compassInterval);
+            compassInterval = null;
+        }
+    });
+
+    // Get geolocation
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                coords.lat = position.coords.latitude;
+                coords.lng = position.coords.longitude;
+            });
+        }
+    }
+
+    // Compass (DeviceOrientation)
+    window.addEventListener('deviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation', function (event) {
+        if (event.absolute || event.webkitCompassHeading !== undefined || event.alpha !== null) {
+            compassHeading = event.webkitCompassHeading || (360 - event.alpha) || 0;
+        }
+    });
+
+    // Overlay drawing
+    function drawOverlay() {
+        const canvas = document.getElementById('compassOverlay');
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width = canvas.offsetWidth;
+        const h = canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0, 0, w, h);
+        // Draw compass circle
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(60, h / 2, 50, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        // Draw heading line
+        ctx.save();
+        ctx.translate(60, h / 2);
+        ctx.rotate((-compassHeading) * Math.PI / 180);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -40);
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+        // Draw N/E/S/W
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillStyle = '#ffff00';
+        ctx.fillText('N', 55, h / 2 - 45);
+        ctx.fillText('S', 55, h / 2 + 65);
+        ctx.fillText('E', 110, h / 2 + 10);
+        ctx.fillText('W', 5, h / 2 + 10);
+    }
+
+
+
+    // Capture photo
+    document.getElementById('capturePhotoBtn').addEventListener('click', function () {
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Optionally, draw overlays on the captured image here
+        // For now, just get the image data
+        canvas.toBlob(function (blob) {
+            // You can now upload this blob via AJAX or attach to a hidden file input for the form
+            alert('Photo captured! (Upload logic to be implemented)');
+        }, 'image/jpeg', 0.95);
+    });
+</script>
+{% endblock %}

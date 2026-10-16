@@ -1,0 +1,22 @@
+[Unit]
+Description=Gunicorn daemon for Checklist Django Application
+After=network.target
+
+[Service]
+Type=notify
+User=YOUR_USER
+Group=www-data
+WorkingDirectory=/home/YOUR_USER/CHECKLIST_APP
+Environment="PATH=/home/YOUR_USER/CHECKLIST_APP/venv/bin"
+ExecStart=/home/YOUR_USER/CHECKLIST_APP/venv/bin/gunicorn \
+          --config /home/YOUR_USER/CHECKLIST_APP/gunicorn_config.py \
+          checklist.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
