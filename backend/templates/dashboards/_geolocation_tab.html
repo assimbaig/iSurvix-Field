@@ -1,0 +1,387 @@
+<div class="tab-pane fade" id="geolocation" role="tabpanel" style="animation: fadeInUp 0.5s ease-out;">
+    <div class="card mb-4" style="animation: slideInUp 0.6s ease-out;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fa-solid fa-map-marked-alt me-2"></i>Interactive Map - Saudi Arabia</h5>
+                <select id="mapStyleSelector" class="form-select" style="width: auto;">
+                    <option value="voyager">Standard (English)</option>
+                    <option value="satellite">Satellite View</option>
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode</option>
+                    <option value="topo">Topographic</option>
+                </select>
+            </div>
+            <div id="map" style="height: 650px; border-radius: 12px; background: #f0f0f0;">
+                <div id="map-loader" style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Loading map...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-location-dot me-2"></i>Add New Pin</h5>
+            <form method="post" action="{% url 'location_add' %}" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    <label class="form-label">Site ID</label>
+                    <input type="text" class="form-control" name="site_id" placeholder="e.g., SITE-001" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Latitude</label>
+                    <input type="text" class="form-control" name="latitude" placeholder="21.64472" step="any" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Longitude</label>
+                    <input type="text" class="form-control" name="longitude" placeholder="39.64" step="any" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa-solid fa-plus me-1"></i>Add Pin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-file-import me-2"></i>Import Pins (Excel)</h5>
+            <form method="post" action="{% url 'location_import' %}" enctype="multipart/form-data" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    <label class="form-label">Client</label>
+                    <select class="form-select" name="project_id" required>
+                        <option value="">Select Client...</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Excel File (Site ID, Latitude, Longitude)</label>
+                    <input type="file" class="form-control" name="locations_file" accept=".xlsx,.xls" required>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fa-solid fa-upload me-1"></i>Import Pins
+                    </button>
+                </div>
+            </form>
+            {% if request.session.is_dev_admin %}
+            <form method="post" action="{% url 'location_delete_all' %}" class="mt-3">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger"
+                    onclick="return confirm('Delete ALL saved locations?')">
+                    <i class="fa-solid fa-trash me-1"></i>Delete All Pins
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-list-ul me-2"></i>Saved Locations ({{ locations.count }})</h5>
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <input type="text" id="locationSearch" class="form-control"
+                        placeholder="Search by Site ID, Latitude, or Longitude">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" id="locationSearchClear">
+                        <i class="fa-solid fa-eraser me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Coordinates</th>
+                            <th>Client</th>
+                            <th>Added By</th>
+                            <th>Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td data-site="{{ location.name }}"><i
+                                    class="fa-solid fa-location-dot text-danger me-2"></i>{{ location.name }}</td>
+                            <td data-coords="{{ location.latitude }}, {{ location.longitude }}">
+                                <code>{{ location.latitude }}, {{ location.longitude }}</code>
+                            </td>
+                            <td>{{ location.project.name|default:"All Projects" }}</td>
+                            <td>{{ location.created_by.username }}</td>
+                            <td>{{ location.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    onclick="flyToLocation({{ location.latitude }}, {{ location.longitude }}, '{{ location.name|escapejs }}')">
+                                    <i class="fa-solid fa-crosshairs me-1"></i>Locate
+                                </button>
+                                {% if request.session.is_dev_admin %}
+                                <form method="post" action="{% url 'location_delete' location.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Delete {{ location.name|escapejs }}?')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No locations added yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var geoMapInitialized = false;
+    var geoMap = null;
+
+    function initializeGeoMap() {
+        if (geoMapInitialized) return;
+        geoMapInitialized = true;
+
+        // Initialize map - centered on Saudi Arabia (Riyadh)
+        geoMap = L.map('map', {
+            center: [24.7136, 46.6753],
+            zoom: 6,
+            zoomControl: true,
+            preferCanvas: true // Better performance
+        });
+
+        // Define all map tile layers with optimizations
+        var tileLayers = {
+            voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap © CARTO',
+                subdomains: 'abcd',
+                maxNativeZoom: 18,
+                updateWhenIdle: true,
+                keepBuffer: 2
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: '© Esri',
+                maxNativeZoom: 18,
+                updateWhenIdle: true,
+                keepBuffer: 2
+            }),
+            dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap © CARTO',
+                subdomains: 'abcd',
+                maxNativeZoom: 18,
+                updateWhenIdle: true,
+                keepBuffer: 2
+            }),
+            light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap © CARTO',
+                subdomains: 'abcd',
+                maxNativeZoom: 18,
+                updateWhenIdle: true,
+                keepBuffer: 2
+            }),
+            topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                maxZoom: 17,
+                attribution: '© OpenStreetMap © OpenTopoMap',
+                maxNativeZoom: 17,
+                updateWhenIdle: true,
+                keepBuffer: 2
+            })
+        };
+
+        // Add default layer (voyager with English labels)
+        var currentLayer = tileLayers.voyager.addTo(geoMap);
+
+        // Hide loader after first tile loads
+        currentLayer.on('load', function() {
+            var loader = document.getElementById('map-loader');
+            if (loader) loader.style.display = 'none';
+        });
+
+        // Set timeout fallback to hide loader
+        setTimeout(function() {
+            var loader = document.getElementById('map-loader');
+            if (loader) loader.style.display = 'none';
+        }, 3000);
+
+        // Style switcher event handler
+        document.getElementById('mapStyleSelector').addEventListener('change', function (e) {
+            var selectedStyle = e.target.value;
+            // Remove current layer
+            geoMap.removeLayer(currentLayer);
+            // Add new layer
+            currentLayer = tileLayers[selectedStyle].addTo(geoMap);
+        });
+
+        // Custom icon
+        var redIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Store markers for quick access
+        window.geoMarkers = {};
+        window.geoMapMarkers = []; // Store actual marker objects
+
+        // Store all location data
+        {% for location in locations %}
+        window.geoMarkers[{{ location.id }}] = {
+            lat: {{ location.latitude }},
+            lng: {{ location.longitude }},
+            name: '{{ location.name|escapejs }}',
+            project: '{% if location.project %}{{ location.project.name|escapejs }}{% endif %}',
+            notes: '{% if location.notes %}{{ location.notes|escapejs }}{% endif %}',
+            created_by: '{{ location.created_by.username }}',
+            created_at: '{{ location.created_at|date:"Y-m-d" }}'
+        };
+        {% endfor %}
+
+        // Use marker clustering for better performance with many markers
+        var markerGroup = L.featureGroup();
+
+        // Show all markers by default
+        for (var id in window.geoMarkers) {
+            if (!window.geoMarkers.hasOwnProperty(id)) continue;
+            var loc = window.geoMarkers[id];
+            var marker = L.marker([loc.lat, loc.lng], { icon: redIcon });
+            var popupContent = `
+                <div style="min-width: 200px;">
+                    <h6><i class="fa-solid fa-location-dot text-danger"></i> ${loc.name}</h6>
+                    <p class="mb-1"><strong>Latitude:</strong> ${loc.lat}</p>
+                    <p class="mb-1"><strong>Longitude:</strong> ${loc.lng}</p>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            markerGroup.addLayer(marker);
+            window.geoMapMarkers.push(marker);
+        }
+
+        // Add all markers at once for better performance
+        markerGroup.addTo(geoMap);
+
+    // Add click handler to map
+    geoMap.on('click', function (e) {
+        var latInput = document.querySelector('input[name="latitude"]');
+        var lngInput = document.querySelector('input[name="longitude"]');
+        if (latInput && lngInput) {
+            latInput.value = e.latlng.lat.toFixed(7);
+            lngInput.value = e.latlng.lng.toFixed(7);
+
+            // Add temporary marker
+            if (window.tempMarker) {
+                geoMap.removeLayer(window.tempMarker);
+            }
+            window.tempMarker = L.marker(e.latlng, { icon: redIcon }).addTo(geoMap);
+            window.tempMarker.bindPopup('Click "Add Pin" to save this location').openPopup();
+        }
+    });
+
+    // Trigger resize to ensure proper rendering
+    setTimeout(function () { geoMap.invalidateSize(); }, 100);
+}
+
+    // Global function to fly to location and show pin
+    window.flyToLocation = function (lat, lng, name) {
+        if (!geoMap) {
+            initializeGeoMap();
+            setTimeout(function () {
+                showLocationMarker(lat, lng);
+            }, 500);
+        } else {
+            showLocationMarker(lat, lng);
+        }
+    };
+
+    // Helper function to show marker for a specific location
+    function showLocationMarker(lat, lng) {
+        geoMap.flyTo([lat, lng], 15, { duration: 1.5 });
+
+        var redIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Find location data and create marker
+        for (var id in window.geoMarkers) {
+            if (window.geoMarkers[id].lat == lat && window.geoMarkers[id].lng == lng) {
+                var loc = window.geoMarkers[id];
+                var marker = L.marker([lat, lng], { icon: redIcon }).addTo(geoMap);
+                var popupContent = `
+                <div style="min-width: 200px;">
+                    <h6><i class="fa-solid fa-location-dot text-danger"></i> ${loc.name}</h6>
+                    <p class="mb-1"><strong>Latitude:</strong> ${loc.lat}</p>
+                    <p class="mb-1"><strong>Longitude:</strong> ${loc.lng}</p>
+                </div>
+            `;
+                marker.bindPopup(popupContent).openPopup();
+                break;
+            }
+        }
+    }
+
+    // Initialize map when geolocation tab is shown
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.getElementById('locationSearch');
+        var clearBtn = document.getElementById('locationSearchClear');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var query = this.value.toLowerCase();
+                document.querySelectorAll('#geolocation table tbody tr').forEach(function (row) {
+                    var site = row.querySelector('[data-site]')?.getAttribute('data-site') || '';
+                    var coords = row.querySelector('[data-coords]')?.getAttribute('data-coords') || '';
+                    var haystack = (site + ' ' + coords).toLowerCase();
+                    row.style.display = haystack.includes(query) ? '' : 'none';
+                });
+            });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                if (searchInput) searchInput.value = '';
+                document.querySelectorAll('#geolocation table tbody tr').forEach(function (row) {
+                    row.style.display = '';
+                });
+            });
+        }
+
+        var geoTab = document.getElementById('geolocation-tab');
+        if (geoTab) {
+            geoTab.addEventListener('shown.bs.tab', function () {
+                initializeGeoMap();
+            });
+
+            // If geolocation tab is active on page load (including after restore from localStorage), initialize immediately
+            setTimeout(function() {
+                if (document.getElementById('geolocation').classList.contains('active') || 
+                    document.getElementById('geolocation').classList.contains('show')) {
+                    initializeGeoMap();
+                }
+            }, 150);
+        }
+    });
+</script>

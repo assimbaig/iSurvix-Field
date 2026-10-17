@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="container py-5">
+        <div class="dashboard-card shadow">
+            <div class="d-flex align-items-center mb-3">
+                <div class="dashboard-icon me-3">
+                    <i class="fa-solid fa-user-pen"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Edit User</h2>
+                    <p class="text-muted mb-0">Update username, password, role, and path</p>
+                </div>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <form method="post" class="row g-3">
+                {% csrf_token %}
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" name="role" required>
+                        <option value="TEAM_LEAD" {% if profile.role == "TEAM_LEAD" %}selected{% endif %}>Team Leader
+                        </option>
+                        <option value="ENGINEER" {% if profile.role == "ENGINEER" %}selected{% endif %}>Engineer</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Project</label>
+                    <select class="form-select" name="project" required>
+                        <option value="" disabled>Select project</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if profile.project and profile.project.id == project.id %}selected{% endif %}>
+                            {{ project.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Path</label>
+                    <input class="form-control" name="path" value="{{ profile.path }}" required>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Username</label>
+                    <input class="form-control" name="username" value="{{ edit_user.username }}" required>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Password (leave blank to keep)</label>
+                    <input type="password" class="form-control" name="password">
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary">Save Changes</button>
+                    <a class="btn btn-outline-secondary ms-2" href="{% url 'dev_admin' %}">Back</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
