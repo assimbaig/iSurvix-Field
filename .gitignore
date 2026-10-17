@@ -15,3 +15,7 @@ backend/media/*
 backend/logs/*
 !backend/logs/.gitkeep
 .DS_Store
+
+# Local launcher state
+.local/
+venv-local/
