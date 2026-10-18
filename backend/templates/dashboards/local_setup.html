@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Set up your local workspace{% endblock %}
+{% block body_class %} governance-page{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
+{% block content %}
+<main class="gw-shell gw-narrow"><section class="gw-card">
+  <h1>Set up your local workspace</h1>
+  <p>Create the first Super Admin account for this computer. All other users join through project invitations. Your database and photos stay in this project's <code>.local</code> folder.</p>
+  <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Create Super Admin</button></form>
+</section></main>
+{% endblock %}

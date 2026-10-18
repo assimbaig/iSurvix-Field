@@ -168,3 +168,13 @@ LOGGING = {
         },
     },
 }
+LOGGING.setdefault('filters', {})['redact_invitations'] = {'()': 'core.governance_logging.RedactInvitations'}
+for handler in LOGGING['handlers'].values():
+    handler.setdefault('filters', []).append('redact_invitations')
+# django.server otherwise uses Django's default console handler with raw URLs.
+LOGGING['handlers']['safe_server_console'] = {
+    'class': 'logging.StreamHandler', 'filters': ['redact_invitations'],
+}
+LOGGING['loggers']['django.server'] = {
+    'handlers': ['safe_server_console'], 'level': 'INFO', 'propagate': False,
+}

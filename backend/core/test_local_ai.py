@@ -26,14 +26,14 @@ class LocalAITests(TestCase):
         anonymous = Client()
         self.assertEqual(anonymous.get('/local-ai/status/').status_code, 401)
         self.assertEqual(self.post({'question': 'Hello'}, anonymous).status_code, 401)
-        self.assertEqual(anonymous.get('/app/').status_code, 302)
+        self.assertEqual(anonymous.get('/app/').status_code, 410)
         strict = Client(enforce_csrf_checks=True)
         strict.force_login(self.user)
         self.assertEqual(self.post({'question': 'Hello'}, strict).status_code, 403)
 
     @patch('core.local_ai.ollama')
     def test_status_lists_only_local_models(self, call):
-        call.return_value = {'models': [{'name': 'qwen3.5:4b'}, {'name': 'remote-cloud'}, {'name': 'remote-custom', 'remote_host': 'https://ollama.com'}]}
+        call.return_value = {'models': [{'name': 'qwen3.5:4b'}, {'name': 'remote-cloud'}, {'name': 'remote:cloud'}, {'name': 'remote-custom', 'remote_host': 'https://ollama.com'}]}
         data = self.client.get('/local-ai/status/').json()
         self.assertEqual(data['models'], ['qwen3.5:4b'])
         self.assertTrue(data['model_installed'])
@@ -62,7 +62,7 @@ class LocalAITests(TestCase):
         for c in [same, cross]:
             self.assertEqual(self.post({'question': 'Read this', 'checklist_id': c.pk}).status_code, 404)
         call.assert_not_called()
-        page = self.client.get('/local/')
+        page = self.client.get('/local/assistant/')
         self.assertContains(page, 'LOCAL-001')
         self.assertNotContains(page, 'OTHER-001')
 
@@ -82,19 +82,14 @@ class LocalAITests(TestCase):
         self.assertEqual(self.post({'question': 'Hello'}).status_code, 503)
 
     def test_busy_model(self):
-        from .local_ai import _AI_BUSY
-        _AI_BUSY.acquire()
-        try:
+        from .photo_queue import inference_lease
+        with inference_lease():
             self.assertEqual(self.post({'question': 'Hello'}).status_code, 429)
-        finally:
-            _AI_BUSY.release()
 
-    def test_preview_and_path_traversal(self):
-        self.assertContains(self.client.get('/app/'), 'Local AI &amp; real surveys')
-        self.assertEqual(self.client.get('/app/../../backend/checklist/settings.py').status_code, 404)
-        response = self.client.get('/app/assets/site-routing.js')
-        self.assertEqual(response.status_code, 200)
-        response.close()
+    def test_sample_preview_retired_and_path_traversal_blocked(self):
+        self.assertEqual(self.client.get('/app/').status_code, 410)
+        self.assertIn(self.client.get('/app/../../backend/checklist/settings.py').status_code, (404, 410))
+        self.assertEqual(self.client.get('/app/assets/site-routing.js').status_code, 410)
         self.assertEqual(self.client.get('/media/custom_evidence/test.png').status_code, 404)
 
     def test_loopback_and_redirect_controls(self):

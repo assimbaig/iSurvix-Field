@@ -33,10 +33,12 @@ class ChecklistBuilderTests(TestCase):
 
     def setUp(self):
         self.admin = self.person('fixture_admin', Profile.Roles.ADMIN, 'ADFixture')
+        # Operational templates belong to the scoped Project Admin.
         self.engineer = self.person('fixture_engineer', Profile.Roles.ENGINEER, 'EngFixture')
         self.lead = self.person('fixture_lead', Profile.Roles.TEAM_LEAD, 'TLFixture')
+        self.quality = self.person('fixture_quality', Profile.Roles.QUALITY_ENGINEER, 'QEFixture')
         self.project = Project.objects.create(name='Fixture project')
-        for user in [self.engineer, self.lead]:
+        for user in [self.admin, self.engineer, self.lead, self.quality]:
             user.profile.project = self.project
             user.profile.save()
         self.definition = {'title': 'Fixture custom checklist', 'sections': [{'id': 'general', 'title': 'Site details', 'fields': [
@@ -66,7 +68,7 @@ class ChecklistBuilderTests(TestCase):
         self.template.save()
         self.project.checklist_template = self.template
         self.project.save()
-        return Checklist.objects.create(project=self.project, user=self.engineer, site_id='FIXTURE-001')
+        return Checklist.objects.create(project=self.project, user=self.engineer, quality_reviewer=self.quality, site_id='FIXTURE-001')
 
     def post_answers(self, checklist, answers, client=None):
         return (client or self.e).post(reverse('custom_checklist_save', args=[checklist.id]), json.dumps({'answers': answers}), content_type='application/json')
@@ -202,6 +204,8 @@ class ChecklistBuilderTests(TestCase):
         c.refresh_from_db(); work.refresh_from_db()
         self.assertEqual(c.status, Checklist.Status.SUBMITTED)
         self.assertEqual(work.status, WorkAssignment.Status.SUBMITTED)
+        from .quality_workflow import review_quality
+        review_quality(self.quality,c,'approve',expected_updated_at=c.updated_at.isoformat())
         self.l.post(reverse('checklist_review_update', args=[c.id]), {'status': 'FINAL', 'comment': 'Accepted'})
         c.refresh_from_db(); work.refresh_from_db()
         self.assertEqual(c.status, Checklist.Status.FINAL)
@@ -245,7 +249,7 @@ class ChecklistBuilderTests(TestCase):
 
     def test_new_assignment_automatically_gets_project_template(self):
         self.publish_and_create()
-        response = self.l.post(reverse('assign_work'), {'site_id': 'FIXTURE-NEW', 'latitude': '24.1', 'longitude': '46.1', 'engineer_id': self.engineer.id, 'project_id': self.project.id})
+        response = self.l.post(reverse('assign_work'), {'site_id': 'FIXTURE-NEW', 'latitude': '24.1', 'longitude': '46.1', 'engineer': self.engineer.id, 'project': self.project.id, 'quality_reviewer':self.quality.pk,'description':'Synthetic assigned activity'})
         self.assertEqual(response.status_code, 302)
         c = Checklist.objects.get(site_id='FIXTURE-NEW')
         self.assertEqual(c.checklist_template, self.template)
@@ -257,15 +261,13 @@ class ChecklistBuilderTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_definition(schema)
 
-    def test_manual_engineer_creation_keeps_site_identity(self):
+    def test_manual_engineer_creation_retired_for_assigned_task_workflow(self):
         self.publish_and_create()
         url = reverse('engineer_checklist_new', args=['EngFixture'])
-        self.assertContains(self.e.get(url), 'Start a site survey')
-        self.assertEqual(self.e.post(url, {'site_id': ''}).status_code, 400)
-        response = self.e.post(url, {'site_id': 'FIXTURE-MANUAL'})
-        self.assertEqual(response.status_code, 302)
-        checklist = Checklist.objects.get(site_id='FIXTURE-MANUAL')
-        self.assertEqual(checklist.checklist_template, self.template)
+        before = Checklist.objects.count()
+        self.assertEqual(self.e.get(url).status_code, 410)
+        self.assertEqual(self.e.post(url, {'site_id': 'FIXTURE-MANUAL'}).status_code, 410)
+        self.assertEqual(Checklist.objects.count(), before)
 
     def test_legacy_record_and_project_remain_usable(self):
         legacy_project = Project.objects.create(name='Legacy fixture')
@@ -282,7 +284,11 @@ class ChecklistBuilderTests(TestCase):
         self.post_answers(c, {'height': '40', 'volts': '48'})
         c.refresh_from_db()
         c.status = Checklist.Status.SUBMITTED
-        c.save(update_fields=['status'])
+        c.quality_reviewer=self.quality
+        c.save(update_fields=['status','quality_reviewer'])
+        from .quality_workflow import review_quality
+        review_quality(self.quality,c,'approve',expected_updated_at=c.updated_at.isoformat())
+        c.refresh_from_db()
         return c
 
     def review_decision(self, c, action, sections=None, comment='', client=None):
@@ -299,9 +305,9 @@ class ChecklistBuilderTests(TestCase):
         self.assertEqual(self.e.post(reverse('custom_checklist_upload', args=[c.pk, 'photo']), {'images': self.logo()}).status_code, 400)
         self.assertEqual(self.e.post(reverse('custom_checklist_photo_delete', args=[c.pk, 'photo', 0])).status_code, 400)
         page = self.e.get(reverse('custom_checklist', args=[c.pk]))
-        self.assertContains(page, 'Photo workspace')
+        self.assertContains(page, 'Checklist section photos')
         self.assertContains(page, 'data-locked="true"')
-        self.assertEqual(c.review_history[0]['sections'], ['general'])
+        self.assertEqual(c.review_history[1]['sections'], ['general'])
 
     def test_multiple_sections_approval_finishes_assignment(self):
         c = self.review_fixture()
@@ -313,7 +319,7 @@ class ChecklistBuilderTests(TestCase):
         self.review_decision(c, 'reject', comment='Cannot reopen approved record')
         c.refresh_from_db()
         self.assertEqual(c.status, Checklist.Status.FINAL)
-        self.assertEqual(len(c.review_history), 1)
+        self.assertEqual(len(c.review_history), 2)
 
     def test_full_reject_requires_reason_and_unlocks_partial_sections(self):
         c = self.review_fixture()
@@ -325,7 +331,7 @@ class ChecklistBuilderTests(TestCase):
         c.refresh_from_db()
         self.assertEqual(c.status, Checklist.Status.REJECTED)
         self.assertEqual(c.section_approvals, {})
-        self.assertEqual(len(c.review_history), 2)
+        self.assertEqual(len(c.review_history), 3)
         self.assertEqual(self.post_answers(c, {'height': '45'}).status_code, 200)
 
     def test_review_permissions_and_invalid_section_selection(self):
@@ -345,14 +351,20 @@ class ChecklistBuilderTests(TestCase):
         self.review_decision(c, 'partial', ['general'])
         self.review_decision(c, 'partial', ['general'])
         c.refresh_from_db()
-        self.assertEqual(len(c.review_history), 1)
+        self.assertEqual(len(c.review_history), 2)
 
     def test_selected_section_required_fields_gate_approval(self):
         c = self.review_fixture()
-        self.post_answers(c, {'volts': ''})
+        # Submitted engineers are read-only; seed incomplete synthetic evidence to test the review gate.
+        self.assertEqual(self.post_answers(c, {'volts': ''}).status_code, 400)
+        c.answer_data['custom']['volts'] = ''
+        c.save(update_fields=['answer_data', 'updated_at'])
         self.review_decision(c, 'approve')
         c.refresh_from_db()
-        self.assertEqual(c.status, Checklist.Status.SUBMITTED)
+        self.assertEqual(c.status, Checklist.Status.REVIEW)
+        self.assertEqual(c.section_approvals,{})
+        from .quality_workflow import review_quality
+        review_quality(self.quality,c,'approve',expected_updated_at=c.updated_at.isoformat())
         self.review_decision(c, 'partial', ['general'])
         c.refresh_from_db()
         self.assertEqual(c.status, Checklist.Status.PARTIAL)
@@ -383,5 +395,5 @@ class ChecklistBuilderTests(TestCase):
         workbook = load_workbook(BytesIO(response.content))
         self.assertEqual(workbook['Section approvals']['B2'].value, 'Approved')
         self.assertEqual(workbook['Section approvals']['B3'].value, 'Pending')
-        self.assertEqual(workbook['Review history']['C2'].value, 'partial')
-        self.assertEqual(workbook['Review history']['E2'].value, 'Foundation verified')
+        self.assertEqual(workbook['Review history']['C3'].value, 'partial')
+        self.assertEqual(workbook['Review history']['E3'].value, 'Foundation verified')

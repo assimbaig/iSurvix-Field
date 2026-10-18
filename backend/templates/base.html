@@ -16,11 +16,12 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}?v=clear-surfaces-2">
+    <link rel="stylesheet" href="{% static 'core/css/platform_navigation.css' %}?v=super-console-1">
     {% block extra_head %}{% endblock %}
 </head>
 
-<body{% if request.resolver_match.url_name == 'login' %} class="login-page-body"{% endif %}>
+<body class="{% if request.resolver_match.url_name == 'login' %}login-page-body{% endif %}{% block body_class %}{% endblock %}">
     <div class="app-header shadow-soft">
         <div class="container-fluid px-3 px-md-4">
             <div class="d-flex align-items-center justify-content-between py-3">
@@ -55,12 +56,12 @@
                     </button>
                     <button class="btn btn-outline-secondary btn-sm d-md-none" onclick="window.location.reload()"
                         title="Refresh Page">
-                        <i class="fa-solid fa-rotate"></i>
+                        <i class="fa-solid fa-rotate" aria-hidden="true"></i><span>Refresh</span>
                     </button>
                     {% if request.user.is_authenticated or request.session.is_dev_admin %}
                     <form method="post" action="{% url 'logout' %}" class="m-0">
                         {% csrf_token %}
-                        <button class="btn btn-outline-danger btn-sm">
+                        <button class="btn btn-outline-danger btn-sm" aria-label="Logout">
                             <i class="fa-solid fa-right-from-bracket me-1"></i>
                             <span class="d-none d-md-inline">Logout</span>
                         </button>
@@ -70,7 +71,7 @@
             </div>
         </div>
     </div>
-    {% if local_ai_enabled and request.user.is_authenticated %}<nav style="padding:8px 24px;background:#f0f6f1"><a href="/local/" style="color:#26783d;text-decoration:none">Local workspace & AI</a></nav>{% endif %}
+    {% if local_ai_enabled and request.user.is_authenticated %}{% include 'dashboards/_primary_navigation.html' %}{% endif %}
     {% block content %}{% endblock %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

@@ -25,8 +25,14 @@ SECURE_HSTS_SECONDS = 0
 SECURE_PROXY_SSL_HEADER = None
 ROOT_URLCONF = 'checklist.urls_local'
 DATABASES['default']['NAME'] = STATE / 'survey.sqlite3'
+# Reserve the sole SQLite writer at the start of short atomic blocks, avoiding
+# deferred read-to-write upgrades. Model inference remains outside transactions.
+DATABASES['default']['OPTIONS'] = {**DATABASES['default'].get('OPTIONS', {}), 'timeout': 30, 'transaction_mode': 'IMMEDIATE'}
+DATABASES['default']['ATOMIC_REQUESTS'] = False
 MEDIA_ROOT = STATE / 'media'
 MEDIA_ROOT.mkdir(exist_ok=True)
+FILE_UPLOAD_TEMP_DIR = STATE / 'upload-tmp'
+FILE_UPLOAD_TEMP_DIR.mkdir(exist_ok=True)
 LOGGING['handlers']['file']['filename'] = STATE / 'app.log'
 LOCAL_AI_ENABLED = True
 OLLAMA_BASE_URL = os.environ.get('ISURVIX_OLLAMA_URL', 'http://127.0.0.1:11434')

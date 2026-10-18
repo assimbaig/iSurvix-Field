@@ -110,15 +110,19 @@ def validate_answer(field, value):
         raise ValidationError('Select a configured dropdown value.')
 
 
-def missing_required(checklist):
+def missing_required(checklist, evidence_checklist=None):
+    from .field_photo_service import confirmed_placements
+    linked = confirmed_placements(evidence_checklist or checklist)
     answers = (checklist.answer_data or {}).get('custom', {})
     missing = []
     for fid, field in field_map(checklist).items():
+        if field.get('photo_required') and not ((checklist.image_data or {}).get(fid) or linked.get(fid)):
+            missing.append(field['label'] + ' photo evidence')
         if not field.get('required'):
             continue
         value = checklist.site_id if field.get('system') == 'site_id' else answers.get(fid)
         if field['type'] == 'photo':
-            value = (checklist.image_data or {}).get(fid)
+            value = (checklist.image_data or {}).get(fid) or linked.get(fid)
         if field['type'] == 'inspection':
             value = value.get('result') if isinstance(value, dict) else None
         if field['type'] == 'table' and isinstance(value, list):
@@ -154,6 +158,8 @@ def export_custom_excel(checklist):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.drawing.image import Image
+    from .field_photo_service import confirmed_placements
+    linked = confirmed_placements(checklist)
     workbook = Workbook()
     ws = workbook.active
     ws.title = 'Site survey'
@@ -211,6 +217,18 @@ def export_custom_excel(checklist):
                 im.width, im.height = im.width * scale, im.height * scale
                 ws.add_image(im, f'D{row}')
                 ws.row_dimensions[row].height = max(im.height * .75, 30)
+            for placement in linked.get(field['id'], []):
+                photo=placement.photo
+                if not photo.preview or not photo.preview.storage.exists(photo.preview.name):
+                    continue
+                row += 1
+                ws.cell(row, 3, safe_excel_text(f'Photo {photo.pk}: {photo.filename} ({placement.status})'))
+                with photo.preview.open('rb') as fh:
+                    im=Image(BytesIO(fh.read()))
+                scale=min(240/im.width,180/im.height)
+                im.width,im.height=im.width*scale,im.height*scale
+                ws.add_image(im,f'D{row}')
+                ws.row_dimensions[row].height=max(im.height*.75,30)
             row += 1
     for cells in ws:
         for cell in cells:
@@ -230,6 +248,17 @@ def export_custom_excel(checklist):
     history.append(['Date', 'Reviewer', 'Decision', 'Section IDs', 'Comment'])
     for event in checklist.review_history:
         history.append([event.get('time', ''), safe_excel_text(event.get('name', '')), event.get('action', ''), safe_excel_text(', '.join(event.get('sections', []))), safe_excel_text(event.get('comment', ''))])
+    if linked:
+        evidence=workbook.create_sheet('Evidence locations')
+        evidence.append(['Field ID','Section ID','Photo ID','Filename','Group','Placement status','Source SHA256','Reviewed by','Reviewed at'])
+        for fid,items in linked.items():
+            for item in items:
+                evidence.append([safe_excel_text(fid),safe_excel_text(item.section_id),item.photo_id,safe_excel_text(item.photo.filename),safe_excel_text(item.photo.group),item.status,item.photo.sha256,item.reviewed_by_id,item.reviewed_at.isoformat() if item.reviewed_at else ''])
+        evidence.freeze_panes='A2'
+        for column in 'ABCDEFGHI':
+            evidence.column_dimensions[column].width=25
+        for cell in evidence[1]:
+            cell.font=Font(bold=True)
     for sheet in [review, history]:
         sheet.freeze_panes = 'A2'
         for column in ['A', 'B', 'C', 'D', 'E']:

@@ -52,13 +52,65 @@ def project_template_upload_path(instance: "Project", filename: str) -> str:
 	return f"project_templates/{slug}/{filename}"
 
 
+class Company(models.Model):
+	name = models.CharField(max_length=160, unique=True)
+	description = models.TextField(blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+	class Meta:
+		ordering = ['name']
+	def __str__(self):
+		return self.name
+
+
+class IndustryCatalog(models.Model):
+	code = models.SlugField(max_length=20, unique=True)
+	name = models.CharField(max_length=100, unique=True)
+	is_active = models.BooleanField(default=True)
+	class Meta:
+		ordering = ['name']
+	def __str__(self):
+		return self.name
+	def save(self,*args,**kwargs):
+		if self.pk:
+			previous=type(self).objects.get(pk=self.pk)
+			if previous.code!=self.code:
+				raise ValidationError('Industry codes are permanent; deactivate an old code instead.')
+		return super().save(*args,**kwargs)
+	def delete(self,*args,**kwargs):
+		raise ValidationError('Deactivate industries to preserve historical project meaning.')
+
+
+class ClientOrganization(models.Model):
+	legacy_company = models.OneToOneField(Company, null=True, blank=True, on_delete=models.PROTECT, related_name='imported_client_organization')
+	name = models.CharField(max_length=160)
+	description = models.TextField(blank=True)
+	company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name='client_organizations')
+	industry = models.ForeignKey(IndustryCatalog, on_delete=models.PROTECT, related_name='client_organizations')
+	created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='created_client_organizations')
+	created_at = models.DateTimeField(auto_now_add=True)
+	class Meta:
+		ordering = ['name','pk']
+		constraints = [models.UniqueConstraint(fields=['company','industry','name'], name='unique_tenant_industry_client')]
+	def __str__(self):
+		return self.name
+
+
 class Project(models.Model):
+	class Industry(models.TextChoices):
+		TELECOM = 'telecom', 'Telecom'
+		CONSTRUCTION = 'construction', 'Construction'
+	client_organization = models.ForeignKey(ClientOrganization, null=True, blank=True, on_delete=models.PROTECT, related_name='projects')
+	industry = models.CharField(max_length=20, default=Industry.TELECOM)
+	company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.PROTECT, related_name='projects')
+	administrator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='administered_projects')
 	name = models.CharField(max_length=120, unique=True)
 	description = models.TextField(blank=True)
 	template_file = models.FileField(upload_to=project_template_upload_path, blank=True, null=True)
 	checklist_template = models.ForeignKey(ChecklistTemplate, null=True, blank=True, on_delete=models.PROTECT, related_name='projects')
 
 	def save(self, *args, **kwargs):
+		if self.client_organization_id and (self.client_organization.company_id!=self.company_id or self.client_organization.industry.code!=self.industry):
+			raise ValidationError('Client organization must match the project company and industry.')
 		if self.checklist_template_id and not self.checklist_template.published:
 			raise ValidationError('Projects may use published checklist revisions only.')
 		return super().save(*args, **kwargs)
@@ -66,13 +118,23 @@ class Project(models.Model):
 	def __str__(self) -> str:
 		return self.name
 
+	def get_industry_display(self):
+		return IndustryCatalog.objects.filter(code=self.industry).values_list('name',flat=True).first() or self.industry
+
 
 class Profile(models.Model):
 	class Roles(models.TextChoices):
-		ADMIN = 'ADMIN', 'Admin'
-		TEAM_LEAD = 'TEAM_LEAD', 'Team Leader'
+		ADMIN = 'ADMIN', 'Project Admin'
+		SUPER_ADMIN = 'SUPER_ADMIN', 'Super Admin'
+		TEAM_LEAD = 'TEAM_LEAD', 'Team Lead'
 		ENGINEER = 'ENGINEER', 'Engineer'
+		QUALITY_ENGINEER = 'QUALITY_ENGINEER', 'Quality Engineer'
+		CLIENT = 'CLIENT', 'Client'
+		PROJECT_MANAGER = 'project_manager', 'Project Manager'
 
+	admin_industry_pending = models.BooleanField(default=False)
+	admin_industry = models.ForeignKey(IndustryCatalog, null=True, blank=True, on_delete=models.PROTECT, related_name='industry_admins')
+	company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.PROTECT, related_name='profiles')
 	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 	role = models.CharField(max_length=20, choices=Roles.choices)
 	project = models.ForeignKey(
@@ -96,7 +158,36 @@ class Profile(models.Model):
 		return f"{self.user.username} ({self.get_role_display()})"
 
 
+class ProjectMembership(models.Model):
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_memberships')
+	project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='memberships')
+	is_active = models.BooleanField(default=True)
+	is_primary = models.BooleanField(default=False)
+	expires_at = models.DateTimeField(null=True, blank=True)
+	granted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='granted_project_memberships')
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	@property
+	def is_effective(self):
+		from django.utils import timezone
+		return self.is_active and (self.expires_at is None or self.expires_at>timezone.now())
+	class Meta:
+		constraints = [models.UniqueConstraint(fields=['user','project'], name='unique_user_project_membership')]
+
+
+
 class Checklist(models.Model):
+	class WorkflowType(models.TextChoices):
+		TELECOM_SURVEY = 'telecom_survey', 'Telecom survey'
+		TELECOM_INSPECTION = 'telecom_inspection', 'Telecom inspection'
+		CONSTRUCTION_INSPECTION = 'construction_inspection', 'Construction inspection'
+	class GovernanceMode(models.TextChoices):
+		LEGACY = 'legacy', 'Engineer - Team Lead - Client'
+		INDEPENDENT = 'independent', 'Independent L1 - L2 - L3 review'
+	workflow_type = models.CharField(max_length=32, choices=WorkflowType.choices, default=WorkflowType.TELECOM_SURVEY)
+	governance_mode = models.CharField(max_length=20, choices=GovernanceMode.choices, default=GovernanceMode.LEGACY)
+	asset_reference = models.CharField(max_length=200, blank=True)
+	coordinate_reference = models.JSONField(default=dict, blank=True)
 	class Status(models.TextChoices):
 		DRAFT = "DRAFT", "Draft"
 		SUBMITTED = "SUBMITTED", "Submitted"
@@ -118,6 +209,7 @@ class Checklist(models.Model):
 		related_name="checklist_comments"
 	)
 	answer_data = models.JSONField(default=dict, blank=True)
+	intake_metadata = models.JSONField(default=dict, blank=True)
 	remark_data = models.JSONField(default=dict, blank=True)
 	image_data = models.JSONField(default=dict, blank=True)
 	template_copy = models.FileField(upload_to="checklists/", blank=True, null=True)
@@ -126,6 +218,12 @@ class Checklist(models.Model):
 	branding_snapshot = models.JSONField(default=dict, blank=True)
 	section_approvals = models.JSONField(default=dict, blank=True)
 	review_history = models.JSONField(default=list, blank=True)
+	quality_reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='quality_checklists')
+	quality_approval = models.JSONField(default=dict, blank=True)
+	client_approval = models.JSONField(default=dict, blank=True)
+	client_review_required = models.BooleanField(null=True, default=None, blank=True)
+	client_review_routed_at = models.DateTimeField(null=True, blank=True)
+	client_review_completed_at = models.DateTimeField(null=True, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -142,6 +240,26 @@ class Checklist(models.Model):
 
 	def __str__(self) -> str:
 		return f"{self.user.username} - {self.project.name} - {self.site_id or self.id}"
+
+	@property
+	def workflow_stage(self):
+		from .workflow_service import workflow_stage
+		return workflow_stage(self)
+
+	@property
+	def workflow_label(self):
+		from .workflow_service import workflow_label
+		return workflow_label(self)
+
+	@property
+	def can_client_decide(self):
+		from .workflow_service import can_client_decide
+		return can_client_decide(self)
+
+	@property
+	def client_review_token(self):
+		from .access import client_review_token
+		return client_review_token(self)
 
 	@property
 	def has_zip(self) -> bool:
@@ -179,6 +297,7 @@ class WorkAssignment(models.Model):
 		IN_PROGRESS = "IN_PROGRESS", "In Progress"
 		SUBMITTED = "SUBMITTED", "Submitted"
 		COMPLETED = "COMPLETED", "Completed"
+		CLIENT_REVIEW = "CLIENT_REVIEW", "Awaiting client approval"
 	
 	site_id = models.CharField(max_length=120, unique=True, help_text="Site identification number (unique)")
 	latitude = models.DecimalField(max_digits=10, decimal_places=7, help_text="Site latitude")
@@ -358,3 +477,15 @@ class ElectricalData(models.Model):
 	
 	def __str__(self):
 		return f"Electrical Data - Row {self.row_number}"
+
+from .photo_models import PhotoEvidence, PhotoJob, PhotoDraft, PhotoWorkerLease  # noqa: E402,F401
+
+from .governance_models import ProjectInvitation, GovernanceAudit, GovernanceState  # noqa: E402,F401
+
+from .ai_review_models import ChecklistAIReview  # noqa: E402,F401
+
+from .photo_models import PhotoPlacement  # noqa: E402,F401
+
+from .intake_models import AssignmentIntakeBatch  # noqa: E402,F401
+from .revision_models import ChecklistReviewPolicy, SubmissionRevision, RevisionDecision  # noqa: E402,F401
+from .roadmap_models import WorkflowTemplateQualification, InspectionFinding, FindingEvent  # noqa: E402,F401

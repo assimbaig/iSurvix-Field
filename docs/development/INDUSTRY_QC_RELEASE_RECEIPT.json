@@ -1,0 +1,45 @@
+{
+  "recorded_at": "2026-10-18T19:34:03.830215",
+  "release": "local-industry-admin-quality-control",
+  "migrations": [
+    "0029_industry_catalog",
+    "0030_admin_industry",
+    "0031_quality_control_workflow"
+  ],
+  "url": "http://127.0.0.1:8000/governance/",
+  "launcher_pid": 9204,
+  "internet_exposed": false,
+  "admin_industry_existing_accounts": {
+    "demo_admin01": "telecom",
+    "demo_admin02": "telecom"
+  },
+  "new_workflow": [
+    "Engineer",
+    "Quality Engineer",
+    "Team Lead",
+    "Client if required",
+    "Closed"
+  ],
+  "historical_frozen_v1_preserved": true,
+  "verification": {
+    "full_core_tests": 269,
+    "seconds": 19.302,
+    "synthetic_fixture_hash_override_only": "MD5",
+    "production_hashers_unchanged": true,
+    "django_checks": true,
+    "migration_drift": false,
+    "existing_role_live_logins": 5,
+    "business_tables_old_columns_exact": 7,
+    "original_photo_hashes_exact": 78,
+    "existing_passwords_and_roles_unchanged": true,
+    "responsive_cases": 18,
+    "additional_policy_form_width_cases": 3,
+    "manual_version": "1.5",
+    "user_pages": 16,
+    "development_pages": 12
+  },
+  "backup_before": ".local/backups/project-checkpoint-20261018-192729",
+  "new_real_reviewers_or_signatures_created": false,
+  "capacity_sla": "400 photos / 30 minutes not accepted",
+  "published_or_pushed": false
+}

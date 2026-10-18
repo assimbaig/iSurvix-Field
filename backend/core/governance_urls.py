@@ -1,0 +1,36 @@
+from django.urls import path
+from . import governance_views as v
+from . import field_intake_views as intake
+from . import roadmap_views as roadmap
+urlpatterns=[
+    path('projects/<int:project_id>/client/',v.project_client,name='governance_project_client'),
+    path('activities/<int:checklist_id>/review-policy/',roadmap.policy_assign,name='roadmap_policy_assign'),
+    path('activities/<int:checklist_id>/quality-reviewer/',roadmap.quality_reviewer_assign,name='quality_reviewer_assign'),
+    path('activities/<int:checklist_id>/quality-review/',roadmap.quality_review,name='quality_review'),
+    path('members/<int:user_id>/industry/',v.admin_industry,name='governance_admin_industry'),
+    path('industries/',v.industry,name='governance_industry'),
+    path('activities/<int:checklist_id>/',roadmap.activity,name='roadmap_activity'),
+    path('activities/<int:checklist_id>/revisions/<int:revision_id>/review/',roadmap.revision_review,name='roadmap_revision_review'),
+    path('activities/<int:checklist_id>/revisions/<int:revision_id>/export/',roadmap.revision_export,name='roadmap_revision_export'),
+    path('activities/<int:checklist_id>/revisions/<int:revision_id>/report/',roadmap.revision_report,name='roadmap_revision_report'),
+    path('activities/<int:checklist_id>/revisions/<int:revision_id>/photos/<int:photo_id>/',roadmap.revision_source,name='roadmap_revision_source'),
+    path('projects/<int:project_id>/qualification/',roadmap.qualify,name='roadmap_qualify'),
+    path('activities/<int:checklist_id>/findings/',roadmap.finding_create,name='roadmap_finding'),
+    path('activities/<int:checklist_id>/findings/<int:finding_id>/',roadmap.finding_update,name='roadmap_finding_action'),
+    path('',v.home,name='governance_home'),
+    path('companies/',v.company,name='governance_company'),
+    path('projects/<int:project_id>/company/',v.project_company,name='governance_project_company'),
+    path('members/<int:user_id>/projects/',v.membership,name='governance_membership'),
+    path('projects/',v.projects,name='governance_projects'),
+    path('projects/<int:project_id>/administrator/',v.project_admin,name='governance_project_admin'),
+    path('invite/',v.invite,name='governance_invite'),
+    path('invite/<str:token>/',v.accept_invite,name='governance_accept_invite'),
+    path('invitations/<int:invitation_id>/revoke/',v.revoke_invite,name='governance_revoke_invite'),
+    path('members/<int:user_id>/',v.member,name='governance_member'),
+    path('assign/bulk/',intake.bulk_assign,name='governance_bulk_assign'),
+    path('assign/bulk/sample/',intake.bulk_sample,name='governance_bulk_sample'),
+    path('assign/',v.assign,name='governance_assign'),
+    path('checklists/<int:checklist_id>/client-approval/',v.client_approval,name='governance_client_approval'),
+    path('audit/',v.audit_log,name='governance_audit'),
+    path('maintenance/',v.reset,name='governance_reset'),
+]

@@ -1,8 +1,14 @@
 # iSurvix Field
 
-Telecom site survey, checklist configuration, evidence and approval workflows.
+Telecom survey and inspection, construction inspection pilot controls, checklist configuration, evidence and governed review.
 
-This repository contains the latest published frontend preview and the available Django checklist application source. The frontend preview and Django backend are separate applications; their integration and Hostinger rollout remain pending.
+The current local application runs through `Start-iSurvix.ps1` at `http://127.0.0.1:8000/local/`. It uses Django, SQLite and a verified local Ollama vision model. Its code, database, originals and private recovery checkpoints stay under `F:\iSurvix\iSurvix-Field`. The static frontend preview below is retained historical source; it is not the current operational application.
+
+## Applied product roadmap
+
+The [roadmap application register](docs/roadmap/APPLICATION_PLAN.md) maps the18October2026 PDF to this checkout. Delivered local foundations include five primary navigation areas, industry/workflow selection, optional independent Engineer/Team Lead/Project Manager review, frozen submissions and reports, criteria qualification, blocking findings and independent retest, named Client correction/release, and expiring project access. Existing activities retain their approval flow and400-photo metadata pipeline. Later design/commercial/construction execution, assets, services and finance modules remain planned; local tests do not establish production or field acceptance.
+
+End-user guidance is in [the Software Manual](docs/manual/iSurvix_Field_Software_Manual.pdf). Internal implementation evidence remains separate in the [Development Guide](docs/development/iSurvix_Field_Development_Guide.pdf) and [local handoff](docs/LOCAL_CODEX_HANDOFF.md).
 
 ## Contents
 
@@ -83,4 +89,28 @@ It starts the app at `http://127.0.0.1:8000/local/` and checks your local Ollama
 Default: `qwen3.5:4b`. See [Windows and local AI setup](docs/LOCAL_SETUP.md).
 
 The new Local workspace provides real saved survey links and a local AI assistant.
-The redesigned `/app/` interface remains a separate sample-data preview.
+The `/local/` entry now opens an invitation-based role workspace. The separate `/app/`
+sample website is retired. See [roles and invitations](docs/ROLES_AND_INVITATIONS.md).
+
+Real surveys now also link to an authenticated **Photo evidence** workspace with
+batched uploads, a durable local vision queue, evidence references and explicit draft
+acceptance. Existing approval locks and checklist exports remain in place. Keep this
+checkout and its `.local/` data under `F:\iSurvix\iSurvix-Field`.
+
+Company access now supports multiple explicitly granted projects per Admin and optional
+additional projects for Team Leads, Engineers and Clients. Non-Admin workspaces default
+to the primary project. Team Leads can request an internal critical AI checklist review
+and explicitly choose whether to share a current report with Clients; Client access
+still requires Final status. Existing approval signatures and data remain protected.
+
+Documentation is split into the [Software Manual](docs/manual/iSurvix_Field_Software_Manual.pdf)
+and internal [Development Guide](docs/development/iSurvix_Field_Development_Guide.pdf).
+See [documentation distribution](docs/README.md): final user releases include only the
+Software Manual. `scripts/package_user_manual.py` creates the allowlisted user package.
+
+The field workflow now opens Engineers directly into grouped Civil/Electrical/Tower
+uploads, editable site preloads, AI photo-location proposals, evidence coverage and
+manual corrections. Team Leads can preview and commit bulk CSV site assignments.
+Confirmed photo links appear in checklist and Excel exports; originals and approval
+locks remain. Engineers can request their own private AI review; only Team Lead
+controls Client sharing. See [field workflow plan](docs/FIELD_PHOTO_WORKFLOW_PLAN.md).

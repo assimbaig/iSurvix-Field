@@ -3,10 +3,11 @@ import json
 from io import BytesIO
 
 from django.contrib import messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -18,7 +19,25 @@ from .template_service import default_definition, duplicate_revision, export_cus
 
 
 def is_template_admin(request):
-    return request.user.is_authenticated and (request.user.is_superuser or getattr(getattr(request.user, 'profile', None), 'role', None) == Profile.Roles.ADMIN)
+    from .access import is_super_admin,role_for,accessible_projects
+    return not is_super_admin(request.user) and role_for(request.user)==Profile.Roles.ADMIN and accessible_projects(request.user).exists()
+
+
+def template_scope(user):
+    from .access import is_super_admin,role_for,managed_project_ids
+    if is_super_admin(user):
+        return ChecklistTemplate.objects.none()
+    if role_for(user)!=Profile.Roles.ADMIN:
+        return ChecklistTemplate.objects.none()
+    projects=managed_project_ids(user)
+    if not projects.exists():
+        return ChecklistTemplate.objects.none()
+    return ChecklistTemplate.objects.filter(Q(created_by=user)|Q(projects__pk__in=projects)|Q(checklists__project_id__in=projects)).distinct()
+
+
+def project_scope(user):
+    from .access import accessible_projects
+    return accessible_projects(user)
 
 
 def image_bytes(upload):
@@ -45,7 +64,7 @@ def image_bytes(upload):
 def template_builder(request, template_id=None):
     if not is_template_admin(request):
         return HttpResponse('Admin access required.', status=403)
-    template = get_object_or_404(ChecklistTemplate, pk=template_id) if template_id else None
+    template = get_object_or_404(template_scope(request.user), pk=template_id) if template_id else None
     if request.method == 'POST':
         try:
             action = request.POST.get('action')
@@ -69,11 +88,14 @@ def template_builder(request, template_id=None):
             if action == 'assign':
                 if not template.published:
                     raise ValidationError('Publish this revision before assigning it to a project.')
-                project = get_object_or_404(Project, pk=request.POST.get('project_id'))
+                project = get_object_or_404(project_scope(request.user), pk=request.POST.get('project_id'))
                 project.checklist_template = template
                 project.save(update_fields=['checklist_template'])
                 messages.success(request, 'Assigned to the project. Existing surveys retain their previous template.')
             elif action in {'save', 'publish'}:
+                from .access import is_super_admin
+                if not is_super_admin(request.user) and template.created_by_id != request.user.pk:
+                    raise ValidationError('Duplicate this template into your own draft before editing it.')
                 if template.published:
                     raise ValidationError('Published revisions are locked. Duplicate this revision to edit.')
                 definition = json.loads(request.POST.get('definition', '{}'))
@@ -103,14 +125,14 @@ def template_builder(request, template_id=None):
             return redirect('checklist_template_edit', template_id=template.id)
         except (ValidationError, ValueError, TypeError) as error:
             messages.error(request, '; '.join(error.messages) if isinstance(error, ValidationError) else 'Invalid template data.')
-    return render(request, 'dashboards/template_builder.html', {'templates': ChecklistTemplate.objects.all(), 'selected_template': template, 'definition': template.definition if template else None, 'projects': Project.objects.all()})
+    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'definition': template.definition if template else None, 'projects': project_scope(request.user)})
 
 
 @require_http_methods(['GET'])
 def template_logo(request, template_id, slot):
     if not is_template_admin(request):
         return HttpResponse(status=403)
-    template = get_object_or_404(ChecklistTemplate, pk=template_id)
+    template = get_object_or_404(template_scope(request.user), pk=template_id)
     if slot not in ['left', 'right']:
         raise Http404()
     logo = getattr(template, f'client_{slot}_logo')
@@ -122,18 +144,39 @@ def template_logo(request, template_id, slot):
 
 
 def survey_access(request, checklist_id, edit=False):
-    if not request.user.is_authenticated:
+    from .access import is_super_admin,can_access_project
+    if not request.user.is_authenticated or not request.user.is_active:
         raise Http404()
+    if is_super_admin(request.user):
+        raise PermissionDenied('Super Admin manages administration only; engineering records require an operational role.')
     checklist = get_object_or_404(Checklist, pk=checklist_id)
     profile = getattr(request.user, 'profile', None)
-    admin = is_template_admin(request)
-    owner = checklist.user_id == request.user.id and profile and profile.project_id == checklist.project_id
-    lead = profile and profile.role == Profile.Roles.TEAM_LEAD and profile.project_id == checklist.project_id
-    if not checklist.schema_snapshot or not (admin or owner or lead):
+    if profile and profile.is_locked:
         raise Http404()
-    if edit and checklist.status == Checklist.Status.FINAL:
+    from .independent_workflow import is_independent,assigned_site_access,is_frozen
+    if is_independent(checklist):
+        from .access import role_for
+        if not assigned_site_access(request.user,checklist):
+            raise Http404()
+        can_edit=role_for(request.user)==Profile.Roles.ENGINEER and checklist.user_id==request.user.pk and checklist.status in {Checklist.Status.DRAFT,Checklist.Status.REJECTED} and not is_frozen(checklist)
+        if edit and not can_edit:
+            raise PermissionDenied('This governed revision is frozen or outside your assigned capture stage.')
+        return {'checklist':checklist,'can_edit':can_edit,'role':role_for(request.user),'redirect':None}
+    admin = is_super_admin(request.user) or bool(profile and profile.role == Profile.Roles.ADMIN and can_access_project(request.user,checklist.project_id))
+    owner = checklist.user_id == request.user.id and profile and profile.role == Profile.Roles.ENGINEER and can_access_project(request.user,checklist.project_id)
+    lead = profile and profile.role == Profile.Roles.TEAM_LEAD and can_access_project(request.user,checklist.project_id)
+    quality = profile and profile.role == Profile.Roles.QUALITY_ENGINEER and checklist.quality_reviewer_id==request.user.pk and can_access_project(request.user,checklist.project_id)
+    client = profile and profile.role == Profile.Roles.CLIENT and can_access_project(request.user,checklist.project_id) and checklist.status == Checklist.Status.FINAL
+    if not checklist.schema_snapshot or not (admin or owner or lead or client or quality):
+        raise Http404()
+    if edit and (client or quality):
+        raise PermissionDenied('Clients may review final evidence and record a client decision only.')
+    can_edit = not (client or quality) and checklist.status != Checklist.Status.FINAL
+    if profile and profile.role == Profile.Roles.ENGINEER and not is_super_admin(request.user):
+        can_edit = can_edit and checklist.status in [Checklist.Status.DRAFT, Checklist.Status.REJECTED, Checklist.Status.PARTIAL]
+    if edit and not can_edit:
         raise ValidationError('This approved checklist is locked.')
-    return {'checklist': checklist, 'can_edit': checklist.status != Checklist.Status.FINAL, 'role': 'ADMIN' if admin else profile.role, 'redirect': None}
+    return {'checklist': checklist, 'can_edit': can_edit, 'role': 'ADMIN' if admin else profile.role, 'redirect': None}
 
 
 def field_is_locked(checklist, field_id):
@@ -150,7 +193,12 @@ def require_field_editable(checklist, field_id):
 @require_http_methods(['POST'])
 def custom_review(request, checklist_id):
     access = survey_access(request, checklist_id)
-    if access['role'] not in ['ADMIN', Profile.Roles.TEAM_LEAD]:
+    from .independent_workflow import is_independent,policy_for,review_revision
+    from .access import role_for
+    if is_independent(access['checklist']):
+        from django.urls import reverse
+        return HttpResponse('Use the revision-bound activity review: '+reverse('roadmap_activity',args=[checklist_id]),status=409)
+    if role_for(request.user)!=Profile.Roles.TEAM_LEAD:
         return HttpResponse(status=403)
     try:
         action = request.POST.get('action', '')
@@ -160,9 +208,17 @@ def custom_review(request, checklist_id):
         if action in {'reject', 'changes'} and not note:
             raise ValidationError('A reason is required.')
         with transaction.atomic():
+            from .governance_views import lock_governance
+            lock_governance(request.user)
+            refreshed=survey_access(request,checklist_id)
+            if role_for(request.user)!=Profile.Roles.TEAM_LEAD:
+                return HttpResponse(status=403)
             checklist = Checklist.objects.select_for_update().get(pk=checklist_id)
             if checklist.status not in [Checklist.Status.SUBMITTED, Checklist.Status.REVIEW, Checklist.Status.PARTIAL]:
                 raise ValidationError('Only submitted surveys can be reviewed.')
+            from .quality_workflow import quality_is_current
+            if not quality_is_current(checklist):
+                raise ValidationError('Quality Control approval of the current submitted evidence is required before Team Lead review.')
             sections = {s['id']: s for s in checklist.schema_snapshot['sections']}
             chosen = list(dict.fromkeys(request.POST.getlist('sections')))
             if action == 'approve':
@@ -173,7 +229,7 @@ def custom_review(request, checklist_id):
                 from copy import copy
                 candidate = copy(checklist)
                 candidate.schema_snapshot = {**checklist.schema_snapshot, 'sections': [sections[s] for s in chosen]}
-                if missing_required(candidate):
+                if missing_required(candidate, evidence_checklist=checklist):
                     raise ValidationError('Complete required fields in the selected sections before approval.')
                 approvals = dict(checklist.section_approvals)
                 for sid in chosen:
@@ -190,8 +246,11 @@ def custom_review(request, checklist_id):
             checklist.comment, checklist.comment_by = note, request.user
             checklist.review_history = [*checklist.review_history, {'action': action, 'sections': chosen, 'comment': note, 'by': request.user.pk, 'name': request.user.username, 'time': timezone.now().isoformat()}]
             checklist.save(update_fields=['status', 'section_approvals', 'review_history', 'comment', 'comment_by', 'updated_at'])
-            if checklist.status == Checklist.Status.FINAL:
-                WorkAssignment.objects.filter(checklist=checklist).update(status=WorkAssignment.Status.COMPLETED, completed_at=timezone.now())
+            from .governance_views import audit
+            audit(request.user, 'survey_review', checklist.project, checklist_id=checklist.pk,
+                  decision=action, sections=chosen)
+            from .workflow_service import internal_review_completed
+            internal_review_completed(checklist,request.user)
         messages.success(request, 'Review recorded. Approved sections are locked.')
     except ValidationError as error:
         messages.error(request, '; '.join(error.messages))
@@ -200,6 +259,19 @@ def custom_review(request, checklist_id):
 
 def survey_context(checklist, request):
     from django.urls import reverse
+    from collections import defaultdict
+    from .field_photo_service import placements
+    linked=defaultdict(list)
+    proposed=defaultdict(list)
+    for placement in placements(checklist):
+        image={'url':reverse('photo_evidence',args=[checklist.pk,placement.photo_id,'preview']),
+               'source_url':reverse('photo_evidence',args=[checklist.pk,placement.photo_id,'original']),
+               'filename':placement.photo.filename,'photo_id':placement.photo_id,
+               'placement_id':placement.pk,'status':placement.status,'reason':placement.reason}
+        if placement.status in {'confirmed','manual'}:
+            linked[placement.field_id].append(image)
+        elif placement.status=='proposed':
+            proposed[placement.field_id].append(image)
     answers = (checklist.answer_data or {}).get('custom', {})
     sections = []
     for section in checklist.schema_snapshot['sections']:
@@ -207,6 +279,8 @@ def survey_context(checklist, request):
         for field in section['fields']:
             value = checklist.site_id if field.get('system') == 'site_id' else answers.get(field['id'], '')
             f = {**field, 'locked': field_is_locked(checklist, field['id']), 'value': value, 'images': [{'path': p, 'url': reverse('custom_checklist_photo', args=[checklist.id, field['id'], i])} for i, p in enumerate((checklist.image_data or {}).get(field['id'], []))]}
+            f['linked_photos']=linked[field['id']]
+            f['proposed_photos']=proposed[field['id']]
             if field['type'] == 'inspection':
                 f['result'] = value.get('result', '') if isinstance(value, dict) else ''
                 f['remarks'] = value.get('remarks', '') if isinstance(value, dict) else ''
@@ -222,7 +296,14 @@ def survey_context(checklist, request):
 def custom_survey(request, checklist_id):
     access = survey_access(request, checklist_id)
     checklist = access['checklist']
-    return render(request, 'dashboards/custom_checklist.html', {'checklist': checklist, 'sections': survey_context(checklist, request), 'schema': checklist.schema_snapshot, 'can_edit': access.get('can_edit') and checklist.status != Checklist.Status.FINAL, 'can_review': access.get('role') in ['ADMIN', Profile.Roles.TEAM_LEAD], 'can_manage_templates': is_template_admin(request), 'missing': missing_required(checklist), 'can_decide': checklist.status in [Checklist.Status.SUBMITTED, Checklist.Status.REVIEW, Checklist.Status.PARTIAL]})
+    from .access import role_for
+    actual_role=role_for(request.user)
+    from .quality_workflow import quality_is_current
+    quality_ready=quality_is_current(checklist) if checklist.governance_mode!='independent' else False
+    from .access import users_for_project
+    quality_candidates=users_for_project(checklist.project_id,{Profile.Roles.QUALITY_ENGINEER})
+    can_assign_quality=actual_role in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD} and checklist.governance_mode!='independent' and checklist.status in {Checklist.Status.DRAFT,Checklist.Status.REJECTED,Checklist.Status.SUBMITTED,Checklist.Status.REVIEW,Checklist.Status.PARTIAL}
+    return render(request, 'dashboards/custom_checklist.html', {'checklist': checklist, 'sections': survey_context(checklist, request), 'schema': checklist.schema_snapshot, 'can_edit': access.get('can_edit') and checklist.status != Checklist.Status.FINAL, 'can_assign_quality':can_assign_quality,'quality_reviewer_candidates':quality_candidates,'can_quality_review': checklist.governance_mode!='independent' and actual_role==Profile.Roles.QUALITY_ENGINEER and checklist.quality_reviewer_id==request.user.pk and checklist.status in {Checklist.Status.SUBMITTED,Checklist.Status.REVIEW,Checklist.Status.PARTIAL} and not quality_ready, 'can_review': actual_role==Profile.Roles.TEAM_LEAD and checklist.governance_mode!='independent' and quality_ready, 'can_submit': actual_role==Profile.Roles.ENGINEER and checklist.user_id==request.user.pk and bool(access.get('can_edit')), 'can_manage_templates': is_template_admin(request), 'missing': missing_required(checklist), 'can_decide': checklist.status in [Checklist.Status.SUBMITTED, Checklist.Status.REVIEW, Checklist.Status.PARTIAL]})
 
 
 @require_http_methods(['POST'])
@@ -254,6 +335,8 @@ def custom_save(request, checklist_id):
                 answers[fid] = value
             checklist.answer_data = {**(checklist.answer_data or {}), 'custom': answers}
             checklist.save(update_fields=['answer_data', 'updated_at'])
+            WorkAssignment.objects.filter(checklist=checklist, status=WorkAssignment.Status.PENDING).update(
+                status=WorkAssignment.Status.IN_PROGRESS, started_at=timezone.now())
         return JsonResponse({'status': 'success', 'missing': missing_required(checklist), 'can_decide': checklist.status in [Checklist.Status.SUBMITTED, Checklist.Status.REVIEW, Checklist.Status.PARTIAL]})
     except (ValidationError, ValueError, TypeError):
         return JsonResponse({'status': 'error', 'message': 'Invalid field value, missing N/A reason, or locked checklist.'}, status=400)
@@ -338,19 +421,39 @@ def custom_client_logo(request, checklist_id, slot):
 @require_http_methods(['POST'])
 def custom_submit(request, checklist_id):
     try:
-        access = survey_access(request, checklist_id, edit=True)
-        if request.user != access['checklist'].user and access.get('role') != 'ADMIN':
+        access = survey_access(request, checklist_id)
+        from .access import role_for
+        if role_for(request.user)!=Profile.Roles.ENGINEER or request.user!=access['checklist'].user:
             return HttpResponse(status=403)
+        from .independent_workflow import is_independent,submit_revision
+        if is_independent(access['checklist']):
+            submit_revision(request.user,access['checklist'])
+            messages.success(request,'Frozen revision submitted for independent validation.')
+            return redirect('custom_checklist',checklist_id=checklist_id)
+        survey_access(request,checklist_id,edit=True)
         with transaction.atomic():
+            from .governance_views import lock_governance
+            lock_governance(request.user)
+            refreshed=survey_access(request,checklist_id)
+            if role_for(request.user)!=Profile.Roles.ENGINEER or request.user!=refreshed['checklist'].user:
+                return HttpResponse(status=403)
+            survey_access(request,checklist_id,edit=True)
             checklist = Checklist.objects.select_for_update().get(pk=checklist_id)
             if checklist.status == Checklist.Status.FINAL:
                 raise ValidationError('This approved checklist is locked.')
             missing = missing_required(checklist)
             if missing:
                 raise ValidationError('Complete required fields: '+', '.join(missing))
+            from .quality_workflow import require_quality_reviewer
+            require_quality_reviewer(checklist.project_id,checklist.quality_reviewer,checklist.user_id)
+            checklist.quality_approval={}
             checklist.status = Checklist.Status.PARTIAL if checklist.section_approvals else Checklist.Status.SUBMITTED
-            checklist.save(update_fields=['status', 'updated_at'])
-            WorkAssignment.objects.filter(checklist=checklist).update(status=WorkAssignment.Status.SUBMITTED, submitted_at=timezone.now())
+            checklist.save(update_fields=['status', 'quality_approval', 'updated_at'])
+            WorkAssignment.objects.filter(checklist=checklist).update(submitted_at=timezone.now())
+            from .workflow_service import sync_assignment
+            sync_assignment(checklist)
+            from .governance_views import audit
+            audit(request.user, 'survey_submitted', checklist.project, checklist_id=checklist.pk)
         messages.success(request, 'Checklist submitted for review.')
     except ValidationError as error:
         messages.error(request, '; '.join(error.messages))

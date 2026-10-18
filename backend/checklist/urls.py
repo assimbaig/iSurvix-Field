@@ -18,11 +18,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from core import account_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', account_views.retired_admin),
+    path('admin/<path:asset>', account_views.retired_admin),
     path('', include('core.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Evidence is served through authenticated, project-scoped download views.

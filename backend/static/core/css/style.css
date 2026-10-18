@@ -44,14 +44,7 @@ body {
 }
 
 body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
 .app-header {
@@ -59,8 +52,6 @@ body::before {
     top: 0;
     z-index: 1050;
     background: var(--gray-100);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(99, 181, 11, 0.2);
     box-shadow: var(--shadow-sm);
     width: 100%;
@@ -195,7 +186,6 @@ body::before {
     border: none;
     border-radius: 24px;
     background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
     box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.1);
     overflow: hidden;
     width: 100%;

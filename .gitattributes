@@ -1,0 +1,4 @@
+
+# Preserve document artifacts byte-for-byte.
+*.pdf binary
+*.docx binary

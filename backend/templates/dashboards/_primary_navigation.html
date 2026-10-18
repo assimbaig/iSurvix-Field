@@ -1,0 +1,14 @@
+{% firstof selected_industry checklist.project.industry '' as industry %}{% firstof selected_project_id checklist.project_id 'all' as project_scope %}
+<nav class="platform-nav" aria-label="Primary navigation">{% if is_super_admin or request.user.is_superuser or request.user.profile.role == 'SUPER_ADMIN' %}{% firstof selected_industry '' as industry %}{% firstof selected_project_id 'all' as project_scope %}
+<a href="{% url 'governance_home' %}?view=dashboard" {% if active_view == 'dashboard' or active_view == 'my_work' or active_view == 'administration' or not active_view %}aria-current="page"{% endif %}>Dashboard</a>
+<a href="{% url 'governance_home' %}?view=industries" {% if active_view == 'industries' %}aria-current="page"{% endif %}>Industries</a>
+<a href="{% url 'governance_home' %}?view=clients" {% if active_view == 'clients' %}aria-current="page"{% endif %}>Clients</a>
+<a href="{% url 'governance_home' %}?view=projects&amp;industry={{ industry|urlencode }}" {% if active_view == 'projects' %}aria-current="page"{% endif %}>Projects</a>
+<a href="{% url 'governance_home' %}?view=sites&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope }}" {% if active_view == 'sites' %}aria-current="page"{% endif %}>Sites</a>
+{% else %}
+<a href="{% url 'governance_home' %}?view=my_work&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope|default:'all' }}" {% if active_view == 'my_work' or not active_view %}aria-current="page"{% endif %}>My work</a>
+<a href="{% url 'governance_home' %}?view=projects&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope|default:'all' }}" {% if active_view == 'projects' %}aria-current="page"{% endif %}>Projects and sites</a>
+<a href="{% url 'governance_home' %}?view=reviews&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope|default:'all' }}" {% if active_view == 'reviews' %}aria-current="page"{% endif %}>Review queue</a>
+<a href="{% url 'governance_home' %}?view=reports&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope|default:'all' }}" {% if active_view == 'reports' %}aria-current="page"{% endif %}>Reports</a>
+{% if can_administer or request.user.is_superuser or request.user.profile.role == 'ADMIN' or request.user.profile.role == 'SUPER_ADMIN' %}<a href="{% url 'governance_home' %}?view=administration&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope|default:'all' }}" {% if active_view == 'administration' %}aria-current="page"{% endif %}>Administration</a>{% endif %}
+{% endif %}</nav>

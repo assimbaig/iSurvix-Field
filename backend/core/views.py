@@ -19,134 +19,32 @@ from openpyxl.utils import get_column_letter
 from PIL import Image as PilImage
 
 from .models import Checklist, Profile, Project, GeoLocation, WorkAssignment
+from .access import can_access_project,accessible_projects,user_project_ids,users_for_project
 
+
+
+
+def _operational_only(view):
+	"""Keep historical engineering aliases outside the Super Admin console."""
+	from functools import wraps
+	@wraps(view)
+	def checked(request,*args,**kwargs):
+		from .access import is_super_admin
+		from django.core.exceptions import PermissionDenied
+		if is_super_admin(request.user):
+			raise PermissionDenied('Super Admin is restricted to administration.')
+		return view(request,*args,**kwargs)
+	return checked
 
 def home_view(request):
-	"""Homepage view - redirect authenticated users to their dashboard"""
-	# If user is logged in, redirect them to their dashboard
-	if request.session.get("is_dev_admin"):
-		return redirect("dev_admin")
-	
-	if request.user.is_authenticated:
-		profile = getattr(request.user, "profile", None)
-		if profile and profile.role == Profile.Roles.ADMIN:
-			request.session["is_dev_admin"] = True
-			return redirect("dev_admin")
-		if profile and profile.path:
-			return redirect(f"/{profile.path}")
-		if request.user.is_staff or request.user.is_superuser:
-			request.session["is_dev_admin"] = True
-			return redirect("dev_admin")
-	
-	# Show public landing page for non-authenticated users
-	return render(request, "dashboards/home.html")
+	from . import account_views
+	return account_views.home(request)
 
 
 @require_http_methods(["GET", "POST"])
 def login_view(request):
-	if request.session.get("is_dev_admin"):
-		return redirect("dev_admin")
-	if request.user.is_authenticated:
-		profile = getattr(request.user, "profile", None)
-		if profile and profile.role == Profile.Roles.ADMIN:
-			request.session["is_dev_admin"] = True
-			return redirect("dev_admin")
-		if profile and profile.path:
-			return redirect(f"/{profile.path}")
-		# Avoid logging out admin/staff users without a path
-		if request.user.is_staff or request.user.is_superuser:
-			request.session["is_dev_admin"] = True
-			return redirect("dev_admin")
-		logout(request)
-		return redirect("login")
-
-	if request.method == "POST":
-		role = request.POST.get("role")
-		username = request.POST.get("username")
-		password = request.POST.get("password")
-
-		user_record = User.objects.filter(username=username).first()
-		profile_record = getattr(user_record, "profile", None) if user_record else None
-		if profile_record and profile_record.is_locked:
-			messages.error(request, "Account locked. Contact admin to unlock.")
-			return render(request, "login.html", {"selected_role": role, "username": username})
-
-		if role == "ADMIN":
-			user = authenticate(request, username=username, password=password)
-			if not user:
-				if profile_record:
-					profile_record.failed_attempts += 1
-					remaining = 3 - profile_record.failed_attempts
-					if profile_record.failed_attempts >= 3:
-						profile_record.is_locked = True
-						messages.error(request, "Account locked after 3 failed attempts. Contact admin to unlock.")
-					else:
-						messages.error(request, f"Incorrect password. {remaining} attempt(s) remaining.")
-					profile_record.save(update_fields=["failed_attempts", "is_locked"])
-				else:
-					messages.error(request, "Username not found.")
-				return render(request, "login.html", {"selected_role": role, "username": username})
-			profile = getattr(user, "profile", None)
-			if not profile or profile.role != Profile.Roles.ADMIN:
-				messages.error(request, "This account is not an App Admin.")
-				return render(request, "login.html", {"selected_role": role, "username": username})
-			# Ensure admin users can access Django admin panel
-			updated_fields = []
-			if not user.is_staff:
-				user.is_staff = True
-				updated_fields.append("is_staff")
-			if not user.is_superuser:
-				user.is_superuser = True
-				updated_fields.append("is_superuser")
-			if updated_fields:
-				user.save(update_fields=updated_fields)
-			profile.failed_attempts = 0
-			profile.is_locked = False
-			profile.save(update_fields=["failed_attempts", "is_locked"])
-			login(request, user)
-			request.session["is_dev_admin"] = True
-			return redirect("dev_admin")
-
-		user = authenticate(request, username=username, password=password)
-		if not user:
-			if profile_record:
-				profile_record.failed_attempts += 1
-				remaining = 3 - profile_record.failed_attempts
-				if profile_record.failed_attempts >= 3:
-					profile_record.is_locked = True
-					messages.error(request, "Account locked after 3 failed attempts. Contact admin to unlock.")
-				else:
-					messages.error(request, f"Incorrect password. {remaining} attempt(s) remaining.")
-				profile_record.save(update_fields=["failed_attempts", "is_locked"])
-			else:
-				messages.error(request, "Username not found.")
-			return render(request, "login.html", {"selected_role": role, "username": username})
-
-		try:
-			profile = user.profile
-		except Profile.DoesNotExist:
-			messages.error(request, "No profile found for this user.")
-			return render(request, "login.html", {"selected_role": role, "username": username})
-
-		if role == "TEAM_LEAD" and profile.role != Profile.Roles.TEAM_LEAD:
-			messages.error(request, "This account is not a Team Leader.")
-			return render(request, "login.html", {"selected_role": role, "username": username})
-
-		if role == "ENGINEER" and profile.role != Profile.Roles.ENGINEER:
-			messages.error(request, "This account is not an Engineer.")
-			return render(request, "login.html", {"selected_role": role, "username": username})
-
-		if not profile.path:
-			messages.error(request, "Your account is missing a path. Ask admin to set it.")
-			return render(request, "login.html", {"selected_role": role, "username": username})
-
-		login(request, user)
-		profile.failed_attempts = 0
-		profile.is_locked = False
-		profile.save(update_fields=["failed_attempts", "is_locked"])
-		return redirect(f"/{profile.path}")
-
-	return render(request, "login.html")
+	from . import account_views
+	return account_views.sign_in(request)
 
 
 @require_http_methods(["POST"])
@@ -158,260 +56,32 @@ def logout_view(request):
 
 @require_http_methods(["GET", "POST"])
 def dev_admin_view(request):
-	if not request.session.get("is_dev_admin"):
-		profile = getattr(request.user, "profile", None) if request.user.is_authenticated else None
-		if profile and profile.role == Profile.Roles.ADMIN:
-			request.session["is_dev_admin"] = True
-		elif request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
-			request.session["is_dev_admin"] = True
-		else:
-			messages.error(request, "Please log in as admin.")
-			return redirect("login")
-
-	if request.method == "POST":
-		action = request.POST.get("action")
-		if action == "create_project":
-			name = request.POST.get("project_name", "").strip()
-			description = request.POST.get("project_description", "").strip()
-			if not name:
-				messages.error(request, "Project name is required.")
-				return redirect("dev_admin")
-			if Project.objects.filter(name__iexact=name).exists():
-				messages.error(request, "Project name already exists.")
-				return redirect("dev_admin")
-			Project.objects.create(name=name, description=description)
-			messages.success(request, f"Project {name} created.")
-			return redirect("dev_admin")
-
-		if action == "create_user":
-			username = request.POST.get("username", "").strip()
-			password = request.POST.get("password", "").strip()
-			role = request.POST.get("role")
-			path = request.POST.get("path", "").strip().lstrip("/")
-			project_id = request.POST.get("project")
-
-			if not username or not password or not role or not path or not project_id:
-				messages.error(request, "All fields are required.")
-				return redirect("dev_admin")
-
-			if role not in (Profile.Roles.TEAM_LEAD, Profile.Roles.ENGINEER):
-				messages.error(request, "Role must be Team Leader or Engineer.")
-				return redirect("dev_admin")
-
-			# Case-insensitive path validation
-			path_lower = path.lower()
-			if role == Profile.Roles.TEAM_LEAD and not path_lower.startswith("tl"):
-				messages.error(request, "Team Leader path must start with TL (e.g. TL1).")
-				return redirect("dev_admin")
-
-			if role == Profile.Roles.ENGINEER and not path_lower.startswith("eng"):
-				messages.error(request, "Engineer path must start with Eng (e.g. Eng1).")
-				return redirect("dev_admin")
-
-			if User.objects.filter(username=username).exists():
-				messages.error(request, "Username already exists.")
-				return redirect("dev_admin")
-
-			if Profile.objects.filter(path=path).exists():
-				messages.error(request, "Path already in use.")
-				return redirect("dev_admin")
-
-			project = Project.objects.filter(id=project_id).first()
-			if not project:
-				messages.error(request, "Selected project not found.")
-				return redirect("dev_admin")
-
-			user = User.objects.create_user(username=username, password=password)
-			profile = user.profile
-			profile.role = role
-			profile.path = path
-			profile.project = project
-			profile.save()
-
-			messages.success(request, f"User {username} created with path /{path}.")
-			return redirect("dev_admin")
-
-		messages.error(request, "Invalid action.")
-		return redirect("dev_admin")
-
-	# Get filter parameters
-	status_filter = request.GET.get("status", "")
-	user_filter = request.GET.get("user", "")
-	search_query = request.GET.get("q", "").strip()
-
-	users = User.objects.select_related("profile", "profile__project").filter(is_superuser=False).order_by("username")
-	projects = Project.objects.order_by("name")
-	
-	checklists = Checklist.objects.select_related("user", "user__profile", "project")
-	
-	# Apply filters
-	if status_filter:
-		checklists = checklists.filter(status=status_filter)
-	if user_filter:
-		checklists = checklists.filter(user_id=user_filter)
-	if search_query:
-		checklists = checklists.filter(site_id__icontains=search_query)
-	
-	checklists = checklists.order_by("-updated_at")
-	
-	# Get all engineers for filter dropdown
-	engineers = User.objects.filter(
-		profile__role=Profile.Roles.ENGINEER
-	).order_by("username")
-	
-	locked_profiles = Profile.objects.select_related("user", "project").filter(is_locked=True).order_by("user__username")
-	user_stats = (
-		Checklist.objects.values("user__username")
-		.filter(status=Checklist.Status.FINAL)
-		.annotate(total=models.Count("id"))
-		.order_by("-total")
-	)
-	
-	# Get all locations that are NOT already assigned
-	assigned_site_ids = WorkAssignment.objects.values_list('site_id', flat=True)
-	locations = GeoLocation.objects.select_related("project", "created_by").exclude(
-		name__in=assigned_site_ids
-	).order_by("-created_at")
-	
-	# Get all work assignments
-	work_assignments = WorkAssignment.objects.select_related(
-		"assigned_to", "assigned_to__profile", "assigned_by", "project"
-	).order_by("-created_at")
-	
-	return render(
-		request,
-		"dashboards/dev_admin.html",
-		{
-			"users": users,
-			"projects": projects,
-			"checklists": checklists,
-			"locked_profiles": locked_profiles,
-			"user_stats": user_stats,
-			"engineers": engineers,
-			"status_filter": status_filter,
-			"user_filter": user_filter,
-			"search_query": search_query,
-			"locations": locations,
-			"work_assignments": work_assignments,
-		},
-	)
+	from . import account_views
+	return account_views.retired_admin(request)
 
 
 @require_http_methods(["GET", "POST"])
 def admin_user_edit(request, user_id: int):
-	if not request.session.get("is_dev_admin"):
-		messages.error(request, "Please log in as admin.")
-		return redirect("login")
-
-	user = get_object_or_404(User, pk=user_id)
-	profile = getattr(user, "profile", None)
-	if not profile:
-		messages.error(request, "Profile not found.")
-		return redirect("dev_admin")
-
-	if request.method == "POST":
-		username = request.POST.get("username", "").strip()
-		password = request.POST.get("password", "").strip()
-		role = request.POST.get("role")
-		path = request.POST.get("path", "").strip().lstrip("/")
-		project_id = request.POST.get("project")
-
-		if not username or not role or not path or not project_id:
-			messages.error(request, "Username, role, path, and project are required.")
-			return redirect("admin_user_edit", user_id=user.id)
-
-		if User.objects.filter(username=username).exclude(id=user.id).exists():
-			messages.error(request, "Username already exists.")
-			return redirect("admin_user_edit", user_id=user.id)
-
-		if Profile.objects.filter(path=path).exclude(user=user).exists():
-			messages.error(request, "Path already in use.")
-			return redirect("admin_user_edit", user_id=user.id)
-
-		# Case-insensitive path validation
-		path_lower = path.lower()
-		if role == Profile.Roles.TEAM_LEAD and not path_lower.startswith("tl"):
-			messages.error(request, "Team Leader path must start with TL (e.g. TL1).")
-			return redirect("admin_user_edit", user_id=user.id)
-
-		if role == Profile.Roles.ENGINEER and not path_lower.startswith("eng"):
-			messages.error(request, "Engineer path must start with Eng (e.g. Eng1).")
-			return redirect("admin_user_edit", user_id=user.id)
-
-		project = Project.objects.filter(id=project_id).first()
-		if not project:
-			messages.error(request, "Selected project not found.")
-			return redirect("admin_user_edit", user_id=user.id)
-
-		user.username = username
-		if password:
-			user.set_password(password)
-		user.save()
-
-		profile.role = role
-		profile.path = path
-		profile.project = project
-		profile.save()
-
-		messages.success(request, "User updated.")
-		return redirect("dev_admin")
-
-	projects = Project.objects.order_by("name")
-	return render(
-		request,
-		"dashboards/admin_user_edit.html",
-		{"edit_user": user, "profile": profile, "projects": projects},
-	)
+	from . import account_views
+	return account_views.retired_admin(request)
 
 
 @require_http_methods(["POST"])
 def admin_user_delete(request, user_id: int):
-	if not request.session.get("is_dev_admin"):
-		messages.error(request, "Please log in as admin.")
-		return redirect("login")
-
-	user = get_object_or_404(User, pk=user_id)
-	if user.is_superuser:
-		messages.error(request, "Cannot delete a superuser.")
-		return redirect("dev_admin")
-
-	user.delete()
-	messages.success(request, "User deleted.")
-	return redirect("dev_admin")
+	from . import account_views
+	return account_views.retired_admin(request)
 
 
 @require_http_methods(["POST"])
 def admin_user_unlock(request, profile_id: int):
-	if not request.session.get("is_dev_admin"):
-		messages.error(request, "Please log in as admin.")
-		return redirect("login")
-
-	profile = get_object_or_404(Profile, id=profile_id)
-	profile.is_locked = False
-	profile.failed_attempts = 0
-	profile.save(update_fields=["is_locked", "failed_attempts"])
-	messages.success(request, f"{profile.user.username} unlocked.")
-	return redirect("dev_admin")
+	from . import account_views
+	return account_views.retired_admin(request)
 
 
+@_operational_only
 def user_dashboard(request, path: str):
-	"""Unified dashboard that routes to team lead or engineer view based on user role"""
-	if not request.user.is_authenticated:
-		messages.error(request, "Please log in.")
-		return redirect("login")
-
-	profile = getattr(request.user, "profile", None)
-	if not profile or profile.path != path:
-		messages.error(request, "Access denied.")
-		return redirect("login")
-
-	if profile.role == Profile.Roles.TEAM_LEAD:
-		return _team_lead_dashboard(request, profile, path)
-	elif profile.role == Profile.Roles.ENGINEER:
-		return _engineer_dashboard(request, profile, path)
-	else:
-		messages.error(request, "Invalid user role.")
-		return redirect("login")
+	from . import account_views
+	return account_views.home(request)
 
 
 def _team_lead_dashboard(request, profile, path):
@@ -421,7 +91,7 @@ def _team_lead_dashboard(request, profile, path):
 	user_filter = request.GET.get("user", "")
 	search_query = request.GET.get("q", "").strip()
 	
-	checklists = Checklist.objects.select_related("user", "user__profile", "project").filter(project=profile.project)
+	checklists = Checklist.objects.select_related("user", "user__profile", "project").filter(project_id__in=user_project_ids(request.user))
 	
 	# Apply filters
 	if status_filter:
@@ -435,13 +105,13 @@ def _team_lead_dashboard(request, profile, path):
 	
 	# Get users in this project for filter dropdown
 	project_users = User.objects.filter(
-		profile__project=profile.project,
+		pk__in=[u.pk for p in accessible_projects(request.user) for u in users_for_project(p)],
 		profile__role=Profile.Roles.ENGINEER
 	).order_by("username")
 	
 	user_stats = (
 		Checklist.objects.values("user__username")
-		.filter(project=profile.project, status=Checklist.Status.FINAL)
+		.filter(project_id__in=user_project_ids(request.user), status=Checklist.Status.FINAL)
 		.annotate(total=models.Count("id"))
 		.order_by("-total")
 	)
@@ -449,7 +119,7 @@ def _team_lead_dashboard(request, profile, path):
 	# Get locations for team lead's project that are NOT already assigned
 	assigned_site_ids = WorkAssignment.objects.values_list('site_id', flat=True)
 	locations = GeoLocation.objects.select_related("project", "created_by").filter(
-		models.Q(project=profile.project) | models.Q(project__isnull=True)
+		models.Q(project_id__in=user_project_ids(request.user)) | models.Q(project__isnull=True)
 	).exclude(
 		name__in=assigned_site_ids
 	).order_by("-created_at")
@@ -457,11 +127,11 @@ def _team_lead_dashboard(request, profile, path):
 	# Get work assignments for team lead's project
 	work_assignments = WorkAssignment.objects.select_related(
 		"assigned_to", "assigned_to__profile", "assigned_by", "project"
-	).filter(project=profile.project).order_by("-created_at")
+	).filter(project_id__in=user_project_ids(request.user)).order_by("-created_at")
 	
 	# Get engineers in this project for assignment form
 	engineers = User.objects.filter(
-		profile__project=profile.project,
+		pk__in=[u.pk for p in accessible_projects(request.user) for u in users_for_project(p)],
 		profile__role=Profile.Roles.ENGINEER
 	).order_by("username")
 
@@ -488,7 +158,7 @@ def _engineer_dashboard(request, profile, path):
 	"""Engineer dashboard logic"""
 	query = request.GET.get("q", "").strip()
 	checklists = (
-		Checklist.objects.filter(user=request.user, project=profile.project)
+		Checklist.objects.filter(user=request.user, project_id__in=user_project_ids(request.user))
 		.order_by("-updated_at")
 	)
 	if query:
@@ -528,6 +198,7 @@ def _engineer_dashboard(request, profile, path):
 	)
 
 
+@_operational_only
 def team_lead_view(request, idx: int):
 	if not request.user.is_authenticated:
 		messages.error(request, "Please log in.")
@@ -539,10 +210,10 @@ def team_lead_view(request, idx: int):
 		messages.error(request, "Access denied.")
 		return redirect("login")
 
-	checklists = Checklist.objects.select_related("user", "project").filter(project=profile.project).order_by("-updated_at")
+	checklists = Checklist.objects.select_related("user", "project").filter(project_id__in=user_project_ids(request.user)).order_by("-updated_at")
 	user_stats = (
 		Checklist.objects.values("user__username")
-		.filter(project=profile.project, status=Checklist.Status.FINAL)
+		.filter(project_id__in=user_project_ids(request.user), status=Checklist.Status.FINAL)
 		.annotate(total=models.Count("id"))
 		.order_by("-total")
 	)
@@ -561,6 +232,7 @@ def team_lead_view(request, idx: int):
 	)
 
 
+@_operational_only
 def engineer_view(request, idx: int):
 	profile, redirect_response = _ensure_engineer_access(request, idx)
 	if redirect_response:
@@ -568,7 +240,7 @@ def engineer_view(request, idx: int):
 
 	query = request.GET.get("q", "").strip()
 	checklists = (
-		Checklist.objects.filter(user=request.user, project=profile.project)
+		Checklist.objects.filter(user=request.user, project_id__in=user_project_ids(request.user))
 		.order_by("-updated_at")
 	)
 	if query:
@@ -587,6 +259,7 @@ def engineer_view(request, idx: int):
 	)
 
 
+@_operational_only
 def engineer_checklist_new(request, path: str):
 	profile, redirect_response = _ensure_engineer_access(request, path)
 	if redirect_response:
@@ -616,6 +289,7 @@ def engineer_checklist_new(request, path: str):
 
 
 @require_http_methods(["GET"])
+@_operational_only
 def engineer_checklist_edit(request, path: str, checklist_id: int):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_survey
@@ -665,6 +339,7 @@ def engineer_checklist_edit(request, path: str, checklist_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def engineer_checklist_autosave(request, path: str, checklist_id: int):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_save
@@ -711,6 +386,7 @@ def engineer_checklist_autosave(request, path: str, checklist_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def engineer_checklist_delete(request, path: str, checklist_id: int):
 	access = _get_checklist_access(request, checklist_id, path=path)
 	if access["redirect"]:
@@ -736,6 +412,7 @@ def engineer_checklist_delete(request, path: str, checklist_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def engineer_checklist_submit(request, path: str, checklist_id: int):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		if request.method != 'POST':
@@ -769,6 +446,7 @@ def engineer_checklist_submit(request, path: str, checklist_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_review_update(request, checklist_id: int):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_review
@@ -828,6 +506,7 @@ def checklist_review_update(request, checklist_id: int):
 	return redirect(access["back_url"])
 
 
+@_operational_only
 def engineer_checklist_download(request, path: str, checklist_id: int):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_download
@@ -864,59 +543,8 @@ def _ensure_engineer_access(request, path: str):
 
 
 def _get_checklist_access(request, checklist_id: int, path: str | None = None):
-	if request.session.get("is_dev_admin"):
-		checklist = get_object_or_404(Checklist, id=checklist_id)
-		return {
-			"checklist": checklist,
-			"profile": Profile(user=checklist.user, role=Profile.Roles.ENGINEER, project=checklist.project, path=""),
-			"can_edit": True,
-			"role": "ADMIN",
-			"redirect": None,
-			"back_url": "dev_admin",
-			"back_name": "dev_admin",
-			"back_path": None,
-		}
-
-	if not request.user.is_authenticated:
-		messages.error(request, "Please log in.")
-		return {"redirect": redirect("login")}
-
-	profile = getattr(request.user, "profile", None)
-	if not profile:
-		messages.error(request, "Profile not found.")
-		return {"redirect": redirect("login")}
-
-	if profile.role == Profile.Roles.ENGINEER:
-		checklist = get_object_or_404(Checklist, id=checklist_id, user=request.user, project=profile.project)
-		if path is not None and profile.path != path:
-			messages.error(request, "Access denied.")
-			return {"redirect": redirect("login")}
-		return {
-			"checklist": checklist,
-			"profile": profile,
-			"can_edit": checklist.status != Checklist.Status.FINAL,
-			"role": profile.role,
-			"redirect": None,
-			"back_url": "user_dashboard",
-			"back_name": profile.path,
-			"back_path": profile.path,
-		}
-
-	if profile.role == Profile.Roles.TEAM_LEAD:
-		checklist = get_object_or_404(Checklist, id=checklist_id, project=profile.project)
-		return {
-			"checklist": checklist,
-			"profile": profile,
-			"can_edit": True,
-			"role": profile.role,
-			"redirect": None,
-			"back_url": "user_dashboard",
-			"back_name": profile.path,
-			"back_path": profile.path,
-		}
-
-	messages.error(request, "Access denied.")
-	return {"redirect": redirect("login")}
+	from .account_views import legacy_survey_access
+	return legacy_survey_access(request, checklist_id, path)
 
 
 def _read_template_questions(template_path: str):
@@ -1450,6 +1078,7 @@ def _build_image_path(checklist: Checklist, filename: str):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def location_add(request):
 	"""Add a new location pin to the map"""
 	if not request.session.get("is_dev_admin") and not (
@@ -1493,6 +1122,7 @@ def location_add(request):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def location_import(request):
 	"""Import location pins from an Excel file (columns: Site ID, Latitude, Longitude)."""
 	if not request.session.get("is_dev_admin") and not (
@@ -1549,6 +1179,7 @@ def location_import(request):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def location_delete(request, location_id: int):
 	"""Delete a location pin from the map (Admin only)"""
 	if not request.session.get("is_dev_admin"):
@@ -1564,6 +1195,7 @@ def location_delete(request, location_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def location_delete_all(request):
 	"""Delete all location pins from the map (Admin only)"""
 	if not request.session.get("is_dev_admin"):
@@ -1577,16 +1209,14 @@ def location_delete_all(request):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def assign_work(request):
 	"""Create a new work assignment for an engineer"""
 	from django.utils import timezone
 	
 	# Check permissions
-	if not request.session.get("is_dev_admin") and not (
-		request.user.is_authenticated and 
-		hasattr(request.user, 'profile') and 
-		request.user.profile.role == Profile.Roles.TEAM_LEAD
-	):
+	from .access import is_super_admin, role_for, project_role_guard
+	if not (is_super_admin(request.user) or role_for(request.user) in {Profile.Roles.TEAM_LEAD, Profile.Roles.ADMIN}):
 		messages.error(request, "Permission denied.")
 		return redirect("login")
 	
@@ -1620,6 +1250,9 @@ def assign_work(request):
 		# Get engineer and project
 		engineer = get_object_or_404(User, id=engineer_id)
 		project = get_object_or_404(Project, id=project_id)
+		project_role_guard(request.user, project, {Profile.Roles.TEAM_LEAD, Profile.Roles.ADMIN})
+		if not engineer.is_active or engineer.profile.role != Profile.Roles.ENGINEER or not can_access_project(engineer,project.pk):
+			raise ValidationError('Choose an active engineer assigned to this project.')
 		
 		# Check if this site is already assigned to anyone
 		existing_assignment = WorkAssignment.objects.filter(site_id=site_id).first()
@@ -1634,10 +1267,7 @@ def assign_work(request):
 			return redirect("user_dashboard", path=request.user.profile.path)
 		
 		# Get the user who is assigning
-		if request.session.get("is_dev_admin"):
-			assigned_by = User.objects.filter(is_superuser=True).first()
-		else:
-			assigned_by = request.user
+		assigned_by = request.user
 		
 		# Create work assignment (checklist will be created by engineer)
 		try:
@@ -1685,6 +1315,7 @@ def assign_work(request):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def work_edit(request, work_id: int):
 	"""Edit an assigned work (team lead can edit their own assignments, admin can edit all)."""
 	if not request.session.get("is_dev_admin") and not (
@@ -1748,6 +1379,7 @@ def work_edit(request, work_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def work_delete(request, work_id: int):
 	"""Delete an assigned work (admin only)."""
 	if not request.session.get("is_dev_admin"):
@@ -1761,6 +1393,7 @@ def work_delete(request, work_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def update_work_status(request, work_id: int):
 	"""Update work assignment status (for engineers)"""
 	from django.utils import timezone
@@ -1792,6 +1425,7 @@ def update_work_status(request, work_id: int):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def complete_work(request, work_id: int):
 	"""Mark work as completed (for admin/team lead)"""
 	from django.utils import timezone
@@ -1818,6 +1452,7 @@ def complete_work(request, work_id: int):
 
 
 @require_http_methods(["GET"])
+@_operational_only
 def create_checklist_from_work(request, work_id: int):
 	"""Create a checklist from work assignment and pre-fill site_id in row 12"""
 	if not request.user.is_authenticated:
@@ -1857,6 +1492,7 @@ def create_checklist_from_work(request, work_id: int):
 # ===== NEW DETAILED CHECKLIST VIEWS =====
 
 @require_http_methods(["GET"])
+@_operational_only
 def checklist_detail_view(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_survey
@@ -1867,7 +1503,7 @@ def checklist_detail_view(request, checklist_id):
 	# Check permissions
 	profile = getattr(request.user, "profile", None)
 	is_team_lead = profile and profile.role == Profile.Roles.TEAM_LEAD
-	is_same_project = is_team_lead and checklist.project == profile.project
+	is_same_project = is_team_lead and can_access_project(request.user,checklist.project_id)
 	is_admin = request.session.get("is_dev_admin")
 	is_engineer = request.user == checklist.user
 	
@@ -1951,6 +1587,7 @@ def checklist_detail_view(request, checklist_id):
 
 
 @require_http_methods(["GET"])
+@_operational_only
 def checklist_data_api(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import survey_access
@@ -2015,6 +1652,7 @@ def checklist_data_api(request, checklist_id):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_autosave_api(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_save
@@ -2112,6 +1750,7 @@ def checklist_autosave_api(request, checklist_id):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_upload_image(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import custom_upload
@@ -2137,7 +1776,7 @@ def checklist_upload_image(request, checklist_id):
 	profile = getattr(request.user, "profile", None)
 	is_admin = request.session.get("is_dev_admin")
 	is_owner = request.user == checklist.user
-	is_team_lead = profile and profile.role == Profile.Roles.TEAM_LEAD and checklist.project == profile.project
+	is_team_lead = profile and profile.role == Profile.Roles.TEAM_LEAD and can_access_project(request.user,checklist.project_id)
 	
 	print(f"Permissions - Admin: {is_admin}, Owner: {is_owner}, Team Lead: {is_team_lead}")
 	
@@ -2213,6 +1852,7 @@ def checklist_upload_image(request, checklist_id):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_delete_image(request):
 	"""Delete a checklist image"""
 	import json
@@ -2247,7 +1887,7 @@ def checklist_delete_image(request):
 		profile = getattr(request.user, "profile", None)
 		is_admin = request.session.get("is_dev_admin")
 		is_owner = request.user == checklist.user
-		is_team_lead = profile and profile.role == Profile.Roles.TEAM_LEAD and checklist.project == profile.project
+		is_team_lead = profile and profile.role == Profile.Roles.TEAM_LEAD and can_access_project(request.user,checklist.project_id)
 		
 		if not (is_admin or is_owner or is_team_lead):
 			print("❌ Permission denied")
@@ -2281,6 +1921,7 @@ def checklist_delete_image(request):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_upload_zip(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import survey_access
@@ -2324,6 +1965,7 @@ def checklist_upload_zip(request, checklist_id):
 
 
 @require_http_methods(["GET"])
+@_operational_only
 def checklist_download_zip(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		from .template_views import survey_access
@@ -2349,6 +1991,7 @@ def checklist_download_zip(request, checklist_id):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_delete_equipment(request, equipment_id):
 	"""Delete tower equipment row"""
 	from .models import TowerEquipment
@@ -2362,6 +2005,7 @@ def checklist_delete_equipment(request, equipment_id):
 
 
 @require_http_methods(["POST"])
+@_operational_only
 def checklist_delete_electrical(request, electrical_id):
 	"""Delete electrical data row"""
 	from .models import ElectricalData
@@ -2375,6 +2019,7 @@ def checklist_delete_electrical(request, electrical_id):
 
 
 @require_http_methods(["GET", "POST"])
+@_operational_only
 def checklist_submit(request, checklist_id):
 	if Checklist.objects.filter(pk=checklist_id).exclude(schema_snapshot={}).exists():
 		if request.method != 'POST':

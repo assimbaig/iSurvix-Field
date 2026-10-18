@@ -1,0 +1,35 @@
+{
+  "recorded_at": "2026-10-18T19:42:06.492459",
+  "scope": "Admin-only Client ownership",
+  "migrations": [
+    "0032_client_organizations",
+    "0033_preserve_legacy_clients"
+  ],
+  "new_client_creation_role": "ADMIN",
+  "super_clients": "read-only",
+  "preserved_legacy_clients": [
+    "Client 1",
+    "client 2"
+  ],
+  "original_company_ids": [
+    2,
+    3
+  ],
+  "original_company_rows_preserved": true,
+  "live_roles_verified": 5,
+  "existing_business_tables_old_columns_exact": 7,
+  "original_photo_hashes_exact": 78,
+  "existing_accounts_passwords_roles_unchanged": true,
+  "full_core_tests": 281,
+  "seconds": 19.987,
+  "fixture_hash_override_only": "MD5",
+  "production_password_hashers_unchanged": true,
+  "manual_version": "1.6",
+  "manual_user_pages": 17,
+  "manual_internal_pages": 13,
+  "local_launcher_pid": 18452,
+  "url": "http://127.0.0.1:8000/governance/",
+  "internet_exposed": false,
+  "before_change_checkpoint": ".local/backups/project-checkpoint-20261018-193722",
+  "saved_locally": true
+}

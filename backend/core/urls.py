@@ -1,10 +1,15 @@
-from django.urls import path
+from django.urls import include, path
 
-from . import views, template_views
+from . import views, template_views, selection_views, field_intake_views
+from . import account_views
+from .legacy_routes import protected_legacy
 
 urlpatterns = [
+    path('governance/', include('core.governance_urls')),
+    path('custom-checklist/<int:checklist_id>/site-information/', field_intake_views.site_information, name='checklist_site_information'),
     path('custom-checklist/<int:checklist_id>/review/', template_views.custom_review, name='custom_checklist_review'),
     path('devadmin/checklist-templates/', template_views.template_builder, name='checklist_templates'),
+    path('devadmin/checklist-templates/select/', selection_views.select_checklist, name='checklist_template_select'),
     path('devadmin/checklist-templates/<int:template_id>/', template_views.template_builder, name='checklist_template_edit'),
     path('devadmin/checklist-templates/<int:template_id>/logo/<str:slot>/', template_views.template_logo, name='checklist_template_logo'),
     path('custom-checklist/<int:checklist_id>/', template_views.custom_survey, name='custom_checklist'),
@@ -15,15 +20,15 @@ urlpatterns = [
     path('custom-checklist/<int:checklist_id>/photo/<str:field_id>/<int:index>/', template_views.custom_photo, name='custom_checklist_photo'),
     path('custom-checklist/<int:checklist_id>/photo/<str:field_id>/<int:index>/delete/', template_views.custom_photo_delete, name='custom_checklist_photo_delete'),
     path('custom-checklist/<int:checklist_id>/logo/<int:slot>/', template_views.custom_client_logo, name='custom_client_logo'),
-    path("", views.home_view, name="home"),
-    path("login/", views.login_view, name="login"),
+    path("", account_views.home, name="home"),
+    path("login/", account_views.sign_in, name="login"),
     path("logout/", views.logout_view, name="logout"),
-    path("devadmin/", views.dev_admin_view, name="dev_admin"),
-    path("devadmin/users/<int:user_id>/edit/", views.admin_user_edit, name="admin_user_edit"),
-    path("devadmin/users/<int:user_id>/delete/", views.admin_user_delete, name="admin_user_delete"),
-    path("devadmin/locked/<int:profile_id>/unlock/", views.admin_user_unlock, name="admin_user_unlock"),
-    path("<str:path>/", views.user_dashboard, name="user_dashboard"),
-    path("<str:path>/checklists/new/", views.engineer_checklist_new, name="engineer_checklist_new"),
+    path("devadmin/", account_views.retired_admin, name="dev_admin"),
+    path("devadmin/users/<int:user_id>/edit/", account_views.retired_admin, name="admin_user_edit"),
+    path("devadmin/users/<int:user_id>/delete/", account_views.retired_admin, name="admin_user_delete"),
+    path("devadmin/locked/<int:profile_id>/unlock/", account_views.retired_admin, name="admin_user_unlock"),
+    path("<str:path>/", account_views.home, name="user_dashboard"),
+    path("<str:path>/checklists/new/", account_views.retired_action, name="engineer_checklist_new"),
     path("<str:path>/checklists/<int:checklist_id>/", views.engineer_checklist_edit, name="engineer_checklist_edit"),
     path(
         "<str:path>/checklists/<int:checklist_id>/autosave/",
@@ -54,7 +59,7 @@ urlpatterns = [
     path("locations/import/", views.location_import, name="location_import"),
     path("locations/delete-all/", views.location_delete_all, name="location_delete_all"),
     path("locations/<int:location_id>/delete/", views.location_delete, name="location_delete"),
-    path("work/assign/", views.assign_work, name="assign_work"),
+    path("work/assign/", account_views.governed_assignment, name="assign_work"),
     path("work/<int:work_id>/edit/", views.work_edit, name="work_edit"),
     path("work/<int:work_id>/delete/", views.work_delete, name="work_delete"),
     path("work/<int:work_id>/update/", views.update_work_status, name="update_work_status"),
@@ -73,3 +78,20 @@ urlpatterns = [
     path("checklist/equipment/<int:equipment_id>/delete/", views.checklist_delete_equipment, name="checklist_delete_equipment"),
     path("checklist/electrical/<int:electrical_id>/delete/", views.checklist_delete_electrical, name="checklist_delete_electrical"),
 ]
+
+# Retire destructive/unscoped legacy tools; originals stay in the database/media.
+retired = {'admin_user_edit', 'admin_user_delete', 'admin_user_unlock',
+           'location_add', 'location_import', 'location_delete', 'location_delete_all',
+           'work_edit', 'work_delete', 'update_work_status', 'complete_work',
+           'checklist_upload_zip', 'checklist_delete_equipment', 'checklist_delete_electrical',
+           'engineer_checklist_delete', 'checklist_delete_image'}
+legacy = {'engineer_checklist_edit', 'engineer_checklist_autosave', 'engineer_checklist_submit',
+          'engineer_checklist_download', 'checklist_review_update', 'checklist_detail',
+          'checklist_data_api', 'checklist_autosave_api', 'checklist_submit',
+          'checklist_upload_image', 'checklist_download_zip', 'create_checklist_from_work'}
+for pattern in urlpatterns:
+    name = getattr(pattern, 'name', None)
+    if name in retired:
+        pattern.callback = account_views.retired_action
+    elif name in legacy:
+        pattern.callback = protected_legacy(pattern.callback, name)

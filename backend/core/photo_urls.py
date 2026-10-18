@@ -1,0 +1,13 @@
+from django.urls import path
+from . import photo_views as v
+urlpatterns=[
+ path('<int:checklist_id>/mapping/',v.mapping,name='photo_mapping'),
+ path('<int:checklist_id>/',v.workspace,name='photo_workspace'),
+ path('<int:checklist_id>/state/',v.state,name='photo_state'),
+ path('<int:checklist_id>/upload/',v.upload,name='photo_upload'),
+ path('<int:checklist_id>/enqueue/',v.enqueue,name='photo_enqueue'),
+ path('<int:checklist_id>/jobs/<int:job_id>/retry/',v.retry,name='photo_retry'),
+ path('<int:checklist_id>/drafts/<int:draft_id>/accept/',v.accept,name='photo_accept'),
+ path('<int:checklist_id>/evidence/<int:photo_id>/<str:variant>/',v.evidence,name='photo_evidence'),
+ path('<int:checklist_id>/report/',v.report,name='photo_report'),
+]
