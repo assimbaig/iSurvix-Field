@@ -74,3 +74,13 @@ The updated frontend is published at https://isurvix-survey-redesign.mirza-assim
 The original application audit identified legacy permission and data-integrity problems. The checklist-builder update is not a blanket remediation of those older routes. Enforce authentication, project/site scope, view-only access and approval locks on the server, and verify those legacy paths before production use.
 
 No production database, credentials, uploaded survey photographs, logs, or installed dependencies are included.
+
+## Run on your Windows PC with Ollama
+
+Open `Start-iSurvix.cmd`. The launcher creates an isolated Python environment, installs
+dependencies, initializes a separate local database and asks you to create an admin account.
+It starts the app at `http://127.0.0.1:8000/local/` and checks your local Ollama model.
+Default: `qwen3.5:4b`. See [Windows and local AI setup](docs/LOCAL_SETUP.md).
+
+The new Local workspace provides real saved survey links and a local AI assistant.
+The redesigned `/app/` interface remains a separate sample-data preview.
