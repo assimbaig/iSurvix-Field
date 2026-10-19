@@ -5,9 +5,22 @@ import json
 from io import BytesIO
 from PIL import Image, ImageOps, ImageFilter, ImageStat, UnidentifiedImageError
 from django.core.exceptions import ValidationError
-from .local_ai import ollama, installed_models
+from .local_ai import ollama as assistant_ollama
 from .template_service import validate_answer
 
+
+def ollama(path, payload=None):
+    from django.conf import settings
+    return assistant_ollama(path, payload, base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
+
+
+def installed_models():
+    models = ollama('/api/tags').get('models', [])
+    if not isinstance(models, list):
+        raise ValueError('Ollama returned an invalid model list.')
+    return [m['name'] for m in models if isinstance(m, dict) and isinstance(m.get('name'), str)
+            and not m.get('remote_model') and not m.get('remote_host')
+            and not any(alias in m['name'].lower() for alias in ('-cloud', ':cloud'))]
 MAX_BYTES = 5 * 1024 * 1024
 
 
@@ -230,8 +243,11 @@ def response_schema(fields):
                         'bbox':{'anyOf':[{'type':'null'},{'type':'array','items':{'type':'number','minimum':0,'maximum':1},'minItems':4,'maxItems':4}]}}}}}}}}}
 
 
-def analyze_photo(photo, schema, model, lease_check=None,progress_callback=None):
+def analyze_photo(photo, schema, model, lease_check=None,progress_callback=None,evidence_context=None):
     """Observe an image once; rematch every frozen field without more image calls."""
+    if evidence_context:
+        from .evidence_pipeline import analyze
+        return analyze(photo,schema,model,evidence_context,lease_check or (lambda:None),progress_callback)
     from .photo_metadata import extract_metadata,match_metadata,metadata_is_current
     cached=metadata_is_current(photo,model)
     metadata=extract_metadata(photo,model,lease_check=lease_check,progress_callback=progress_callback)
@@ -240,7 +256,7 @@ def analyze_photo(photo, schema, model, lease_check=None,progress_callback=None)
     if progress_callback:
         progress_callback('matching_checklist',cached)
     fields=[field for section in schema.get('sections',[]) for field in section['fields']]
-    proposals=match_metadata(metadata,schema)
+    proposals=match_metadata(metadata,schema,photo_group=getattr(photo,'group',''))
     try:
         return validate_drafts({'drafts':proposals},fields)
     except (ValueError,ValidationError,TypeError) as exc:

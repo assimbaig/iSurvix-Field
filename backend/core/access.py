@@ -49,6 +49,7 @@ def accessible_projects(user):
         condition|=Q(pk=profile.project_id)
     projects=Project.objects.filter(condition,company_id=company_id_for(user))
     if role==Profile.Roles.ADMIN:
+        projects=projects.filter(administrator_id=user.pk)
         industry=Profile.objects.filter(user=user).values_list('admin_industry__code',flat=True).first()
         if industry:projects=projects.filter(industry=industry)
     return projects.distinct()
@@ -61,6 +62,19 @@ def user_project_ids(user):
 def can_access_project(user,project_or_id):
     project_id=getattr(project_or_id,'pk',project_or_id)
     return accessible_projects(user).filter(pk=project_id).exists()
+
+
+def client_checklist_visibility(user):
+    """Current task data is visible only after that exact revision was shared."""
+    from django.db.models import Q,F
+    from .models import Checklist
+    historical=Q(review_route_record__isnull=True,status=Checklist.Status.FINAL)&(
+        Q(governance_mode='legacy')|Q(review_policy__customer_reviewer=user))
+    shared=Q(review_policy__customer_reviewer=user,
+             review_route_record__events__from_stage='team_lead',
+             review_route_record__events__to_stage='client',
+             review_route_record__events__revision_id=F('review_route_record__revision_id'))&~Q(review_route_record__stage='engineer')
+    return historical|shared
 
 
 def project_role(user,project_or_id):

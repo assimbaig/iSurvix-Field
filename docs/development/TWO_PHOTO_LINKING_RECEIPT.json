@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-19T15:38:43.116010",
+  "checklist_id": 1,
+  "authorization": "User explicitly requested linking photos using saved analysis or other solid evidence",
+  "links": [
+    {
+      "photo_id": 1,
+      "field_id": "site_identification",
+      "basis": "Current cached AI observations say sign/site ID; visual source review confirms readable Site ID label and identification board."
+    },
+    {
+      "photo_id": 2,
+      "field_id": "tower_structure",
+      "basis": "Current cached AI observations say tower and ladder; visual source review confirms tower structure and access ladder."
+    }
+  ],
+  "covered_checkpoints": 2,
+  "missing_required_photos": 0,
+  "submission_blockers": [],
+  "answers_and_workflow_unchanged": true,
+  "original_hashes_preserved": true,
+  "native_inference_calls": 0,
+  "evidence": ".local/photo-links-confirmed.json",
+  "backup": "F:\\iSurvix\\iSurvix-Field\\.local\\backups\\before-photo-link-20261019-153842"
+}

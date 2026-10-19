@@ -89,3 +89,34 @@ class EngineerMultipartUploadTests(TestCase):
         self.survey.refresh_from_db()
         self.assertEqual(self.survey.image_data,{})
         self.assertEqual(PhotoEvidence.objects.count(),0)
+
+    def test_submission_interleaving_blocks_late_upload_save_and_delete(self):
+        from copy import deepcopy
+        from unittest.mock import patch
+        from .template_views import survey_access as real_access
+        import json
+        response=self.client.post(reverse('custom_checklist_upload',args=[self.survey.pk,'photo']),{'images':[self.image()],'csrfmiddlewaretoken':self.csrf})
+        self.assertEqual(response.status_code,200)
+        self.survey.refresh_from_db();original=deepcopy(self.survey.image_data)
+        for operation in ['upload','save','delete']:
+            with self.subTest(operation=operation):
+                Checklist.objects.filter(pk=self.survey.pk).update(status=Checklist.Status.REJECTED,image_data=original)
+                first=[True]
+                def concurrent_submit(*args,**kwargs):
+                    result=real_access(*args,**kwargs)
+                    if first[0]:
+                        first[0]=False
+                        Checklist.objects.filter(pk=self.survey.pk).update(status=Checklist.Status.SUBMITTED)
+                    return result
+                with patch('core.template_views.survey_access',side_effect=concurrent_submit):
+                    if operation=='upload':
+                        result=self.client.post(reverse('custom_checklist_upload',args=[self.survey.pk,'photo']),{'images':[self.image()],'csrfmiddlewaretoken':self.csrf})
+                    elif operation=='save':
+                        result=self.client.post(reverse('custom_checklist_save',args=[self.survey.pk]),json.dumps({'answers':{'inspection':{'result':'Checked','remarks':'Late write'}}}),content_type='application/json',HTTP_X_CSRFTOKEN=self.csrf)
+                    else:
+                        result=self.client.post(reverse('custom_checklist_photo_delete',args=[self.survey.pk,'photo',0]),{'csrfmiddlewaretoken':self.csrf})
+                self.assertEqual(result.status_code,400)
+                self.survey.refresh_from_db()
+                self.assertEqual(self.survey.image_data,original)
+                self.assertEqual(self.survey.answer_data,{})
+                self.assertEqual(self.survey.status,Checklist.Status.SUBMITTED)

@@ -1,0 +1,186 @@
+{
+  "at": "2026-10-19T16:12:22.732281+00:00",
+  "project_root": "F:\\iSurvix\\iSurvix-Field",
+  "architecture": {
+    "worker": "Independent durable Django photo_worker process",
+    "photo_server": "http://127.0.0.1:11435",
+    "interactive_assistant": "http://127.0.0.1:11434",
+    "stages": [
+      "Vision analysis",
+      "Durable observation checkpoint",
+      "OCR/QR and cached checklist embeddings",
+      "Targeted vision verification",
+      "Unconfirmed evidence suggestions",
+      "Explicit human confirmation"
+    ],
+    "prefetch_photos": 4,
+    "native_parallelism": 1,
+    "queue_lock": "photo-worker",
+    "native_lock": "photo-inference",
+    "schema_change": "Additive migration 0043: immutable PhotoObservation cache; no existing rows replaced"
+  },
+  "model": {
+    "name": "qwen3.5:4b",
+    "digest": "d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04",
+    "vision_verified_before_photos": true,
+    "runtime": {
+      "models": [
+        {
+          "name": "qwen3.5:4b",
+          "model": "qwen3.5:4b",
+          "size": 3140495604,
+          "digest": "d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "4.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-10-19T19:17:17.6085415+03:00",
+          "size_vram": 3140495604,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  },
+  "performance": {
+    "previous_full_photo_average_seconds": 128.682,
+    "warm_image_analysis_seconds": [
+      4.406,
+      4.203
+    ],
+    "cold_probe_seconds": 43.875,
+    "current_last_image_analysis_seconds": 0.016,
+    "current_last_checklist_comparison_seconds": 8.985,
+    "current_attempt_full_photo_average_seconds": 10.141,
+    "current_attempt_photos_per_minute": 5.92,
+    "limitations": [
+      "Early final-run samples reuse previously fingerprinted observations; these timings are not a completed 400-photo benchmark.",
+      "400 photos within 30 minutes has not been demonstrated.",
+      "Targeted verification is retained; no engineering evidence rules were removed to improve speed."
+    ]
+  },
+  "live_job": {
+    "id": 7,
+    "site_id": "Z78005",
+    "checklist_id": 2,
+    "status": "running",
+    "completed": 5,
+    "total": 400,
+    "attempts": 1,
+    "error": "",
+    "stage": "matching_checklist",
+    "durable_observations": 29,
+    "processing_continues_in_background": true
+  },
+  "preservation": {
+    "stored_originals": 402,
+    "all_402_original_hashes_verified": true,
+    "accounts_password_hashes_roles_unchanged": true,
+    "answers_approval_controls_and_history_unchanged": true,
+    "human_photo_decisions_unchanged": true,
+    "historical_jobs_retained": [
+      4,
+      5,
+      6
+    ],
+    "historical_contexts_unchanged": true,
+    "current_rules_explicitly_adopted_through_normal_engineer_enqueue": true,
+    "workflow_status": "DRAFT"
+  },
+  "verification": {
+    "full_core_suite": {
+      "passed": 490,
+      "failed": 0
+    },
+    "focused_final_queue_suite": {
+      "passed": 55,
+      "failed": 0
+    },
+    "grounding_recovery_suite": {
+      "passed": 43,
+      "failed": 0
+    },
+    "native_previously_failing_photo_retested": 29,
+    "django_check": "passed",
+    "pending_model_migrations": "none",
+    "javascript_syntax": "passed",
+    "powershell_launcher_syntax": "passed",
+    "browser": {
+      "title": "Z78005 \u00c2\u00b7 Photo review",
+      "heading": "181 points from this checklist",
+      "analysis": "AI Analysis: 6% \u00c2\u00b7 26 / 400 photos \u00c2\u00b7 Images analyzed: 29 \u00c2\u00b7 Checklist comparison: 26 \u00c2\u00b7 Running batch: 1 / 400",
+      "matched": "Matched: 26",
+      "pending": "Pending analysis: 374",
+      "images": 40,
+      "overflow": false,
+      "back": "http://127.0.0.1:8000/governance/tasks/?project=2&q=Z78005",
+      "mobile": {
+        "overflow": false,
+        "images": 40,
+        "analysis": "AI Analysis: 6% \u00c2\u00b7 26 / 400 photos \u00c2\u00b7 Images analyzed: 29 \u00c2\u00b7 Checklist comparison: 26 \u00c2\u00b7 Running batch: 1 / 400"
+      },
+      "filteredReturn": {
+        "url": "http://127.0.0.1:8000/governance/tasks/?project=2&q=Z78005",
+        "query": "Z78005"
+      }
+    },
+    "live_role_checks": [
+      {
+        "username": "engineer01",
+        "status": 200
+      },
+      {
+        "username": "qa01",
+        "status": 200
+      },
+      {
+        "username": "teamlead01",
+        "status": 200
+      },
+      {
+        "username": "client01",
+        "status": 404
+      },
+      {
+        "username": "super_assim",
+        "status": 403
+      }
+    ],
+    "identical_saved_record_digests_across_internal_roles": 26
+  },
+  "grounding_recovery": {
+    "historical_job": 6,
+    "completed_before_failure": 26,
+    "failure": "Supported claim lacked a concrete visible description.",
+    "fix": "Structurally valid ungrounded supported claims become insufficient evidence with an explicit missing-evidence note; entire response still passes the unchanged strict validator. Answers, unknown or duplicate fields, malformed reasons and unsupported structures remain rejected.",
+    "native_retest": "Previously failing photo29 completed with 3 unconfirmed proposals under current tools; no observation re-caption needed.",
+    "previous_pipeline_average_seconds": 12.721
+  },
+  "recovery_checkpoint_before_changes": ".local/backups/project-checkpoint-20261019-185716",
+  "new_or_updated_pipeline_files": [
+    "Start-iSurvix.ps1",
+    "scripts/Start-PhotoAI.ps1",
+    "backend/checklist/settings_local.py",
+    "backend/core/local_ai.py",
+    "backend/core/photo_service.py",
+    "backend/core/photo_models.py",
+    "backend/core/models.py",
+    "backend/core/migrations/0043_photo_observation_pipeline.py",
+    "backend/core/evidence_pipeline.py",
+    "backend/core/local_evidence_tools.py",
+    "backend/core/photo_queue.py",
+    "backend/core/test_photo_pipeline.py",
+    "backend/core/test_photo_placements.py",
+    "backend/static/core/js/ai_analysis.js",
+    "backend/templates/dashboards/photo_workspace.html",
+    "docs/LOCAL_SETUP.md"
+  ],
+  "external_ai_service_added": false,
+  "github_push_performed": false
+}

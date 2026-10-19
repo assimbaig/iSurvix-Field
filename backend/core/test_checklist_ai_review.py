@@ -15,6 +15,9 @@ def lease():
 @override_settings(ROOT_URLCONF='checklist.urls_local',ALLOWED_HOSTS=['testserver'],SECURE_SSL_REDIRECT=False,LOCAL_AI_ENABLED=True,OLLAMA_MODEL='fixture:local')
 class ChecklistAIReviewTests(TestCase):
     def setUp(self):
+        fingerprint=patch('core.evidence_pipeline.model_fingerprint',return_value='a'*64)
+        fingerprint.start()
+        self.addCleanup(fingerprint.stop)
         schema={'title':'Fixture','sections':[{'id':'general','title':'General','fields':[{'id':'condition','label':'Condition','type':'text'}]}]}
         t=ChecklistTemplate.objects.create(name='Fixture',definition=schema,published=True)
         self.project=Project.objects.create(name='Review fixture',checklist_template=t)
@@ -215,10 +218,108 @@ class ChecklistAIReviewTests(TestCase):
         self.assertEqual(len(self.client.get(self.url('checklist_ai_state')).json()['reviews']),1)
         PhotoPlacement.objects.create(photo=photo,field_id='condition',section_id='general',status='manual',schema_digest='fixture')
         self.assertEqual(self.client.get(self.url('checklist_ai_state')).json()['reviews'],[])
-    def test_engineer_does_not_read_team_lead_private_review(self):
+    def test_engineer_reads_same_internal_site_review_requested_by_team_lead(self):
         self.review()
         self.client.force_login(self.engineer)
-        self.assertEqual(self.client.get(self.url('checklist_ai_state')).json()['reviews'],[])
+        reviews=self.client.get(self.url('checklist_ai_state')).json()['reviews']
+        self.assertEqual(len(reviews),1)
+        self.assertEqual(reviews[0]['findings'],[self.finding])
+
+    @patch('core.checklist_ai_review.inference_lease',lease)
+    @patch('core.checklist_ai_review.installed_models',return_value=['fixture:local'])
+    @patch('core.checklist_ai_review.ollama')
+    def test_unchanged_site_reuses_canonical_findings_across_requesting_actors(self,call,models):
+        call.side_effect=[{'capabilities':['completion']},{'message':{'content':json.dumps({'findings':[self.finding]})}},
+                          {'capabilities':['completion']}]
+        self.client.force_login(self.engineer)
+        first=self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json')
+        self.assertEqual(first.status_code,201,first.content)
+        self.client.force_login(self.lead)
+        second=self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json')
+        self.assertEqual(second.status_code,201,second.content)
+        self.assertEqual(first.json()['id'],second.json()['id'])
+        self.assertEqual(sum(args.args[0]=='/api/chat' for args in call.call_args_list),1)
+        from .evidence_models import EvidenceAnalysisRecord
+        self.assertEqual(EvidenceAnalysisRecord.objects.filter(photo__isnull=True).count(),1)
+        shown=self.client.get(self.url('checklist_ai_state')).json()['reviews'][0]
+        self.assertEqual(shown['findings'],[self.finding])
+        self.assertEqual(shown['provenance']['model_version'],'a'*64)
+        self.assertEqual(shown['provenance']['record_id'],EvidenceAnalysisRecord.objects.get().pk)
+        from .evidence_models import EvidenceReviewBinding
+        binding=EvidenceReviewBinding.objects.get()
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            binding.save()
+
+    def test_identical_retry_drafts_do_not_change_source_snapshot(self):
+        from .models import PhotoEvidence,PhotoJob,PhotoDraft
+        photo=PhotoEvidence.objects.create(checklist=self.c,filename='synthetic.png',sha256='a'*64)
+        job=PhotoJob.objects.create(checklist=self.c,requested_by=self.engineer,model='fixture:local',schema=self.c.schema_snapshot)
+        values={'job':job,'photo':photo,'field_id':'condition','label':'Condition','value':None,
+                'reason':'Synthetic observation','uncertainty':'high','missing_information':'','anomalies':[]}
+        PhotoDraft.objects.create(**values)
+        first=digest_snapshot(snapshot(self.c))
+        PhotoDraft.objects.create(**values)
+        self.assertEqual(first,digest_snapshot(snapshot(self.c)))
+
+    def test_saved_insufficient_and_contradictory_assessments_reach_correct_field_without_raw_ocr(self):
+        from .models import PhotoEvidence
+        from .evidence_learning import get_or_create_analysis
+        photo=PhotoEvidence.objects.create(checklist=self.c,filename='synthetic.png',sha256='a'*64)
+        versions={'rules_version':'rules-1','model_version':'model-1','tool_version':'tools-1','prompt_version':'prompt-1'}
+        payload={'assessments':[{'field_id':'condition','outcome':'contradictory','hard_blocked':True,
+                 'reasons':['Visible identifier contradicts required site'],'missing_evidence':['Correct site identifier'],
+                 'quality_flags':['possible_blur']}],
+                 'tools':{'ocr_lines':['RAW-OCR-MUST-NOT-BE-REPEATED']*64,'quality':{'possible_blur':True},
+                          'capture_facts':{},'errors':[{'tool':'qr','code':'unavailable'}]}}
+        record,_=get_or_create_analysis(self.c,photo,payload,versions)
+        data=snapshot(self.c)
+        self.assertEqual(data['evidence_analysis_records'][0]['record_id'],record.pk)
+        item=list(review_batches(data))[0][0]
+        self.assertEqual(item['evidence_assessments'][0]['outcome'],'contradictory')
+        self.assertEqual(item['evidence_assessments'][0]['photo_id'],photo.pk)
+        self.assertEqual(item['evidence_assessments'][0]['record_digest'],record.payload_digest)
+        self.assertEqual(item['evidence_assessments'][0]['tool_summary']['missing_capture'],['captured_at','gps'])
+        self.assertNotIn('RAW-OCR-MUST-NOT-BE-REPEATED',json.dumps(item))
+        newer,_=get_or_create_analysis(self.c,photo,{'assessments':[{'field_id':'condition','outcome':'insufficient',
+            'reasons':['A closer photo is needed'],'missing_evidence':['Closer photo']} ]},{**versions,'rules_version':'rules-2'})
+        current=snapshot(self.c)
+        self.assertEqual(len(current['evidence_assessments']),1)
+        self.assertEqual(current['evidence_assessments'][0]['record_id'],newer.pk)
+        self.assertEqual(current['evidence_assessments'][0]['outcome'],'insufficient')
+
+    def test_400_photo_assessments_split_without_crossfield_or_source_omission(self):
+        data=snapshot(self.c)
+        data['schema']['sections'][0]['fields']=[{'id':key,'label':key,'type':'photo'} for key in ['one','two']]
+        data['photos']=[{'id':index,'sha256':str(index)} for index in range(1,401)]
+        data['evidence_assessments']=[{'field_id':key,'photo_id':index,'record_id':index,
+            'record_digest':'a'*64,'outcome':'insufficient','missing_evidence':['Closer original required'],
+            'reasons':['Synthetic bounded source assessment'],'tool_summary':{'missing_capture':['gps']}}
+            for key in ['one','two'] for index in range(1,401)]
+        items=[item for batch in review_batches(data) for item in batch]
+        found=set()
+        for item in items:
+            self.assertLessEqual(len(json.dumps(item,ensure_ascii=False).encode()),14000)
+            for assessment in item['evidence_assessments']:
+                self.assertEqual(assessment['field_id'],item['field']['id'])
+                found.add((assessment['field_id'],assessment['photo_id']))
+        self.assertEqual(len(found),800)
+
+    @patch('core.checklist_ai_review.ollama')
+    def test_corrupt_saved_assessment_returns_controlled_recovery_without_inference(self,native):
+        from django.db import connection
+        from .models import PhotoEvidence
+        from .evidence_learning import get_or_create_analysis
+        photo=PhotoEvidence.objects.create(checklist=self.c,filename='synthetic.png',sha256='a'*64)
+        versions={'rules_version':'rules','model_version':'model','tool_version':'tools','prompt_version':'prompt'}
+        record,_=get_or_create_analysis(self.c,photo,{'assessments':[]},versions)
+        with connection.cursor() as cursor:
+            cursor.execute('UPDATE core_evidenceanalysisrecord SET payload=%s WHERE id=%s',[json.dumps({'assessments':['corrupt']}),record.pk])
+        self.client.force_login(self.engineer)
+        self.assertEqual(self.client.get(self.url('checklist_ai_state')).status_code,503)
+        self.assertEqual(self.client.get(self.url('checklist_ai_review')).status_code,503)
+        self.assertEqual(self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json').status_code,503)
+        native.assert_not_called()
     @patch('core.checklist_ai_review.ollama')
     def test_unprocessed_photo_blocks_final_review_before_any_native_call(self,call):
         from .models import PhotoEvidence

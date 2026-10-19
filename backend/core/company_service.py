@@ -5,6 +5,7 @@ from .models import Profile,ProjectMembership
 from django.utils import timezone
 from django.db.models import Q
 from datetime import datetime
+from django.db import transaction
 
 
 def grant_guard(actor,target,project,revoking=False):
@@ -32,8 +33,18 @@ def grant_guard(actor,target,project,revoking=False):
         raise ValidationError('All active projects for this account must belong to the same company.')
 
 
-def grant_membership(actor,target,project,make_primary=False,expires_at=None):
+@transaction.atomic
+def grant_membership(actor,target,project,make_primary=False,expires_at=None,transfer_owner=False):
     grant_guard(actor,target,project)
+    if target.profile.role==Profile.Roles.ADMIN:
+        from .models import Project
+        owner=Project.objects.filter(pk=project.pk).values_list('administrator_id',flat=True).first()
+        if owner and owner!=target.pk and not (transfer_owner and is_super_admin(actor)):
+            raise ValidationError('This project already has an owning Admin. Use explicit ownership transfer instead of an additional Admin grant.')
+        if owner is None and is_super_admin(actor):
+            Project.objects.filter(pk=project.pk,administrator__isnull=True).update(administrator_id=target.pk)
+            if Project.objects.filter(pk=project.pk).exclude(administrator_id=target.pk).exists():
+                raise ValidationError('Project ownership changed. Reload before granting access.')
     if expires_at is not None and (not isinstance(expires_at,datetime) or timezone.is_naive(expires_at) or expires_at<=timezone.now()):
         raise ValidationError('Choose a future expiry with a timezone, or leave it empty for an ongoing grant.')
     profile=target.profile

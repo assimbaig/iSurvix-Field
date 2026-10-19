@@ -37,10 +37,13 @@ def qualify_template(actor,project,workflow_type,criteria_reference,inspection_m
     if is_super_admin(actor) or role_for(actor) not in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER} or not can_access_project(actor,project):
         raise PermissionDenied('Technical qualification requires an active project Team Lead or historical Project Manager; administrative privilege is insufficient.')
     expected='construction' if workflow_type==Checklist.WorkflowType.CONSTRUCTION_INSPECTION else 'telecom'
-    if workflow_type not in Checklist.WorkflowType.values or project.industry!=expected:
+    from .industry_service import industry_family
+    if workflow_type not in Checklist.WorkflowType.values or industry_family(project)!=expected:
         raise ValidationError('Choose an applicable workflow for the project industry.')
     template=project.checklist_template
     if not template or not template.published:raise ValidationError('Select a published project template first.')
+    from .standard_checklist_service import validate_standard_project
+    validate_standard_project(template,project,workflow_type)
     for value in [criteria_reference,inspection_method,reason]:
         if not isinstance(value,str) or not value.strip() or len(value)>4000:raise ValidationError('Record criteria, inspection method and applicability reason (up to 4000 characters each).')
     record=WorkflowTemplateQualification.objects.create(project=project,template=template,workflow_type=workflow_type,definition_digest=definition_digest(template.definition),criteria_reference=criteria_reference,inspection_method=inspection_method,reason=reason,reviewed_by=actor)

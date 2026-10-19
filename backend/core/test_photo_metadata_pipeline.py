@@ -1,4 +1,4 @@
-"""Independent metadata-first photo processing and 400-photo bound regressions."""
+"""Independent metadata-first photo processing and 500-photo bound regressions."""
 import json
 import tempfile
 from io import BytesIO
@@ -13,7 +13,7 @@ from .models import Checklist,ChecklistTemplate,Project,Profile,PhotoEvidence,Ph
 
 
 @override_settings(ROOT_URLCONF='checklist.urls_local',ALLOWED_HOSTS=['testserver'],SECURE_SSL_REDIRECT=False,PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
-class Photo400LimitTests(TestCase):
+class Photo500LimitTests(TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory(prefix='metadata-qa-',dir=Path(__file__).resolve().parents[2]/'.local')
         self.addCleanup(temporary.cleanup)
@@ -38,31 +38,32 @@ class Photo400LimitTests(TestCase):
     def seed(self,survey,count,prefix):
         PhotoEvidence.objects.bulk_create([PhotoEvidence(checklist=survey,filename=f'{prefix}-{index}.png',sha256=f'{prefix}-{index}') for index in range(count)])
 
-    def test_site_accepts_400th_photo_and_refuses_401st_across_checklists(self):
+    def test_site_accepts_500th_photo_and_refuses_501st_across_checklists(self):
         sibling=Checklist.objects.create(project=self.project,user=self.user,site_id=self.survey.site_id)
         self.seed(sibling,200,'sibling')
-        self.seed(self.survey,199,'current')
+        self.seed(self.survey,299,'current')
         url=reverse('photo_upload',args=[self.survey.pk])
         response=self.client.post(url,{'files':[self.image()],'group':'Civil'})
         self.assertEqual(response.status_code,201,response.content)
         response=self.client.post(url,{'files':[self.image('blue')],'group':'Civil'})
         self.assertIn(response.status_code,(400,409))
-        self.assertEqual(PhotoEvidence.objects.filter(checklist__project=self.project,checklist__site_id=self.survey.site_id).count(),400)
+        self.assertEqual(PhotoEvidence.objects.filter(checklist__project=self.project,checklist__site_id=self.survey.site_id).count(),500)
         # Exact duplicate remains safe/idempotent even when the quota is full.
         response=self.client.post(url,{'files':[self.image()],'group':'Civil'})
         self.assertEqual(response.status_code,201)
         self.assertTrue(response.json()['photos'][0]['duplicate'])
 
+    @patch('core.evidence_pipeline.processing_context',return_value={'rules_version':'synthetic-rules','model_version':'synthetic-local','tool_version':'synthetic-tools','prompt_version':'synthetic-prompt'})
     @patch('core.photo_views.verify_vision')
-    def test_enqueue_400_distinct_photos_and_reject_401_without_an_extra_job(self,vision):
-        self.seed(self.survey,401,'queue')
+    def test_enqueue_500_distinct_photos_and_reject_501_without_an_extra_job(self,vision,processing):
+        self.seed(self.survey,501,'queue')
         ids=list(self.survey.photo_evidence.order_by('pk').values_list('pk',flat=True))
         url=reverse('photo_enqueue',args=[self.survey.pk])
-        response=self.client.post(url,json.dumps({'photo_ids':ids[:400],'model':'synthetic-local'}),content_type='application/json')
+        response=self.client.post(url,json.dumps({'photo_ids':ids[:500],'model':'synthetic-local'}),content_type='application/json')
         self.assertEqual(response.status_code,201,response.content)
         job=PhotoJob.objects.get(pk=response.json()['id'])
-        self.assertEqual(job.total,400)
-        self.assertEqual(job.photos.count(),400)
+        self.assertEqual(job.total,500)
+        self.assertEqual(job.photos.count(),500)
         response=self.client.post(url,json.dumps({'photo_ids':ids,'model':'synthetic-local'}),content_type='application/json')
         self.assertEqual(response.status_code,400)
         self.assertEqual(PhotoJob.objects.count(),1)
@@ -74,9 +75,9 @@ def compact_observation():
 
 @override_settings(ROOT_URLCONF='checklist.urls_local',ALLOWED_HOSTS=['testserver'],SECURE_SSL_REDIRECT=False,PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class MetadataPipelineTests(TestCase):
-    image=Photo400LimitTests.image
+    image=Photo500LimitTests.image
     def setUp(self):
-        Photo400LimitTests.setUp(self)
+        Photo500LimitTests.setUp(self)
         from django.core.files.base import ContentFile
         self.photo=PhotoEvidence.objects.create(checklist=self.survey,filename='synthetic.png',sha256='a'*64)
         self.photo.preview.save('synthetic-preview.png',ContentFile(self.image().read()))
@@ -94,7 +95,9 @@ class MetadataPipelineTests(TestCase):
         payload=native.call_args.args[1]
         self.assertEqual(len(payload['messages'][1]['images']),1)
         self.assertNotIn('fields',payload['messages'][1]['content'])
-        self.assertLessEqual(payload['options']['num_predict'],384)
+        # Detailed verification has a bounded recovery budget; fast retrieval
+        # runs separately and never waits for this autoregressive response.
+        self.assertLessEqual(payload['options']['num_predict'],768)
         self.photo=PhotoEvidence.objects.get(pk=self.photo.pk)
         self.assertTrue(self.photo.analysis_signature)
         self.assertEqual(self.photo.analysis_metadata,compact_observation())

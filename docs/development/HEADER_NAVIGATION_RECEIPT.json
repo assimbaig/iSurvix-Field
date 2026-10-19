@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-19",
+  "scope": "Header navigation and checklist wayfinding",
+  "changes": [
+    "Permission-scoped blue header navigation across roles; removed global sidebar",
+    "Human readable page titles and task context; preserved filtered Tasks return",
+    "Custom answers visible by default; left checklist and mobile section drawer",
+    "Collapsed template, site and workflow history; authorized decision forms retained",
+    "Appearance remains color-only; Super SA-02 administrative tabs retained"
+  ],
+  "tests": {
+    "focused_django": 24,
+    "browser_cases": 342,
+    "live_roles": 5,
+    "original_photos_unchanged": 78
+  },
+  "evidence": [
+    ".local/header-navigation-qa/receipt.json",
+    ".local/checklist-wayfinding-qa/receipt.json",
+    ".local/header-navigation-live-verified.json"
+  ],
+  "schema_changes": false,
+  "github_push": false
+}

@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-19",
+  "scope": "Editable survey account/company/photo prefills",
+  "sources": {
+    "surveyor": "Assigned account full name, professional display name fallback",
+    "organization": "Actual assigned project company, not free-form experience employer",
+    "project": "Assigned project name",
+    "survey_date_time": "Valid photo capture details; same-date agreement and earliest recorded capture time, without invented timezone",
+    "coordinates": "Valid photo GPS; agreement at six decimal places",
+    "site_id": "Explicit readable Site ID/Code text bound to current photo analysis hash; suggestion/conflict only, assigned identity retained"
+  },
+  "safety": [
+    "Existing answer keys including empty, None and zero retained",
+    "Missing/conflicting photo facts stay blank with review note",
+    "Approved/frozen/read-only saved values retained; no inferred replacements",
+    "GET never writes survey data",
+    "Editable unsaved defaults saved only by user save/submit/edit actions",
+    "No profile-completion gate during development; manual editing retained"
+  ],
+  "changes": [
+    "Site-information API exposes source notes and prefill/conflict flags",
+    "Both custom checklist and photo site-information pane prefill missing fields",
+    "Save autofilled details action; Save and submit includes prefills",
+    "New photo analysis refreshes site defaults without replacing dirty user input",
+    "Professional profile page explains current development policy"
+  ],
+  "validation": {
+    "full_core_tests": 327,
+    "full_core_seconds": 25.751,
+    "focused_prefill_intake_tests": 16,
+    "prefill_browser_cases": 24,
+    "ai_analysis_browser_cases": 21,
+    "browser_failures": 0,
+    "operational_browser_writes": 0,
+    "live_roles": 5,
+    "business_tables_equal_to_checkpoint": "project-checkpoint-20261019-140924",
+    "original_photo_hashes_preserved": 78
+  },
+  "evidence": [
+    ".local/ai-prefill-core-tests.log",
+    ".local/prefill-browser-qa/receipt.json",
+    ".local/ai-analysis-qa/receipt.json",
+    ".local/survey-prefill-live-verified.json"
+  ],
+  "schema_changes": false,
+  "github_push": false,
+  "runtime_launcher_pid": 14576
+}

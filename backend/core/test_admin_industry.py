@@ -39,7 +39,8 @@ class AdminIndustryTests(TestCase):
         self.admin.profile.refresh_from_db()
         self.assertEqual(self.admin.profile.admin_industry_id,self.telecom.pk)
     def test_new_admin_invitation_requires_matching_industry(self):
-        base={'email':'synthetic_invite@example.test','role':Profile.Roles.ADMIN,'project':self.a.pk}
+        unowned=Project.objects.create(name='Unowned invitation telecom',company=self.company,industry='telecom')
+        base={'email':'synthetic_invite@example.test','role':Profile.Roles.ADMIN,'project':unowned.pk}
         self.assertFalse(InvitationForm(base,actor=self.super).is_valid())
         self.assertFalse(InvitationForm({**base,'admin_industry':self.construction.pk},actor=self.super).is_valid())
         self.assertTrue(InvitationForm({**base,'admin_industry':self.telecom.pk},actor=self.super).is_valid())
@@ -54,13 +55,14 @@ class AdminIndustryTests(TestCase):
         from datetime import timedelta
         from django.utils import timezone
         token='synthetic-industry-invitation-token'
-        invitation=ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),email='bound_admin@example.test',role=Profile.Roles.ADMIN,project=self.a,admin_industry=self.telecom,created_by=self.super,expires_at=timezone.now()+timedelta(hours=1))
+        unowned=Project.objects.create(name='Unowned acceptance telecom',company=self.company,industry='telecom')
+        invitation=ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),email='bound_admin@example.test',role=Profile.Roles.ADMIN,project=unowned,admin_industry=self.telecom,created_by=self.super,expires_at=timezone.now()+timedelta(hours=1))
         self.client.logout()
         response=self.client.post(reverse('governance_accept_invite',args=[token]),{'username':'new_industry_admin','email':invitation.email,'password1':'SyntheticFixture-4830!','password2':'SyntheticFixture-4830!'})
         self.assertEqual(response.status_code,302)
         user=User.objects.get(username='new_industry_admin')
         self.assertEqual(user.profile.admin_industry_id,self.telecom.pk)
-        self.assertEqual(list(accessible_projects(user)),[self.a])
+        self.assertEqual(list(accessible_projects(user)),[unowned])
         with self.assertRaises(ValidationError):grant_membership(self.super,user,self.b)
 
     def test_upgrade_binds_unambiguous_and_fails_closed_ambiguous_admin(self):

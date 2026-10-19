@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-19",
+  "design": "Compact enterprise navy/white/blue",
+  "stack": "Existing Django templates, CSS and JavaScript; SQLite and local Ollama retained",
+  "routes": [
+    "/governance/tasks/",
+    "/governance/",
+    "/custom-checklist/<id>/",
+    "/local/photos/<id>/",
+    "/governance/activities/<id>/"
+  ],
+  "changes": [
+    "Permission-scoped module/project selectors, navigation, breadcrumbs and working help/user menus",
+    "Task explorer: status counters, module tabs, real filters/search, sorting, 25-row database pagination, column preferences, row selection and safe filtered/selected CSV",
+    "Checklist evidence split pane, answer/evidence status separation, search, field links, keyboard/pointer resize, mobile drawer",
+    "Photo viewer next/previous/zoom, lazy paged thumbnails, available capture/GPS/uploader metadata, existing AI proposal/manual confirmation controls",
+    "Validated per-user/task filtered return context and scroll restoration"
+  ],
+  "tests": {
+    "core": {
+      "count": 301,
+      "seconds": 24.273,
+      "result": "pass",
+      "password_hashing": "Synthetic test-process-only MD5 override; actual production password hashes unchanged"
+    },
+    "django_check": "pass",
+    "migration_drift": "No changes detected",
+    "browser_receipt": ".local/enterprise-layout-qa/browser-receipt.json",
+    "live_receipt": ".local/enterprise-live-verified.json",
+    "data_preservation": "Seven existing business table comparisons, account identities/password hashes/roles and 78 original SHA256 hashes unchanged"
+  },
+  "limitations": [
+    "No contractor, due date or independent site-name field exists; no schema invented",
+    "No new bulk workflow transitions or permanent original-photo deletion were introduced; only existing authorized workflow and evidence-link actions are exposed",
+    "Existing review forms remain the decision authority; partial approval only where legacy workflow supports it",
+    "205-photo browser check is synthetic and is not a 400-photo inference/30-minute benchmark",
+    "No separate persisted photo comment field exists; available remarks and metadata retain their existing meaning"
+  ],
+  "runtime": {
+    "launcher_pid": 31284,
+    "url": "http://127.0.0.1:8000/",
+    "network": "loopback only",
+    "python": "3.12.10",
+    "ollama": "Existing qwen3.5:4b reports vision; worker capability verification preserved"
+  },
+  "data_schema_changed": false,
+  "github_pushed": false,
+  "prechange_checkpoint": ".local/backups/project-checkpoint-20261019-123029"
+}

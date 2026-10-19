@@ -14,7 +14,7 @@ from .models import Checklist,ChecklistTemplate,Project,Profile,PhotoEvidence,Ph
 from .field_photo_service import schema_digest,coverage,record_proposals,confirmed_placements
 
 @contextmanager
-def lease():
+def lease(*args, **kwargs):
     yield lambda:None
 
 @override_settings(ROOT_URLCONF='checklist.urls_local',ALLOWED_HOSTS=['testserver'],SECURE_SSL_REDIRECT=False,PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])

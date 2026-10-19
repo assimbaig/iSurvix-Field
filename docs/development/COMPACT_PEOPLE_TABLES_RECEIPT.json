@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-19",
+  "change": "Compact searchable tables for People, project access, Admin industry assignments and invitations, using the existing server-rendered forms and permissions",
+  "screens": ["Super Admin dashboard local panels", "Project Admin Administration / People & invitations"],
+  "behavior": ["Bounded internal scrolling with sticky headings and person column", "Project Admin People / Project access / Invitations tabs with arrow-key navigation", "Search and visible record counts, including real empty state", "Expandable membership and grant controls", "Compact action icons with hover titles and accessible names", "No-JavaScript fallback retains the original forms"],
+  "verification": {"focused_backend_tests": "20 passed1.954s", "browser": "16 cases passed at1440/390/320, Super/Admin; actual source and transformed form actions/fields/required flags compared equal", "live": "Normal Super/Admin pages and static assets verified;39 business tables and account credentials unchanged", "operational_writes": 0},
+  "files": ["backend/static/core/js/people_tables.js", "backend/static/core/css/people_tables.css", "backend/templates/dashboards/super_admin_workspace.html", "backend/templates/dashboards/governance_workspace.html"],
+  "runtime_launcher_pid": 33968,
+  "receipts": [".local/people-table-qa/receipt.json", ".local/people-table-qa/live-receipt.json", ".local/people-tables-focused-tests.log"],
+  "schema_and_permission_changes": false
+}

@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-19",
+  "delivered": [
+    "Only a bound Project Admin creates projects; company, industry and owning Admin are enforced on the server",
+    "One owning Admin per project; other Admins cannot access its data even with same-company or stale membership grants",
+    "Super Admin retains administrative oversight and explicit ownership transfer; former owner loses project access without deleting history",
+    "New projects choose three layers Engineer-QA-TeamLead or four layers adding Client approval/rejection",
+    "Each new task freezes its project routing and named reviewers; existing activities retain their recorded policy",
+    "Rejection goes one step back; recipients clarify forward or return one further step with reasons; Engineer changes create a new frozen submission and fresh approvals",
+    "Append-only route events, stale tokens, current membership checks and immutable reviewer assignments",
+    "Company/industry Admin invitations work before the Admin creates their first project",
+    "Editable industry codes, names, descriptions and active status with atomic reference updates and audit history",
+    "Stable workflow families preserve modules/checklists/qualifications when an industry code is renamed",
+    "Local AI drafts editable descriptions; explicit Save is required and no generated text is automatically persisted"
+  ],
+  "routes": ["/governance/?view=projects", "/governance/?view=industries", "/work/review-routes/<checklist_id>/action/", "/governance/industries/description/"],
+  "migrations_applied": ["0038_project_review_routes", "0039_admin_invitation_before_project", "0040_unique_project_owners", "0041_industry_descriptions_and_families", "0042_seed_industry_workflow_families"],
+  "validation": {
+    "full_core": "479 tests passed in46.874seconds; process-only synthetic MD5 test override, real passwords unchanged",
+    "project_and_return_browser": "5 cases passed desktop/390/320, including actual CSRF TeamLead rejection toQA and QA clarification back toTeamLead",
+    "industry_browser": "5 cases passed desktop/320, mocked local provider503/retry, editable draft and reload proves no autosave",
+    "actual_local_AI": "Normal Super Admin HTTP POST to configured local qwen3.5:4b returned449character description; saved=false; catalog contents unchanged",
+    "live_permissions": "Super project creation form absent; both existing Admin forms available; nonowner Admin project lookup404",
+    "preservation": "37 existing business tables unchanged in shared pre-migration columns; all20account identities/password hashes and2original photo SHA256 values unchanged; no production tasks/projects/routes/imports created"
+  },
+  "runtime_launcher_pid": 26696,
+  "pre_upgrade_checkpoint": ".local/backups/project-checkpoint-20261019-173411",
+  "receipts": [".local/project-industry-final-core-tests.log", ".local/project-industry-live-verification.json", ".local/review-route-browser-qa/receipt.json", ".local/industry-browser-qa/receipt.json"],
+  "notes": ["Descriptions and historical engineering labels are preserved independently; administrative renaming does not rewrite frozen submissions", "Old tasks are not silently converted; three/four-layer routes apply to tasks created under the new project setting", "No GitHub push or internet hosting; project/runtime/data remain under F:/iSurvix/iSurvix-Field"]
+}

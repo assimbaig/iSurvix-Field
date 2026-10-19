@@ -58,10 +58,23 @@ def manager_guard(actor):
         raise PermissionDenied('Project administration access is required.')
 
 
-def issue_guard(actor,project,role):
+def project_creation_guard(actor):
+    if is_super_admin(actor) or role_for(actor)!=Profile.Roles.ADMIN:
+        raise PermissionDenied('Only a Project Admin can create company projects.')
+    profile=actor.profile
+    if (profile.admin_industry_pending or not profile.admin_industry_id or
+        not profile.admin_industry.is_active or not company_id_for(actor)):
+        raise PermissionDenied('An active company and industry binding are required before creating a project.')
+
+
+def issue_guard(actor,project,role,company=None,industry=None):
     manager_guard(actor)
     if is_super_admin(actor) and role==Profile.Roles.CLIENT:
         raise PermissionDenied('Only Project Admin may invite Clients.')
+    if project is None:
+        if not is_super_admin(actor) or role!=Profile.Roles.ADMIN or not company or not industry or not industry.is_active:
+            raise PermissionDenied('A project-free invitation requires Super Admin, an Admin role, a company and an active industry.')
+        return
     project_role_guard(actor,project,{Profile.Roles.ADMIN})
     allowed={Profile.Roles.ADMIN,Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.PROJECT_MANAGER,Profile.Roles.QUALITY_ENGINEER} if is_super_admin(actor) else {Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.PROJECT_MANAGER,Profile.Roles.QUALITY_ENGINEER}
     if role not in allowed:
@@ -109,7 +122,8 @@ def workspace_context(request,**extra):
         surveys=surveys.filter(user=actor)
         assignments=assignments.filter(assigned_to=actor)
     if role==Profile.Roles.CLIENT:
-        surveys=surveys.filter(status=Checklist.Status.FINAL)
+        from .access import client_checklist_visibility
+        surveys=surveys.filter(client_checklist_visibility(actor)).distinct()
         assignments=assignments.none()
         from django.db.models import Q
         surveys=surveys.filter(Q(governance_mode=Checklist.GovernanceMode.LEGACY)|Q(review_policy__customer_reviewer=actor))
@@ -131,7 +145,7 @@ def workspace_context(request,**extra):
         expected_stage={Profile.Roles.QUALITY_ENGINEER:'quality_engineer',Profile.Roles.TEAM_LEAD:'team_lead',Profile.Roles.PROJECT_MANAGER:'project_manager'}[role]
         review_queue=[survey for survey in surveys.filter(status__in=[Checklist.Status.SUBMITTED,Checklist.Status.REVIEW,Checklist.Status.PARTIAL]) if survey.workflow_stage==expected_stage]
     else:review_queue=Checklist.objects.none()
-    invites=ProjectInvitation.objects.filter(project__in=projects).select_related('project','created_by') if admin else ProjectInvitation.objects.none()
+    invites=(ProjectInvitation.objects.all() if super_admin else ProjectInvitation.objects.filter(project__in=projects)).select_related('project','company','created_by') if admin else ProjectInvitation.objects.none()
     member_ids={user.pk for project in projects for user in users_for_project(project,include_inactive=True)} if admin else set()
     members=User.objects.filter(pk__in=member_ids).select_related('profile','profile__project','profile__company').order_by('username')
     if is_super_admin(actor):
@@ -148,13 +162,15 @@ def workspace_context(request,**extra):
         member.can_manage_account=is_super_admin(actor) or active_ids.issubset(actor_ids)
     context={'active_view':active_view,'selected_industry':selected_industry,'industry_choices':list(IndustryCatalog.objects.filter(code__in=accessible_projects(actor).values_list('industry',flat=True)).values_list('code','name')) if not super_admin else list(IndustryCatalog.objects.values_list('code','name')),'can_administer':admin,'review_queue':review_queue,'reports':surveys.filter(status=Checklist.Status.FINAL),'can_qualify':role in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER},'role':role,'role_label':dict(Profile.Roles.choices).get(role,'Unassigned'),
         'is_super_admin':is_super_admin(actor),'is_project_admin':role==Profile.Roles.ADMIN,
-        'is_client':role==Profile.Roles.CLIENT,'can_client_approve':is_super_admin(actor) or role in {Profile.Roles.ADMIN,Profile.Roles.CLIENT},
+        'can_create_project':bool(role==Profile.Roles.ADMIN and not super_admin and not actor.profile.admin_industry_pending and actor.profile.admin_industry_id and actor.profile.admin_industry.is_active and company_id_for(actor)),
+        'is_client':role==Profile.Roles.CLIENT,'can_client_approve':not super_admin and role in {Profile.Roles.ADMIN,Profile.Roles.CLIENT},
         'can_invite':admin,'can_assign':not super_admin and role in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD},
         'projects':projects,'scope_projects':scope_projects,'project_filter':scope_projects,'selected_project_id':str(chosen.pk) if chosen else '',
         'scope_label':chosen.name if chosen else 'All assigned projects','companies':Company.objects.all() if is_super_admin(actor) else Company.objects.filter(pk=company_id_for(actor)),
         'clientorg_form':ClientOrganizationForm(),'client_organization_form':ClientOrganizationForm(),'client_organizations':ClientOrganization.objects.all() if super_admin else ClientOrganization.objects.filter(company_id=company_id_for(actor),industry_id=getattr(actor.profile,'admin_industry_id',None)),'company_form':CompanyForm(),'surveys':surveys,'assignments':assignments,'invitations':invites,'members':members,
-        'admin_industry_form':AdminIndustryForm(),'project_form':ProjectForm(),'invite_form':InvitationForm(actor=actor),'assignment_form':AssignmentForm(actor=actor)}
+        'admin_industry_form':AdminIndustryForm(),'project_form':ProjectForm(actor=actor),'invite_form':InvitationForm(actor=actor),'assignment_form':AssignmentForm(actor=actor)}
     if super_admin:
+        context['recent_audit']=GovernanceAudit.objects.select_related('actor','project').order_by('-created_at','-pk')[:12]
         context.update({'industries':IndustryCatalog.objects.all(),'industry_form':IndustryForm(),'sites':assignments,'counts':{'clients':ClientOrganization.objects.count(),'projects':Project.objects.count(),'sites':WorkAssignment.objects.count(),'users':User.objects.count(),'industries':IndustryCatalog.objects.count()}})
         context['surveys']=Checklist.objects.none()
         context['assignments']=WorkAssignment.objects.none()
@@ -170,7 +186,7 @@ def workspace_context(request,**extra):
 
 def workspace_response(request,status=200,**context):
     if is_super_admin(request.user) and status>=400 and 'active_view' not in context:
-        for key,view in [('industry_form','industries'),('project_form','projects'),('invite_form','clients')]:
+        for key,view in [('industry_form','industries'),('project_form','projects'),('invite_form','dashboard')]:
             if key in context:
                 context['active_view']=view
                 break
@@ -196,21 +212,23 @@ def industry(request):
     with transaction.atomic():
         lock_governance(request.user)
         if not is_super_admin(request.user):raise PermissionDenied()
-        form=IndustryForm(request.POST)
         if request.POST.get('action')=='delete':return HttpResponse('Deactivate an industry to preserve history.',status=409)
-        if not form.is_valid():return workspace_response(request,status=400,industry_form=form,error='Check the industry code and name.')
-        data=form.cleaned_data
         identifier=request.POST.get('industry_id','')
         if identifier:
-            if not identifier.isascii() or not identifier.isdigit():raise Http404()
+            if len(identifier)>19 or not identifier.isascii() or not identifier.isdigit():raise Http404()
             record=get_object_or_404(IndustryCatalog.objects.select_for_update(),pk=int(identifier))
-            if data['code']!=record.code:return HttpResponse('Industry codes are permanent. Rename or deactivate the existing industry instead.',status=409)
-            previous={'name':record.name,'is_active':record.is_active}
-            record.name=data['name'];record.is_active=data['is_active'];record.save(update_fields=['name','is_active'])
         else:
-            previous=None
-            record=IndustryCatalog.objects.create(**data)
-        audit(request.user,'industry_updated' if previous else 'industry_created',industry_id=record.pk,code=record.code,name=record.name,is_active=record.is_active,previous=previous)
+            record=None
+        form=IndustryForm(request.POST,instance=record)
+        if not form.is_valid():return workspace_response(request,status=400,industry_form=form,error='Check the industry code, name and description.')
+        data=form.cleaned_data
+        from .industry_service import update_industry
+        try:
+            update_industry(request.user,record,data['code'],data['name'],data.get('description',''),data['is_active'],
+                expected_token=request.POST.get('expected_token'),
+                workflow_family=data.get('workflow_family') if not record or 'workflow_family' in request.POST else None)
+        except ValidationError as error:
+            return workspace_response(request,status=409 if record else 400,industry_form=form,error='; '.join(error.messages))
     return redirect(reverse('governance_home')+'?view=industries')
 
 
@@ -218,19 +236,27 @@ def industry(request):
 @require_POST
 @guarded_write
 def projects(request):
-    if not is_super_admin(request.user):
-        raise PermissionDenied('Only Super Admin can create projects.')
+    project_creation_guard(request.user)
     with transaction.atomic():
         lock_governance(request.user)
-        if not is_super_admin(request.user):
-            raise PermissionDenied()
-        form=ProjectForm(request.POST)
+        project_creation_guard(request.user)
+        form=ProjectForm(request.POST,actor=request.user)
         if not form.is_valid():
             return workspace_response(request,status=400,project_form=form)
-        project=form.save()
-        audit(request.user,'project_created',project,name=project.name,template_id=project.checklist_template_id)
+        project=form.save(commit=False)
+        project.company_id=company_id_for(request.user)
+        project.industry=request.user.profile.admin_industry.code
+        project.administrator=request.user
+        project.save()
+        primary=not ProjectMembership.objects.filter(user=request.user,is_primary=True,is_active=True).exists()
+        ProjectMembership.objects.create(user=request.user,project=project,is_active=True,is_primary=primary,granted_by=request.user)
+        if not request.user.profile.project_id:
+            request.user.profile.project=project
+            request.user.profile.save(update_fields=['project'])
+        audit(request.user,'project_created',project,name=project.name,template_id=project.checklist_template_id,
+              company_id=project.company_id,industry=project.industry,review_layers=project.review_layers)
     messages.success(request,'Project created.')
-    return redirect('governance_home')
+    return redirect(reverse('governance_home')+'?view=projects&project='+str(project.pk))
 
 
 @login_required(login_url='/login/')
@@ -246,11 +272,13 @@ def invite(request):
         if not form.is_valid():
             return workspace_response(request,status=400,invite_form=form)
         data=form.cleaned_data
-        issue_guard(request.user,data['project'],data['role'])
+        issue_guard(request.user,data['project'],data['role'],data.get('company'),data.get('admin_industry'))
         token=secrets.token_urlsafe(32)
         now=timezone.now()
-        ProjectInvitation.objects.filter(email__iexact=data['email'],project=data['project'],accepted_at__isnull=True,revoked_at__isnull=True).update(revoked_at=now)
-        invitation=ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),email=data['email'],role=data['role'],admin_industry=data.get('admin_industry') if data['role']==Profile.Roles.ADMIN else None,project=data['project'],created_by=request.user,expires_at=now+timedelta(hours=72))
+        pending=ProjectInvitation.objects.filter(email__iexact=data['email'],project=data['project'],accepted_at__isnull=True,revoked_at__isnull=True)
+        if not data['project']:pending=pending.filter(company=data.get('company'))
+        pending.update(revoked_at=now)
+        invitation=ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),email=data['email'],role=data['role'],admin_industry=data.get('admin_industry') if data['role']==Profile.Roles.ADMIN else None,company=data.get('company'),project=data['project'],created_by=request.user,expires_at=now+timedelta(hours=72))
         audit(request.user,'invitation_created',data['project'],invitation_id=invitation.pk,email=data['email'],role=data['role'])
     # Raw bearer token is shown once, never persisted in session, messages or audit.
     return workspace_response(request,invite_url=request.build_absolute_uri(reverse('governance_accept_invite',args=[token])))
@@ -260,13 +288,17 @@ def invitation_for(token):
     if not isinstance(token,str) or not 16<=len(token)<=100:
         raise Http404('Invitation unavailable.')
     invitation=get_object_or_404(ProjectInvitation.objects.select_related('project','created_by'),token_hash=hashlib.sha256(token.encode()).hexdigest(),accepted_at__isnull=True,revoked_at__isnull=True,expires_at__gt=timezone.now())
-    if invitation.role==Profile.Roles.ADMIN and invitation.admin_industry_id and invitation.admin_industry.code!=invitation.project.industry:
+    if invitation.role==Profile.Roles.ADMIN and invitation.admin_industry_id and invitation.project_id and invitation.admin_industry.code!=invitation.project.industry:
         raise Http404('Invitation industry changed.')
+    if invitation.company_id and invitation.project_id and invitation.company_id!=invitation.project.company_id:
+        raise Http404('Invitation company changed.')
+    if invitation.role==Profile.Roles.ADMIN and invitation.project_id and invitation.project.administrator_id:
+        raise Http404('This project now has an owning Admin. Request a company-level Admin invitation instead.')
     issuer=invitation.created_by
     if not issuer or getattr(getattr(issuer,'profile',None),'is_locked',True):
         raise Http404('Invitation unavailable.')
     try:
-        issue_guard(issuer,invitation.project,invitation.role)
+        issue_guard(issuer,invitation.project,invitation.role,invitation.company,invitation.admin_industry)
     except PermissionDenied:
         raise Http404('Invitation unavailable.')
     return invitation
@@ -297,12 +329,12 @@ def accept_invite(request,token):
                 profile=user.profile
                 profile.role=invitation.role
                 profile.project=invitation.project
-                profile.company=invitation.project.company
+                profile.company=invitation.project.company if invitation.project_id else invitation.company
                 profile.admin_industry=invitation.admin_industry
                 profile.save(update_fields=['role','project','company','admin_industry'])
                 from .company_service import grant_membership
-                grant_membership(invitation.created_by,user,invitation.project,make_primary=True)
-                if invitation.role==Profile.Roles.ADMIN and invitation.project.administrator_id is None:
+                if invitation.project_id:grant_membership(invitation.created_by,user,invitation.project,make_primary=True)
+                if invitation.role==Profile.Roles.ADMIN and invitation.project_id and invitation.project.administrator_id is None:
                     invitation.project.administrator=user
                     invitation.project.save(update_fields=['administrator'])
                     audit(invitation.created_by,'project_administrator_assigned',invitation.project,administrator_id=user.pk,via_invitation_id=invitation.pk)
@@ -347,6 +379,16 @@ def client_approval(request,checklist_id):
     if is_super_admin(request.user):raise PermissionDenied('Super Admin manages the platform; project roles record Client correspondence and decisions.')
     c=get_object_or_404(Checklist,pk=checklist_id)
     project_role_guard(request.user,c.project_id,{Profile.Roles.ADMIN,Profile.Roles.CLIENT})
+    from .review_route_service import route_for,act_on_route
+    if route_for(c):
+        if role_for(request.user)!=Profile.Roles.CLIENT:
+            raise PermissionDenied('Only the assigned Client may sign this project approval stage.')
+        action={'approved':'approve','rejected':'reject'}.get(request.POST.get('decision'))
+        try:
+            act_on_route(request.user,c,action,request.POST.get('reference',''),request.POST.get('expected_route_token',''))
+        except ValidationError as error:
+            return HttpResponse('; '.join(error.messages),status=409,content_type='text/plain')
+        return redirect('roadmap_activity',checklist_id=c.pk)
     with transaction.atomic():
         lock_governance(request.user)
         c=Checklist.objects.select_for_update().get(pk=checklist_id)
@@ -513,13 +555,13 @@ def project_admin(request,project_id):
         previous=project.administrator_id
         from .company_service import grant_membership
         try:
-            grant_membership(request.user,administrator,project)
+            grant_membership(request.user,administrator,project,transfer_owner=True)
         except ValidationError as exc:
             return workspace_response(request,status=400,error='; '.join(exc.messages))
         project.administrator=administrator
         project.save(update_fields=['administrator'])
         audit(request.user,'project_administrator_assigned',project,administrator_id=administrator.pk,previous_administrator_id=previous)
-    messages.success(request,'Primary project administrator assigned. Existing project memberships are preserved.')
+    messages.success(request,'Project ownership assigned. Only this Admin can administer or view the project; evidence and history are preserved.')
     return redirect('governance_home')
 
 

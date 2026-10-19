@@ -41,6 +41,7 @@ class ChecklistBuilderTests(TestCase):
         for user in [self.admin, self.engineer, self.lead, self.quality]:
             user.profile.project = self.project
             user.profile.save()
+        self.project.refresh_from_db()  # Keep the authoritative Admin owner on later fixture saves.
         self.definition = {'title': 'Fixture custom checklist', 'sections': [{'id': 'general', 'title': 'Site details', 'fields': [
             {'id': 'site_id', 'label': 'Site ID', 'type': 'text', 'system': 'site_id', 'required': True},
             {'id': 'height', 'label': 'Tower height', 'type': 'number', 'required': True, 'unit': 'm'},
@@ -305,7 +306,7 @@ class ChecklistBuilderTests(TestCase):
         self.assertEqual(self.e.post(reverse('custom_checklist_upload', args=[c.pk, 'photo']), {'images': self.logo()}).status_code, 400)
         self.assertEqual(self.e.post(reverse('custom_checklist_photo_delete', args=[c.pk, 'photo', 0])).status_code, 400)
         page = self.e.get(reverse('custom_checklist', args=[c.pk]))
-        self.assertContains(page, 'Checklist section photos')
+        self.assertContains(page, 'Section evidence')
         self.assertContains(page, 'data-locked="true"')
         self.assertEqual(c.review_history[1]['sections'], ['general'])
 

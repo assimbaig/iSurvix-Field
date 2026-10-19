@@ -108,6 +108,7 @@ the web server exits. For a separately managed worker, from this checkout run:
 
 ```powershell
 $env:DJANGO_SETTINGS_MODULE = 'checklist.settings_local'
+$env:ISURVIX_PHOTO_OLLAMA_URL = 'http://127.0.0.1:11435'
 Set-Location backend
 & ..\.local\venv\Scripts\python.exe manage.py photo_worker
 ```
@@ -117,6 +118,41 @@ lease expires (normally five minutes); completed photos are checkpointed. Failed
 can be retried without resetting their original answer baseline. Worker logs stay in
 `.local`. Do not delete `.local` to recover a job.
 
+### Dedicated photo pipeline
+
+The launcher also runs `photo_search_worker`, a separate batched CPU image/text
+retrieval worker. Its **Fast AI Analysis** panel provides unverified checklist
+subjects promptly; **Detailed AI verification** retains the existing evidence rules
+and submission guards. Initial suggestions do not establish complete analysis.
+The installed local CLIP encoders are pinned under `.local/models/photo-search`.
+If reinstalling them, run `scripts/setup_photo_search_models.py` with the project
+Python environment; runtime inference never downloads models or sends photos out.
+Migration0044 adds immutable vector/result caches. Capacity is now500photos/site.
+The fast results endpoint is permission checked and returns two tiles per page;
+the usual photo mapping endpoint remains responsible for manual confirmation.
+
+Double-click **Start-iSurvix.cmd** as usual. On this PC the launcher also starts or
+connects to a separate loopback photo AI service on port 11435, using the signed
+portable runtime in `.local/runtime/ollama-0.40.5` and the existing verified model
+store in `.local/ollama/models`. The interactive assistant keeps port 11434.
+No new model or external AI provider is needed. If the portable installation is
+unavailable, the launcher explicitly reports fallback to the original local queue.
+
+The photo worker runs image analysis, saves a fingerprinted observation, compares
+the checklist using local OCR/QR and cached semantic vectors, and retains targeted
+vision verification for uncertain candidates. It stages four photos at a time.
+Migration 0043 adds an immutable PhotoObservation cache table; it does not replace
+photos, answers, accounts, templates, approvals or historical analysis records.
+Retries reuse completed image analysis even if checklist comparison failed. Cache
+identity includes original bytes, model-file digest and observation instructions.
+Changed models or pinned processing tools still require explicit rule adoption.
+
+The progress bar counts saved image-analysis and checklist-comparison stages.
+Matched, mismatched and human-confirmed counts retain their separate meanings.
+An AI match remains a suggestion until a permitted person confirms it. A database
+queue lease prevents competing consumers even if configured with different model
+endpoints; inference leases separate the photo server from chat.
+
 For a synthetic local vision check that never reads project photos:
 
 ```powershell
@@ -125,15 +161,18 @@ For a synthetic local vision check that never reads project photos:
 
 ## Verification and limits
 
-The Python/Django implementation is tested in the available Linux workspace. Tests use simulated Ollama replies to verify auth, CSRF, project scope, data isolation, context, cloud-model exclusion, disconnected/busy handling and localhost controls. No live connection to the user's Windows Ollama service can be made from that workspace.
+The application is tested in this Windows checkout. Automated tests use simulated Ollama replies to verify authentication, CSRF, project scope, evidence integrity, approval ordering, context, cloud-model exclusion and disconnected/busy handling. Separate opt-in synthetic probes verify the installed local Ollama service without reading project photos.
 
 Python 3.12.10 and the Windows local Django first launch were verified in this checkout.
 The installed `qwen3.5:4b` reported vision capability and correctly described a synthetic
 image through Ollama's native image API. A disposable synthetic end-to-end pilot also
-passed upload, queue, real inference, explicit answer acceptance and report export.
-Edge browser checks at 1440, 390 and 320 pixels used rendered synthetic content and
-stubbed API responses; no real survey data was inserted for browser tests.
-Real site-photo quality and throughput still
-require a few user-selected photos before scaling. The Django development server binds
+passed upload, queue, real metadata extraction, explicit photo-location confirmation and report export. No checklist answers or approvals are automatically applied.
+Earlier Edge browser checks at 1440, 390 and 320 pixels used synthetic content.
+The later Z78005 test uses 400 real uploaded site photos and normal role sessions;
+desktop 1440 and mobile 390 checks preserve filtered return navigation and bounded
+thumbnails. Dedicated native GPU probes measured 4.2–4.4 seconds for warm image
+descriptions; these timings exclude subsequent checklist comparison. A complete
+400-photo run within 30 minutes has not been established. See the development
+receipts and LOCAL_CODEX_HANDOFF.md for live-job status. The Django development server binds
 to loopback and local-only middleware rejects non-loopback clients. External fonts/styles
 used by the existing app may still need internet; this is not a fully offline asset bundle.

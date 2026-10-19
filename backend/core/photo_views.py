@@ -18,6 +18,10 @@ from .template_service import field_map
 from .local_ai import allowed_surveys
 from .photo_service import prepare_image, verify_vision, validate_drafts
 
+def photo_limit():
+    return getattr(settings,'PHOTO_MAX_PER_SITE',500)
+
+
 def api_errors(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -45,23 +49,45 @@ def body(request):
 def url(checklist, photo, variant):
     return reverse('photo_evidence', args=[checklist.pk,photo.pk,variant])
 
+
+@require_GET
+@api_errors
+def fast_state(request,checklist_id):
+    c=survey_access(request,checklist_id)['checklist']
+    from .access import role_for
+    if role_for(request.user)=='CLIENT':return JsonResponse({'enabled':False})
+    from .photo_search import state as search_state,MODELS
+    if not (MODELS/'manifest.json').exists():return JsonResponse({'enabled':False})
+    try:page=int(request.GET.get('page','1'))
+    except ValueError:raise ValueError('Invalid page.')
+    response=JsonResponse(search_state(c,list(c.photo_evidence.order_by('pk')),page))
+    response['Cache-Control']='private, no-store'
+    return response
+
 @require_GET
 def workspace(request, checklist_id):
     access=survey_access(request,checklist_id)
     checklist=access['checklist']
     from .field_intake_service import site_information_fields
-    return render(request,'dashboards/photo_workspace.html',{'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':settings.OLLAMA_MODEL})
+    from .access import role_for
+    internal=role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER','TEAM_LEAD'}
+    return render(request,'dashboards/photo_workspace.html',{'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':settings.OLLAMA_MODEL})
 
 @require_GET
+@api_errors
 def state(request, checklist_id):
-    c=survey_access(request,checklist_id)['checklist']
-    from .field_photo_service import field_catalog,mapping_state,coverage,schema_digest,analysis_state
+    access=survey_access(request,checklist_id)
+    c=access['checklist']
+    from .field_photo_service import field_catalog,mapping_state,coverage,schema_digest,analysis_state,metadata_workflow
     from .photo_metadata import metadata_is_current
-    photos=list(c.photo_evidence.order_by('pk'))
+    photos=list(c.photo_evidence.select_related('uploaded_by').order_by('pk'))
     ready={p.pk:metadata_is_current(p,settings.OLLAMA_MODEL) for p in photos}
     analysis={**analysis_state(c),'metadata_ready_count':sum(ready.values())}
-    jobs=[{**{key:getattr(job,key) for key in ('id','status','error','completed','total','attempts','progress')},'photo_ids':[photo.pk for photo in job.photos.all()]} for job in c.photo_jobs.order_by('-pk').prefetch_related('photos')]
-    return JsonResponse({'max_photos':400,'analysis':analysis,'field_catalog':field_catalog(c),'mappings':mapping_state(c),'coverage':coverage(c),'schema_digest':schema_digest(c),'photos':[{'id':p.pk,'filename':p.filename,'group':p.group,'metadata_ready':ready[p.pk],'visual_metadata':p.analysis_metadata if ready[p.pk] else None,'preview_url':url(c,p,'preview'),'original_url':url(c,p,'original'),'metadata':p.metadata,'advisories':p.advisories} for p in photos], 'jobs':jobs, 'drafts':list(PhotoDraft.objects.filter(job__checklist=c).order_by('-pk').values('id','photo_id','field_id','label','value','reason','uncertainty','status','missing_information','anomalies'))})
+    jobs=[{'current_schema':job.schema==c.schema_snapshot,**{key:getattr(job,key) for key in ('id','status','error','completed','total','attempts','progress')},'photo_ids':[photo.pk for photo in job.photos.all()]} for job in c.photo_jobs.order_by('-pk').prefetch_related('photos')]
+    analysis['workflow']=metadata_workflow(c,photos,ready,analysis,jobs)
+    from .evidence_pipeline import saved_state
+    evidence_analysis=saved_state(c,access['can_edit'],reverse('evidence_learning',args=[c.pk]))
+    return JsonResponse({'evidence_analysis':evidence_analysis,'max_photos':photo_limit(),'analysis':analysis,'field_catalog':field_catalog(c),'mappings':mapping_state(c),'coverage':coverage(c),'schema_digest':schema_digest(c),'photos':[{'id':p.pk,'filename':p.filename,'group':p.group,'uploaded_by':p.uploaded_by.get_username() if p.uploaded_by_id else None,'uploaded_at':p.created_at.isoformat(),'metadata_ready':ready[p.pk],'visual_metadata':p.analysis_metadata if ready[p.pk] else None,'preview_url':url(c,p,'preview'),'original_url':url(c,p,'original'),'metadata':p.metadata,'advisories':p.advisories} for p in photos], 'jobs':jobs, 'drafts':list(PhotoDraft.objects.filter(job__checklist=c).order_by('-pk').values('id','photo_id','field_id','label','value','reason','uncertainty','status','missing_information','anomalies'))})
 
 @require_POST
 @api_errors
@@ -85,8 +111,8 @@ def upload(request, checklist_id):
             hashes=set(c.photo_evidence.values_list('sha256',flat=True))
             new={item[1][2] for item in prepared}-hashes
             count=PhotoEvidence.objects.filter(checklist__project=c.project,checklist__site_id=c.site_id).count()
-            if count+len(new)>400:
-                raise ValidationError('This site already has the maximum 400 photos.')
+            if count+len(new)>photo_limit():
+                raise ValidationError(f'This site already has the maximum {photo_limit()} photos.')
             ids=[]
             for f,(raw,preview,digest,metadata,advisories) in prepared:
                 existing=c.photo_evidence.filter(sha256=digest).first()
@@ -128,10 +154,13 @@ def enqueue(request,checklist_id):
         data=body(request)
         ids=data.get('photo_ids')
         queue_when_busy=data.get('queue_when_busy',False)
+        adopt=data.get('apply_current_rules',False)
+        if type(adopt) is not bool:
+            raise ValueError('apply_current_rules must be a boolean.')
         if type(queue_when_busy)!=bool:
             raise ValueError('queue_when_busy must be a boolean.')
-        if not isinstance(ids,list) or not 1<=len(ids)<=400 or any(type(i)!=int for i in ids) or len(set(ids))!=len(ids):
-            raise ValueError('Choose 1 to 400 distinct photos.')
+        if not isinstance(ids,list) or not 1<=len(ids)<=photo_limit() or any(type(i)!=int for i in ids) or len(set(ids))!=len(ids):
+            raise ValueError(f'Choose 1 to {photo_limit()} distinct photos.')
         photos=list(c.photo_evidence.filter(pk__in=ids))
         if len(photos)!=len(ids):
             raise ValueError('A photo is outside this survey.')
@@ -139,6 +168,8 @@ def enqueue(request,checklist_id):
         if not isinstance(model,str) or len(model)>160:
             raise ValueError('Invalid model.')
         verify_vision(model)
+        from .evidence_pipeline import processing_context
+        context=processing_context(c,model,adopt=adopt)
         with transaction.atomic():
             c=Checklist.objects.select_for_update().get(pk=c.pk)
             survey_access(request,c.pk,edit=True)
@@ -150,10 +181,12 @@ def enqueue(request,checklist_id):
                 return error(ValueError('This survey already has 10 pending photo jobs. Wait for processing before queuing more.'),409)
             if active.filter(photos__pk__in=ids).exists():
                 return error(ValueError('One or more selected photos are already queued or processing.'),409)
-            job=PhotoJob.objects.create(checklist=c,requested_by=request.user,model=model,total=len(photos),baseline=deepcopy((c.answer_data or {}).get('custom',{})),schema=deepcopy(c.schema_snapshot))
+            job=PhotoJob.objects.create(checklist=c,requested_by=request.user,model=model,total=len(photos),baseline=deepcopy((c.answer_data or {}).get('custom',{})),schema=deepcopy(c.schema_snapshot),progress={'evidence_context':context})
             job.photos.set(photos)
         return JsonResponse({'id':job.pk,'status':job.status},status=201)
-    except (ValueError,ValidationError,OSError) as exc:
+    except ValidationError as exc:
+        return error(exc,409)
+    except (ValueError,OSError) as exc:
         return error(ValueError('Local model unavailable or invalid photo request. Check vision support and retry.'))
 
 @require_POST
@@ -213,10 +246,11 @@ def accept(request,checklist_id,draft_id):
         return error(exc,409)
 
 @require_GET
+@api_errors
 def report(request,checklist_id):
     c=survey_access(request,checklist_id)['checklist']
     from .field_photo_service import mapping_state,coverage
-    response=JsonResponse({'placements':mapping_state(c),'coverage':coverage(c),'notice':'Draft evidence only. No engineering certification. Absence of detections is not a pass.','site_id':c.site_id,'checklist_id':c.pk,'template_revision':{'id':c.checklist_template_id,'version':c.checklist_template.version if c.checklist_template_id else None,'family_id':str(c.checklist_template.family_id) if c.checklist_template_id else None},'jobs':list(c.photo_jobs.values('id','model','status','requested_by_id','created_at','updated_at','attempts','completed','total','schema')),'drafts':list(PhotoDraft.objects.filter(job__checklist=c).values('id','job_id','photo_id','field_id','label','value','reason','uncertainty','missing_information','anomalies','status','accepted_by_id','accepted_at','baseline','baseline_present')),'evidence':[{'id':p.pk,'filename':p.filename,'sha256':p.sha256,'group':p.group,'metadata':p.metadata,'uploaded_by_id':p.uploaded_by_id,'created_at':p.created_at,'source':url(c,p,'original')} for p in c.photo_evidence.all()],'audit':c.review_history},json_dumps_params={'indent':2})
+    response=JsonResponse({'evidence_analysis':__import__('core.evidence_pipeline',fromlist=['saved_state']).saved_state(c),'placements':mapping_state(c),'coverage':coverage(c),'notice':'Draft evidence only. No engineering certification. Absence of detections is not a pass.','site_id':c.site_id,'checklist_id':c.pk,'template_revision':{'id':c.checklist_template_id,'version':c.checklist_template.version if c.checklist_template_id else None,'family_id':str(c.checklist_template.family_id) if c.checklist_template_id else None},'jobs':list(c.photo_jobs.values('id','model','status','requested_by_id','created_at','updated_at','attempts','completed','total','schema')),'drafts':list(PhotoDraft.objects.filter(job__checklist=c).values('id','job_id','photo_id','field_id','label','value','reason','uncertainty','missing_information','anomalies','status','accepted_by_id','accepted_at','baseline','baseline_present')),'evidence':[{'id':p.pk,'filename':p.filename,'sha256':p.sha256,'group':p.group,'metadata':p.metadata,'uploaded_by_id':p.uploaded_by_id,'created_at':p.created_at,'source':url(c,p,'original')} for p in c.photo_evidence.all()],'audit':c.review_history},json_dumps_params={'indent':2})
     response['Content-Disposition']='attachment; filename="photo-evidence-report.json"'
     response['Cache-Control']='private, no-store'
     return response

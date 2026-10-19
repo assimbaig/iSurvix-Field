@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "roleResponsiveAndVariantCases": 90,
+  "roles": 6,
+  "layouts": 6,
+  "palettes": 6,
+  "persistence": true,
+  "copy": true,
+  "download": true,
+  "compare": true,
+  "phoneToggle": true,
+  "noBrowserExceptions": true,
+  "storageDeniedFeedback": true,
+  "reset": true,
+  "url": "http://127.0.0.1:8000/static/core/design_lab/index.html",
+  "prototypeOnly": true,
+  "liveApplicationTemplatesChanged": false,
+  "syntheticDataOnly": true,
+  "networkMutations": false,
+  "selectionStorage": "browser localStorage",
+  "selectionSharing": [
+    "copy text",
+    "download JSON"
+  ],
+  "defaults": {
+    "SUPER_ADMIN": "Command center / Midnight violet",
+    "ADMIN": "Portfolio canvas / Teal and coral",
+    "CLIENT": "Editorial report / Soft plum",
+    "TEAM_LEAD": "Split workbench / Charcoal and orange",
+    "ENGINEER": "Field companion / Field blue",
+    "QUALITY_ENGINEER": "Evidence ledger / Forest and lime"
+  }
+}

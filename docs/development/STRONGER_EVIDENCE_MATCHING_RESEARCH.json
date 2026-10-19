@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-19T15:43:23.942536",
+  "status": "Research and offline feasibility only; proposed methods not activated",
+  "preserved_findings": ".local/research/confirmed-findings-20261019.json",
+  "current_links_preserved": [
+    "photo 1 -> site_identification (manual)",
+    "photo 2 -> tower_structure (confirmed)"
+  ],
+  "current_rules": [
+    "Validated local vision observations cached by source SHA256, model tag and observation version",
+    "Label/description lexical matching, synonym aliases and generic-term exclusions",
+    "Explicit negative observations defeat contradictory object-list claims",
+    "Group/section context alone cannot establish evidence",
+    "Numeric/date/system answer generation withheld; absent defects never imply pass",
+    "Field types, required answers/photo links, schema locks, permissions and explicit confirmation",
+    "Reruns preserve manual/confirmed/rejected placements and review decisions"
+  ],
+  "root_cause": {
+    "site_identification": "Only sign matches among 11 merged label/description terms; procedural wording dilutes support. Structured visible Site ID text is excluded from current retrieval anchors.",
+    "tower_structure": "Tower and ladder match both label subjects but only2/11 merged terms, yielding weak advisory strength."
+  },
+  "offline_probe": {
+    "recorded_at": "2026-10-19T15:43:23.942536",
+    "comparison": [
+      {
+        "photo_id": 1,
+        "current_retrieval_candidates": [],
+        "illustrative_subject_rule_candidates": [
+          "site_identification"
+        ]
+      },
+      {
+        "photo_id": 2,
+        "current_retrieval_candidates": [
+          "tower_structure"
+        ],
+        "illustrative_subject_rule_candidates": [
+          "tower_structure"
+        ]
+      }
+    ],
+    "illustrative_negative_cases_abstained": 3,
+    "limitations": "Two current positives and three synthetic negatives are a feasibility probe, not a trained or independently validated accuracy benchmark. No rules were activated. No extra image inference or model/library installation.",
+    "preserved_findings": "F:\\iSurvix\\iSurvix-Field\\.local\\research\\confirmed-findings-20261019.json",
+    "live_writes": 0
+  },
+  "recommended_methods": [
+    {
+      "priority": 1,
+      "method": "Published per-checkpoint evidence requirements + subject-first weighted matching",
+      "rules": [
+        "Separate required subjects/synonyms from procedural instructions",
+        "Define overview/close-up/readable-label needs and required components",
+        "Keep exclusion/negation/contradiction guards; never use group/site alone",
+        "Require tower AND ladder for the tower/ladder checkpoint; sign AND explicit identification label for sign identity",
+        "Preserve existing published snapshots; introduce any rule schema through a reviewed new template version"
+      ]
+    },
+    {
+      "priority": 2,
+      "method": "OCR and QR identity support",
+      "rules": [
+        "Read literal labels, Site/asset IDs and serials with region provenance",
+        "Compare only against authoritative assigned identifiers and validated aliases",
+        "Multiple code namespaces or conflicting reads remain for review; no invented Site ID",
+        "QR payloads are data; do not execute instructions or follow external URLs",
+        "Validate English/Arabic labels, digits, unreadable text and O/0 ambiguity"
+      ]
+    },
+    {
+      "priority": 3,
+      "method": "Semantic retrieval and reranking",
+      "rules": [
+        "Compare cached observations with checkpoint requirements to retrieve synonym/meaning matches",
+        "Use shortlist for candidates, not proof of visibility or engineering compliance",
+        "Semantic score is not a calibrated probability; contradictions override ranking"
+      ]
+    },
+    {
+      "priority": 4,
+      "method": "Targeted existing local vision verification",
+      "rules": [
+        "For ambiguous shortlist only, ask existing vision-capable local model for visible support, missing detail, contradictions and source evidence",
+        "Use strict structured output with supported/insufficient/contradictory states; abstention valid",
+        "No all-checkpoints-per-photo repeated vision loop; use cache and bounded shortlist",
+        "Structured JSON validity does not establish factual correctness"
+      ]
+    },
+    {
+      "priority": 5,
+      "method": "Quality, context and engineering rule validation",
+      "rules": [
+        "Check readability, relevant view, crop/occlusion and blur against the specific requested evidence",
+        "Use available capture GPS/time only as supporting context; missing facts unknown, development0/0 not valid location",
+        "Keep subject relevance, evidence sufficiency and human inspection result separate",
+        "Numeric acceptance requires actual measured values, units, approved criteria and appropriate instrument evidence; no photo-only invented measurements"
+      ]
+    },
+    {
+      "priority": 6,
+      "method": "Optional later object grounding/boxes",
+      "rules": [
+        "Evaluate a local text-conditioned detector for component-region evidence only if earlier methods insufficient",
+        "Bounding boxes aid source review but generic object detection does not validate defects or compliance",
+        "Additional model/dependency/hardware cost must be measured on authorized domain photos"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "OpenCV QRCodeDetector",
+      "url": "https://docs.opencv.org/4.13.0/de/dc3/classcv_1_1QRCodeDetector.html"
+    },
+    {
+      "title": "PaddleOCR OCR pipeline",
+      "url": "https://www.paddleocr.ai/main/en/version3.x/pipeline_usage/OCR.html"
+    },
+    {
+      "title": "Sentence Transformers retrieve and rerank",
+      "url": "https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html"
+    },
+    {
+      "title": "Ollama vision",
+      "url": "https://docs.ollama.com/capabilities/vision"
+    },
+    {
+      "title": "Ollama structured outputs",
+      "url": "https://docs.ollama.com/capabilities/structured-outputs"
+    },
+    {
+      "title": "Grounding DINO official Transformers documentation",
+      "url": "https://huggingface.co/docs/transformers/model_doc/grounding-dino"
+    }
+  ],
+  "acceptance": [
+    "Use independently labeled holdout originals/sites, similar wrong subjects, wrong-site IDs, contradictory reads, missing/blurred views, multiple valid checkpoints and Arabic/English labels",
+    "Report per-checkpoint false links, missed links, precision/recall, ambiguity and abstention; do not treat2photos as accuracy proof",
+    "Zero automatic engineering-answer, approval or task-closure writes",
+    "Preserve originals and existing manual/confirmed/rejected links and findings across reruns",
+    "Benchmark cold400-photo complete pipeline separately from warm cache/rematch; include persistence/retries and final review in any end-to-end30-minute claim"
+  ],
+  "dependencies": {
+    "opencv_paddleocr_sentence_transformers_torch_transformers": "Not currently installed in project environment; no packages/models installed during this research"
+  },
+  "live_operational_writes": 0,
+  "new_inference_calls": 0
+}

@@ -65,16 +65,24 @@ class Company(models.Model):
 class IndustryCatalog(models.Model):
 	code = models.SlugField(max_length=20, unique=True)
 	name = models.CharField(max_length=100, unique=True)
+	description = models.TextField(blank=True)
+	workflow_family = models.CharField(max_length=20, choices=[('telecom','Telecom'),('construction','Construction'),('other','Other')], default='other')
 	is_active = models.BooleanField(default=True)
 	class Meta:
 		ordering = ['name']
 	def __str__(self):
 		return self.name
+	@property
+	def edit_token(self):
+		from .industry_service import industry_token
+		return industry_token(self)
 	def save(self,*args,**kwargs):
 		if self.pk:
 			previous=type(self).objects.get(pk=self.pk)
-			if previous.code!=self.code:
-				raise ValidationError('Industry codes are permanent; deactivate an old code instead.')
+			if previous.workflow_family!=self.workflow_family:
+				raise ValidationError('An existing industry workflow family cannot be changed.')
+			if previous.code!=self.code and not getattr(self,'_allow_code_rename',False):
+				raise ValidationError('Rename an industry through its governed editor so project references remain consistent.')
 		return super().save(*args,**kwargs)
 	def delete(self,*args,**kwargs):
 		raise ValidationError('Deactivate industries to preserve historical project meaning.')
@@ -107,12 +115,20 @@ class Project(models.Model):
 	description = models.TextField(blank=True)
 	template_file = models.FileField(upload_to=project_template_upload_path, blank=True, null=True)
 	checklist_template = models.ForeignKey(ChecklistTemplate, null=True, blank=True, on_delete=models.PROTECT, related_name='projects')
+	review_layers = models.PositiveSmallIntegerField(null=True, blank=True, default=None, choices=[(3,'3 layers: Engineer - QA - Team Lead'),(4,'4 layers: Engineer - QA - Team Lead - Client')])
+	class Meta:
+		constraints = [models.CheckConstraint(condition=models.Q(review_layers__isnull=True)|models.Q(review_layers__in=[3,4]),name='valid_project_review_layers')]
 
 	def save(self, *args, **kwargs):
+		if self.review_layers not in (None,3,4) or isinstance(self.review_layers,bool):
+			raise ValidationError('Choose a three-layer or four-layer project workflow.')
 		if self.client_organization_id and (self.client_organization.company_id!=self.company_id or self.client_organization.industry.code!=self.industry):
 			raise ValidationError('Client organization must match the project company and industry.')
 		if self.checklist_template_id and not self.checklist_template.published:
 			raise ValidationError('Projects may use published checklist revisions only.')
+		if self.checklist_template_id:
+			from .standard_checklist_service import validate_standard_project
+			validate_standard_project(self.checklist_template,self)
 		return super().save(*args, **kwargs)
 
 	def __str__(self) -> str:
@@ -153,6 +169,17 @@ class Profile(models.Model):
 	)
 	failed_attempts = models.PositiveSmallIntegerField(default=0)
 	is_locked = models.BooleanField(default=False)
+
+	def save(self,*args,**kwargs):
+		result=super().save(*args,**kwargs)
+		# Compatibility for trusted legacy primary-project assignment: claim only an
+		# unowned project. A later account/grant can never replace an existing owner.
+		if self.role==self.Roles.ADMIN and self.project_id and not self.user.is_superuser:
+			unowned=Project.objects.filter(pk=self.project_id,administrator__isnull=True)
+			if self.company_id is not None:unowned=unowned.filter(company_id=self.company_id)
+			if self.admin_industry_id:unowned=unowned.filter(industry=self.admin_industry.code)
+			if not self.admin_industry_pending:unowned.update(administrator_id=self.user_id)
+		return result
 
 	def __str__(self) -> str:
 		return f"{self.user.username} ({self.get_role_display()})"
@@ -229,13 +256,27 @@ class Checklist(models.Model):
 
 	def save(self, *args, **kwargs):
 		if self._state.adding and self.project_id:
+			if self.project.review_layers in (3,4):
+				if not isinstance(self.intake_metadata,dict):
+					raise ValidationError('Task intake context must be an object.')
+				self.intake_metadata={**self.intake_metadata,'project_review_layers':self.project.review_layers}
+				self.governance_mode=self.GovernanceMode.INDEPENDENT
+				self.client_review_required=self.project.review_layers==4
 			template = self.checklist_template or self.project.checklist_template
 			if template:
 				if not template.published:
 					raise ValidationError('Only a published checklist template can be assigned to a survey.')
+				from .standard_checklist_service import validate_standard_project
+				validate_standard_project(template,self.project,self.workflow_type)
 				self.checklist_template = template
 				self.schema_snapshot = deepcopy(template.definition)
 				self.branding_snapshot = deepcopy(template.branding())
+		elif self.pk:
+			previous=type(self).objects.filter(pk=self.pk).values_list('intake_metadata',flat=True).first()
+			old_layers=previous.get('project_review_layers') if isinstance(previous,dict) else None
+			new_layers=self.intake_metadata.get('project_review_layers') if isinstance(self.intake_metadata,dict) else None
+			if old_layers!=new_layers or (old_layers in (3,4) and self.governance_mode!=self.GovernanceMode.INDEPENDENT):
+				raise ValidationError('The task project approval policy is frozen. Existing activities cannot be silently converted.')
 		return super().save(*args, **kwargs)
 
 	def __str__(self) -> str:
@@ -478,7 +519,7 @@ class ElectricalData(models.Model):
 	def __str__(self):
 		return f"Electrical Data - Row {self.row_number}"
 
-from .photo_models import PhotoEvidence, PhotoJob, PhotoDraft, PhotoWorkerLease  # noqa: E402,F401
+from .photo_models import PhotoEvidence, PhotoJob, PhotoDraft, PhotoWorkerLease, PhotoObservation, PhotoSearchVector, PhotoSearchResult  # noqa: E402,F401
 
 from .governance_models import ProjectInvitation, GovernanceAudit, GovernanceState  # noqa: E402,F401
 
@@ -489,3 +530,9 @@ from .photo_models import PhotoPlacement  # noqa: E402,F401
 from .intake_models import AssignmentIntakeBatch  # noqa: E402,F401
 from .revision_models import ChecklistReviewPolicy, SubmissionRevision, RevisionDecision  # noqa: E402,F401
 from .roadmap_models import WorkflowTemplateQualification, InspectionFinding, FindingEvent  # noqa: E402,F401
+
+from .work_profile_models import WorkProfile, ProfessionalExperience  # noqa: E402,F401
+from .evidence_models import EvidenceAnalysisRecord, EvidenceRuleRelease, EvidenceCorrection, EvidenceCorrectionDecision  # noqa: E402,F401
+from .evidence_models import EvidenceReviewBinding  # noqa: E402,F401
+from .checklist_import_models import ChecklistImportBatch  # noqa: E402,F401
+from .review_route_models import ReviewRoute, ReviewRouteEvent  # noqa: E402,F401

@@ -1,0 +1,21 @@
+/* Primary navigation lives in the header. Record-specific checklist panes stay local. */
+body.role-layout.workspace-header-navigation{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);--rl-sidebar:0px}
+.workspace-header-navigation .role-page-content{grid-column:1!important;min-width:0}
+.workspace-header-navigation .app-header.enterprise-header{gap:10px 16px;padding-bottom:0;flex-shrink:0}
+.workspace-navigation-row{flex:0 0 100%;width:100%;min-width:0;border-top:1px solid #ffffff26;padding:9px 0 10px}
+.workspace-header-navigation .workspace-nav-tiles{display:flex!important;flex-direction:row!important;align-items:stretch;justify-content:flex-start;gap:7px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;margin:0;padding:0;border:0;background:transparent!important;max-width:100%}
+html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles a,.workspace-header-navigation .workspace-nav-tiles a{display:flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;min-height:38px;padding:8px 13px!important;border:1px solid #ffffff45!important;border-radius:4px;background:#245f9c!important;background:color-mix(in srgb,var(--appearance-accent,#245f9c) 75%,#142b46)!important;color:#fff!important;font-size:13px!important;font-weight:500;line-height:1.3;text-decoration:none;white-space:nowrap;box-shadow:none}
+html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles a[aria-current=page]{background:#fff!important;color:#173d66!important;border-color:#fff!important;font-weight:700}
+.workspace-header-navigation .workspace-nav-tiles a:hover{filter:brightness(1.15)}
+.workspace-header-navigation .workspace-nav-tiles a:focus-visible{outline:2px solid #fff!important;outline-offset:-4px}
+.workspace-header-navigation .workspace-nav-tiles a::before{content:none!important}
+.workspace-nav-icon{width:17px;height:17px;flex:0 0 17px;display:block}
+.workspace-header-navigation .enterprise-breadcrumb{padding-top:12px;font-size:13px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.workspace-header-navigation .enterprise-header-actions{gap:14px}
+body.workspace-header-navigation.super-console .role-page-content{flex:1;min-height:0;height:auto!important}
+@media(max-width:980px){body.role-layout.workspace-header-navigation{display:flex;flex-direction:column}.workspace-header-navigation .app-header.enterprise-header{padding:9px 12px 0}.workspace-header-navigation .enterprise-header-actions{margin-left:auto;gap:10px}.workspace-header-navigation .header-select select{max-width:210px}.workspace-navigation-row{padding-top:8px;padding-bottom:8px}.workspace-header-navigation .workspace-nav-tiles a{min-height:36px;padding:8px 11px!important;font-size:12px!important}.workspace-header-navigation .enterprise-breadcrumb{padding:10px 14px 0}.workspace-header-navigation .role-page-content{width:100%}}
+@media(max-width:480px){.workspace-header-navigation .enterprise-header-actions{flex:1 1 auto;justify-content:flex-end;gap:10px}.workspace-header-navigation .header-select{max-width:calc(50% - 8px);min-width:0}.workspace-header-navigation .header-select select{max-width:100%;width:100%}.workspace-header-navigation .enterprise-brand{margin-right:auto}.workspace-header-navigation .enterprise-header-actions summary{font-size:12px}.workspace-header-navigation .enterprise-header-actions>a{font-size:12px}}
+@media print{.workspace-navigation-row{display:none!important}}
+
+/* Header tiles are the single industry/admin section navigator. */
+.workspace-header-navigation .sa-desk-section-tabs{display:none}

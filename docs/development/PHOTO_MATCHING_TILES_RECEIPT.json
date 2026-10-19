@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-19",
+  "scope": "Metadata-first photo matching with separate two-photo review pages",
+  "processing_order": [
+    "Verify installed local vision model capability",
+    "Extract or reuse per-photo visual metadata",
+    "Compare observations against frozen checklist labels, descriptions and context",
+    "Store proposed photo/checklist links",
+    "Human selects and confirms links"
+  ],
+  "matching_limit": "Existing deterministic lexical/context matching; no additional AI reasoning service introduced. Processing sequence is per photo, not a barrier requiring every photo to finish observation before any matching.",
+  "changes": [
+    "Separate Needs matching queue; two photos per page and two columns on desktop, one mobile",
+    "One photo card per source ID; one section/item dropdown, saved observations and confirmation control",
+    "Existing confirmed links preserved; ambiguous matches require explicit selection",
+    "Source viewer and history collapsed by default to avoid duplicate simultaneous presentation",
+    "Existing exact-byte per-checklist upload dedup retained; originals never deleted"
+  ],
+  "schema_changes": false,
+  "tests": {
+    "backend_focused": 18,
+    "browser_cases": 17,
+    "browser_failures": 0,
+    "browser_operational_writes": 0,
+    "live_roles": 5,
+    "original_photos_preserved": 78
+  },
+  "evidence": [
+    ".local/photo-tiles-backend-tests.log",
+    ".local/photo-tiles-qa/receipt.json",
+    ".local/photo-tiles-live-verified.json"
+  ],
+  "github_push": false
+}

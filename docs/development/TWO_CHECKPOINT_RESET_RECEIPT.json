@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-19",
+  "user_authorization": "Remove old operational data and start from zero with two checkpoints and two photos",
+  "archive": ".local/backups/project-checkpoint-20261019-142515",
+  "archived_database": "retired-survey.sqlite3",
+  "archived_media": "retired-media",
+  "reset_method": "Prepared and validated fresh migrated database/media, preserved account identity/company/profile foundation, atomically installed after stopping only verified app launcher. Previous database, media, photos and approvals remain recoverable in the local archive.",
+  "live_state": {
+    "projects": 1,
+    "tasks": 1,
+    "site": "TEST-SITE-001",
+    "checkpoints": 2,
+    "photos": 2,
+    "checklist_status": "DRAFT",
+    "assignment_status": "PENDING",
+    "saved_answers": 0,
+    "photo_links": 0,
+    "photo_jobs": 0,
+    "approvals": 0
+  },
+  "kept_existing_accounts": 18,
+  "new_quality_engineer": "demo_qa01",
+  "quality_account_creation": "Normal scoped Admin invitation and acceptance",
+  "main_accounts": {
+    "engineer": "demo_eng01",
+    "quality_engineer": "demo_qa01",
+    "team_lead": "demo_lead01",
+    "client": "demo_client01",
+    "admin": "demo_admin01"
+  },
+  "private_credentials_and_steps": ".local/TWO_CHECKPOINT_TEST_GUIDE.md",
+  "photos": "Exact-byte copies of two existing archived-source field photos (site sign and tower); no old analysis or mapping decisions imported",
+  "checkpoints": [
+    "Site identification sign condition",
+    "Tower structure and ladder condition"
+  ],
+  "submission_rules": "Both inspection results and explicitly confirmed photo evidence required. Explicit QE assignment retained; no bypass.",
+  "fixes": [
+    "QE rejection reason and reviewer now populate Engineer correction feedback",
+    "Shared visible success/error feedback with accessibility semantics and no duplicate message loops"
+  ],
+  "root_cause": "Old rejected checklist had no Quality Engineer, and no QE account existed. Its submission was blocked by the required review control. Separately, QE rejection reason was not shown in the Engineer feedback panel.",
+  "validation": {
+    "full_core_tests": 328,
+    "full_core_seconds": 26.35,
+    "private_browser_workflow_cases": 8,
+    "exact_fresh_seed_private_acceptance_checks": 7,
+    "live_readonly_http_checks": 10,
+    "live_desktop_mobile_browser_cases": 4,
+    "live_operational_approval_test_writes": 0
+  },
+  "evidence": [
+    ".local/reset-rectification-core-tests.log",
+    ".local/submission-browser-qa/combined-receipt.json",
+    ".local/two-point-exact-acceptance/receipt.json",
+    ".local/reset-readonly-smoke/receipt.json",
+    ".local/reset-readonly-smoke/browser-receipt.json",
+    ".local/reset-readonly-smoke/post-browser-state.json"
+  ],
+  "runtime_launcher_pid": 36376,
+  "schema_changes": false,
+  "github_push": false
+}

@@ -31,6 +31,7 @@ class ChecklistSelectionTests(TestCase):
         self.quality=self.person('selection_quality',Profile.Roles.QUALITY_ENGINEER,self.project)
         self.client_user=self.person('selection_client',Profile.Roles.CLIENT,self.project)
         self.foreign_admin=self.person('selection_foreign_admin',Profile.Roles.ADMIN,self.foreign_project)
+        self.project.refresh_from_db()  # Preserve the Admin owner claimed by Profile.save.
         self.schema={'title':'Synthetic branded source','metadata':{'purpose':['preserve']},'sections':[
             {'id':'general','title':'General','group':'Site evidence','metadata':{'note':'keep'},'fields':[
                 {'id':'site_id','label':'Site ID','type':'text','system':'site_id','required':True},

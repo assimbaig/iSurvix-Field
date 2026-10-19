@@ -1,6 +1,7 @@
 from django.urls import path
 from . import photo_views as v
 urlpatterns=[
+ path('<int:checklist_id>/fast-state/',v.fast_state,name='photo_fast_state'),
  path('<int:checklist_id>/mapping/',v.mapping,name='photo_mapping'),
  path('<int:checklist_id>/',v.workspace,name='photo_workspace'),
  path('<int:checklist_id>/state/',v.state,name='photo_state'),

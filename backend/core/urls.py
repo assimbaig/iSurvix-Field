@@ -2,14 +2,25 @@ from django.urls import include, path
 
 from . import views, template_views, selection_views, field_intake_views
 from . import account_views
+from . import standard_checklist_views
+from . import checklist_wizard_views
 from .legacy_routes import protected_legacy
 
 urlpatterns = [
+    path('governance/industries/',include('core.industry_urls')),
+    path('work/review-routes/',include('core.review_route_urls')),
+    path('devadmin/checklist-wizard/',checklist_wizard_views.wizard,name='checklist_wizard'),
+    path('devadmin/checklist-wizard/workbook/',checklist_wizard_views.workbook,name='checklist_wizard_workbook'),
+    path('devadmin/checklist-wizard/<int:template_id>/',checklist_wizard_views.edit,name='checklist_wizard_edit'),
+    path('devadmin/checklist-wizard/<int:template_id>/export/',checklist_wizard_views.export,name='checklist_wizard_export'),
     path('governance/', include('core.governance_urls')),
+    path('evidence/', include('core.evidence_urls')),
     path('custom-checklist/<int:checklist_id>/site-information/', field_intake_views.site_information, name='checklist_site_information'),
     path('custom-checklist/<int:checklist_id>/review/', template_views.custom_review, name='custom_checklist_review'),
     path('devadmin/checklist-templates/', template_views.template_builder, name='checklist_templates'),
     path('devadmin/checklist-templates/select/', selection_views.select_checklist, name='checklist_template_select'),
+    path('devadmin/checklist-templates/standards/', standard_checklist_views.library, name='standard_checklists'),
+    path('devadmin/checklist-templates/standards/preview/', standard_checklist_views.preview, name='standard_checklist_preview'),
     path('devadmin/checklist-templates/<int:template_id>/', template_views.template_builder, name='checklist_template_edit'),
     path('devadmin/checklist-templates/<int:template_id>/logo/<str:slot>/', template_views.template_logo, name='checklist_template_logo'),
     path('custom-checklist/<int:checklist_id>/', template_views.custom_survey, name='custom_checklist'),

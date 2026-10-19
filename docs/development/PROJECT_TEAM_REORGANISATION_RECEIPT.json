@@ -1,0 +1,278 @@
+{
+  "retain_super_admin": "super_assim",
+  "accounts": [
+    {
+      "old_username": "demo_admin01",
+      "username": "admin01",
+      "role": "ADMIN",
+      "project_ids": [
+        2,
+        3
+      ],
+      "user_id": 17
+    },
+    {
+      "old_username": "demo_client01",
+      "username": "client01",
+      "role": "CLIENT",
+      "project_ids": [
+        2
+      ],
+      "user_id": 12
+    },
+    {
+      "old_username": "test_client01",
+      "username": "client02",
+      "role": "CLIENT",
+      "project_ids": [
+        3
+      ],
+      "user_id": 20
+    },
+    {
+      "old_username": "demo_lead01",
+      "username": "teamlead01",
+      "role": "TEAM_LEAD",
+      "project_ids": [
+        2,
+        3
+      ],
+      "user_id": 15
+    },
+    {
+      "old_username": "demo_qa01",
+      "username": "qa01",
+      "role": "QUALITY_ENGINEER",
+      "project_ids": [
+        2,
+        3
+      ],
+      "user_id": 19
+    },
+    {
+      "old_username": "demo_eng01",
+      "username": "engineer01",
+      "role": "ENGINEER",
+      "project_ids": [
+        2,
+        3
+      ],
+      "user_id": 2
+    }
+  ],
+  "remove_users": [
+    {
+      "id": 3,
+      "username": "demo_eng02"
+    },
+    {
+      "id": 4,
+      "username": "demo_eng03"
+    },
+    {
+      "id": 5,
+      "username": "demo_eng04"
+    },
+    {
+      "id": 6,
+      "username": "demo_eng05"
+    },
+    {
+      "id": 7,
+      "username": "demo_eng06"
+    },
+    {
+      "id": 8,
+      "username": "demo_eng07"
+    },
+    {
+      "id": 9,
+      "username": "demo_eng08"
+    },
+    {
+      "id": 10,
+      "username": "demo_eng09"
+    },
+    {
+      "id": 11,
+      "username": "demo_eng10"
+    },
+    {
+      "id": 13,
+      "username": "demo_client02"
+    },
+    {
+      "id": 14,
+      "username": "demo_client03"
+    },
+    {
+      "id": 16,
+      "username": "demo_lead02"
+    },
+    {
+      "id": 18,
+      "username": "demo_admin02"
+    }
+  ],
+  "preserve_legacy_project": 1,
+  "projects": [
+    {
+      "id": 2,
+      "name": "Test Project 1",
+      "review_layers": 4
+    },
+    {
+      "id": 3,
+      "name": "Test Project 2",
+      "review_layers": 4
+    }
+  ],
+  "completed_at": "2026-10-19T15:10:34.749530+00:00",
+  "active_accounts": 7,
+  "removed_unused_temporary_accounts": 13,
+  "passwords_changed": false,
+  "super_admin_unchanged": true,
+  "protected_tables_unchanged": [
+    "django_migrations",
+    "auth_group_permissions",
+    "auth_user_groups",
+    "auth_user_user_permissions",
+    "django_admin_log",
+    "django_content_type",
+    "auth_permission",
+    "auth_group",
+    "core_geolocation",
+    "core_checklistsection",
+    "core_checklistimage",
+    "core_electricaldata",
+    "core_towerequipment",
+    "core_dcpowersystemdata",
+    "core_workassignment",
+    "core_checklisttemplate",
+    "core_photoworkerlease",
+    "core_photojob_photos",
+    "core_photodraft",
+    "core_company",
+    "core_checklistaireview",
+    "core_assignmentintakebatch",
+    "core_photoplacement",
+    "core_photoevidence",
+    "core_photojob",
+    "core_revisiondecision",
+    "core_inspectionfinding",
+    "core_findingevent",
+    "core_workflowtemplatequalification",
+    "core_checklist",
+    "core_checklistreviewpolicy",
+    "core_submissionrevision",
+    "core_workprofile",
+    "core_professionalexperience",
+    "core_evidenceanalysisrecord",
+    "core_evidencecorrection",
+    "core_evidencecorrectiondecision",
+    "core_evidencerulerelease",
+    "core_evidencereviewbinding",
+    "core_checklistimportbatch",
+    "core_reviewroute",
+    "core_reviewrouteevent",
+    "core_industrycatalog"
+  ],
+  "original_file_hashes_unchanged": 6,
+  "legacy_project_retained_without_active_grants": 1,
+  "revoked_pending_invitations": 0,
+  "invalidated_staff_sessions": 20,
+  "checkpoint": ".local/backups/project-checkpoint-20261019-180751",
+  "status": "completed",
+  "verification": {
+    "accounts": [
+      {
+        "username": "super_assim",
+        "role": "SUPER_ADMIN",
+        "project_ids": [
+          1,
+          2,
+          3
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      },
+      {
+        "username": "admin01",
+        "role": "ADMIN",
+        "project_ids": [
+          2,
+          3
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      },
+      {
+        "username": "client01",
+        "role": "CLIENT",
+        "project_ids": [
+          2
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      },
+      {
+        "username": "client02",
+        "role": "CLIENT",
+        "project_ids": [
+          3
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      },
+      {
+        "username": "teamlead01",
+        "role": "TEAM_LEAD",
+        "project_ids": [
+          2,
+          3
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      },
+      {
+        "username": "qa01",
+        "role": "QUALITY_ENGINEER",
+        "project_ids": [
+          2,
+          3
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      },
+      {
+        "username": "engineer01",
+        "role": "ENGINEER",
+        "project_ids": [
+          2,
+          3
+        ],
+        "live_login": true,
+        "scope_checks": 3,
+        "password_unchanged": true
+      }
+    ],
+    "live_login_count": 7,
+    "project_scope_checks": 21,
+    "active_memberships": 10,
+    "temporary_users_remaining": 0,
+    "result": "passed"
+  },
+  "credential_files": {
+    "excel": ".local/private/iSurvix_Usernames_and_Passwords.xlsx",
+    "word": ".local/private/iSurvix_Current_Usernames_and_Passwords.docx",
+    "original_word_locked": true,
+    "native_word_render_available": false,
+    "excel_rows_verified": 7
+  }
+}

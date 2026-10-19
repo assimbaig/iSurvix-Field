@@ -41,15 +41,23 @@ def review_quality(actor,checklist,decision,reason='',expected_updated_at=''):
         raise ValidationError('This checklist is not awaiting Quality Control.')
     if decision not in {'approve','reject'} or not isinstance(reason,str) or len(reason)>4000 or decision=='reject' and not reason.strip():
         raise ValidationError('Choose approve or reject; rejection requires a reason of at most 4000 characters.')
+    if decision=='approve':
+        # Team Lead partial approval validates only its selected sections.
+        # Quality Control reviews the available submission; unfinished jobs
+        # must not alter its signed evidence after this decision.
+        if checklist.photo_jobs.filter(schema=checklist.schema_snapshot,status__in=['queued','running']).exists():
+            raise ValidationError('Finish active AI Analysis before Quality Control approval.')
     record={'decision':'approved' if decision=='approve' else 'rejected','reviewer_id':actor.pk,'name':actor.username,'reason':reason.strip(),'time':timezone.now().isoformat(),'digest':quality_digest(checklist)}
     checklist.quality_approval=record
     if decision=='reject':
         checklist.status=Checklist.Status.REJECTED
         checklist.section_approvals={}
+        checklist.comment=reason.strip()
+        checklist.comment_by=actor
     else:
         checklist.status=Checklist.Status.REVIEW
     checklist.review_history=[*(checklist.review_history or []),{'action':'quality_'+decision,**record}]
-    checklist.save(update_fields=['quality_approval','status','section_approvals','review_history','updated_at'])
+    checklist.save(update_fields=['quality_approval','status','section_approvals','review_history','comment','comment_by','updated_at'])
     sync_assignment(checklist)
     audit(actor,'quality_'+decision,checklist.project,checklist_id=checklist.pk,reason=reason.strip())
     return record

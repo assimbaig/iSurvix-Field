@@ -115,14 +115,21 @@ class GovernanceTests(TestCase):
         for path in paths:
             self.assertEqual(strict.post(path).status_code,403)
 
-    def test_only_super_can_create_projects_and_invite_project_admin(self):
-        for user in [self.admin,self.lead,self.engineer]:
+    def test_only_bound_admin_creates_projects_and_super_invites_project_admin(self):
+        for user in [self.super,self.lead,self.engineer]:
             self.login(user)
-            self.assertEqual(self.client.post(reverse('governance_projects'),{'name':'Forbidden'}).status_code,403)
+            self.assertEqual(self.client.post(reverse('governance_projects'),{'name':'Forbidden','review_layers':3}).status_code,403)
+        from .models import Company
+        company=Company.objects.create(name='Scoped project creation tenant')
+        self.admin.profile.company=company
+        self.admin.profile.admin_industry=IndustryCatalog.objects.get(code='telecom')
+        self.admin.profile.save()
+        self.login(self.admin)
+        self.assertEqual(self.client.post(reverse('governance_projects'),{'name':'New synthetic','review_layers':3}).status_code,302)
+        self.assertTrue(Project.objects.filter(name='New synthetic',company=company,administrator=self.admin).exists())
         self.login(self.super)
-        self.assertEqual(self.client.post(reverse('governance_projects'),{'name':'New synthetic','checklist_template':self.template.pk}).status_code,302)
-        self.assertTrue(Project.objects.filter(name='New synthetic').exists())
-        self.assertEqual(self.invite(role=Profile.Roles.ADMIN).status_code,200)
+        self.assertEqual(self.client.post(reverse('governance_invite'),{'email':'new@example.test',
+            'role':Profile.Roles.ADMIN,'company':company.pk,'admin_industry':IndustryCatalog.objects.get(code='telecom').pk}).status_code,200)
         self.assertEqual(ProjectInvitation.objects.get().role,Profile.Roles.ADMIN)
         self.assertNotEqual(self.invite(email='escalate@example.test',role=Profile.Roles.SUPER_ADMIN).status_code,200)
 

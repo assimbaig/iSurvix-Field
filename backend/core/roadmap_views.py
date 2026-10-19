@@ -48,6 +48,8 @@ class ReviewPolicyForm(forms.Form):
 
 
 def can_configure_policy(actor,c,policy):
+    from .review_route_service import route_for
+    if route_for(c):return False
     from .access import can_access_project
     if not can_access_project(actor,c.project_id) or c.status not in {Checklist.Status.DRAFT,Checklist.Status.REJECTED}:
         return False
@@ -73,10 +75,13 @@ def activity(request,checklist_id):
     current=policy.current_revision if policy else None
     state=revision_state(current) if current else 'draft'
     role=role_for(request.user)
+    from .review_route_service import route_context
+    routing=route_context(request.user,c)
+    if routing:state='closed' if routing['stage']=='closed' else routing['stage']+'_'+routing['mode']
     quality_flow=bool(current and current.workflow_version>=2 or not current and policy and policy.workflow_version>=2)
     l2_role=Profile.Roles.QUALITY_ENGINEER if quality_flow else Profile.Roles.TEAM_LEAD
     l3_role=Profile.Roles.TEAM_LEAD if quality_flow else Profile.Roles.PROJECT_MANAGER
-    return render(request,'dashboards/roadmap_activity.html',{'checklist':c,'can_configure_policy':can_configure_policy(request.user,c,policy),'policy_form':ReviewPolicyForm(checklist=c),'quality_flow':quality_flow,'policy':policy,'current_revision':current,'revision_state':state,'revisions':c.submission_revisions.order_by('-number').prefetch_related('decisions__actor'),'qualification':current_qualification(c),'findings':c.inspection_findings.prefetch_related('events__actor').order_by('-pk'),'finding_form':FindingForm(),'can_record_finding':bool(access.get('can_edit') and role==Profile.Roles.ENGINEER and c.user_id==request.user.pk),'can_validate':bool(policy and current and state=='submitted' and request.user.pk==policy.l2_reviewer_id and role==l2_role),'can_approve':bool(policy and current and state=='validated' and request.user.pk==policy.l3_approver_id and role==l3_role),'can_return':bool(policy and current and (state=='submitted' and request.user.pk==policy.l2_reviewer_id or state=='validated' and request.user.pk==policy.l3_approver_id)),'can_retest':bool(policy and not is_frozen(c) and c.status!=Checklist.Status.FINAL and request.user.pk in {policy.l2_reviewer_id,policy.l3_approver_id}),'can_qualify':role in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER},'role':role})
+    return render(request,'dashboards/roadmap_activity.html',{'review_route':routing,'checklist':c,'can_configure_policy':can_configure_policy(request.user,c,policy),'policy_form':ReviewPolicyForm(checklist=c),'quality_flow':quality_flow,'policy':policy,'current_revision':current,'revision_state':state,'revisions':c.submission_revisions.order_by('-number').prefetch_related('decisions__actor'),'qualification':current_qualification(c),'findings':c.inspection_findings.prefetch_related('events__actor').order_by('-pk'),'finding_form':FindingForm(),'can_record_finding':bool(access.get('can_edit') and role==Profile.Roles.ENGINEER and c.user_id==request.user.pk),'can_validate':not routing and bool(policy and current and state=='submitted' and request.user.pk==policy.l2_reviewer_id and role==l2_role),'can_approve':not routing and bool(policy and current and state=='validated' and request.user.pk==policy.l3_approver_id and role==l3_role),'can_return':not routing and bool(policy and current and (state=='submitted' and request.user.pk==policy.l2_reviewer_id or state=='validated' and request.user.pk==policy.l3_approver_id)),'can_retest':bool(policy and not is_frozen(c) and c.status!=Checklist.Status.FINAL and request.user.pk in {policy.l2_reviewer_id,policy.l3_approver_id}),'can_qualify':role in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER},'role':role})
 
 
 @login_required

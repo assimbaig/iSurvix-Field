@@ -29,16 +29,25 @@ def configured_client_review(project_id):
 
 
 def closed_activity(checklist):
+    from .review_route_service import route_for
+    route=route_for(checklist)
+    if route:return route.stage=='closed'
     if checklist.client_review_completed_at or checklist.client_review_required is False:
         return True
     return WorkAssignment.objects.filter(checklist_id=checklist.pk,status=WorkAssignment.Status.COMPLETED).exists()
 
 
 def can_client_decide(checklist):
+    from .review_route_service import route_for
+    route=route_for(checklist)
+    if route:return route.stage=='client' and route.mode=='review' and route.layer_count==4
     return checklist.status==Checklist.Status.FINAL and not closed_activity(checklist)
 
 
 def workflow_stage(checklist):
+    from .review_route_service import route_for
+    route=route_for(checklist)
+    if route:return route.stage
     if getattr(checklist,'governance_mode','legacy')=='independent':
         from .independent_workflow import policy_for,revision_state
         policy=policy_for(checklist)
@@ -61,6 +70,9 @@ def workflow_stage(checklist):
 
 
 def workflow_label(checklist):
+    from .review_route_service import route_for,LABELS
+    route=route_for(checklist)
+    if route:return 'Activity closed' if route.stage=='closed' else (LABELS[route.stage]+' clarification required' if route.mode=='clarification' else 'Awaiting '+LABELS[route.stage])
     stage=workflow_stage(checklist)
     if stage=='closed':
         return 'Activity closed - no client review configured' if checklist.client_review_required is False else 'Activity closed'
@@ -80,6 +92,14 @@ def workflow_label(checklist):
 
 
 def sync_assignment(checklist):
+    from .review_route_service import route_for
+    route=route_for(checklist)
+    if route:
+        stage=route.stage
+        status=WorkAssignment.Status.COMPLETED if stage=='closed' else WorkAssignment.Status.CLIENT_REVIEW if stage=='client' else WorkAssignment.Status.IN_PROGRESS if stage=='engineer' else WorkAssignment.Status.SUBMITTED
+        WorkAssignment.objects.filter(checklist=checklist).update(status=status,completed_at=timezone.now() if stage=='closed' else None)
+        checklist._state.fields_cache.pop('work_assignment',None)
+        return
     work=WorkAssignment.objects.filter(checklist=checklist)
     now=timezone.now()
     if checklist.status==Checklist.Status.FINAL:
@@ -98,6 +118,10 @@ def sync_assignment(checklist):
 
 
 def internal_review_completed(checklist,actor):
+    from .review_route_service import route_for
+    if route_for(checklist):
+        sync_assignment(checklist)
+        return
     if checklist.status!=Checklist.Status.FINAL:
         sync_assignment(checklist)
         return
@@ -111,6 +135,8 @@ def internal_review_completed(checklist,actor):
 
 
 def apply_client_decision(checklist,actor,authenticated_client):
+    from .review_route_service import route_for
+    if route_for(checklist):raise ValidationError('Use the token-bound project review route for this Client decision.')
     if not can_client_decide(checklist):
         raise ValidationError('This activity is already closed or is not awaiting a client decision.')
     if checklist.client_review_required is True and authenticated_client and checklist.client_approval.get('decision')=='approved':

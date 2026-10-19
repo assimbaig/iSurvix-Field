@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-19",
+  "scope": "AI Analysis progress and manual mismatch window",
+  "changes": [
+    "Front-end label AI Analysis; technical storage names unchanged",
+    "Real worker completed/total and reported stage drive progress; active current-batch label; no artificial timer",
+    "Matched counts unique photos with suggested/confirmed/manual links; mismatched counts analyzed photos without those links; pending and human-confirmed shown separately",
+    "Native dialog with independently scrolling searchable checklist and thumbnail tables",
+    "Manual link uses existing mapping API with current schema, stale source, active job and lock checks; explicit confirmation; readonly enforced"
+  ],
+  "validation": {
+    "browser_cases": 21,
+    "browser_failures": 0,
+    "focused_backend_tests": 18,
+    "full_core_tests": 327,
+    "operational_browser_writes": 0
+  },
+  "data_note": "Read-only comparisons observed concurrent user checklist answers and processing records; retained without reverting. QA compared IDs and column names only; original photo hashes and accounts checked separately.",
+  "evidence": [
+    ".local/ai-analysis-qa/receipt.json",
+    ".local/ai-prefill-core-tests.log",
+    ".local/qa-readonly-changes-135339.json"
+  ],
+  "schema_changes": false
+}

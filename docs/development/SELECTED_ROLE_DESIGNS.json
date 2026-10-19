@@ -1,0 +1,97 @@
+{
+  "user_selected": true,
+  "roles": {
+    "SUPER_ADMIN": {
+      "code": "S1-6",
+      "layout": "command",
+      "layout_label": "Command center",
+      "palette": "forest",
+      "palette_label": "Forest and lime"
+    },
+    "ADMIN": {
+      "code": "A6-2",
+      "layout": "audit",
+      "layout_label": "Evidence ledger",
+      "palette": "teal",
+      "palette_label": "Teal and coral"
+    },
+    "CLIENT": {
+      "code": "C6-2",
+      "layout": "audit",
+      "layout_label": "Evidence ledger",
+      "palette": "teal",
+      "palette_label": "Teal and coral"
+    },
+    "TEAM_LEAD": {
+      "code": "T6-2",
+      "layout": "audit",
+      "layout_label": "Evidence ledger",
+      "palette": "teal",
+      "palette_label": "Teal and coral"
+    },
+    "ENGINEER": {
+      "code": "E6-2",
+      "layout": "audit",
+      "layout_label": "Evidence ledger",
+      "palette": "teal",
+      "palette_label": "Teal and coral"
+    },
+    "QUALITY_ENGINEER": {
+      "code": "Q6-2",
+      "layout": "audit",
+      "layout_label": "Evidence ledger",
+      "palette": "teal",
+      "palette_label": "Teal and coral"
+    }
+  },
+  "applied_locally": true,
+  "applied_at": "2026-10-19T12:27:02.556335",
+  "full_core_tests": 292,
+  "full_core_seconds": 24.391,
+  "browser_screen_width_cases": 51,
+  "browser_appearance_cases": 12,
+  "rendered_pages": 17,
+  "widths": [
+    1440,
+    390,
+    320
+  ],
+  "live_existing_roles_verified": 5,
+  "original_photo_hashes_preserved": 78,
+  "permissions_and_approvals_preserved": true,
+  "production_password_hashers_unchanged": true,
+  "synthetic_test_fixture_hash_override": "MD5",
+  "local_launcher_pid": 32324,
+  "github_updated": false,
+  "historical_roles_notice": "Original role selections below were superseded by the compact enterprise direction. See current_designs.",
+  "current_designs": {
+    "SUPER_ADMIN": {
+      "code": "SA-02",
+      "layout": "tabbed_desk",
+      "layout_label": "Tabbed desk",
+      "palette": "navy_white_blue",
+      "status": "Applied to live Super Admin console",
+      "internal_scroll_panels": true
+    },
+    "ADMIN": {
+      "layout": "enterprise",
+      "palette": "navy_white_blue"
+    },
+    "CLIENT": {
+      "layout": "enterprise",
+      "palette": "navy_white_blue"
+    },
+    "TEAM_LEAD": {
+      "layout": "enterprise",
+      "palette": "navy_white_blue"
+    },
+    "ENGINEER": {
+      "layout": "enterprise",
+      "palette": "navy_white_blue"
+    },
+    "QUALITY_ENGINEER": {
+      "layout": "enterprise",
+      "palette": "navy_white_blue"
+    }
+  }
+}

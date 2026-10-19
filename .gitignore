@@ -9,6 +9,8 @@ venv/
 node_modules/
 *.sqlite3
 *.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 *.log
 backend/media/*
 !backend/media/.gitkeep
@@ -19,3 +21,6 @@ backend/logs/*
 # Local launcher state
 .local/
 venv-local/
+
+# Generated local exports; reusable templates live in backend/static/core/templates/
+/outputs/

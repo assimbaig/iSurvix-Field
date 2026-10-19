@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-19",
+  "feature": "System appearance, bottom left; color-only preferences with locked layouts",
+  "schemes": [
+    "Navy",
+    "Teal",
+    "Forest",
+    "Slate",
+    "Violet",
+    "Indigo",
+    "Azure",
+    "Charcoal",
+    "Terracotta",
+    "Olive"
+  ],
+  "modes": [
+    "System",
+    "Light",
+    "Dark"
+  ],
+  "default": {
+    "scheme": "navy",
+    "mode": "system"
+  },
+  "controls": {
+    "trigger": "#appearance-toggle",
+    "panel": "#appearance-panel",
+    "mode": "#role-appearance",
+    "schemes": "#appearance-schemes",
+    "layout_locked": true,
+    "position": "Fixed bottom left; remains accessible with collapsed navigation/on phones"
+  },
+  "persistence": {
+    "scope": "Per authenticated username in this browser",
+    "key": "isurvix-appearance-v1:<encoded username>",
+    "storage_denied": "Apply for session with clear not-saved message",
+    "backend_writes": false
+  },
+  "preserved": [
+    "Super Admin SA-02 Tabbed desk",
+    "Operational workspace layouts, table/pane positions and navigation",
+    "Existing application records, role permissions, human decisions and original photos",
+    "Supplied official logo artwork"
+  ],
+  "changes": [
+    "One central control replaces page-level theme selectors",
+    "Live layout-chooser link removed; no layout controls in Appearance",
+    "Legacy unguarded photo theme block removed so photo APIs initialize without the old select",
+    "Legacy role theme listener yields to account-scoped central mode control",
+    "Palette overrides cover tasks, sticky identifying cells, photos, checklist metadata/counts, professional profiles, navigation and administration",
+    "Keyboard roving scheme radios, Escape/close/outside click, focus restoration, visible focus",
+    "Constant sidebar-footer clearance prevents preference button overlap"
+  ],
+  "validation": {
+    "focused_role_super_tests": 13,
+    "seconds": 1.45,
+    "django_check": "pass",
+    "js_syntax": "pass",
+    "utf8_files_checked": 75,
+    "live_receipt": ".local/appearance-live-verified.json",
+    "old_business_tables_preserved": 7,
+    "original_photo_hashes_preserved": 78,
+    "browser_receipt": ".local/appearance-qa/receipt.json",
+    "browser_checks": 374,
+    "geometry_color_contrast_checks": 360,
+    "interaction_checks": 14,
+    "browser_failures": [],
+    "network_write_requests": []
+  },
+  "schema_changes": false,
+  "runtime": {
+    "launcher_pid": 35524,
+    "url": "http://127.0.0.1:8000/",
+    "network": "Loopback only",
+    "active_photo_jobs_before_restart": 0
+  },
+  "github_pushed": false
+}

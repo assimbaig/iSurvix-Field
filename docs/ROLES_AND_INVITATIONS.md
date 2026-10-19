@@ -53,3 +53,19 @@ Account-wide activation, unlock and eligible role changes require authority over
 Engineer, assigned Quality Engineer and Team Lead can request critical AI review after photo processing finishes. Engineer sees its own requested reviews; assigned reviewers can inspect internal critique. Only Team Lead can explicitly share or withdraw a report for Client. Client reads require appropriate project/activity authority, internally approved status and a completed report matching current evidence. Super Admin has no engineering AI access. AI never approves, rejects, signs, edits answers or closes work. Installed model vision support is verified before analyzing photographs.
 
 The 400-photo capacity remains supported. The full checklist and 400-photo 30-minute target is not an accepted benchmark; cached timings and projections do not prove that service level.
+
+
+## Professional profiles and shared-project visibility
+
+Every active, unlocked user can open **My profile** from the user menu, edit a professional display name, headline and introduction, and preview their profile. These fields never change the account role or project grants. Publication is off by default. Publishing allows eligible people on currently shared projects to read professional information; unpublishing immediately removes that access.
+
+Engineers and Quality Engineers can add, edit and delete their own experience entries: employer/organization, role, start/end dates or current role, relevant work and self-reported qualifications. Experience appears on the published professional profile; it is not a verified certification or an approval signature. Other roles have a general profile but cannot create or modify Engineer/QA experience entries.
+
+Clients use **Work profiles** in the user menu to browse published Engineer, QA, Team Lead and Admin professional profiles on actively shared projects. Every list and detail request rechecks both parties' current project grants, company boundaries, active account state and account locks. Expired/revoked access or withdrawn publication removes visibility. Other Client accounts and Super Admin are excluded from Client discovery. Super Admin can maintain its own profile and continues using administrative account controls rather than the operational people directory. Login names, email, passwords and private account metadata are not part of another person's professional profile.
+
+Routes: `/governance/profile/` (self), `/governance/people/` (eligible directory), `/governance/people/<user_id>/` (published professional detail). Existing CSRF protection applies to editing and experience actions. Audit events record publication state and experience IDs without copying private profile text into the log. Migration0034 adds separate professional-profile/experience tables; the authorization Profile model is unchanged.
+
+
+## Appearance
+
+Open **Appearance** at the bottom left. Choose System, Light or Dark mode and one of10 color schemes. The layout remains fixed, including the Super Admin Tabbed desk. Your choice is saved for your account in this browser; it does not change permissions or another user's preferences. If browser storage is unavailable, colors still apply for the current session and the menu explains that the choice cannot be saved.

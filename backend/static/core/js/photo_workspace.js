@@ -4,17 +4,20 @@
   if (!app) return;
   const el = id => document.getElementById(id);
   const readOnly = app.dataset.readonly === 'true';
-  let photoLimit = Number(app.dataset.photoLimit) || 400;
+  let photoLimit = Number(app.dataset.photoLimit) || 500;
   let cameraFiles = null, queueBusy=false;
+  let visibleLimit=36, activeField=null;
+  function visiblePhotos(){if(!activeField)return state.photos;const ids=new Set((state.mappings||[]).filter(m=>m.field_id===activeField&&["proposed","confirmed","manual"].includes(m.status)).map(m=>m.photo_id));return state.photos.filter(p=>ids.has(p.id));}
   const pendingAnalysis=new Set();
   const selection = new Set();
   let state = {photos: [], jobs: [], drafts: []}, current = null, refreshing = false;
   const token = app.querySelector('[name=csrfmiddlewaretoken]').value;
   const base = window.location.pathname.replace(/\/?$/, '/');
-  const message = text => { el('photo-message').textContent = text; };
+  const uiText = text => String(text ?? '').replace(/metadata/gi,'AI Analysis');
+  const message = text => { el('photo-message').textContent = uiText(text); };
   function node(tag, text, cls) {
     const item = document.createElement(tag);
-    if (text !== undefined) item.textContent = text;
+    if (text !== undefined) item.textContent = uiText(text);
     if (cls) item.className = cls;
     return item;
   }
@@ -28,7 +31,7 @@
     }
     const response = await fetch(base + path, options);
     const data = await response.json().catch(() => ({error: 'Session expired or unexpected server response. Reload and sign in again.'}));
-    if (!response.ok) { const error=new Error(data.error || `Request failed (${response.status}).`);error.status=response.status;throw error; }
+    if (!response.ok) { const error=new Error(uiText(data.error || `Request failed (${response.status}).`));error.status=response.status;throw error; }
     if (!response.headers.get('content-type')?.includes('application/json')) throw new Error(data.error);
     return data;
   }
@@ -46,8 +49,9 @@
   }
   function showPhoto(photo) {
     current = photo.id;
+    if(el('photo-position'))el('photo-position').textContent=(visiblePhotos().findIndex(p=>p.id===current)+1)+' / '+visiblePhotos().length;
     renderVisualMetadata(photo);
-    if(el('photo-metadata-status'))el('photo-metadata-status').textContent=photo.metadata_ready===true?'Reusable photo metadata is ready; checklist matching can use the saved metadata.':photo.metadata_ready===false?'Photo metadata has not been extracted for the current model yet.':'';
+    if(el('photo-metadata-status'))el('photo-metadata-status').textContent=photo.metadata_ready===true?'AI Analysis is ready. Review the suggested checklist links.':photo.metadata_ready===false?'AI Analysis is pending for this photo.':'';
     document.dispatchEvent(new CustomEvent('photo-selected', {detail:photo}));
     el('photo-selected').src = photo.preview_url;
     el('photo-selected').alt = photo.filename;
@@ -55,11 +59,14 @@
     el('photo-original').href = photo.original_url; el('photo-original').hidden = false;
     const m = photo.metadata || {};
     el('photo-caption').textContent = `${photo.filename} · ${m.width || '?'} × ${m.height || '?'} · Captured: ${m.captured_at || 'not recorded'} · GPS: ${m.gps ? `${m.gps.latitude}, ${m.gps.longitude}` : 'not recorded'}${photo.advisories?.length ? ' · ' + photo.advisories.join(' ') : ''}`;
+    if(photo.uploaded_by)el('photo-caption').textContent += ' · Uploaded by: '+photo.uploaded_by;
+    if(photo.uploaded_at)el('photo-caption').textContent += ' · Uploaded: '+photo.uploaded_at;
     document.querySelectorAll('.photo-thumb button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.photo) === current)));
   }
   function render() {
-    const thumbs = el('photo-thumbs'); thumbs.replaceChildren();
-    for (const p of state.photos) {
+    const thumbs = el('photo-thumbs'),scroll=thumbs.scrollLeft,scrollTop=thumbs.scrollTop; thumbs.replaceChildren();
+    const filtered=visiblePhotos();
+    for (const p of filtered.slice(0,visibleLimit)) {
       const card = node('div', undefined, 'photo-thumb'), button = node('button');
       button.type = 'button'; button.dataset.photo = p.id; button.setAttribute('aria-label', `View ${p.filename}`);
       button.setAttribute('aria-pressed', String(p.id === current));
@@ -69,9 +76,14 @@
       check.onchange = () => { check.checked ? selection.add(p.id) : selection.delete(p.id); counts(); };
       if (!readOnly) label.append(check); label.append(document.createTextNode((p.group ? p.group + ' · ' : '') + p.filename)); card.append(button, label); thumbs.append(card);
     }
-    if (state.photos.length && !state.photos.some(p => p.id === current)) showPhoto(state.photos[0]);
+    thumbs.scrollLeft=scroll;thumbs.scrollTop=scrollTop;
+    if(filtered.length&&!filtered.some(p=>p.id===current))showPhoto(filtered[0]);
+    if(!filtered.length){current=null;el('photo-selected').hidden=true;el('photo-empty').hidden=false;el('photo-empty').textContent=activeField?'No photo evidence is linked to this checklist item.':'No source photos are recorded for this checklist.';el('photo-original').hidden=true;el('photo-caption').textContent='';}
+    if(el('photo-more'))el('photo-more').hidden=visibleLimit>=filtered.length;
+    if(el('photo-thumbnail-count'))el('photo-thumbnail-count').textContent='Showing '+Math.min(visibleLimit,filtered.length)+' of '+filtered.length+' photos';
+    if(el('photo-position'))el('photo-position').textContent=current?(filtered.findIndex(p=>p.id===current)+1)+' / '+filtered.length:'No photo selected';
     counts();
-    const selected=state.photos.find(p=>p.id===current);renderVisualMetadata(selected);if(el('photo-metadata-status'))el('photo-metadata-status').textContent=selected?.metadata_ready===true?'Reusable photo metadata is ready; checklist matching can use the saved metadata.':selected?.metadata_ready===false?'Photo metadata has not been extracted for the current model yet.':'';
+    const selected=state.photos.find(p=>p.id===current);renderVisualMetadata(selected);if(el('photo-metadata-status'))el('photo-metadata-status').textContent=selected?.metadata_ready===true?'AI Analysis is ready. Review the suggested checklist links.':selected?.metadata_ready===false?'AI Analysis is pending for this photo.':'';
     const active=state.jobs.find(j=>j.status==='running')||state.jobs.find(j=>j.status==='queued');if(el('photo-processing-stages'))el('photo-processing-stages').dataset.stage=active?.progress?.stage||(state.jobs[0]?.status==='failed'?'failed':state.analysis?.review_ready&&state.jobs[0]?.status==='completed'?'completed':'queued');
     const jobs = el('photo-jobs'); jobs.replaceChildren();
     if (!state.jobs.length) jobs.append(node('p', 'No processing jobs yet.'));
@@ -84,7 +96,7 @@
         const history=node('details'),summary=node('summary','View original attempt');history.append(summary,node('p',`${j.completed}/${j.total} photos processed in this earlier attempt.`));if(j.error)history.append(node('p',j.error));row.append(history);jobs.append(row);continue;
       }
       row.append(node('strong',`Job ${j.id} · ${j.status} · ${j.completed}/${j.total}`));
-      const stageLabels={extracting_metadata:'Extracting photo metadata',matching_checklist:'Matching metadata to checklist',completed:'Processing complete — review drafts',failed:'Processing failed'};const stage=j.status==='queued'?'Queued — waiting for the local worker':stageLabels[j.progress?.stage]||j.status;row.append(node('p',stage,'photo-job-stage'));if(j.progress?.photo_id){const photo=state.photos.find(p=>p.id===j.progress.photo_id);row.append(node('small',(j.status==='completed'?'Last processed photo: ':'Current photo: ')+(photo?.filename||j.progress.photo_id)));}if(j.progress?.cache_reused)row.append(node('p','Saved metadata reused for this photo.','photo-job-reuse'));
+      const stageLabels={extracting_metadata:'AI Analysis — examining photo',matching_checklist:'AI Analysis — matching checklist points',completed:'Processing complete — review drafts',failed:'Processing failed'};const stage=j.status==='queued'?'Queued — waiting for the local worker':stageLabels[j.progress?.stage]||j.status;row.append(node('p',stage,'photo-job-stage'));if(j.progress?.photo_id){const photo=state.photos.find(p=>p.id===j.progress.photo_id);row.append(node('small',(j.status==='completed'?'Last processed photo: ':'Current photo: ')+(photo?.filename||j.progress.photo_id)));}if(j.progress?.cache_reused)row.append(node('p','Saved AI Analysis reused for this photo.','photo-job-reuse'));
       const progress=node('progress');progress.max=j.total||1;progress.value=j.completed;progress.setAttribute('aria-label',`Job ${j.id} progress`);row.append(progress);
       if(j.error)row.append(node('p',j.error));
       if(!readOnly&&j.status==='failed'){const retry=node('button','Retry failed job');retry.type='button';retry.onclick=()=>act(retry,`jobs/${j.id}/retry/`,{});row.append(retry);}
@@ -155,11 +167,8 @@
   el('photo-refresh').onclick = refresh;
   el('photo-fullscreen').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await el('photo-viewer').requestFullscreen(); } catch { message('Fullscreen is unavailable in this browser. Open the original photo instead.'); } };
   el('catalog-mode').onclick = () => { const ungrouped = el('photo-sites').classList.toggle('photo-ungrouped'); if (ungrouped) el('photo-sites').querySelectorAll('details').forEach(item => { item.open = true; }); el('catalog-mode').textContent = ungrouped ? 'Group projects' : 'Ungroup projects'; };
-  const theme = el('photo-theme');
-  const applyTheme = value => { if (value === 'system') document.documentElement.removeAttribute('data-photo-theme'); else document.documentElement.dataset.photoTheme = value; };
-  try { theme.value = ['light', 'dark'].includes(localStorage.getItem('photo-theme')) ? localStorage.getItem('photo-theme') : 'system'; } catch { /* Storage may be disabled. */ }
-  applyTheme(theme.value);
-  theme.onchange = () => { applyTheme(theme.value); try { localStorage.setItem('photo-theme', theme.value); } catch { /* Theme remains usable without storage. */ } };
-  window.photoWorkspace={request,refresh,getState:()=>state,getCurrent:()=>current,message,readOnly};
+  // Appearance is controlled centrally by the bottom-left system menu.
+  if(el('photo-more'))el('photo-more').onclick=()=>{visibleLimit+=36;render();};
+  window.photoWorkspace={request,refresh,getState:()=>state,getCurrent:()=>current,message,readOnly,selectPhoto:id=>{const photo=state.photos.find(p=>p.id===id);if(photo){const index=visiblePhotos().findIndex(p=>p.id===id);if(index>=visibleLimit){visibleLimit=Math.ceil((index+1)/36)*36;render();}showPhoto(photo);}},getVisiblePhotos:visiblePhotos,filterField:id=>{activeField=id||null;visibleLimit=36;render();}};
   refresh(); setInterval(refresh, 6000); document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 })();

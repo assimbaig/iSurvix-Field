@@ -24,6 +24,12 @@ def validate_definition(definition):
         raise ValidationError('A checklist must contain a sections list.')
     if not 1 <= len(definition['sections']) <= 100:
         raise ValidationError('Provide between 1 and 100 sections.')
+    if 'standard_catalog' in definition:
+        from .standard_checklist_service import standard_metadata
+        standard_metadata(definition)
+    if 'wizard_context' in definition:
+        from .standard_checklist_service import wizard_metadata
+        wizard_metadata(definition)
     section_ids, field_ids = set(), set()
     for section in definition['sections']:
         if not isinstance(section, dict):
@@ -54,6 +60,10 @@ def validate_definition(definition):
                 raise ValidationError('The linked Site ID field must remain a text field.')
             if not isinstance(field.get('required', False), bool):
                 raise ValidationError('Required must be true or false.')
+            if 'evidence_rules' in field:
+                from .evidence_rules import validate_evidence_rules
+                try:validate_evidence_rules(field['evidence_rules'])
+                except ValueError as error:raise ValidationError(str(error)) from error
             if field.get('type') == 'select':
                 options = field.get('options')
                 if not isinstance(options, list) or not 1 <= len(options) <= 100 or any(not isinstance(x, str) or not x.strip() or len(x)>200 for x in options):
@@ -110,12 +120,54 @@ def validate_answer(field, value):
         raise ValidationError('Select a configured dropdown value.')
 
 
+
+def declared_evidence_missing(checklist,field,links,record_cache):
+    """Read saved results only; inference is forbidden in validation/read requests."""
+    from .evidence_rules import validate_evidence_rules
+    from .field_photo_service import schema_digest
+    from .evidence_learning import digest
+    from .evidence_models import EvidenceAnalysisRecord
+    try:rules=validate_evidence_rules(field.get('evidence_rules'))
+    except ValueError:return [field['label']+' invalid evidence requirements']
+    active={key:value for key,value in rules.items() if key not in {'version','notes'} and value not in (False,None,[],{},'any')}
+    if not active:return []
+    minimum=rules.get('min_photos',1)
+    photos={link.photo_id:link.photo for link in links}
+    if len(photos)<minimum:return [field['label']+' requires '+str(minimum)+' distinct confirmed source photos']
+    if set(active)<={'min_photos'}:return []
+    eligible=0;contradictory=False
+    for photo_id,photo in photos.items():
+        if photo_id not in record_cache:
+            record_cache[photo_id]=EvidenceAnalysisRecord.objects.filter(checklist_id=checklist.pk,project_id=checklist.project_id,company_id=checklist.project.company_id,site_id=checklist.site_id,photo_id=photo_id,photo_sha256=photo.sha256,schema_digest=schema_digest(checklist)).order_by('-pk').first()
+        record=record_cache[photo_id]
+        if not record:continue
+        try:
+            if digest(record.payload)!=record.payload_digest:continue
+        except ValidationError:continue
+        assessments=record.payload.get('assessments',[]) if isinstance(record.payload,dict) else []
+        assessment=next((item for item in assessments if isinstance(item,dict) and item.get('field_id')==field['id']),None)
+        if not assessment:continue
+        if assessment.get('outcome')=='contradictory':contradictory=True
+        if assessment.get('outcome')=='supported' and not assessment.get('hard_blocked'):eligible+=1
+    result=[]
+    if contradictory:result.append(field['label']+' has contradictory saved source evidence')
+    if eligible<minimum:result.append(field['label']+' evidence requirements need '+str(minimum)+' supported confirmed source photos; '+str(eligible)+' available')
+    return result
+
 def missing_required(checklist, evidence_checklist=None):
     from .field_photo_service import confirmed_placements
+    from .models import PhotoJob
+    source=evidence_checklist or checklist
     linked = confirmed_placements(evidence_checklist or checklist)
     answers = (checklist.answer_data or {}).get('custom', {})
     missing = []
+    if getattr(source,'pk',None) and PhotoJob.objects.filter(checklist_id=source.pk,
+            schema=source.schema_snapshot,status__in=['queued','running']).exists():
+        missing.append('Photo analysis is still active; wait for processing to finish before submission or approval')
+    record_cache={}
     for fid, field in field_map(checklist).items():
+        if field.get('evidence_rules'):
+            missing.extend(declared_evidence_missing(evidence_checklist or checklist,field,linked.get(fid,[]),record_cache))
         if field.get('photo_required') and not ((checklist.image_data or {}).get(fid) or linked.get(fid)):
             missing.append(field['label'] + ' photo evidence')
         if not field.get('required'):

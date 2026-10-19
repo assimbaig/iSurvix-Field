@@ -19,60 +19,32 @@
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}?v=clear-surfaces-2">
     <link rel="stylesheet" href="{% static 'core/css/platform_navigation.css' %}?v=super-console-1">
     {% block extra_head %}{% endblock %}
+    {% if role_design %}<link rel="stylesheet" href="{% static 'core/css/role_layout.css' %}?v=selected-designs-1"><link rel="stylesheet" href="{% static 'core/css/enterprise.css' %}?v=enterprise-1"><link rel="stylesheet" href="{% static 'core/css/appearance.css' %}?v=appearance-1">{% endif %}
+{% if role_design %}<link rel="stylesheet" href="{% static 'core/css/workspace_navigation.css' %}?v=header-tiles-1">{% endif %}
+    <link rel="stylesheet" href="{% static 'core/css/button_depth.css' %}?v=raised-1">
+<style id="workspace-feedback-styles">.workspace-feedback{margin:12px 20px;flex:0 0 auto;max-height:180px;overflow:auto}.workspace-feedback-item{padding:10px 13px;margin:0 0 8px;border:1px solid var(--rl-line,#ccd6e3);border-left:4px solid var(--rl-accent,#245f9c);border-radius:4px;background:var(--rl-surface,#fff);color:var(--rl-ink,#23344a);font-size:14px;line-height:1.5;overflow-wrap:anywhere}.workspace-feedback-item strong{display:block;font-size:12px;margin-bottom:3px}.workspace-feedback-error{border-left-color:#c83d3d}.workspace-feedback-success{border-left-color:#288250}.workspace-feedback-warning{border-left-color:#b67a14}@media(max-width:600px){.workspace-feedback{margin:10px 12px;max-height:160px}}</style>
 </head>
 
-<body class="{% if request.resolver_match.url_name == 'login' %}login-page-body{% endif %}{% block body_class %}{% endblock %}">
-    <div class="app-header shadow-soft">
-        <div class="container-fluid px-3 px-md-4">
-            <div class="d-flex align-items-center justify-content-between py-3">
-                <div class="d-flex align-items-center gap-3">
-                    <a href="/" class="text-decoration-none">
-                        <img src="{% static 'core/img/logo.png' %}" alt="iSurvix" style="width:142px;height:38px;object-fit:contain;object-position:left">
-                        <small style="display:block;color:#789084;letter-spacing:2px;font-size:10px">SURVEY</small>
-                    </a>
-                </div>
-                <div class="d-flex align-items-center gap-2 gap-md-3">
-                    {% if request.user.is_authenticated or request.session.is_dev_admin %}
-                    <div class="d-none d-md-flex align-items-center gap-2 px-3 py-2 rounded-3"
-                        style="background: rgba(99, 181, 11, 0.1);">
-                        <i class="fa-solid fa-user-circle text-primary" style="font-size: 1.25rem;"></i>
-                        <div class="d-flex flex-column">
-                            <small class="text-muted" style="font-size: 0.65rem; line-height: 1;">Logged in as</small>
-                            <span class="fw-semibold text-dark" style="font-size: 0.875rem; line-height: 1.2;">
-                                {% if request.user.is_authenticated %}
-                                {{ request.user.username }}
-                                {% elif request.session.dev_admin_username %}
-                                {{ request.session.dev_admin_username }}
-                                {% else %}
-                                Admin
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <button class="btn btn-outline-secondary btn-sm d-none d-md-inline-flex"
-                        onclick="window.location.reload()" title="Refresh Page">
-                        <i class="fa-solid fa-rotate me-1"></i>Refresh
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm d-md-none" onclick="window.location.reload()"
-                        title="Refresh Page">
-                        <i class="fa-solid fa-rotate" aria-hidden="true"></i><span>Refresh</span>
-                    </button>
-                    {% if request.user.is_authenticated or request.session.is_dev_admin %}
-                    <form method="post" action="{% url 'logout' %}" class="m-0">
-                        {% csrf_token %}
-                        <button class="btn btn-outline-danger btn-sm" aria-label="Logout">
-                            <i class="fa-solid fa-right-from-bracket me-1"></i>
-                            <span class="d-none d-md-inline">Logout</span>
-                        </button>
-                    </form>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% if local_ai_enabled and request.user.is_authenticated %}{% include 'dashboards/_primary_navigation.html' %}{% endif %}
-    {% block content %}{% endblock %}
+<body data-appearance-user="{{ request.user.username }}" {% if role_design %}data-role="{{ role_design.role }}" data-layout="{{ role_design.layout }}" data-palette="{{ role_design.palette }}" data-design-code="{{ role_design.code }}"{% endif %} class="{% if role_design %}role-layout workspace-header-navigation {% endif %}{% if request.resolver_match.url_name == 'login' %}login-page-body{% endif %}{% block body_class %}{% endblock %}">
+    <header class="app-header enterprise-header">
+        <a class="enterprise-brand" href="{% url 'governance_home' %}"><img src="{% static 'core/img/isurvix-logo-20261019.png' %}" alt="iSurvix - Intelligent Survey Index" width="136" height="44" style="display:block;width:136px;height:44px;object-fit:contain;background:#fff;border-radius:3px"></a>
+        {% if role_design %}
+
+        {% if shell_modules %}<label class="header-select"><span class="sr-only">Industry and module</span><select id="enterprise-module"><option value="">Industry / module</option>{% for module in shell_modules %}<option value="{{ module.code }}" {% if module.code == checklist.workflow_type %}selected{% endif %} data-industry="{{ module.industry }}">{{ module.label }}</option>{% endfor %}</select></label>{% endif %}
+        {% if shell_projects %}<label class="header-select"><span class="sr-only">Project</span><select id="enterprise-project"><option value="all">All permitted projects</option>{% for project in shell_projects %}<option value="{{ project.pk }}" {% if project.pk == checklist.project_id or project.pk|stringformat:"s" == selected_project_id %}selected{% endif %}>{{ project.name }}</option>{% endfor %}</select></label>{% endif %}
+        <div class="enterprise-header-actions">
+        {% if role_design.role != 'SUPER_ADMIN' and role_design.role != 'ENGINEER' %}<a href="{% url 'governance_home' %}?view=reviews" title="Review notifications">Reviews</a>{% endif %}
+        <details class="enterprise-help"><summary>Help</summary><div><strong>Workspace guide</strong><p>Use My tasks or Tasks to filter assigned work. Open a task to inspect its checklist and evidence. Confirm AI photo suggestions before submitting. Review decisions follow the assigned approval stages.</p><p>Administrators manage access and projects under Administration.</p></div></details>
+        <details class="enterprise-user"><summary>{{ request.user.username }}</summary><div><strong>{{ role_design.label }}</strong><p><a class="enterprise-account-link" href="/governance/profile/">My profile</a></p>{% if role_design.role != 'SUPER_ADMIN' %}<p><a class="enterprise-account-link" href="/governance/people/">Work profiles</a></p>{% endif %}<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" aria-label="Logout">Logout</button></form></div></details>
+        </div>{% endif %}
+        {% if local_ai_enabled and request.user.is_authenticated %}{% include 'dashboards/_primary_navigation.html' %}{% endif %}
+    </header>
+    {% if role_design %}<div class="role-page-content" id="role-page-content"><nav class="enterprise-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'governance_home' %}">Workspace</a><span aria-hidden="true"> / </span>{% if checklist %}<a href="{% url 'task_explorer' %}">Tasks</a><span aria-hidden="true"> / </span><span>{{ checklist.site_id }}</span>{% else %}<span>{% if active_view == 'my_work' %}Overview{% elif active_view == 'tasks' %}Tasks{% elif active_view == 'reviews' %}Review queue{% elif active_view == 'projects' %}Projects and sites{% elif active_view == 'administration' %}Administration{% elif active_view == 'reports' %}Reports{% elif active_view == 'dashboard' %}Dashboard{% elif active_view == 'industries' %}Industries{% elif active_view == 'clients' %}Clients{% elif active_view == 'sites' %}Sites{% else %}Workspace{% endif %}</span>{% endif %}</nav>{% endif %}
+    {% if messages %}<section class="workspace-feedback" aria-label="Action feedback" id="workspace-feedback">{% for message in messages %}<div class="workspace-feedback-item workspace-feedback-{{ message.level_tag }}" {% if message.level >= 40 %}role="alert"{% else %}role="status"{% endif %}>{% if message.level >= 40 %}<strong>Action could not be completed</strong>{% elif message.level == 30 %}<strong>Attention required</strong>{% elif message.level == 25 %}<strong>Completed</strong>{% endif %}{{ message }}</div>{% endfor %}</section>{% endif %}
+    {% comment %}The shared feedback region owns Django messages; child loops receive an empty value to avoid duplicate notices.{% endcomment %}
+    {% with messages="" %}{% block content %}{% endblock %}{% endwith %}
+    {% if role_design %}</div>{% endif %}
+    {% if role_design %}<div class="appearance-dock" id="system-appearance" data-layout-locked="true"><button type="button" id="appearance-toggle" aria-controls="appearance-panel" aria-expanded="false" title="Change colors and light or dark mode">&#9680; Appearance</button><section id="appearance-panel" aria-label="Appearance settings" hidden><header><strong>Appearance</strong><button type="button" id="appearance-close" aria-label="Close appearance settings" title="Close appearance settings">&times;</button></header><label for="role-appearance">Display mode</label><select id="role-appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select><p class="appearance-group-label" id="appearance-scheme-label">Color scheme</p><div id="appearance-schemes" role="radiogroup" aria-labelledby="appearance-scheme-label"></div><p class="appearance-lock">&#128274; Layout locked &middot; colors only</p><p id="appearance-status" role="status" aria-live="polite"></p></section></div>{% endif %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
@@ -100,6 +72,8 @@
     </script>
 
     {% block extra_js %}{% endblock %}
+    {% if role_design %}<script src="{% static 'core/js/role_layout.js' %}?v=appearance-1"></script><script src="{% static 'core/js/enterprise.js' %}?v=header-tiles-1"></script><script src="{% static 'core/js/appearance.js' %}?v=appearance-1"></script>{% endif %}
+{% if role_design %}<script src="{% static 'core/js/workspace_navigation.js' %}?v=header-tiles-1"></script>{% endif %}
 </body>
 
 </html>

@@ -3,11 +3,12 @@ from django.conf import settings
 from django.db import models
 
 class ProjectInvitation(models.Model):
+    company=models.ForeignKey('core.Company',null=True,blank=True,on_delete=models.PROTECT,related_name='administration_invitations')
     admin_industry=models.ForeignKey('core.IndustryCatalog',null=True,blank=True,on_delete=models.PROTECT,related_name='admin_invitations')
     token_hash=models.CharField(max_length=64,unique=True)
     email=models.EmailField()
     role=models.CharField(max_length=20)
-    project=models.ForeignKey('core.Project',on_delete=models.CASCADE,related_name='invitations')
+    project=models.ForeignKey('core.Project',null=True,blank=True,on_delete=models.CASCADE,related_name='invitations')
     created_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL,related_name='created_project_invitations')
     expires_at=models.DateTimeField()
     accepted_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL,related_name='accepted_project_invitations')

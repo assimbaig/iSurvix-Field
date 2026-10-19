@@ -250,9 +250,10 @@ class ReviewWorkflowTests(TestCase):
         self.client.force_login(self.super)
         self.assertEqual(self.client.post(url,{'administrator':candidate.pk}).status_code,403)
         self.project.refresh_from_db()
-        self.assertIsNone(self.project.administrator)
+        self.assertEqual(self.project.administrator,self.admin)
 
     def test_project_admin_invitation_acceptance_sets_project_administrator_and_bound_scope(self):
+        self.project=Project.objects.create(name='Unowned project awaiting invited Admin',checklist_template=self.template)
         self.client.force_login(self.super)
         email='new-project-administrator@example.test'
         response=self.client.post(reverse('governance_invite'),{'email':email,'role':Profile.Roles.ADMIN,'project':self.project.pk,'admin_industry':IndustryCatalog.objects.get(code=self.project.industry).pk})

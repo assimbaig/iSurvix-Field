@@ -16,7 +16,7 @@ def schema_digest(checklist):
 
 def field_catalog(checklist):
     from .template_views import field_is_locked
-    return [{'id':f['id'],'label':f['label'],'type':f['type'],'required':f.get('required',False),'section_id':s['id'],'section_title':s['title'],'locked':field_is_locked(checklist,f['id'])} for s in checklist.schema_snapshot.get('sections',[]) for f in s['fields']]
+    return [{'id':f['id'],'label':f['label'],'type':f['type'],'description':' '.join(f.get(key,'') for key in ('description','help_text','question','instructions') if isinstance(f.get(key,''),str)),'section_description':s.get('description',''),'group':f.get('group',s.get('group','')),'required':f.get('required',False),'section_id':s['id'],'section_title':s['title'],'locked':field_is_locked(checklist,f['id'])} for s in checklist.schema_snapshot.get('sections',[]) for f in s['fields']]
 
 def placements(checklist):
     return PhotoPlacement.objects.filter(photo__checklist=checklist,schema_digest=schema_digest(checklist)).select_related('photo').order_by('photo_id','field_id')
@@ -45,7 +45,14 @@ def coverage(checklist):
         answer=answers.get(field['id'])
         human_na=not mandatory and isinstance(answer,dict) and answer.get('result')=='Not applicable' and isinstance(answer.get('remarks'),str) and bool(answer['remarks'].strip())
         state='not_applicable' if human_na else 'covered' if accepted or existing else 'uncertain' if proposed[field['id']] else 'missing'
-        slots.append({'field_id':field['id'],'label':field['label'],'section_id':field['section_id'],'status':state,'required':bool(mandatory),'requirement':'Required photo' if mandatory else 'Recommended evidence','photo_ids':accepted,'proposed_photo_ids':proposed[field['id']]})
+        requirements=[]
+        if schema_field.get('evidence_rules'):
+            from .template_service import declared_evidence_missing
+            requirements=declared_evidence_missing(checklist,schema_field,confirmed.get(field['id'],[]),{})
+            if requirements:
+                mandatory=True
+                if state=='covered':state='uncertain'
+        slots.append({'field_id':field['id'],'label':field['label'],'section_id':field['section_id'],'status':state,'required':bool(mandatory),'requirement':'Required photo' if mandatory else 'Recommended evidence','photo_ids':accepted,'proposed_photo_ids':proposed[field['id']],'evidence_requirements':requirements})
     return {'required':slots,'evidence_slots':slots,'required_missing_count':sum(p['required'] and p['status']!='covered' for p in slots),'recommended_missing_count':sum(not p['required'] and p['status'] in {'missing','uncertain'} for p in slots),**{state+'_count':sum(item['status']==state for item in slots) for state in ('missing','uncertain','covered','not_applicable')}}
 def mapping_state(checklist):
     catalog={f['id']:f for f in field_catalog(checklist)}
@@ -119,6 +126,8 @@ def review_mappings(request,checklist_id,decisions,expected_digest):
         current.reviewed_by=request.user
         current.reviewed_at=timezone.now()
         current.save()
+        from .evidence_learning import capture_correction
+        capture_correction(request.user,c,photo,fid,action,mapping_id=current.pk)
         audit(request.user,'photo_mapping_'+action,c.project,checklist_id=c.pk,photo_id=pid,field_id=fid,placement_id=current.pk)
     return c
 
@@ -129,13 +138,46 @@ def analysis_state(checklist):
     from .models import PhotoJob
     source_ids=set(checklist.photo_evidence.values_list('pk',flat=True))
     analyzed=set()
+    current_matching=set()
+    from .photo_metadata import MATCHER_VERSION
     active=0
     for job in PhotoJob.objects.filter(checklist=checklist).prefetch_related('photos'):
         if job.schema!=checklist.schema_snapshot:
             continue
         active+=job.status in {'queued','running'}
         job_ids={p.pk for p in job.photos.all()}
-        analyzed.update(pid for pid in job.processed_photo_ids if type(pid)==int and pid in job_ids and pid in source_ids)
+        valid_ids={pid for pid in job.processed_photo_ids if type(pid)==int and pid in job_ids and pid in source_ids}
+        analyzed.update(valid_ids)
+        if job.progress.get('matcher_version')==MATCHER_VERSION:current_matching.update(pid for pid in job.progress.get('matched_photo_ids',[]) if type(pid)==int and pid in valid_ids)
     unprocessed=source_ids-analyzed
     pending=placements(checklist).filter(status='proposed').count()
-    return {'analyzed_photo_ids':sorted(analyzed),'unprocessed_photo_ids':sorted(unprocessed),'active_job_count':active,'pending_mapping_count':pending,'review_ready':not unprocessed and not active,'photo_count':len(source_ids)}
+    return {'current_matching_photo_ids':sorted(current_matching),'analyzed_photo_ids':sorted(analyzed),'unprocessed_photo_ids':sorted(unprocessed),'active_job_count':active,'pending_mapping_count':pending,'review_ready':not unprocessed and not active,'photo_count':len(source_ids)}
+
+
+def metadata_workflow(checklist,photos,metadata_ready,analysis,jobs):
+    """A photo location is never an answer or an engineering approval."""
+    source_ids={photo.pk for photo in photos}
+    states=list(placements(checklist).values('photo_id','status'))
+    proposed=defaultdict(int)
+    accepted=set()
+    counts={status:0 for status in ['proposed','confirmed','manual','rejected']}
+    for row in states:
+        status=row['status']
+        if status in counts:counts[status]+=1
+        if status=='proposed':proposed[row['photo_id']]+=1
+        if status in {'confirmed','manual'}:accepted.add(row['photo_id'])
+    analyzed=set(analysis['analyzed_photo_ids'])
+    unmatched=sorted(analyzed-source_ids.intersection(accepted)-set(proposed))
+    review=sorted((set(proposed)|set(unmatched))&source_ids)
+    multiple=sorted(pid for pid,count in proposed.items() if count>1)
+    ready_count=sum(bool(metadata_ready.get(pid)) for pid in source_ids)
+    active=[job for job in jobs if job['status'] in {'queued','running'} and job.get('current_schema',True)]
+    if not source_ids:stage='awaiting_upload'
+    elif active:
+        current=next((job for job in active if job['status']=='running'),None)
+        stage='pending_analysis' if not current else 'matching_checklist' if current.get('progress',{}).get('stage')=='matching_checklist' else 'extracting_metadata'
+    elif analysis['unprocessed_photo_ids'] or ready_count<len(source_ids):stage='pending_analysis'
+    elif review:stage='awaiting_confirmation'
+    else:stage='photo_locations_reviewed'
+    labels={'awaiting_upload':'Add source photos','pending_analysis':'Extract metadata and match checklist points','extracting_metadata':'Extracting image metadata','matching_checklist':'Matching metadata to checklist points','awaiting_confirmation':'Review and confirm photo locations','photo_locations_reviewed':'Photo locations reviewed'}
+    return {'metadata_ready_photo_ids':sorted(pid for pid in source_ids if metadata_ready.get(pid)),'rematch_recommended_photo_ids':sorted(pid for pid in source_ids if metadata_ready.get(pid) and pid not in analysis.get('current_matching_photo_ids',[])),'stage':stage,'label':labels[stage],'metadata_ready_count':ready_count,'metadata_pending_count':len(source_ids)-ready_count,'matched_photo_count':len((set(proposed)|accepted)&source_ids),'unmatched_photo_ids':unmatched,'multiple_proposal_photo_ids':multiple,'review_photo_ids':review,'proposed_mapping_count':counts['proposed'],'confirmed_mapping_count':counts['confirmed'],'manual_mapping_count':counts['manual'],'rejected_mapping_count':counts['rejected'],'requires_confirmation':True}

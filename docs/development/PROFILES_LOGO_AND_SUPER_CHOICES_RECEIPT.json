@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-19",
+  "scope": [
+    "Five compact Super Admin layout proposals",
+    "All-user professional profiles with Engineer and QA experience",
+    "Supplied official logo"
+  ],
+  "super_admin_choices": {
+    "url": "/static/core/super_admin_choices/index.html",
+    "options": [
+      {
+        "code": "SA-01",
+        "name": "Window grid",
+        "recommended": true
+      },
+      {
+        "code": "SA-02",
+        "name": "Tabbed desk"
+      },
+      {
+        "code": "SA-03",
+        "name": "Master and detail"
+      },
+      {
+        "code": "SA-04",
+        "name": "Command rail"
+      },
+      {
+        "code": "SA-05",
+        "name": "Focus board"
+      }
+    ],
+    "status": "Synthetic interactive previews; selecting/keeping is browser-local and does not apply a live layout",
+    "features": [
+      "Bounded windows with internal scrolling",
+      "Compact text and icon actions",
+      "Actual hover/focus tooltips and accessible names",
+      "Keyboard/touch operation",
+      "Saved choice and copy selection"
+    ],
+    "browser_receipt": ".local/super-admin-choices-qa/receipt.json"
+  },
+  "professional_profiles": {
+    "routes": [
+      "/governance/profile/",
+      "/governance/people/",
+      "/governance/people/<user_id>/"
+    ],
+    "migration": "0034_professional_profiles",
+    "schema": "Two additive tables WorkProfile and ProfessionalExperience; authorization Profile unchanged",
+    "publication": "Private by default; owner-controlled publication; live shared-project/tenant/account checks on every read",
+    "experience": "Owned Engineer/QE CRUD; role, organization, dates, summary, self-reported qualifications",
+    "client_visibility": "Published Engineer/QE/TL/Admin staff on shared active projects; no Super/other Client discovery; no login/email/contact/password information",
+    "audit": "Publish state/experience IDs only; no profile body text"
+  },
+  "logo": {
+    "asset": "backend/static/core/img/isurvix-logo-20261019.png",
+    "sha256": "982a4851d3a09527ffeb3615aec47f39d5c0032830520db6fbce679596e0a202",
+    "source_copy": "Byte identical to supplied image; no crop or generated alteration",
+    "uses": [
+      "Application header and sidebar",
+      "Legacy home branding",
+      "Five new layout previews"
+    ]
+  },
+  "validation": {
+    "core_tests": 309,
+    "seconds": 26.1,
+    "test_hashing": "In-process synthetic MD5 override only; actual password hashes preserved",
+    "focused_profile_tests": 8,
+    "focused_super_console_tests": 4,
+    "django_check": "pass",
+    "migration_drift": "No changes detected",
+    "live_receipt": ".local/profiles-logo-live-verified.json",
+    "data_preservation": "Seven original business tables, existing account identities/password hashes/roles and 78 original photo SHA256 unchanged",
+    "chooser_browser_checks": 54,
+    "profile_logo_browser_checks": 36,
+    "profile_browser_receipt": ".local/profile-layout-qa/receipt.json",
+    "browser_failures": []
+  },
+  "pre_migration_checkpoint": ".local/backups/project-checkpoint-20261019-125201",
+  "runtime": {
+    "launcher_pid": 35804,
+    "url": "http://127.0.0.1:8000/",
+    "network": "Loopback only"
+  },
+  "github_pushed": false,
+  "browser_launch": "Automatic approval review blocked opening browser; user can use local link."
+}

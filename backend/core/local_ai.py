@@ -53,11 +53,39 @@ class NoRedirect(HTTPRedirectHandler):
 
 
 def local_context(request):
-    return {'local_ai_enabled': getattr(settings, 'LOCAL_AI_ENABLED', False)}
+    from .access import role_for
+    role=role_for(getattr(request,'user',None))
+    choices={
+        Profile.Roles.SUPER_ADMIN:('command','forest','S1-6','Super Admin'),
+        Profile.Roles.ADMIN:('audit','teal','A6-2','Admin'),
+        Profile.Roles.CLIENT:('audit','teal','C6-2','Client'),
+        Profile.Roles.TEAM_LEAD:('audit','teal','T6-2','Team Lead'),
+        Profile.Roles.ENGINEER:('audit','teal','E6-2','Engineer'),
+        Profile.Roles.QUALITY_ENGINEER:('audit','teal','Q6-2','QA Engineer'),
+    }
+    selection=choices.get(role)
+    design=dict(zip(('layout','palette','code','label'),selection)) if selection else None
+    if design:
+        design['role']=role
+        design.update(layout='enterprise', palette='navy', code='enterprise-1')
+    from .access import accessible_projects
+    projects = list(accessible_projects(request.user).order_by('name')) if design else []
+    from .industry_service import industry_family
+    industries = {industry_family(project) for project in projects}
+    modules = [
+        {'code': code, 'label': label, 'industry': industry}
+        for code, label, industry in [
+            ('telecom_survey', 'Telecom / Survey', 'telecom'),
+            ('telecom_inspection', 'Telecom / Inspection', 'telecom'),
+            ('construction_inspection', 'Construction / Inspection', 'construction'),
+        ] if industry in industries and role != Profile.Roles.SUPER_ADMIN
+    ]
+    return {'local_ai_enabled': getattr(settings, 'LOCAL_AI_ENABLED', False),'role_design':design,
+            'shell_projects': projects, 'shell_modules': modules}
 
 
-def ollama(path, payload=None):
-    base = settings.OLLAMA_BASE_URL
+def ollama(path, payload=None, *, base_url=None):
+    base = base_url if base_url is not None else settings.OLLAMA_BASE_URL
     parsed = urlsplit(base)
     if parsed.scheme != 'http' or parsed.hostname not in {'127.0.0.1', 'localhost', '::1'} or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in {'', '/'}:
         raise ValueError('Ollama must use an HTTP loopback address on this computer.')
@@ -92,7 +120,8 @@ def allowed_surveys(request):
     role=role_for(request.user)
     legacy=Q(governance_mode='legacy')
     if role==Profile.Roles.CLIENT:
-        qs=qs.filter(status=Checklist.Status.FINAL).filter(legacy | Q(governance_mode='independent',review_policy__customer_reviewer=request.user))
+        from .access import client_checklist_visibility
+        qs=qs.filter(client_checklist_visibility(request.user)).distinct()
     elif role==Profile.Roles.ENGINEER:
         qs=qs.filter(user=request.user)
     elif role==Profile.Roles.TEAM_LEAD:

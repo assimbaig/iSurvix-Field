@@ -1,0 +1,197 @@
+{
+  "completed_at": "2026-10-19T13:50:17.189239+00:00",
+  "status": "implemented_and_verified",
+  "catalog": [
+    {
+      "key": "telecom_survey_default",
+      "name": "Telecom survey - Default checklist (uploaded FDED master)",
+      "industry": "telecom",
+      "workflow_type": "telecom_survey",
+      "sections_count": 16,
+      "fields_count": 181,
+      "room_types": [],
+      "stage_choices": []
+    },
+    {
+      "key": "telecom_inspection_bts",
+      "name": "Telecom inspection - Built to Suit",
+      "industry": "telecom",
+      "workflow_type": "telecom_inspection",
+      "sections_count": 8,
+      "fields_count": 56,
+      "room_types": [],
+      "stage_choices": []
+    },
+    {
+      "key": "telecom_inspection_colocation",
+      "name": "Telecom inspection - Colocation and Modernization",
+      "industry": "telecom",
+      "workflow_type": "telecom_inspection",
+      "sections_count": 8,
+      "fields_count": 48,
+      "room_types": [],
+      "stage_choices": []
+    },
+    {
+      "key": "construction_inspection_all",
+      "name": "Construction inspection - all stages",
+      "industry": "construction",
+      "workflow_type": "construction_inspection",
+      "sections_count": 8,
+      "fields_count": 55,
+      "room_types": [
+        "bedroom",
+        "bathroom",
+        "walk_in_closet",
+        "staircase",
+        "prayer_room",
+        "pantry",
+        "kitchen",
+        "living",
+        "dining",
+        "majlis",
+        "laundry",
+        "study",
+        "office",
+        "balcony",
+        "terrace",
+        "garage",
+        "store",
+        "utility",
+        "plant",
+        "maid",
+        "guest",
+        "entrance",
+        "corridor",
+        "other"
+      ],
+      "stage_choices": [
+        {
+          "value": "preconstruction",
+          "label": "Preconstruction"
+        },
+        {
+          "value": "design",
+          "label": "Design"
+        },
+        {
+          "value": "grey_structure",
+          "label": "Grey Structure"
+        },
+        {
+          "value": "mep",
+          "label": "Mep"
+        },
+        {
+          "value": "finishing",
+          "label": "Finishing"
+        },
+        {
+          "value": "external_works",
+          "label": "External Works"
+        },
+        {
+          "value": "testing_handover",
+          "label": "Testing Handover"
+        }
+      ]
+    }
+  ],
+  "construction": {
+    "stages": [
+      "preconstruction",
+      "design",
+      "grey_structure",
+      "mep",
+      "finishing",
+      "external_works",
+      "testing_handover"
+    ],
+    "room_types": [
+      "bedroom",
+      "bathroom",
+      "walk_in_closet",
+      "staircase",
+      "prayer_room",
+      "pantry",
+      "kitchen",
+      "living",
+      "dining",
+      "majlis",
+      "laundry",
+      "study",
+      "office",
+      "balcony",
+      "terrace",
+      "garage",
+      "store",
+      "utility",
+      "plant",
+      "maid",
+      "guest",
+      "entrance",
+      "corridor",
+      "other"
+    ],
+    "max_named_rooms": 40,
+    "repeated_room_types": true,
+    "separate_room_answers_and_photos": true,
+    "unidentified_room_photo_requires_manual_review": true
+  },
+  "permissions": {
+    "super_admin": "Read shared catalog and previews",
+    "project_admin": "Create own drafts in permitted industry; existing publish and assignment controls",
+    "operational_roles": "Use assigned frozen project templates"
+  },
+  "preservation": {
+    "original_uploaded_fded": true,
+    "existing_project_defaults": true,
+    "existing_published_templates": true,
+    "answers_photos_links_approvals": true,
+    "operational_digest": "02a7fdecf42ae0943421e48a7779ea9ee771c8ac5ba42fd78f8e0562ec223347"
+  },
+  "existing_admin_drafts": [
+    {
+      "id": 2,
+      "key": "telecom_survey_default",
+      "name": "Telecom survey - Default checklist (uploaded FDED master)",
+      "published": false
+    },
+    {
+      "id": 3,
+      "key": "telecom_inspection_bts",
+      "name": "Telecom inspection - Built to Suit",
+      "published": false
+    },
+    {
+      "id": 4,
+      "key": "telecom_inspection_colocation",
+      "name": "Telecom inspection - Colocation and Modernization",
+      "published": false
+    }
+  ],
+  "construction_shared_catalog_available": true,
+  "verification": {
+    "core_tests": 403,
+    "seconds": 29.378,
+    "browser_cases": 21,
+    "browser_widths": [
+      1440,
+      390,
+      320
+    ],
+    "browser_write_requests": 0,
+    "actual_live_http_login_and_library": "Super Admin and Project Admin passed",
+    "sql_migrations": "None required",
+    "system_check": "passed"
+  },
+  "local_url": "http://127.0.0.1:8000/devadmin/checklist-templates/standards/",
+  "launcher_pid": 36544,
+  "technical_controls": "Editable project baselines; existing technical qualification and approvals retained. No invented universal acceptance thresholds.",
+  "evidence": [
+    ".local/standard-final-core-tests.log",
+    ".local/standard-catalog-browser-qa/receipt.json",
+    ".local/standard-checklists-live-receipt.json",
+    ".local/standard-library-http-check.json"
+  ]
+}

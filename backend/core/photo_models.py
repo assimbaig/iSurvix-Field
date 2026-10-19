@@ -1,6 +1,36 @@
 """Durable local evidence, inference queue and explicitly reviewed proposals."""
 from django.conf import settings
 from django.db import models
+from .revision_models import ImmutableRecord
+
+
+class PhotoObservation(ImmutableRecord):
+    """Durable image-only analysis, independent of checklist matching and approvals."""
+    photo = models.ForeignKey('core.PhotoEvidence', on_delete=models.PROTECT, related_name='observations')
+    cache_key = models.CharField(max_length=64, unique=True)
+    model_digest = models.CharField(max_length=64)
+    payload = models.JSONField(default=dict)
+    payload_digest = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PhotoSearchVector(ImmutableRecord):
+    photo = models.ForeignKey('core.PhotoEvidence', on_delete=models.PROTECT, related_name='search_vectors')
+    cache_key = models.CharField(max_length=64, unique=True)
+    model_digest = models.CharField(max_length=64)
+    vector = models.JSONField(default=list)
+    payload_digest = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PhotoSearchResult(ImmutableRecord):
+    photo = models.ForeignKey('core.PhotoEvidence', on_delete=models.PROTECT, related_name='search_results')
+    cache_key = models.CharField(max_length=64, unique=True)
+    model_digest = models.CharField(max_length=64)
+    schema_digest = models.CharField(max_length=64)
+    payload = models.JSONField(default=dict)
+    payload_digest = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class PhotoEvidence(models.Model):
     checklist = models.ForeignKey('core.Checklist', on_delete=models.CASCADE, related_name='photo_evidence')

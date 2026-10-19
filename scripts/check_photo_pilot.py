@@ -18,9 +18,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
 from django.db import connections
 from PIL import Image, ImageDraw
-from core.models import Profile,Project,ChecklistTemplate,Checklist,PhotoJob,PhotoDraft
+from core.models import Profile,Project,ChecklistTemplate,Checklist,PhotoJob,PhotoEvidence,PhotoPlacement
 from core.photo_queue import process_next
 from core.photo_service import verify_vision
+from core.photo_metadata import validate_metadata
+from core.field_photo_service import schema_digest,coverage
 
 
 def main():
@@ -39,7 +41,7 @@ def main():
                 user.profile.project=project
                 user.profile.role=Profile.Roles.ENGINEER
                 user.profile.save()
-                schema={'title':'Synthetic image pilot','sections':[{'id':'visual','title':'Visual evidence','fields':[{'id':'visible_shapes','label':'Describe the visible colored shapes and positions','type':'text'}]}]}
+                schema={'title':'Synthetic image pilot','sections':[{'id':'visual','title':'Visual evidence','fields':[{'id':'visible_shapes','label':'Red square and blue circle','type':'photo','required':True}]}]}
                 template=ChecklistTemplate.objects.create(name='Disposable pilot',published=True,definition=schema)
                 project.checklist_template=template
                 project.save()
@@ -68,16 +70,22 @@ def main():
                 state=client.get(base+'state/').json()
                 survey.refresh_from_db()
                 assert survey.answer_data=={} and not survey.section_approvals
-                draft=PhotoDraft.objects.filter(job=job,value__isnull=False).first()
-                assert draft is not None,'Model returned insufficient evidence; no acceptable draft.'
-                response=client.post(base+f'drafts/{draft.pk}/accept/',data='{}',content_type='application/json')
+                evidence=PhotoEvidence.objects.get(pk=photo)
+                validate_metadata(evidence.analysis_metadata)
+                observed=json.dumps(evidence.analysis_metadata).lower()
+                assert 'red' in observed and 'blue' in observed,'Native metadata did not describe the synthetic colors.'
+                proposal=PhotoPlacement.objects.filter(photo_id=photo,status='proposed').first()
+                assert proposal is not None,'No advisory photo location matched the explicit synthetic subjects.'
+                assert coverage(survey)['required_missing_count']==1,'Unconfirmed AI proposals must not satisfy required evidence.'
+                response=client.post(base+'mapping/',json.dumps({'decisions':[{'photo_id':photo,'field_id':proposal.field_id,'mapping_id':proposal.pk,'action':'confirm'}],'expected_schema_digest':schema_digest(survey)}),content_type='application/json')
                 assert response.status_code==200,response.content
+                proposal.refresh_from_db();assert proposal.status=='confirmed'
+                assert coverage(survey)['required_missing_count']==0
                 survey.refresh_from_db()
-                assert survey.answer_data['custom'][draft.field_id]==draft.value
-                assert survey.status==Checklist.Status.DRAFT and not survey.section_approvals
+                assert survey.answer_data=={} and survey.status==Checklist.Status.DRAFT and not survey.section_approvals
                 report=client.get(base+'report/')
-                assert report.status_code==200 and report.json()['drafts'][0]['status']=='accepted'
-                print(json.dumps({'result':'PASS','model':settings.OLLAMA_MODEL,'job_status':job.status,'drafts':len(state['drafts']),'explicit_acceptance':True,'original_preserved':True,'automatic_approval':False,'data':'disposable synthetic only'}))
+                assert report.status_code==200
+                print(json.dumps({'result':'PASS','model':settings.OLLAMA_MODEL,'job_status':job.status,'photos_processed':job.completed,'native_metadata_validated':True,'explicit_location_confirmation':True,'original_preserved':True,'automatic_answers':False,'automatic_approval':False,'data':'disposable synthetic only'}))
                 connections.close_all()
             finally:
                 connections.close_all()

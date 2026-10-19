@@ -682,3 +682,420 @@ The user created Company records 2 and 3, Client 1 and client 2, between earlier
 Final full core suite: 281 tests passed in 19.987 seconds, with fixture-only in-process MD5 override; real password hashers are unchanged. Prior 279 passing run preceded legacy preservation migration. Counts overlap. Coverage includes permission/CSRF/forged fields, old invitation rejection, cross-company/industry assignment, raw admin form restrictions, source digest changes, legacy import provenance/preservation/idempotency and existing workflow/photo tests. Django checks and migration drift checks pass. UI evidence: 12 responsive role/page cases and two synthetic POST payloads. Manuals v1.6 are separate green-branded 17-page user and 13-page internal DOCX/PDF; all 30 pages were rendered and checked. User documentation ZIP contains only the Software Manual DOCX/PDF.
 
 Current hidden launcher PID18452; local app and independent photo worker are running at 127.0.0.1:8000. No internet exposure, commit, push or hosted deployment. Live normal sign-ins passed for Super/Admin/Engineer/TL/Client. Super Client-create endpoints are blocked, Clients page has no creation/invitation forms, and Admin administration shows both preserved Clients and its creation form. Read-only exact comparison against this task's 193722 checkpoint verified all old columns in seven business tables, existing account identities/passwords/roles and all 78 original photo hashes. Expected own sign-in sessions/last-login bookkeeping is excluded. Evidence: .local/super-console-live-verified.json and docs/development/ADMIN_CLIENT_OWNERSHIP_RECEIPT.json. User asked to save everything after completion; source, persistent data, manuals, credentials and recovery backup are preserved locally.
+
+
+## 19 October 2026 Workflow photo upload submission and approval testing
+
+Resumed clean GitHub commit e9e36a2 on feat/local-photo-pilot. Python 3.12.10, migrations and local app startup were checked. Initial full 281 tests passed. Added six isolated CSRF-enabled HTTP acceptance cases covering multipart original upload, required-photo blocking before confirmed placement, explicit photo location, Engineer submission, QE decision, TL approval, optional Client closure and exact original download hash. Both legacy and independent modes pass with and without Client. Additional cases verify QC rejection/resubmission repeats the gate and a new photo after QC invalidates TL approval until fresh QC.
+
+A deterministic submission interleaving reproduced late individual-photo upload and deletion after Engineer submission. custom_save, custom_upload and custom_photo_delete now recheck survey edit permission inside their transaction after locking the Checklist. The regression exercises late upload, valid answer save and photo deletion. Final full core suite: 288 tests passed in 22.394 seconds, with synthetic fixture-only MD5 override and production password hashing unchanged. Django checks and migration drift checks pass. No schema changes were needed.
+
+Native Ollama initially reported vision capability but returned HTTP500 because its llama-server libraries were missing. Downloaded the exact official 0.40.5 runtime under F and verified archive SHA256/signature and equality with the installed executable. Automatic approval review blocked a separate runtime service launch; no alternate launch was attempted. A safer repair backed up the existing library directory under .local/ollama/original-lib-before-repair-20261019 and restored only matching missing libraries in the original installed software directory. The original executable, listener PID9728/127.0.0.1:11434, configuration and model originals were retained; project data was not moved outside F.
+
+The original existing service then passed real native vision on a synthetic red-square/blue-circle image. scripts/check_photo_pilot.py was updated from obsolete automatic answer-draft expectations to the approved metadata-first contract. Its disposable SQLite/media pilot passed multipart upload, byte-preserved original export, native worker job 1/1 completion, valid compact metadata, proposed location, explicit human confirmation, required-photo coverage and report export. No automatic answers or approvals were applied. No real project photos were analyzed. Logs: .local/workflow-final-20261019.log, .local/native-photo-pipeline-20261019.log, .local/ollama/runtime-diagnosis.json. Receipt: docs/development/WORKFLOW_TEST_RECEIPT_20261019.json. The full 400-photo/30-minute target is not proven by these checks.
+
+The app was restarted with only its verified launcher tree, current hidden launcher PID31060, local app and photo worker running at127.0.0.1:8000. Normal existing Super/Admin/Engineer/TL/Client sign-ins passed after the fixes; seven business-table original columns, existing account identities/password hashes/roles, existing approvals and all78 photo hashes were preserved. New tests and the transaction fix are saved locally; they have not been pushed to GitHub during this testing task.
+
+
+## 19 October 2026 Role layout and palette chooser
+
+Added standalone static prototype at http://127.0.0.1:8000/static/core/design_lab/index.html. Files: backend/static/core/design_lab/index.html, style.css and app.js. These do not change live application templates, authorization, workflows, accounts or records. All preview data and illustrated evidence are synthetic.
+
+Six distinct role defaults: Super Admin command center/midnight violet; Admin portfolio canvas/teal-coral; Client editorial report/soft plum; Team Lead split workbench/charcoal-orange; Engineer field companion/blue; QA Engineer evidence ledger/forest-lime. Every role can independently select any of six layouts and six palettes. Controls include desktop/phone preview, Compare all roles, Keep this design, a visible kept-selection summary, Copy my choices with selectable fallback, one JSON download and confirmed reset. Choices persist in the current browser under isurvix-design-lab-v1; selection does not apply a theme to the actual app. Codes identify each role/layout/palette for later implementation.
+
+Role previews follow the current permission boundaries, including read-only Super Admin Clients, industry-bound Admin Client management, Engineer capture/submission, assigned QA quality review, Team Lead approval after QA with optional AI sharing, and Client release. Mock controls announce preview-only actions and send no backend writes. No project photos or credentials are exposed.
+
+Headless Edge passed 90 role/responsive/layout/palette cases, plus persistence, phone toggle, compare, copy, six-role JSON export, reset and denied-storage feedback; no browser exceptions. Tested widths1600/390/320. Comparison thumbnails resize to fill their cards. Screenshots and test helpers are under .local/design-lab-qa; receipt docs/development/DESIGN_CHOOSER_RECEIPT.json. No source changes were pushed or rolled into production views. User should open the chooser, keep a design for each role and paste Copy my choices into chat before applying chosen designs.
+
+
+## 19 October 2026 Applied user selected role layouts
+
+User confirmed Super Admin S1-6 Command center / Forest and lime, with Admin A6-2, Client C6-2, Team Lead T6-2, Engineer E6-2 and QA Engineer Q6-2 all using Evidence ledger / Teal and coral. These selections are now applied to the working local app, not just the prototype. Record: docs/development/SELECTED_ROLE_DESIGNS.json.
+
+core.local_ai.local_context provides role_design {role,label,layout,palette,code} using the actual access.role_for account identity. Super receives command/forest; the other five selected roles receive audit/teal. Anonymous, inactive, locked, forged Super profile labels and unselected historical PM accounts receive no descriptor. A label or legacy session claim cannot grant a design or role authority. Primary navigation no longer uses a raw Super profile label to select Super chrome.
+
+base.html and _primary_navigation.html now provide the selected body attributes, a desktop left sidebar and in-flow collapsible mobile navigation. role_layout.css and role_layout.js apply shared palettes, readable type, squared ledger panels and accented rows, with the separate forest Command center for Super. Existing routes, form IDs, CSRF, upload controls, project scope and review actions are retained. Existing System/Light/Dark preferences remain usable through synchronized appearance controls. New assets use selected-designs-1 cache keys.
+
+Mobile photo pages put the active capture workspace before the site catalog. Site context is an accessible collapsed details panel on phones and open on desktop, retaining its inner IDs. Logout remains text-labeled even when external icon fonts fail. Non-Final read-only checklists now say Read-only view instead of incorrectly saying Approved record; Final retains that label. Internal prototype design codes remain in data attributes, not the live sidebar text.
+
+Four new role-design/permission tests pass. Final full core suite: 292 tests passed in24.391seconds, with fixture-only MD5 override and unchanged production hashers. Django checks and migration drift checks pass; no migrations were added. Headless Edge checked17 actual rendered role pages at1440/390/320 (51 cases), plus12 mobile light/dark appearance cases, all passed. Fixtures use a private SQLite database and media in .local/selected-layout-qa, including real synthetic API JSON and photo URLs. Source-bound controls remain intact: Engineer capture inputs, named QA decisions, TL review after QC and Client read-only deliverables. Existing full photo/approval regression coverage is included in the292.
+
+Stopped only the verified previous launcher31060 tree and started hidden launcher32324 through Start-iSurvix.ps1 -NoBrowser. App and independent photo worker are running at127.0.0.1:8000. Live normal Super/Admin/Engineer/TL/Client sign-ins verified their exact selected design codes, normal navigation and Super engineering403. Existing seven business-table original columns, accounts/password hashes/roles, approvals, Client1/client2 records and all78 original photo hashes are unchanged. No new real users, photos, review signatures or jobs were fabricated. No GitHub push or public hosting was performed during layout application. The standalone chooser remains available under/static/core/design_lab/index.html for future exploration.
+
+
+## 19 October 2026 Compact enterprise task and inspection workspace
+
+User's latest navy/white/blue compact enterprise direction supersedes the earlier forest/teal presentation choices. Existing Django/plain CSS/JavaScript stack and real scoped records retained. local_context now emits enterprise/navy/enterprise-1 for the six active roles; descriptors never grant authority. Header has permission-scoped module/project selectors, collapsible navigation, review-queue link, working help and user/logout menus. Super remains administrative only. Module hierarchy is Telecom Survey/Inspection and Construction Inspection when permitted projects exist.
+
+New /governance/tasks/ (task_explorer; governance_tasks alias) unions scoped checklists and unlinked assignments in the database, paginates25 before per-row workflow display, filters/searches real fields, has clickable stored-status counters/module tabs, sorting, sticky task identifiers, browser-persisted column visibility and selected/filtered CSV with formula escaping and scope revalidation. No fake contractor/due date/site-name fields. Schema-backed tasks open the local photo workspace; separate review link uses the existing legacy or independent decision route. Assignment without checklist remains clearly read-only. Super cannot open or export operational tasks. Clients' personnel restrictions are preserved.
+
+/local/photos/<id>/ is now a searchable, expandable resizable checklist/evidence split pane. Saved item results are distinct from evidence coverage and workflow stage. Checklist items link to the exact existing custom form field. Main source viewer supports previous/next/zoom/fit/metadata and36-at-a-time lazy thumbnail loading, keeping selected evidence separate from AI suggestions. Drawer/Escape on phones, keyboard resize, selected item/photo/scroll restoration and existing upload progress/retry/queue/mapping controls retained. Existing metadata now includes stored uploader and upload date; missing capture/GPS remain explicitly missing. No photo comment field or destructive original-delete API was invented. Existing photo mappings/confirmation and approval APIs remain authoritative; superseded AI placements are excluded from active item grouping. Review decisions stay in existing authorized forms; partial approval is offered only by workflows that already support it.
+
+Shared enterprise.js validates return_to strictly against same-origin /governance/tasks/, stores context per user/task through existing POST redirects, propagates same-record links and restores filtered-list scroll. Enterprise photo context defaults collapsed to prioritize the evidence viewer; explicit expansion remains usable. No schema or migrations added, no real approvals or photos fabricated. Recovery checkpoint before edits: .local/backups/project-checkpoint-20261019-123029.
+
+Validation:301 core tests passed24.273s, including existing CSRF/photo upload/submission/QE/TL/Client flows, new task scope/CSV and shell contracts. Test-only MD5 override; actual password hashing unchanged. Django check and migration drift passed. Browser QA evidence in .local/enterprise-layout-qa/browser-receipt.json covers22 actual private rendered pages at1440/390/320, safe return context, external URL rejection, and205 genuine synthetic private photos with paged thumbnails/navigation/search/zoom/drawer. This is not a400-photo inference timing benchmark. Receipt docs/development/ENTERPRISE_WORKSPACE_RECEIPT.json records scope and gaps.
+
+Verified exact previous launcher32324 tree before stopping; new hidden launcher31284 runs current app and independent photo worker at127.0.0.1:8000. Python3.12.10, installed qwen3.5:4b reportsvision and existing worker capability gate retained. Native Ollama listener was not replaced. Normal Super/Admin/Engineer/TL/Client sign-ins and operational task pages passed. Read-only comparison with this task's checkpoint verified seven original business tables, account identities/password hashes/roles, existing approvals and78 original photo SHA256 values unchanged. Evidence .local/enterprise-live-verified.json. No GitHub push or public hosting during redesign.
+
+
+## 19 October 2026 Super Admin window choices, professional profiles and official logo
+
+User dislikes long Super Admin scrolling and requested five clean compact proposals with internal panel scrollbars and action-icon hover explanations. New /static/core/super_admin_choices/index.html provides SA-01 Window grid(recommended), SA-02 Tabbed desk, SA-03 Master and detail, SA-04 Command rail and SA-05 Focus board. Same navy/white/blue palette, People & invites/Industries/Clients/Projects/Sites/Audit, real hover/focus tooltips, keyboard/touch, desktop/phone/compare, browser-local Keep/Copy choice. It is explicitly synthetic preview only: no backend requests/writes or applied layout change. Current Super page links Compare5compact layouts. Clients remain read-only and operational signatures are excluded.54 chooser browser checks passed including bounded desktop document/internal scroll, all widths1440/390/320, tooltip hover/focus, persistence/copy and all tabs/focus-board keyboard activation. Evidence .local/super-admin-choices-qa/receipt.json.
+
+User also requested profiles for every role and extra Engineer/QA professional experience visible to Clients. WorkProfile/ProfessionalExperience are separate additive models, migration0034 applied after verified pre-migration checkpoint .local/backups/project-checkpoint-20261019-125201. Authentication Profile and existing role rules unchanged. Self profile /governance/profile/, directory /governance/people/, detail /governance/people/<user_id>/. User menu now provides My profile and Work profiles (directory not offered to Super). Publication defaults off, self editing allowlists professional display name/headline/bio/publication. Engineer/QE can add/edit/delete own organization/title/dates/current/summary/qualifications; dates and ownership validated. Shared work information is self-reported, never an engineering approval. Every other-person read rechecks active/unlocked accounts, same company and active accessible-project intersection. Clients discover only published Engineer/QE/TL/Admin staff, never Super/other Clients. Unpublish/revocation/expiry removes access. Login usernames, emails, password/contact fields are not included in public professional content; empty name falls back to full name or Project team member. Audit stores publication/experience IDs, not private body text. Self GET lazily creates an empty professional row; no experience is fabricated.
+
+User supplied new logo from E:/Online Storage/OneDrive/Documents/Personal Projects/iSurvix/Company Documents/General/765f753c-6a28-4662-bdfe-46622ab933ba.png. Copied byte-identically into F project at backend/static/core/img/isurvix-logo-20261019.png SHA256982a4851d3a09527ffeb3615aec47f39d5c0032830520db6fbce679596e0a202. Header/sidebar/login(via base), legacy home and new five previews use it with object-fit contain/white background; no image cropping/generation or source modification. All project assets/data remain F.
+
+Validation:309 full core tests passed26.100s with synthetic process-only MD5 override, eight focused profile authorization/CRUD/privacy/CSRF tests and four Super console tests. Django checks/migration drift pass. QA rendered12 private profile/login pages at1440/390/320, verifying logo load and clipping; Add experience contrast corrected. Live normal Super/Admin/Engineer/TL/Client sign-ins, self profiles and allowed directory pages passed. Old seven business tables, identities/roles/password hashes, approvals and78 original photo SHA256 values remain unchanged against pre-migration checkpoint. Five live self GETs create only authorized blank profile rows, no experience or publication. Evidence .local/profiles-logo-live-verified.json and docs/development/PROFILES_LOGO_AND_SUPER_CHOICES_RECEIPT.json. Verified previous launcher31284 tree before stop; current hidden launcher35804 runs app plus photo worker127.0.0.1:8000. Native Ollama unchanged. No GitHub push, new public hosting or change to approval controls.
+
+
+## 19 October 2026 Metadata -> checklist -> one-step links and applied SA-02
+
+User requested metadata-first matching, auto suggested photo/checkpoint connections, a single dropdown confirmation workflow and a compact overall view. Existing native metadata extraction/cache was retained. photo_metadata.match_metadata now uses field labels plus optional description/help/question/instructions as subject anchors; section/type/upload group only provide context/ranking, never image proof. Generic words alone/absent defects/unsupported measurements still cannot create links. Unique strongly anchored candidates may have medium advisory lexical strength; multi-target candidates stay uncertain. METADATA_VERSION stays compact-vision-v1 so existing valid cache is reused. MATCHER_VERSION catalog-context-v2 plus per-job progress matched_photo_ids distinguish actual new matching from old completed jobs; no migration was required.
+
+Photo state exposes analysis.workflow metadata-ready/pending, suggested/confirmed/manual/rejected, unmatched/multiple candidates and recommended cached-rematch source IDs. No old job is relabeled as reprocessed. New visible compact3stagebar+20-row paged table provides one combined section/item dropdown per photo, explicit reviewed selection and one batch confirmation action. Up to100 mapping decisions/request, source/proposal fingerprints rechecked after refresh, active-worker guards, low/ambiguous candidates never auto-selected, truthful partial-success reporting. Existing extra AI alternatives and all human links remain preserved; Advanced links retains explicit atomic correction/removal. Match saved metadata uses existing durable enqueue and validated cached observations, no new AI service. Upload remains visible, source/viewer side by side at wide widths, advanced metadata/mapping/coverage/job/draft details collapsed, lists bounded. A photo location is separate from checklist result or approval. No real78photo reanalysis/rematch was performed.
+
+During implementation user explicitly chose SA-02 / Tabbed desk / navy white blue / compact internal scroll. Applied to actual Super Admin console, not just prototype: data-super-design SA-02, new super_tabbed_desk.css/js, main bounded workspace plus recent12 actual audit events in its own scroller. Dashboard local tabs People/Invite account/Admin industries/Project access/Invitations/Overview. All other administrative views retain real forms in internally scrolling tab panels; current Clients remain read-only. Actions are compact icons with hover/focus labels and preserved CSRF/confirmation handlers. Keyboard tabs/Home/End work; invalid form panel opens automatically. Mobile global nav can open without pushing the active panel outside the viewport. Shared role_design descriptor remains enterprise/navy/enterprise-1; console-specific selection is data-super-design SA-02. SELECTED_ROLE_DESIGNS.json now marks historical choices superseded and records current Super SA-02. governance_views adds Super-only limited recent_audit; Super can_client_approve flag is false. Invalid Super invitation errors correctly return to dashboard invite panel rather than Clients. No authority change to engineering decisions.
+
+Validation:319 core tests passed26.909s with synthetic process-only MD5 override and unchanged real hashes. Three independent acceptance tests cover true mocked-native metadata/cache/worker/proposals/explicit confirmation, preserved human choices/reruns and100-success+1-failed atomic request accounting. Native qwen3.5:4b reports vision, checked before a real native disposable one-photo pilot; metadata/schema, original hash, explicit link confirmation, unchanged answers/approvals and completed job all passed. Native log .local/compact-metadata-native-pilot.log. QA private205-photo actual cached worker completed205/205 without native calls;9 compact browser cases cover layouts, single dropdown, worker/uncertainty guards,205 cached queue IDs and118 reviewed choices where100 saved then18 simulated request failures remain pending truthfully. SA-02 browser30 cases cover5views+invalidinvite at1440/390/320, six local panels, audit scroll, actual hover/focus tooltips/keyboard and nav-open viewport bounds. Receipts .local/compact-photo-qa/receipt.json and .local/sa02-live-qa/browser-receipt.json. No400-photo fresh-inference timing claim.
+
+Verified previous launcher35804 tree before stopping; current hidden launcher22892 runs app and independent photo worker127.0.0.1:8000. Native Ollama unchanged. Live Super/Admin/Engineer/TL/Client sign-ins/navigation/profile pages and actual SA-02 markup passed. Read-only exact comparison with prechange checkpoint .local/backups/project-checkpoint-20261019-125536 verified seven old business tables, identities/password hashes/roles, approvals and78 original photo SHA256 values unchanged. Evidence .local/sa02-metadata-live-verified.json. No GitHub push/public hosting/schema migration in this task. Documentation receipt docs/development/METADATA_CONFIRMATION_AND_SA02_RECEIPT.json.
+
+
+## 19 October 2026 Bottom-left appearance, ten color schemes, layout locked
+
+User requested System appearance at bottom left with10 color schemes and a locked layout. Added a single authenticated-role control in base.html outside the sidebar so it remains reachable when navigation is collapsed/on phones. #appearance-toggle opens #appearance-panel with System/Light/Dark mode (#role-appearance) and10 keyboard-radio schemes: Navy(default), Teal, Forest, Slate, Violet, Indigo, Azure, Charcoal, Terracotta, Olive. Appearance exposes colors only; SA-02 Super Admin layout and operational workspace structures stay fixed. The former live Compare5compactlayouts link is removed, while historical static prototypes remain unlinked and cannot apply live layouts. Page-level theme selects were removed from operational/admin/template/invitation pages. Footer has constant60px clearance so the fixed button does not cover username text.
+
+New appearance.css changes palette variables and component colors (header, surfaces, labels, links, inputs, task sticky cells/counters, photo tree/matching and profile content) without changing page/pane geometry. Only the new floating control defines its own fixed position. Existing role_layout.js yields mode ownership to appearance.js after retaining navigation/context setup. Removed the old unguarded photo-theme select code from photo_workspace.js; its absent element would otherwise break photoWorkspace initialization. Cache keys bumped to appearance-1. System follows OS mode; explicit mode is not overwritten by the legacy listener. Preferences are JSON localStorage per authenticated username under isurvix-appearance-v1:<encoded username>. Allowlisted scheme/mode defaults, graceful denied-storage feedback, Escape/focus return/outside close and keyboard radio arrows supported. No backend preference writes, account changes, schema/migrations or new dependencies.
+
+Focused role/SuperHTTP13 tests passed1.450s using synthetic process-only MD5 override; actual hashes unchanged. Django check, JS syntax and75-file strict UTF8 checks pass. Browser evidence .local/appearance-qa/receipt.json verifies10 schemes in light/dark at desktop/mobile across roles/tasks/photos/profile, invariant header/sidebar/pane/table geometry, modes/persistence/keyboard/System/storage denial, actual photo API initialized and popup fitting320px. Dark photo count contrast and bottom-left footer overlap found during QA were corrected. Receipt docs/development/APPEARANCE_RECEIPT.json. No real photos were processed.
+
+Live template caching required app restart: verified launcher22892 tree and confirmed0queued/running photo jobs before stopping. Current hidden launcher35524 runs local app and independent worker127.0.0.1:8000; native Ollama unchanged. Normal live Super/Admin/Engineer/TL/Client sign-ins read-only checked central controls, absence of duplicate selectors/layout picker and preserved SA-02. Against prior verified checkpoint .local/backups/project-checkpoint-20261019-130716, exact seven old business tables, existing account identities/roles/password hashes/approvals and78 original photo SHA256 values remain unchanged. Evidence .local/appearance-live-verified.json. No GitHub push or internet exposure.
+
+
+## 19 October 2026 Header navigation and checklist wayfinding
+
+User explicitly requested blue navigation tiles in the header, a second task heading, left-side checklist and the same clearer layout across the app. This supersedes the prior sidebar geometry while Appearance remains color-only. Shared permission-scoped header navigation now replaces the global sidebar. Engineer has My tasks / Projects & sites / Reports; other roles retain their permitted links. Human-readable titles and context headers link back to the filtered task list. Super SA-02 local administrative panels remain; its duplicated category bar is hidden because the same links are in the header.
+
+Custom checklist answers now open by default; section evidence is an explicit alternate view. Desktop sections stay left, mobile uses a keyboard-accessible drawer. Template, site and workflow history details start collapsed; existing QE/TL decision forms remain outside those wrappers. Footer feedback/actions clear the bottom-left Appearance button. Existing upload, review, workflow and permission APIs are unchanged. No schema change or new dependency.
+
+Validation: 24 focused role/Super/photo upload/approval tests passed; 330 shared-header browser cases and 12 custom-checklist cases passed across desktop/390/320 widths and applicable modes. Browser checks used private real Django-rendered fixtures with no operational writes. Live five-role sign-ins passed; seven original business tables, account identities/roles/password hashes and all78 original photo hashes match checkpoint20261019-131915. Receipt docs/development/HEADER_NAVIGATION_RECEIPT.json. No GitHub push or external hosting.
+
+
+## 19 October 2026 Separate two-photo metadata matching queue
+
+User asked for photo analysis first, then checklist interpretation/comparison and proposed connections, with unmatched photos parked separately in tiles of two and duplicate displays removed. Existing backend already observes each source through the vision-capability gate, caches visual metadata, then compares it against frozen checklist labels/descriptions/context and stores proposed placements. Matching is existing deterministic lexical/context retrieval, not an added second LLM reasoning call. The order is per photo, not a global all-photos-first phase. No new service, schema or live analysis run was introduced.
+
+Photo workspace now has four clear stages and a separate Needs matching queue, two source cards per page, two columns desktop/one mobile. Each card has preview, saved observations, one section/item selector, advisory match status and explicit reviewed confirmation. Sources deduplicate by source ID in this view; existing per-checklist raw-SHA256 upload dedup and unique photo/field mappings remain authoritative. The evidence viewer and advanced history start collapsed, opening when a source is inspected. Confirmed/manual/rejected decisions and original photos are preserved. Ambiguous proposals require deliberate choices; active-job and stale-schema guards remain. This does not approve answers or sections.
+
+Validation:18 focused metadata/confirmation/upload/approval tests passed2.747s,17 browser interaction cases passed with zero operational writes at1440/390/320, and live five-role/header/photo-page checks passed. Seven original business tables, account identities/password hashes/roles and all78 original source hashes match checkpoint20261019-131915. Evidence docs/development/PHOTO_MATCHING_TILES_RECEIPT.json and .local/photo-tiles-qa/. Existing342 header/checklist browser cases and24 focused navigation tests are recorded separately. No GitHub push or internet exposure.
+
+
+## 19 October 2026 Raised tactile buttons
+
+User requested all buttons appear visually 3D and depress on click. Shared button_depth.css is loaded last in base.html (raised-1). Native buttons and submit/reset inputs, styled action links, header tiles and upload labels use subtle inset highlights, a raised bottom shadow and a2px pressed translation without changing layout dimensions or action handlers. Existing palette/background colors remain. Disabled controls have subdued shadows and no press behavior; keyboard focus, reduced-motion and print rules included. No schema, backend or data changes. Six private browser cases passed at1440/390/320 in light/dark, checking real pointer press, keyboard focus and disabled style with no operational writes. Receipt docs/development/BUTTON_DEPTH_RECEIPT.json.
+
+
+## 19 October 2026 AI Analysis progress and manual mismatch dialog
+
+User requested AI Analysis wording in the front end, actual progressive status with matched/mismatched counts and a manual matching window. Photo-workspace presentation now avoids the internal technical term, including stored proposal reasons, tooltips and error wording. New ai_analysis.js uses durable analyzed IDs when idle and actual completed/total with the reported matching stage for the current active batch. No timer invents progress; queued/failed states remain explicit. The active batch is labeled, site-wide matched/mismatched/pending/confirmed counts remain separate. Matched counts unique source IDs with proposed/confirmed/manual links; mismatched counts only analyzed sources with no active link, never pending photos.
+
+Mismatched opens native keyboard-accessible dialog with two independent searchable/scrolling tables: checklist points and unmatched photo thumbnails. Select both then explicitly confirm. Uses existing mapping API action manual, schema digest and fresh preflight; active jobs, changed schema, locked fields and no-longer-unmatched sources block writes. Read-only users can inspect but cannot confirm. Errors preserve selections; success refreshes counts; missing photos show a genuine missing-evidence message. No schema or AI integration change.
+
+21 private browser cases passed at desktop/390/320, including synthetic request-spy success/error, guards, progress/counts, independent scroll and keyboard focus; zero operational writes.18 focused backend regressions passed; later complete327 core tests passed25.751s with in-process synthetic MD5 override only. Read-only comparison with135339 observed concurrent user changes to checklist1 answer_data/updated_at and photo-processing records; these were preserved, never reset to an earlier checkpoint. Recovery checkpoint140924 includes that work. Receipt docs/development/AI_ANALYSIS_PROGRESS_RECEIPT.json.
+
+
+## 19 October 2026 Editable survey identity and photo capture prefills
+
+User requested surveyor from the user account, organization from the Admin/company, survey date/time/location/site ID from available photos, and eventual mandatory profile completion while retaining manual development entry now. field_intake_service.survey_prefill_suggestions/site_information_fields derive unsaved defaults from the assigned checklist.user full name (professional display-name fallback), actual project.company, assigned project name, valid photo capture dates/times and GPS. Dates must agree on a capture day; earliest actual clock time is offered without inventing timezone. GPS must agree at six decimals; differing positions/dates remain blank with conflict notes. Region/city, engineering dimensions and other absent facts are never guessed. Explicit full-line Site ID/Code text from current hash-bound analysis is suggested; system assigned site identity is never changed by a photo or filename. Original photo details and files remain untouched.
+
+Existing answer keys, including explicit blank/None/zero, always win. Approved/frozen/locked values are retained. Additional field keys stored_value, prefilled, suggested_value, suggestion_source/note/conflict support provenance. Both custom checklist and photo site-information pane show defaults with source/review hints. Save autofilled details or Save and submit collects only unsaved defaults plus user edits through existing validated APIs; no opening/GET causes a survey save. Photo-pane Save includes existing expected_updated_at. New photo-state defaults refresh only when no dirty manual input exists. Client/read-only views display saved values, not inferred replacements. Professional profile page explains identity/company origin; mandatory completion is deferred during development as requested. No schema/migration or AI service change.
+
+Validation:327 full core tests passed25.751s, including8new prefill/integration tests and8intake regressions; actual custom GET tests cover absent defaults, explicit clears, SUBMITTED/FINAL read-only fields and unchanged updated_at/answers/review history.24 private browser checks passed at1440/390/320, covering both forms, provenance, default/manual values, zero initialPOSTs, explicit save payloads, stale-update token, dirty-input retention and footer/Appearance reachability. Six synthetic-spy save calls only; zero operational writes.21AIAnalysis browser cases also reran successfully on final JS. Live normal five-role sign-ins plus Engineer custom/photo pages passed. Compared with recovery checkpoint140924, seven business tables, account identities/roles/password hashes and all78 original photo hashes remain equal. This comparison preserves the concurrent user changes documented in the previous entry. Current hidden launcher14576 runs app/worker127.0.0.1:8000, native Ollama unchanged;0activejobs confirmed before restart. Receipt docs/development/SURVEY_PREFILL_RECEIPT.json. No GitHub push or public exposure.
+
+
+## 19 October 2026 Owner-authorized clean two-checkpoint trial and rectification feedback fix
+
+User explicitly requested removal of operational data and a fresh trial with two checkpoints and two photos because submission/rectification appeared broken. Read-only diagnosis: old Checklist1/Test1 was REJECTED with required answers complete, but quality_reviewer wasNULL and no QE account existed. The mandatory QE gate correctly blocked resubmission. No approval controls were removed. Separately, QE rejection reason was recorded only in quality_approval/history.reason while Engineer feedback displayed checklist.comment: quality_workflow now records comment/comment_by on rejection. base.html now renders accessible typed Django messages once above content and scopes child message loops empty to avoid duplicates. Submission failures are visible.
+
+Stopped verified launcher14576 tree and saved verified recovery checkpoint .local/backups/project-checkpoint-20261019-142515. A fresh migrated database/media was staged under .local/clean-two-point-20261019-142515-v2 and validated before installation. Kept all18 existing account usernames/password hashes/roles/company/industry bindings and professional profiles; old operational projects, templates, checklists, answers, jobs, placements, decisions and history are absent from the fresh live dataset. Original DB and media are retained as retired-survey.sqlite3 and retired-media inside the checkpoint, in addition to the verified recovery ZIP. Install had rollback protection; Windows open-handle checks were resolved before final successful swap. No old source/approval/photo file was permanently deleted.
+
+Live: one project Two-checkpoint workflow test, one TEST-SITE-001 DRAFT/PENDING task, exact two required inspection fields (Site identification sign condition; Tower structure and ladder condition), each requiring confirmed evidence, and exact two original photo copies from archived sign/tower sources. No answers, mappings, jobs or approval decisions seeded. Main accounts demo_eng01 / demo_lead01 / demo_client01 / demo_admin01. Created demo_qa01 through the normal Admin invitation/acceptance flow and assigned explicitly to the task. Existing accounts retain passwords and role authority; primary project grants were reset for the small trial. Client review is required after QE and Team Lead; Client draft access remains hidden. Private credentials and click-by-click testing instructions: .local/TWO_CHECKPOINT_TEST_GUIDE.md and .local/two-checkpoint-test-accounts.json. Do not copy passwords into source documentation.
+
+Full328core tests passed26.350s. Eight actual disposable-browser workflow cases passed upload→submit→QE return→Engineer edit/resubmit→QE approve→TL approve→Client complete, including visible required-field errors and rejection reasons. Seven additional HTTP acceptance checks against an exact private copy of the fresh seed passed with CSRF enforced, including photo_required evidence gating and final closure; zero native inference calls and no live operational writes. Ten live credential HTTP checks and four actual desktop/mobile browser cases passed. Post-QA live state remainsDRAFT with2photos/0placements/0jobs/19accounts. Hidden launcher36376 runs app/independent worker127.0.0.1:8000; native Ollama unchanged, vision gate retained. No schema or GitHub push. Receipt docs/development/TWO_CHECKPOINT_RESET_RECEIPT.json. Earlier preservation assertions against the previous dataset are now historical and must not be rerun unchanged after this explicitly authorized reset.
+
+
+## 19 October 2026 Explicitly requested two-photo checkpoint linking
+
+After the user completed AI Analysis and saved two inspection answers, live coverage had an unassigned sign photo and an unconfirmed tower suggestion. User explicitly requested linking using saved observations or other solid evidence. Both current hash-bound AI observations and the actual previews were inspected. Photo1 clearly shows the site identification sign/label; photo2 shows tower structure and access ladder. Backed up the current database privately before linking. Through normal Engineer credential sign-in, CSRF and schema-checked mapping API, manually linked photo1→site_identification and confirmed the existing photo2→tower_structure proposal. No original, saved inspection answer, workflow status or approval was changed; no new inference or submission. Live task remainsDRAFT with2/2 required evidence slots covered and missing_required=[] as verified after the requests. This explicitly authorized action supersedes the earlier zero-placement test-state description. Receipt docs/development/TWO_PHOTO_LINKING_RECEIPT.json and .local/photo-links-confirmed.json.
+
+
+## 19 October 2026 Preserve findings and investigate stronger photo/checkpoint validation
+
+User requested retaining the current findings and investigating stronger rules/methods. Read-only source audit and primary-documentation research completed; no application code, template snapshot, observation cache, photo link, answer, approval or task status was changed. The two source originals match stored hashes; one manual sign link and one confirmed tower link remain intact. Private snapshot .local/research/confirmed-findings-20261019.json preserves source hashes, observations, schema, links, answers and decisions. Main research record docs/development/STRONGER_EVIDENCE_MATCHING_RESEARCH.json; proposed phased rules appended to docs/FIELD_PHOTO_WORKFLOW_PLAN.md.
+
+Concrete current weakness: procedural instruction tokens inflate the matching denominator and visible Site ID text is excluded from anchors. Subject-specific label rules plus literal identification labels can improve candidate retrieval without another image call; broader semantic retrieval/OCR/QR/targeted vision need separate implementation and field validation. An in-memory2-photo/3-negative demonstration passed its illustrative conditions only; not a calibrated accuracy benchmark. No new dependencies/models or cloud service were introduced, and no inference or live operational writes ran. Human matching, evidence sufficiency, and engineering pass/fail must remain distinct. Cache/400photo support still does not establish the30-minute end-to-end target.
+
+
+## 19 October 2026 Shared, versioned evidence analysis and controlled learning
+
+Implemented the researched operational rules: subject-first checkpoint retrieval with contradiction/negation guards; strict optional evidence requirements per published template field; local RapidOCR text extraction with region/confidence provenance; local OpenCV QR decoding without following payload URLs; original capture-time/GPS context and blur/resolution indicators; local BGE semantic retrieval; bounded verification of ambiguous candidates using the existing vision-capable Ollama model. Numeric answers, measurements, N/A, inspection pass/fail and workflow approvals remain human-controlled. The optional later object-grounding model was not introduced.
+
+New immutable evidence records are scoped to company/project/activity/site/source hash/frozen schema, actual model-file digest, tool/source/model-weight fingerprints, prompt/rule versions and explicitly adopted correction release. Source bytes and saved payload integrity are checked. Observations are reused across rule updates; unchanged complete assessments are reused without more inference. All authorized operational users receive the same saved findings. Historical observations are archived, not represented as digest-verified new results. The saved-analysis panel distinguishes historical versions; the evidence JSON report carries provenance. Independent submission snapshots bind saved evidence provenance.
+
+Human photo confirmation, manual reassignment and rejection now capture pending correction examples. A different assigned QA Engineer or Team Lead must review an example. Publication creates an immutable project release, and applying it is explicit. Exact-source corrections affect suggestions only; similar-photo examples are retrieval hints for another visual check. Intrinsic evidence/contradiction guards remain enforced. This is controlled reference learning, not model-weight fine-tuning. Previously saved answers, confirmed/manual/rejected links, approvals and original photos are preserved. Active photo processing blocks submission/review gates.
+
+The final critical-review layer reuses canonical findings across users for the same source snapshot and model/prompt version. Retry-only duplicate drafts do not change engineering inputs. Client visibility still requires Team Lead sharing of a current completed review. Immutable review bindings expose canonical provenance.
+
+Runtime: Python3.12 local environment; RapidOCR1.4.4, OpenCV5.0.0.93 and FastEmbed0.9.0 installed in the F-drive venv. Semantic weights are under .local/models/embeddings, runtime downloads disabled. Reprovision using scripts/setup_evidence_models.py after installing backend/requirements.txt. Migrations0035 and0036 are additive. No cloud photo service or new Ollama service was introduced. Native Ollama remains external and unchanged.
+
+Native two-photo validation: OCR succeeded on both sources; QR decoded on photo1. First complete versioned job2 processed2/2 in approximately141seconds on the currently CPU-only Ollama runtime. Both intended checkpoint matches were supported and both cross-matches remained insufficient. This is a functional probe, not an accuracy or400-photo timing benchmark. The400-photos/30-minute target is not demonstrated on this runtime. Final verification and preservation results are recorded in docs/development/VERSIONED_EVIDENCE_RECEIPT.json.
+
+Final acceptance:382 core tests passed28.556s;12 desktop/mobile browser checks passed. Live final-version2/2photo run and four-role identical saved-record comparison passed. Cached replay of both photos completed0.015s with native inference/tool entrypoints instrumented to fail if called. Exact human-data preservation comparison passed; no pending jobs, no automatic approvals or changed links/answers. Final hidden launcher8788 serves127.0.0.1:8000. Receipt docs/development/VERSIONED_EVIDENCE_RECEIPT.json.
+
+
+## 19 October 2026 Standard checklist library and construction room instances
+
+Added the shared standard catalog at /devadmin/checklist-templates/standards/ with actual previews and four versioned sources: Telecom Survey Default from the previously uploaded FDED master; Telecom Inspection Built to Suit; Telecom Inspection Colocation and Modernization; Construction Inspection all stages. The FDED source remains byte-for-byte equivalent in its sections/field definitions: 16sections,172fixed spreadsheet rows and9equipment inventories,181fields total. Inspection baselines have56BTS fields,48Colocation/Modernization fields and55Construction base fields.
+
+Construction stages are Preconstruction,Design,Grey Structure,MEP,Finishing,External works,Testing and handover. The room inventory supports24types and up to40named instances with optional floor/level. Repeated bedrooms/bathrooms keep separate section IDs, field IDs, answers and photo evidence. Room-specific points include wet-area,stairs,external-room and plant/garage topics. Stages and room instances are validated again on the server and in edited template configuration. Generated room fields include structured room context; a generic interior photo cannot establish room/floor identity for automatic suggestions. Explicit manual photo assignment remains available. Large room catalogs use semantic batches of at most500fields without dropping fields.
+
+Super Admin can inspect the shared administrative catalog and source previews. Scoped Project Admins can create separate drafts only within their permitted industry, then use existing publish/assignment controls. Source templates are not engineering certification: approved project criteria, technical applicability and the existing independent review workflow are retained. Standard templates cannot be assigned to the wrong project industry or task workflow, including direct model/service callers. Existing custom templates without standard metadata retain their behavior. No SQL schema migration was introduced.
+
+The three Telecom drafts were created for the existing scoped Admin through normal CSRF-protected invitation-era administration routes; they are not published or assigned automatically. Construction is available globally in the standard library for a Construction Admin; no synthetic live Construction project/account was created. The current two-checkpoint project, its published template, answers, approvals, photos and links were compared before/after and remain unchanged. Existing operational templates and project defaults were not reassigned. Frontend form errors preserve entered name, stages and room JSON; previews use actual selected stages/rooms, with no-JavaScript stage submission supported. Final acceptance evidence: docs/development/STANDARD_CHECKLISTS_RECEIPT.json.
+
+Standard library final acceptance:403core tests passed29.378s;21desktop/mobile browser cases passed with zero writes. Actual server credential login/library/source-preview checks passed for Super Admin and Project Admin. Live3Telecom drafts created without publication or project reassignment; Construction shared standard available under its industry controls. Runtime hidden launcher36544. Receipt docs/development/STANDARD_CHECKLISTS_RECEIPT.json.
+
+## 19 October 2026 Checklist Wizard, multi-checklist Excel and construction activities
+
+Checklist Wizard is live at /devadmin/checklist-wizard/. Project Admins can create scoped blank drafts, modify owned drafts, independently replicate permitted sources, choose standards and preview Excel imports. Super Admin has administrative read/download access. Excel supports all eight existing field types and explicit existing evidence sufficiency conditions, repeated-table definitions, room context and lossless FDED/standard descriptive metadata. Unsupported conditions, formulas, macros, external links and malformed/oversized workbooks fail before draft creation. Actor/company-bound30minute immutable previews require matching digest and explicit atomic commit; replay returns the same drafts. No automatic publish, assignment, survey answers, AI runs or approval writes. Additive migration0037 stores preview batches. Published revisions remain immutable; Wizard draft saves reject stale edits and retain entered structure. Industry/workflow cannot be bypassed through the legacy editor.
+
+Construction now has20 stage choices, retaining all7older codes plus13 detailed activities: excavation, engineering fill/compaction, FDT, lean concrete, foundation reinforcement/concrete, plinth beams, ground slab, lintel beams, first-floor reinforcement/concrete and reusable other-floor cycles. Each explicit activity ends in a required repeated test register with appropriate actual measurements, report/criteria references, units, human decision, reviewer and retest/N-A explanation columns. General legacy stage registers stay optional. No numerical engineering thresholds are invented. Ordinary draft sections can be copied with new IDs for additional floors; named-room copies use explicit room inventory instead. Existing published/site definitions are not regenerated.
+
+Validated443full core tests40.514s, final17Wizard-focused tests,20actual desktop/mobile Wizard browser cases and4actual Engineer mobile FDT/slump save/reload cases. Starter XLSX in outputs/checklist-wizard-20261019 and backend/static/core/templates was authored with Artifact Tool;9sheets visually reviewed,2Telecom examples importable,0formulas and10dropdown rules. Runtime exports reuse installed openpyxl. Valid XLSX files with absent/incorrect optional dimension metadata are bounded using actual coordinates and parse correctly. Live credential GET/download/export checks pass for Super/Admin; Construction20stage workbook and original181field FDED export verified. Production imports0;2originalphoto hashes and allaccount identities/password hashes preserved.34business tables match checkpoint165637. Concurrent Super Admin industry created/updated/binding events changed IndustryCatalog/Profile and were retained, not reset. Normal sign-ins append audit/session timestamps. Current launcher18076, nativeOllama untouched. Receipt docs/development/CHECKLIST_WIZARD_RECEIPT.json. Next active user change: move project creation to scoped Admin and choose3/4layer workflow with one-step clarification returns.
+
+## 19 October 2026 Private Admin projects, three/four layers and editable industries
+
+User superseded Super project creation: only an active company/industry-bound Project Admin may create projects. ProjectForm fixes company/industry/administrator on the server, requires3or4review layers and grants the creator membership. Super creation is403 and all creation forms were removed from Super screens. Project.administrator is the unique owner; central accessible_projects now requires both owner and effective affiliation for an Admin. Same-company memberships, primary-profile pointers, forged filters and former-owner grants cannot expose another Admin's project, APIs, photos, reports or project-linked templates. Explicit Super ownership transfer is audited, preserves evidence/history and immediately removes former-owner access. Legacy trusted primary assignment claims only null ownership, never replaces an owner; migration0040 adopts only an unambiguous existing Admin and preserves already named owners. Existing live project1 remains owned by demo_admin01. Super retains administrative metadata/audit/ownership controls, no engineering signatures. Admin invitations can bind company and industry without any project; that Admin creates their first project after accepting. Operational invitations still require a scoped project; Clients remain Admin-only.
+
+New project workflows:3layers Engineer->Quality Engineer->Team Lead closes after TL;4layers adds a named Client approval/rejection. Each new task freezes project_review_layers at creation and independent reviewer IDs in ReviewRoute; alternate service/model paths cannot downgrade it. Existing tasks without that marker retain their prior policy. Client rejection goes only to TL; TL rejection goes only to QA; QA rejection goes only to Engineer. Reviewer clarification keeps inputs frozen, requires an attributed reason and can respond one step forward or return one further step. Engineer corrections create a new parent-linked immutable SubmissionRevision and require fresh approvals. ReviewRouteEvent is append-only and supports repeated cycles without replacing old signatures. Current-route actions require CSRF, assigned current person/role/membership and fresh state token; Admin/Super cannot sign. Client access requires a TL sharing event for the exact current revision and excludes Engineer/unshared corrections; old already-shared snapshots remain readable through historical revision controls.
+
+Industries now have description and a stable workflow_family. Super may edit code/name/description/active state through an atomic token-checked service; code changes retain IndustryCatalogPK/Admin and Client organization FKs and update Project.industry references. Existing family is fixed, new industry creation may choose Telecom/Construction/Other. All module/standard/assignment/qualification checks use stable family, not editable display code. New frozen routed snapshots include stable industry identity; administrative code/name changes retain historical labels during digest validation and do not rewrite approved snapshots. Local AI description generation is Super-only, JSON/CSRF protected, uses the existing inference lease and configured Ollama text model, returns an editable proposal and never saves automatically. Real error/retry and dirty-edit protections exist. No new AI service or photo inference was introduced.
+
+Additive migrations0038through0042 applied. Final479core tests PASS46.874seconds (process-only test MD5 override),5actual route browser cases and5industry browser cases passed across desktop/mobile. Normal live Super/Admin logins and owner restrictions verified. Actual native qwen3.5:4b text description returned449characters with saved=false and unchanged catalog; no operational test data created.37existing business tables in shared pre-migration columns, all20account identities/password hashes and2original photo SHA256 values match checkpoint171154. Original legacy project/task routing preserved; production ReviewRoute/events0. New runtime hidden launcher26696; nativeOllama unchanged. Pre-upgrade checkpoint173411. Receipt docs/development/PROJECT_OWNERSHIP_REVIEW_AND_INDUSTRY_RECEIPT.json; live proof .local/project-industry-live-verification.json. No GitHub push/public hosting. All project/data remain under F:/iSurvix/iSurvix-Field.
+
+## 19 October 2026 Compact People and invitations tables
+
+People, project access, Admin industry bindings and invitation cards now enhance to compact tables using people_tables.js/css loaded on Super/Admin screens. The transformation moves the original permission-scoped form nodes, preserving actions, CSRF, confirmation handlers, select/input names, values and required flags. Project Admin People & invitations uses three keyboard tabs; existing Super SA-02 panels remain. Tables have bounded internal scrolling, sticky headings/person column, search/counts, expandable access/grant details and hover/focus-labelled action icons. Original server-rendered cards remain functional without JavaScript. No backend, permission or schema change.
+
+20focused governance/console tests passed1.954s;16private browser cases passed1440/390/320 across Super/Admin. Browser source-vs-table form signatures match, search/empty states, keyboard tabs and grant/invitation panels pass; screenshots inspected. Normal live Super/Admin pages/assets pass;39business tables and account credentials match checkpoint173618 (normal sign-in audit/session updates only). No operational writes/native AI calls. Restarted only verified launcher26696 after0active photojobs; current hidden launcher33968. Private QA helper stopped. Receipt docs/development/COMPACT_PEOPLE_TABLES_RECEIPT.json.
+
+
+## 19 October 2026 Seven account project team
+
+Owner requested one Admin, two projects and Clients, with one shared Team Lead, QA and Engineer. Reused six existing linked identities and renamed logins: admin01, client01, client02, teamlead01, qa01, engineer01. Super Admin super_assim and all retained password hashes unchanged. Removed13unused temporary accounts after inspecting deletion cascades; original audit actor labels retained. No demo_/test_ usernames remain. Seven active accounts total.
+
+Test Project1(ID2) and Test Project2(ID3) remain owned by admin01, both four-layer Engineer->QA->Team Lead->Client. Ten active grants: Admin/TL/QA/Engineer access both, client01 only2 and client02 only3. Admin-created Client1/Client2 organizations linked to corresponding project. Legacy Two-checkpoint workflow test(ID1), its draft/evidence and history remain stored with no active staff grants or owner. Super can inspect its administrative metadata. No technical decisions or historical identities were rewritten; no projects or tasks were invented or removed.
+
+Verified seven actual HTTP credential logins and21allow/deny project requests; retained passwords unchanged; protected business tables and original media hashes match pre-cleanup checkpoint180751. Account-reorganisation receipt records the exact scope. Private Excel register updated in place with seven rows. Existing Word original is locked open, so current seven-account copy saved to .local/private/iSurvix_Current_Usernames_and_Passwords.docx without closing Word. Packaged native DOCX renderer unavailable because bundled LibreOffice is absent. Existing app/worker runtime unchanged; no code/schema migration or GitHub push.
+
+
+## 19 October 2026 Live Telecom survey user test with real Z78005 photographs
+
+Used normal live HTTP credential sessions for admin01, teamlead01, engineer01, qa01, client01, client02 and super_assim. No force-login or direct ORM writes for configuration, assignments, uploads, mappings or review actions. Admin published existing uploaded-FDED standard2(181fields) through Wizard and assigned it to Test Project1/2. Team Lead assigned siteZ78005 in Project2(Test Project1) to engineer01 with QA19, TL15 and Client12 under the existing four-layer route. ChecklistID2. General site information and coordinates22.64275,39.130271 came from the supplied source XLSX; original surveyorNaseer/ISG retained as source information. Task description explicitly marks live testing, not engineering certification.
+
+Source E:/Online Storage/iSurvix/OneDrive - iSurvix/Nokia Project - Site Survey/Data from Surveyors/Ahmed/Z78005 contains1164JPEGs. Full readonly SHA/image audit890.51seconds found16exactduplicates,1148unique and0unsupported. Uploaded400distinct originals into F .local/media:57Civil,146Electrical,197Tower. Proportional chronological sample preserves20bootstrap photos uploaded through actual Engineer browser controls; final effective selection in .local/real-site-test-20261019/effective-upload-plan.json.748unique originals remain outside the existing400/site cap. Native deduplication at capacity and safe rejection of a401st new photo were tested through real CSRF-protected HTTP uploads. Z90039 directory exists but contains0files; no fictional coordinates, photos or empty engineering assignment created. Project3 has the full Telecom checklist ready for later input.
+
+Verified Python3.12.10, actual Ollama/api/show vision capability of installed qwen3.5:4b digestd8b0f5... before native inference. Native processing is CPU only(size_vram0), with initial photos about135-139seconds/photo.400/30minutes is not demonstrated; this observed throughput is far too slow. PhotoJob4 is20bootstrap photos, Job5 is380queued photos. Processing is STILL ACTIVE in independent worker; do not claim400photos analyzed or a completed review cycle. Submission and final AI review are guarded while photos are pending; no QA/TL/Client technical signatures were recorded.
+
+13live role/guard checks passed. Internal Engineer/QA/TL read identical immutable saved analysis payloads/digests; Clients cannot read unshared draft; Super is administratively restricted; QA/TL uploads and premature approvals blocked. First sign photo correctly displaysZ78005 but AI also suggested an unrelated tower nameplate and FPFH item. Engineer test session confirmedTAWALsign row23 and rejectedrow26/62. These create draft learning cases only; no correction release or engineering answer/pass was published. Mapping precision and native performance remain actual findings.
+
+Found and fixed the main AI progress display using a current20photo batch as denominator when400site photos existed. ai_analysis.js now uses distinct site photos and saved processed IDs, retains current batch counts as a secondary label and half-step only for a genuinely unprocessed current source. Template query key bumped to ai-analysis-2. Cached browsers need Ctrl+F5. No restart because native work is active; launcher33968, web292 and worker4224 remain. Production files changed only static/core/js/ai_analysis.js and templates/dashboards/photo_workspace.html. No Python/schema/matcher/tool fingerprint or approval control changes.
+
+400photo browser review at1440and390 passed;40image DOM nodes rather than400thumbnails, no root horizontal overflow, actual filtered task list->photo workspace->return retains project2/qZ78005. Node syntax and Django system checks passed. All400stored original hashes verified against source selection;146preexisting core rows preserved(except authorized Project2/3 template pointers and published Template2; runtime leases/governance mutex excluded). Seven account names/password hashes/roles unchanged. Older two-checkpoint draft/photos remain intact. Receipt docs/development/REAL_TELECOM_SITE_TEST_RECEIPT.json; private logs/screenshots/HTTP source states in .local/real-site-test-20261019. No GitHub push, new external AI service or public hosting.
+
+## 19 October 2026 Dedicated GPU photo analysis pipeline
+
+This supersedes the CPU-only runtime and active-job details immediately above.
+Owner requested a separate, faster photo analysis pipeline. Detected RTX3060Ti8GB,
+driver610.88; existing native Ollama11434 was CPU-only. Started the already installed,
+signed portable Ollama0.40.5 from F .local/runtime/ollama-0.40.5 with model store
+F .local/ollama/models, bound127.0.0.1:11435. Kept original11434 process untouched
+for interactive chat. Verified qwen3.5:4b local vision before photos, exact same
+digest d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04.
+Native /api/ps reports3140495604bytes in VRAM rather than0; CUDA8.6 detected.
+Cold vision probe43.875seconds includes36.877seconds model load. Warm image-only
+probes4.406and4.203seconds. No new provider or model download.
+
+Start-iSurvix.cmd/ps1 now connects or starts scripts/Start-PhotoAI.ps1; dedicated
+photo endpoint is ISURVIX_PHOTO_OLLAMA_URL, falling back explicitly to original
+queue if portable installation is unavailable. Local transport retains loopback,
+no redirects/proxies, response bounds and cloud-model exclusion. Separate native
+lease photo-inference avoids holding the chat lock; global photo-worker lease
+prevents two consumers racing even with different endpoint configurations.
+
+Migration0043 adds immutable PhotoObservation rows with original/model/prompt
+fingerprints and payload digests. Existing data tables/rows were preserved.
+Worker stages four images before checklist comparison, commits reusable vision
+output before OCR/QR/semantic/targeted steps, and resumes from durable stages.
+Fingerprint-qualified historical observations are reused; uncertified legacy
+observations remain preserved and are reanalyzed once. Checklist text embeddings
+are cached per worker, bounded4096texts; OCR ONNX threads limited2intra/1inter.
+All existing hard evidence rules, targeted verification, published correction
+controls and human confirmation remain. UI progress reflects durable analysis and
+comparison halves, retains separate matched/mismatched/human-confirmed counts;
+cache key ai-analysis-3. No timed fake progress.
+
+Stopped only verified app/worker process trees for handoff; originals and cached
+results retained. Historical jobs4/5 now superseded with maintenance handoff note,
+old contexts/processed IDs unchanged. Normal engineer01 credential+CSRF enqueue
+explicitly adopted current processing tools for all400sitephotos in Job6. At
+19:07local snapshot:25/400complete, no error, running,25durable observations,
+current-attempt average11.363seconds/photo (5.28/minute), last image stage3.36s,
+last comparison9.5s. Prior full-photo average128.682s. Early throughput is not a
+complete400photo benchmark; initial samples reuse old observations. The400/30min
+target has NOT been demonstrated. Leave processing running; do not claim completed
+analysis, engineering submission or approval. Task2 remains DRAFT.
+
+All489coretests passed, plus55focused final queue tests; Django checks and pending
+migration checks clean; JavaScript and both PowerShell launcher syntax passed.
+Recovery tests cover failed matching without repeated vision, changed model digest,
+tampered original/payload guards, lease loss, concurrent consumer exclusion,
+embedding reuse/eviction and actor-independent saved output. Live Engineer/QA/TL
+state200, Clientdraft404, Super403;24common saved-record digests identical across
+internal roles. All402stored original hashes, seven users/auth hashes/roles,
+checklist answers/schema/status/history/approval values and human photo decisions
+were compared against a pre-handoff baseline and are unchanged. Real browser1440/
+390passed,40thumbnail nodes, no root overflow, filtered task return retained.
+
+Receipt docs/development/DEDICATED_PHOTO_PIPELINE_RECEIPT.json. Private benchmark,
+protected baseline and handoff records under .local/photo-pipeline-20261019.
+Pre-change verified recovery checkpoint .local/backups/project-checkpoint-20261019-185716.
+Final launcherPID32628; app http://127.0.0.1:8000, photo runtimePID12616 on11435,
+original OllamaPID9728 on11434. Verify current PIDs before future process actions.
+Pipeline logs .local/pipeline-final-launch.*.log and latest worker-*.log. All work
+and local data remain under F:/iSurvix/iSurvix-Field. No GitHub push/public hosting.
+
+### Final native grounding recovery and current queue
+
+The initial dedicated Job6 stopped after26photos: photo29's targeted model reply
+claimed supported without at least20characters of concrete visible evidence.
+Diagnosed against the real original and preserved its cached image analysis.
+Targeted instructions now request short bounded explanations. A structurally valid
+unsupported claim is explicitly downgraded to insufficient, with a missing-evidence
+note, before the unchanged strict validator runs. This cannot create a link, answer
+or approval. Injected answers, extra/unknown/duplicate fields, invalid reasons and
+malformed structures still fail validation. Native photo29 retest under the final
+current tools succeeded with3unconfirmedproposals; its image analysis was reused.
+No evidence rules were removed to gain speed. Job6 and its failure/context/results
+remain preserved as superseded; historical jobs4/5 also remain.
+
+Normal Engineer credential/CSRF enqueue explicitly adopted the final tools for all
+400photos in Job7. It is running independently; previously completed observations
+survive, and historical human decisions/answers/approvals remain unchanged.
+Early Job6 full-photo average12.721seconds versus128.682seconds previously;
+these are early mixed cache/fresh measurements, not a completed400photo benchmark.
+Warm image-only probes remain4.2–4.4seconds. The400/30minute target is still NOT
+verified. Do not claim the analysis or submission/approval cycle has completed.
+
+Final full core suite490tests passed in54.234seconds. Django check, migration drift
+check and JavaScript syntax passed. Final live original SHA/account/answer/schema/
+history/approval/human-link baseline comparison passed for402originals. Real browser
+1440/390passed again with40thumbnails and retained project2/qZ78005 return filters.
+Final launcherPID35564, loopback app8000, native photo server11435/PID12616; original
+CPU assistant11434/PID9728 preserved. Logs .local/pipeline-verified-launch.*.log.
+The current job ID is also in .local/photo-pipeline-20261019/new-job.json.
+Use docs/development/DEDICATED_PHOTO_PIPELINE_RECEIPT.json for the final snapshot.
+
+## 19 October 2026: requested five photos per second
+
+Implemented a separate CPU batched image/text retrieval lane alongside the existing
+GPU detailed verifier. Research and alternatives are recorded at the start of
+docs/FIELD_PHOTO_WORKFLOW_PLAN.md; primary sources include Qdrant's paired CLIP
+ONNX model cards, OpenAI CLIP, Google SigLIP2 and Ollama concurrency documentation.
+Selected the two CLIP encoders supported by the installed FastEmbed stack; no new
+Python dependency, hosted model or outbound photo transfer. Pinned revision and
+official model SHA256 verification, plus tokenizer/preprocessing/runtime/source/
+schema fingerprints, keep results versioned and shared across authorized users.
+Models and caches remain under F .local/models/photo-search; reproducible installer
+scripts/setup_photo_search_models.py. Actual vision architecture/weights are checked
+before processing project images.
+
+Final retrieval benchmark:400unique real Z78005 originals,41.019seconds,9.751photos/
+second. Includes cold process model verification/load,181-field checklist text
+encoding, original SHA reads, image decode/preprocessing, two-thread CPU inference,
+rankings, permissions/schema checks and SQLite commits. Current version had0cached
+vector hits;400rehearsal-version rows were preserved separately. This EXCEEDS5/sec
+for INITIAL UNVERIFIED SUGGESTIONS. It does NOT establish detailed OCR/QR/vision
+verification, engineering accuracy, submission readiness or approval at5/sec.
+Estimated500initialsuggestions50-60seconds;500uniquephoto benchmark not run.
+64-image encoder samples14-19/sec; final production setting uses2CPUthreads and
+batches32 to leave capacity for the rest of the app. Benchmark and browser receipts
+in .local/photo-search-benchmark. Research quality limits are explicit: no calibrated
+confidence or cross-industry accuracy validation. The one existing human-confirmed
+sign pointrow23 appeared in the top3(photo3); this is not a broad accuracy study.
+
+Migration0044 adds immutable PhotoSearchVector/PhotoSearchResult only. New independent
+photo_search_worker starts with Start-iSurvix.cmd alongside photo_worker and stops
+with its launcher. Retrieval can run even if detailed verification has failed;
+neither worker creates approvals. Fast-state GET uses the existing survey access
+guard, paginates2results, hides internal suggestions from Clients and sets private/
+no-store. A permitted Engineer can inspect a photo and manually choose a point using
+the existing mapping API; QA/TL have read-only controls here. Existing human links,
+rejections, answers, accounts and workflow locks remain unchanged. Fast completion
+does not update PhotoJob.processed_photo_ids or open final-review/submission gates.
+
+Photo workspace now separates Fast AI Analysis from Detailed AI verification, shows
+two photo tiles/page, and expands saved detailed history lazily. Real desktop1440/
+mobile390 tests passed; pagination changes actual photos, confirmation is disabled
+until a point is selected, closed history builds0assessmentnodes, expansion builds
+only the chosen181-item record, no root overflow, filtered task return retained.
+The upload and enqueue cap is now500photos/site;20perbatch and5MiB/file remain.
+Boundary tests accept500/refuse501 and permit duplicates at capacity.
+
+During this task the old detailed Job7 failed after64photos because photo67's compact
+observation exceeded256tokens. Invalid partial output was not cached. Increased the
+bounded ceiling to768without relaxing schema/approval checks; actual photo67 retest
+completed and saved valid observations. Historical Job7/context/error/results were
+preserved as superseded. Normal Engineer credential+CSRF enqueue explicitly adopted
+current tools ONLY for336remaining photos in Job8;64completed results preserved.
+At19:37local snapshot Job8running16/336,80/400totaldeepcomplete,400/400fastready,
+no current job error. Leave detailed processing running. Do not claim all400fully
+verified or a finished review/approval cycle. Site2 remains DRAFT.
+
+Full497coretests passed in50.087seconds; final focused16passed. Django check, migration
+drift, four JS modules and PowerShell launcher syntax passed. Live Engineer/QA/TL
+fast-state200 with identical saved suggestions; unshared Client404; Super403. All402
+original SHA256s and baseline user auth/role/active state, answers, schema, approvals,
+history and human mappings were rechecked unchanged. No GitHub push or new users.
+Latest final launcherPID26272; .local/fast-photo-launch.pid is authoritative after
+restart. Logs .local/fast-final-launch.*.log and photo-search-*.log. Original native
+assistant11434/PID9728 and photo model11435/PID12616 preserved. Verify PIDs before
+future process actions. Final receipt docs/development/FAST_PHOTO_ANALYSIS_RECEIPT.json.
+Pre-change recovery checkpoint .local/backups/project-checkpoint-20261019-192530.
+
+
+### Final visual relevance filter and delivered benchmark
+
+Visual QA identified profile/contact fields among the initial generic text
+similarities. Restricted retrieval to photo/inspection points or fields explicitly
+requiring photo evidence, retaining the number/date/system exclusions. The live
+181-field template has150eligiblevisualpoints. The sign's existing human-confirmed
+point remains represented; no profile fields are suggested. Fast indexing covers
+the full editable site, independently of a resumed deep job's remaining-photo
+subset. Tests cover both conditions.
+
+The final filtered cold run processed400unique originals in50.846seconds,
+7.867photos/second, with0current-versionvectorcachehits while GPU verification
+continued. This supersedes the earlier41.019second/9.751rate for the broader
+catalog. Projected500initialsuggestions60-75seconds; full verification is still
+slower and remains mandatory before final review/submission. Retained historical
+rehearsal-version rows are not used as current results. No photo/answer/human
+decision was changed by the filter or cache upgrade.
+
+Final full core suite499tests passed; focused retrieval/capacity suite18passed.
+Final launcherPID17496; .local/fast-photo-launch.pid remains the current source.
+Logs .local/fast-release-launch.*.log; UI and API unchanged routes. Final performance,
+quality limits, source links and live role results are in
+docs/development/FAST_PHOTO_ANALYSIS_RECEIPT.json. Latest browser checks include
+two-card pagination and lazy history at desktop/mobile widths.

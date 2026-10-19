@@ -1,0 +1,95 @@
+{
+  "completed_at": "2026-10-19T13:06:43.973052+00:00",
+  "status": "implemented_and_verified",
+  "workspace": "F:\\iSurvix\\iSurvix-Field",
+  "rules": [
+    "subject-first retrieval",
+    "negation and contradiction guards",
+    "typed per-checkpoint evidence requirements",
+    "local OCR with regions/confidence",
+    "literal QR decoding",
+    "original GPS/time and quality context",
+    "semantic retrieval without probability claims",
+    "bounded targeted local vision",
+    "no generated measurements or approvals"
+  ],
+  "consistency": [
+    "immutable scoped saved findings",
+    "photo/source/schema/model/tool/prompt/release fingerprints",
+    "cross-user shared findings",
+    "pinned versions until explicit adoption",
+    "payload and source integrity checks",
+    "shared critical review with immutable provenance"
+  ],
+  "controlled_learning": [
+    "human mapping decisions become pending examples",
+    "different assigned QA/Team Lead peer review",
+    "explicit immutable project release",
+    "explicit application to a site",
+    "exact-source correction replay",
+    "similar-source examples advisory only",
+    "no automatic model-weight training"
+  ],
+  "migrations_applied": [
+    "0035_evidence_learning",
+    "0036_evidence_review_binding"
+  ],
+  "screens": [
+    "/local/photos/<checklist_id>/",
+    "/evidence/activities/<checklist_id>/evidence-learning/",
+    "existing checklist template builder",
+    "/local/checklist-review/",
+    "existing evidence JSON report"
+  ],
+  "verification": {
+    "python": "3.12.10",
+    "django_check": "passed",
+    "migration_drift": "none",
+    "dependency_check": "passed",
+    "core_tests": 382,
+    "core_test_seconds": 28.556,
+    "browser_cases": 12,
+    "browser_widths": [
+      1440,
+      390,
+      320
+    ],
+    "browser_failures": [],
+    "native_photos_processed": 2,
+    "native_correct_checkpoint_support": 2,
+    "native_cross_matches_abstained": 2,
+    "local_ocr_sources": 2,
+    "local_qr_decoded_sources": 1,
+    "local_vision_capability_verified": true,
+    "same_saved_findings_authorized_roles": [
+      "Engineer",
+      "Quality Engineer",
+      "Team Lead",
+      "Project Admin"
+    ],
+    "human_data_unchanged": true,
+    "preservation_digest": "1c543710c405994a3689f4b42996042459b8d6ab80a12645f84b846632be49b8",
+    "cached_two_photo_seconds": 0.015,
+    "cached_replay_no_inference": true,
+    "all_current_records": true,
+    "pending_photo_jobs": 0
+  },
+  "limits": [
+    "First two-photo full versioned run took about141seconds on current CPU-only Ollama.",
+    "400photos/30minutes has not been demonstrated.",
+    "Domain accuracy and multilingual OCR require broader independent field validation.",
+    "Optional later object-grounding detector not activated; no automatic LLM weight fine-tuning."
+  ],
+  "runtime": {
+    "url": "http://127.0.0.1:8000/local/",
+    "launcher_pid": 8788,
+    "data_root": "F:\\iSurvix\\iSurvix-Field\\.local",
+    "semantic_cache": ".local/models/embeddings"
+  },
+  "private_evidence": [
+    ".local/versioned-evidence-live-receipt.json",
+    ".local/research/local-tools-real-photos.json",
+    ".local/evidence-browser-qa/receipt.json",
+    ".local/evidence-final-core-tests.log"
+  ]
+}

@@ -57,6 +57,12 @@ if ($aiReady) {
         } catch { Write-Host 'Vision capability could not be verified. The photo worker will require verification before analysis.' }
     }
 } else { Write-Host 'Ollama is not responding. Start Ollama and use Check connection in the app.' }
+try {
+    & (Join-Path $projectRoot 'scripts\Start-PhotoAI.ps1') -Model $Model
+} catch {
+    $env:ISURVIX_PHOTO_OLLAMA_URL = $env:ISURVIX_OLLAMA_URL
+    Write-Host "Dedicated photo AI unavailable: $($_.Exception.Message) Using the existing local AI queue."
+}
 & $venvPython (Join-Path $projectRoot 'scripts\local_setup.py') --browser-admin
 if ($LASTEXITCODE -ne 0) { throw 'Local database setup did not finish. See the message above.' }
 $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
@@ -67,11 +73,13 @@ Write-Host 'Your database, photos and secret are preserved in .local. Do not del
 if (-not $NoBrowser) { Start-Process "http://127.0.0.1:$Port/local/" }
 $runStamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $worker = Start-Process -FilePath $venvPython -ArgumentList @('manage.py', 'photo_worker') -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $projectRoot ".local\worker-$runStamp.stdout.log") -RedirectStandardError (Join-Path $projectRoot ".local\worker-$runStamp.stderr.log") -PassThru
-Write-Host 'The independent local photo worker is running. Jobs and evidence survive restart.'
+$searchWorker = Start-Process -FilePath $venvPython -ArgumentList @('manage.py', 'photo_search_worker') -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $projectRoot ".local\photo-search-$runStamp.stdout.log") -RedirectStandardError (Join-Path $projectRoot ".local\photo-search-$runStamp.stderr.log") -PassThru
+Write-Host 'The independent photo pipeline is running: image analysis, checklist comparison, then human confirmation. Durable stages survive restart.'
 Push-Location (Join-Path $projectRoot 'backend')
 try { & $venvPython manage.py runserver "127.0.0.1:$Port" --noreload } finally {
     Pop-Location
     # Windows virtual-environment Python can spawn a runtime child; stop that
     # exact worker tree so it cannot remain detached after the launcher exits.
     if ($worker -and -not $worker.HasExited) { & taskkill.exe /PID $worker.Id /T /F | Out-Null }
+    if ($searchWorker -and -not $searchWorker.HasExited) { & taskkill.exe /PID $searchWorker.Id /T /F | Out-Null }
 }

@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-19",
+  "photo_workflow": {
+    "stages": [
+      "Upload originals",
+      "Extract reusable visual metadata",
+      "Match checklist labels/descriptions with conservative context",
+      "Engineer reviews single-point dropdown and confirms selected links"
+    ],
+    "matcher": "catalog-context-v2",
+    "metadata_cache_version": "compact-vision-v1 unchanged",
+    "confirmation": "Explicit reviewed choices only; 100-decision atomic chunks; stale/active guards; partial success reported truthfully",
+    "multiple_matches": "Unchosen suggestions and all human links preserved; explicit advanced correction remains available",
+    "cached_rematch": "Existing enqueue API; metadata-ready sources reused; no real library rematched during implementation",
+    "compact_ui": "20-photo review pages, bounded lists, wide split match/viewer, advanced sections collapsed",
+    "schema_changed": false
+  },
+  "super_admin": {
+    "chosen": "SA-02 / Tabbed desk",
+    "status": "Applied live",
+    "palette": "Navy, white and blue",
+    "panels": [
+      "People",
+      "Invite account",
+      "Admin industries",
+      "Project access",
+      "Invitations",
+      "Overview"
+    ],
+    "sections": [
+      "People & invites",
+      "Industries",
+      "Clients",
+      "Projects",
+      "Sites"
+    ],
+    "audit": "12 latest actual administrative events, independent scroll panel, Super-only",
+    "controls": "Real form actions preserved, compact icons with actual hover/focus tooltips and accessible names; local keyboard tabs; invalid form panel opens automatically"
+  },
+  "validation": {
+    "core_tests": 319,
+    "seconds": 26.909,
+    "test_hashing": "Synthetic process-only MD5 override; actual password hashes unchanged",
+    "native_ollama_pilot": {
+      "result": "PASS",
+      "model": "qwen3.5:4b",
+      "vision_verified_before_analysis": true,
+      "photos": 1,
+      "data": "Disposable synthetic only under project .local",
+      "original_preserved": true,
+      "metadata_validated": true,
+      "explicit_confirmation": true,
+      "answers_or_approvals_changed": false,
+      "log": ".local/compact-metadata-native-pilot.log"
+    },
+    "browser_receipts": [
+      ".local/compact-photo-qa/receipt.json",
+      ".local/sa02-live-qa/browser-receipt.json"
+    ],
+    "browser_cases": 39,
+    "independent_confirmation_tests": 3,
+    "django_check": "pass",
+    "migration_drift": "No changes detected",
+    "live_preservation_receipt": ".local/sa02-metadata-live-verified.json",
+    "preserved": "Seven existing business tables, account identities/password hashes/roles, approvals and 78 original photo hashes"
+  },
+  "runtime": {
+    "launcher_pid": 22892,
+    "url": "http://127.0.0.1:8000/",
+    "network": "Loopback only",
+    "photo_worker": "Independent local worker retained"
+  },
+  "prechange_checkpoint": ".local/backups/project-checkpoint-20261019-125536",
+  "github_pushed": false
+}

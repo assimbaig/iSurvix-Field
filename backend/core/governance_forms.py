@@ -8,44 +8,97 @@ from .access import is_super_admin,role_for,can_access_project,accessible_projec
 
 class ProjectForm(forms.ModelForm):
     industry=forms.ChoiceField(required=False)
+    review_layers=forms.TypedChoiceField(choices=[(3,'3 layers - Engineer > QA > Team Lead (closes after approval)'),(4,'4 layers - Engineer > QA > Team Lead > Client decision')],coerce=int,initial=3,label='Approval workflow')
     class Meta:
         model=Project
-        fields=['name','description','industry','company','checklist_template']
-    def __init__(self,*args,**kwargs):
+        fields=['name','description','industry','company','review_layers','checklist_template']
+    def __init__(self,*args,actor=None,**kwargs):
+        self.actor=actor
         super().__init__(*args,**kwargs)
         self.fields['checklist_template'].queryset=ChecklistTemplate.objects.filter(published=True)
         self.fields['industry'].required=False
         self.fields['industry'].choices=[('', 'Choose an industry'),*IndustryCatalog.objects.filter(is_active=True).values_list('code','name')]
+        if actor and role_for(actor)==Profile.Roles.ADMIN:
+            from .template_views import template_scope
+            company=company_id_for(actor)
+            industry=actor.profile.admin_industry
+            self.fields['company'].queryset=Company.objects.filter(pk=company)
+            self.fields['company'].initial=company
+            self.fields['company'].disabled=True
+            self.fields['industry'].choices=[(industry.code,industry.name)] if industry else []
+            self.fields['industry'].initial=industry.code if industry else ''
+            self.fields['industry'].disabled=True
+            self.fields['checklist_template'].queryset=template_scope(actor).filter(published=True)
+            self.instance.company_id=company
+            self.instance.industry=industry.code if industry else ''
+            self.instance.administrator=actor
+            self.fields['checklist_template'].help_text='Optional now. Create or publish a checklist in the Wizard, then assign it before site work.'
+    def clean(self):
+        data=super().clean()
+        if self.actor and role_for(self.actor)==Profile.Roles.ADMIN:
+            industry=getattr(self.actor.profile.admin_industry,'code','')
+            for key,expected in [('company',str(company_id_for(self.actor) or '')),('industry',industry)]:
+                supplied=self.data.get(key)
+                if supplied not in (None,'',expected):self.add_error(key,'Project company and industry come from your Admin account and cannot be changed.')
+        return data
     def clean_industry(self):
         code=self.cleaned_data.get('industry') or Project.Industry.TELECOM
         if not IndustryCatalog.objects.filter(code=code,is_active=True).exists():raise forms.ValidationError('Choose an active industry.')
         return code
 
 class IndustryForm(forms.Form):
-    code=forms.SlugField(max_length=20,help_text='Permanent code; use letters, numbers, hyphens or underscores.')
+    code=forms.SlugField(max_length=20,help_text='Editable code; renaming preserves linked industry records and project references.')
     name=forms.CharField(max_length=100)
+    description=forms.CharField(max_length=6000,required=False,widget=forms.Textarea,help_text='Describe the industry scope. AI suggestions remain editable until you explicitly save.')
+    workflow_family=forms.ChoiceField(choices=[('telecom','Telecom'),('construction','Construction'),('other','Other')],required=False,initial='other',help_text='Choose the technical workflow family when creating an industry. It is fixed after creation.')
     is_active=forms.BooleanField(required=False,initial=True)
+    expected_token=forms.CharField(max_length=64,required=False,widget=forms.HiddenInput)
+    def __init__(self,*args,instance=None,**kwargs):
+        if instance and instance.pk:
+            kwargs.setdefault('initial',{key:getattr(instance,key) for key in ['code','name','description','workflow_family','is_active']})
+        super().__init__(*args,**kwargs)
+        if instance and instance.pk:
+            self.fields['workflow_family'].disabled=True
+            self.fields['expected_token'].required=True
+            self.fields['expected_token'].initial=instance.edit_token
+    def clean_workflow_family(self):
+        return self.cleaned_data.get('workflow_family') or 'other'
+
 
 class AdminIndustryForm(forms.Form):
     admin_industry=forms.ModelChoiceField(queryset=IndustryCatalog.objects.filter(is_active=True))
 
 class InvitationForm(forms.Form):
+    company=forms.ModelChoiceField(queryset=Company.objects.all(),required=False,label='Admin company (required when no project is selected)')
     admin_industry=forms.ModelChoiceField(queryset=IndustryCatalog.objects.filter(is_active=True),required=False)
     email=forms.EmailField()
     role=forms.ChoiceField()
-    project=forms.ModelChoiceField(queryset=Project.objects.none())
+    project=forms.ModelChoiceField(queryset=Project.objects.none(),required=False,label='Existing project (optional for a new Admin)')
     def __init__(self,*args,actor,**kwargs):
         super().__init__(*args,**kwargs)
         self.fields['role'].choices=([(Profile.Roles.ADMIN,'Project Admin')] if is_super_admin(actor) else []) + [(Profile.Roles.ENGINEER,'Engineer'),(Profile.Roles.TEAM_LEAD,'Team Lead'),(Profile.Roles.CLIENT,'Client'),(Profile.Roles.PROJECT_MANAGER,'Project Manager'),(Profile.Roles.QUALITY_ENGINEER,'Quality Engineer')]
         if is_super_admin(actor):self.fields['role'].choices=[choice for choice in self.fields['role'].choices if choice[0]!=Profile.Roles.CLIENT]
         self.fields['project'].queryset=accessible_projects(actor)
-        if not is_super_admin(actor):self.fields.pop('admin_industry')
+        if not is_super_admin(actor):
+            self.fields.pop('admin_industry');self.fields.pop('company')
+            self.fields['project'].required=True
+            self.fields['project'].label='Project'
     def clean(self):
         data=super().clean()
         if data.get('role')==Profile.Roles.ADMIN:
             industry=data.get('admin_industry')
             if not industry:self.add_error('admin_industry','Choose the industry this Admin will manage.')
             elif data.get('project') and data['project'].industry!=industry.code:self.add_error('admin_industry','The Admin industry must match the selected project.')
+            if data.get('project') and data['project'].administrator_id:
+                self.add_error('project','This project already has an owning Admin. Invite the new Admin with company and industry only, or transfer existing project ownership explicitly.')
+            if not data.get('project') and not data.get('company'):
+                self.add_error('company','Choose the company this Admin will manage before they create their first project.')
+        elif not data.get('project'):
+            self.add_error('project','Choose a project for this operational role.')
+        if data.get('project'):
+            if data.get('company') and data['company'].pk!=data['project'].company_id:
+                self.add_error('company','The company must match the selected project.')
+            data['company']=data['project'].company
         return data
     def clean_email(self):
         email=self.cleaned_data['email'].strip().lower()
@@ -108,11 +161,24 @@ class AssignmentForm(forms.Form):
         from .models import Checklist
         data['governance_mode']=data.get('governance_mode') or Checklist.GovernanceMode.LEGACY
         if project:
-            data['workflow_type']=data.get('workflow_type') or (Checklist.WorkflowType.CONSTRUCTION_INSPECTION if project.industry==Project.Industry.CONSTRUCTION else Checklist.WorkflowType.TELECOM_SURVEY)
+            if project.review_layers in (3,4):
+                data['governance_mode']=Checklist.GovernanceMode.INDEPENDENT
+                required=project.review_layers==4
+                supplied=data.get('client_review_required')
+                if supplied and (supplied=='required')!=required:
+                    self.add_error('client_review_required','Client routing is fixed by this project approval workflow.')
+                data['client_review_required']='required' if required else 'not_required'
+                if not required and data.get('customer_reviewer'):
+                    self.add_error('customer_reviewer','A three-layer project does not have a Client approval stage.')
+                data['review_reason']=data.get('review_reason') or f'Project-selected {project.review_layers}-layer approval workflow.'
+                data['l2_reviewer']=data.get('l2_reviewer') or data.get('quality_reviewer')
+            from .industry_service import industry_family
+            family=industry_family(project)
+            data['workflow_type']=data.get('workflow_type') or (Checklist.WorkflowType.CONSTRUCTION_INSPECTION if family==Project.Industry.CONSTRUCTION else Checklist.WorkflowType.TELECOM_SURVEY)
             workflow=data['workflow_type']
             mode=data['governance_mode']
             expected=Project.Industry.CONSTRUCTION if workflow==Checklist.WorkflowType.CONSTRUCTION_INSPECTION else Project.Industry.TELECOM
-            if project.industry!=expected:
+            if family!=expected:
                 self.add_error('workflow_type','Choose a workflow matching the project industry. Construction survey is outside this release.')
             if workflow!=Checklist.WorkflowType.TELECOM_SURVEY and not data.get('asset_reference'):
                 self.add_error('asset_reference','Identify the asset or inspection location.')
@@ -134,6 +200,10 @@ class AssignmentForm(forms.Form):
                 if len(actors)!=len(set(actors)):self.add_error(None,'Submitter and reviewers must be different people.')
         if project and not project.checklist_template_id:
             self.add_error('project','Assign a published checklist template to this project first.')
+        if project and project.checklist_template_id:
+            from .standard_checklist_service import validate_standard_project
+            try:validate_standard_project(project.checklist_template,project,data.get('workflow_type'))
+            except forms.ValidationError as exc:self.add_error('workflow_type',exc)
         if project and engineer and not can_access_project(engineer,project):
             self.add_error('engineer','Choose an engineer from this project.')
         if project and project.checklist_template_id:

@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-19",
+  "change": "Shared raised and pressed button styling",
+  "files": [
+    "backend/static/core/css/button_depth.css",
+    "backend/templates/base.html"
+  ],
+  "scope": "Native buttons, submit/reset inputs, styled action links, header navigation tiles and photo upload labels",
+  "preserved": [
+    "Existing colors, actions, dimensions, permissions and data",
+    "Visible keyboard focus, disabled states, reduced motion and print handling"
+  ],
+  "validation": {
+    "browser_cases": 6,
+    "widths": [
+      1440,
+      390,
+      320
+    ],
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "failures": [],
+    "write_requests": []
+  },
+  "evidence": ".local/button-depth-qa/receipt.json"
+}

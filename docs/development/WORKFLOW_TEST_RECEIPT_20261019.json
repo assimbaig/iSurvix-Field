@@ -1,0 +1,43 @@
+{
+  "verified_at": "2026-10-19T11:49:35.224306",
+  "full_core_tests": 288,
+  "seconds": 22.394,
+  "result": "PASS",
+  "fixture_password_hash_override_only": "MD5",
+  "production_password_hashers_unchanged": true,
+  "new_complete_http_photo_approval_cases": 6,
+  "http_cases": [
+    "legacy with Client",
+    "legacy without Client",
+    "independent with Client",
+    "independent without Client",
+    "QC rejection and resubmission",
+    "changed photo evidence after QC blocks Team Lead until recheck"
+  ],
+  "csrf_enabled_in_complete_http_cases": true,
+  "late_submission_interleaving_regression": [
+    "individual photo upload",
+    "answer save",
+    "photo deletion"
+  ],
+  "fix": "Recheck survey edit authority after acquiring the checklist transaction lock",
+  "native_ollama": {
+    "model": "qwen3.5:4b",
+    "vision_capability_verified_before_inference": true,
+    "synthetic_colored_shapes": "PASS",
+    "photo_worker_synthetic_queue": "PASS",
+    "photos_processed": 1,
+    "native_metadata_validated": true,
+    "human_location_confirmation_required": true,
+    "automatic_answers": false,
+    "automatic_approval": false,
+    "runner_repair": "Matching official missing libraries restored to existing Ollama installation; existing executable and listener retained",
+    "real_project_photos_analyzed": false
+  },
+  "live_existing_roles_verified": 5,
+  "original_photo_hashes_verified": 78,
+  "existing_business_records_accounts_passwords_and_approvals_preserved": true,
+  "local_launcher_pid": 31060,
+  "source_changes_pushed": false,
+  "full_400_photo_30_minute_acceptance": "Not established by these tests"
+}

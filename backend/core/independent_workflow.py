@@ -28,6 +28,9 @@ def is_independent(checklist):
 
 
 def is_frozen(checklist):
+    from .review_route_service import route_for
+    route=route_for(checklist) if is_independent(checklist) else None
+    if route:return route.stage!='engineer'
     policy=policy_for(checklist) if is_independent(checklist) else None
     return bool(policy and policy.current_revision_id and revision_state(policy.current_revision) in {'submitted','validated','approved'})
 
@@ -42,6 +45,11 @@ def assigned_site_access(actor,checklist):
         return True
     if role==Profile.Roles.CLIENT:
         policy=policy_for(checklist)
+        from .review_route_service import route_for
+        route=route_for(checklist)
+        if route:
+            shared=route.revision_id and route.events.filter(revision_id=route.revision_id,from_stage='team_lead',to_stage='client').exists()
+            return route.stage!='engineer' and shared and route.reviewers.get('client')==actor.pk
         return checklist.status==Checklist.Status.FINAL and bool(policy and policy.customer_reviewer_id==actor.pk)
     if role==Profile.Roles.ENGINEER:
         return checklist.user_id==actor.pk
@@ -69,6 +77,23 @@ def content_snapshot(checklist):
     coordinates=WorkAssignment.objects.filter(checklist=checklist).values('latitude','longitude').first()
     project=checklist.project
     project_context={'id':project.pk,'name':project.name,'company_id':project.company_id,'industry':project.industry,'industry_name':project.get_industry_display()}
+    from .review_route_service import route_for
+    from .models import IndustryCatalog,GovernanceAudit
+    route=route_for(checklist)
+    catalog=IndustryCatalog.objects.filter(code=project.industry).first()
+    baseline=(policy.current_revision.snapshot.get('project_context') or {}) if policy and policy.current_revision_id else {}
+    if route and catalog:
+        project_context['industry_catalog_id']=catalog.pk
+    same_identity=bool(catalog and baseline and (
+        baseline.get('industry_catalog_id')==catalog.pk or
+        baseline.get('industry')==project.industry or
+        GovernanceAudit.objects.filter(action='industry_updated',details__industry_id=catalog.pk,
+            details__previous__code=baseline.get('industry')).exists()))
+    if same_identity:
+        # Catalog code/name are administrative labels. Keep their frozen display
+        # representation while validating all actual engineering inputs afresh.
+        project_context['industry']=baseline.get('industry',project_context['industry'])
+        project_context['industry_name']=baseline.get('industry_name',project_context['industry_name'])
     if project.client_organization_id:
         project_context['client_organization']={'id':project.client_organization_id,'name':project.client_organization.name,'company_id':project.client_organization.company_id,'industry_id':project.client_organization.industry_id}
     data={'project_context':project_context,'qualification':qualification_data,'findings':findings,'finding_events':finding_events,'assigned_coordinates':coordinates,'engineer_id':checklist.user_id,'review_policy':review_policy,'site_id':checklist.site_id,'project_id':checklist.project_id,'template_id':checklist.checklist_template_id,
@@ -76,6 +101,16 @@ def content_snapshot(checklist):
         'remarks':checklist.remark_data,'field_images':checklist.image_data,'photos':photos,'placements':placements,
         'workflow_type':getattr(checklist,'workflow_type',''),'asset_reference':getattr(checklist,'asset_reference',''),
         'coordinate_reference':getattr(checklist,'coordinate_reference',{})}
+    from .review_route_service import route_for
+    route=route_for(checklist)
+    if route:
+        frozen_route={'version':1,'layers':route.layer_count,'reviewers':route.reviewers}
+        data['review_route_policy']=frozen_route
+    # Add provenance only for activities processed by the versioned pipeline;
+    # legacy immutable snapshots retain their original representation.
+    evidence=list(checklist.evidence_analyses.filter(photo__isnull=False).order_by('pk').values('id','photo_id','photo_sha256','schema_digest','rules_version','model_version','tool_version','prompt_version','payload_digest'))
+    if evidence:
+        data['evidence_analysis']=evidence
     return json.loads(json.dumps(data,cls=DjangoJSONEncoder,sort_keys=True))
 
 
@@ -98,7 +133,7 @@ def _roles_valid(checklist,l2,l3,version=2):
 
 
 @transaction.atomic
-def configure_policy(actor,checklist,l2_reviewer,l3_approver,reason,customer_reviewer=None,customer_required=None,expected_updated_at=None):
+def configure_policy(actor,checklist,l2_reviewer,l3_approver,reason,customer_reviewer=None,customer_required=None,expected_updated_at=None,enable_route=False):
     from .governance_views import lock_governance,audit
     lock_governance(actor)
     actor=_fresh_actor(actor)
@@ -138,12 +173,19 @@ def configure_policy(actor,checklist,l2_reviewer,l3_approver,reason,customer_rev
     checklist.governance_mode='independent'
     checklist.quality_reviewer=l2
     checklist.save(update_fields=['governance_mode','quality_reviewer','updated_at'])
+    from .review_route_service import configure_route,route_for
+    frozen_layers=(checklist.intake_metadata or {}).get('project_review_layers')
+    if enable_route and (type(frozen_layers) is not int or frozen_layers not in (3,4)):
+        raise ValidationError('Only a new task created under an explicit project review policy can enable routed review.')
+    if frozen_layers in (3,4) and type(frozen_layers) is int or route_for(checklist):configure_route(actor,checklist,policy)
     audit(actor,'independent_review_configured',checklist.project,checklist_id=checklist.pk,l2_reviewer_id=l2.pk,l3_approver_id=l3.pk,reason=reason.strip())
     return policy
 
 
 @transaction.atomic
 def submit_revision(actor,checklist):
+    from .review_route_service import route_for,submit_route
+    if route_for(checklist):return submit_route(actor,checklist)
     from .governance_views import lock_governance,audit
     from .template_service import missing_required
     from .roadmap_service import require_qualified_template
@@ -183,6 +225,8 @@ def submit_revision(actor,checklist):
 
 @transaction.atomic
 def review_revision(actor,checklist,revision_id,action,reason=''):
+    from .review_route_service import route_for
+    if route_for(checklist):raise ValidationError('Use the current token-bound review route action, not the historical revision endpoint.')
     from .governance_views import lock_governance,audit
     from .roadmap_service import require_no_blocking_findings
     lock_governance(actor)
@@ -242,6 +286,8 @@ def record_customer_decision(actor,checklist,decision,reason=''):
     Caller may apply legacy closure first within its surrounding transaction.
     Returns the immutable decision; rejection persists the editable correction state.
     """
+    from .review_route_service import route_for
+    if route_for(checklist):raise ValidationError('Use the current token-bound review route Client action.')
     from .governance_views import lock_governance,audit
     lock_governance(actor)
     actor=_fresh_actor(actor)
@@ -283,7 +329,11 @@ def accessible_revision(actor,revision_id):
         raise Http404()
     if role_for(actor)==Profile.Roles.CLIENT:
         policy=revision.snapshot.get('review_policy') or {}
-        if not can_access_project(actor,revision.checklist.project_id) or policy.get('customer_reviewer_id')!=actor.pk or revision_state(revision) not in {'approved','customer_rejected'}:
+        frozen_route=revision.snapshot.get('review_route_policy')
+        if frozen_route:
+            shared=revision.route_events.filter(from_stage='team_lead',to_stage='client').exists()
+            if not can_access_project(actor,revision.checklist.project_id) or frozen_route.get('reviewers',{}).get('client')!=actor.pk or not shared:raise Http404()
+        elif not can_access_project(actor,revision.checklist.project_id) or policy.get('customer_reviewer_id')!=actor.pk or revision_state(revision) not in {'approved','customer_rejected'}:
             raise Http404()
     elif not assigned_site_access(actor,revision.checklist):
         historical_role=(Profile.Roles.QUALITY_ENGINEER if revision.workflow_version==2 else Profile.Roles.TEAM_LEAD) if actor.pk==revision.l2_reviewer_id else (Profile.Roles.TEAM_LEAD if revision.workflow_version==2 else Profile.Roles.PROJECT_MANAGER) if actor.pk==revision.l3_approver_id else None

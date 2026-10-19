@@ -35,7 +35,10 @@ FILE_UPLOAD_TEMP_DIR = STATE / 'upload-tmp'
 FILE_UPLOAD_TEMP_DIR.mkdir(exist_ok=True)
 LOGGING['handlers']['file']['filename'] = STATE / 'app.log'
 LOCAL_AI_ENABLED = True
+PHOTO_MAX_PER_SITE = 500
 OLLAMA_BASE_URL = os.environ.get('ISURVIX_OLLAMA_URL', 'http://127.0.0.1:11434')
+# Photo inference can run independently of the interactive assistant.
+PHOTO_OLLAMA_BASE_URL = os.environ.get('ISURVIX_PHOTO_OLLAMA_URL', OLLAMA_BASE_URL)
 OLLAMA_MODEL = os.environ.get('ISURVIX_AI_MODEL', 'qwen3.5:4b')
 OLLAMA_TIMEOUT = 180
 MIDDLEWARE.insert(0, 'core.local_ai.LoopbackOnlyMiddleware')

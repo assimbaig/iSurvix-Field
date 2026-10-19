@@ -1,0 +1,30 @@
+/* Shared tactile controls. Shadows/translation preserve existing layout and colors. */
+body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button],a.gw-primary,a.wp-primary,a.photo-primary-link,.photo-capture,.workspace-nav-tiles a){
+  box-shadow:inset 0 1px 0 #ffffff70,inset 0 -1px 0 #00000018,0 3px 0 #00000038,0 4px 6px #00000020!important;
+  background-image:linear-gradient(#ffffff12,#00000008)!important;
+  transition:box-shadow 100ms ease,translate 100ms ease,filter 100ms ease;
+  cursor:pointer;
+}
+body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button],a.gw-primary,a.wp-primary,a.photo-primary-link,.photo-capture,.workspace-nav-tiles a):not(:disabled):not([aria-disabled=true]):hover{
+  filter:brightness(1.06);
+}
+body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button],a.gw-primary,a.wp-primary,a.photo-primary-link,.photo-capture,.workspace-nav-tiles a):not(:disabled):not([aria-disabled=true]):active{
+  translate:0 2px;
+  box-shadow:inset 0 2px 4px #00000030,0 1px 0 #00000038!important;
+  filter:brightness(.96);
+}
+body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button],a.gw-primary,a.wp-primary,a.photo-primary-link,.photo-capture,.workspace-nav-tiles a):focus-visible{
+  outline:2px solid var(--rl-accent,#245f9c)!important;
+  outline-offset:3px!important;
+}
+body .enterprise-header :is(button,.workspace-nav-tiles a):focus-visible{outline-color:#fff!important;outline-offset:-4px!important}
+body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button]):is(:disabled,[aria-disabled=true]){
+  box-shadow:inset 0 1px 0 #ffffff20,0 1px 0 #00000020!important;
+  background-image:none!important;
+  translate:none;
+  filter:none;
+  cursor:not-allowed;
+  opacity:.55;
+}
+@media(prefers-reduced-motion:reduce){body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button],a.gw-primary,a.wp-primary,a.photo-primary-link,.photo-capture,.workspace-nav-tiles a){transition:none}}
+@media print{body :is(button,input[type=button],input[type=submit],input[type=reset],a.btn,a[role=button],a.gw-primary,a.wp-primary,a.photo-primary-link,.photo-capture,.workspace-nav-tiles a){box-shadow:none!important;background-image:none!important;translate:none}}
