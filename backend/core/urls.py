@@ -23,6 +23,7 @@ urlpatterns = [
     path('devadmin/checklist-templates/standards/', standard_checklist_views.library, name='standard_checklists'),
     path('devadmin/checklist-templates/standards/preview/', standard_checklist_views.preview, name='standard_checklist_preview'),
     path('devadmin/checklist-templates/<int:template_id>/', template_views.template_builder, name='checklist_template_edit'),
+    path('devadmin/checklist-templates/<int:template_id>/recommendations/', template_views.template_recommendations, name='checklist_template_recommendations'),
     path('devadmin/checklist-templates/<int:template_id>/logo/<str:slot>/', template_views.template_logo, name='checklist_template_logo'),
     path('custom-checklist/<int:checklist_id>/', template_views.custom_survey, name='custom_checklist'),
     path('custom-checklist/<int:checklist_id>/save/', template_views.custom_save, name='custom_checklist_save'),

@@ -1185,3 +1185,38 @@ match all old columns of62live tables and402originalphoto SHA256s. No operationa
 test accounts, tasks, template changes or approvals were seeded. Checkpoint before
 changes: `.local/backups/project-checkpoint-20261021-190149`. Private browser/test
 receipts: `.local/guided-wizard-qa`. See docs/manual/CHECKLIST_CREATION_GUIDE.md.
+
+## 21 October 2026: exact-revision checklist tree editor
+
+Branch `feat/checklist-editor-tree` extends `feat/checklist-guided-wizard` with a
+focused editor update. Wizard Edit and Replicate have independent selectors and
+desktop columns. Explicit template/version form identity, canonical POST targets,
+no-store responses and stale edit digests protect selection and concurrent saves.
+
+The editor uses two compact header rows, collapsed three-column branding and a
+Group / Section / Field tree beside Properties and Recommended additions. Group,
+Ungroup, move and sibling reorder preserve existing IDs and rules. Optional JSON
+`editor_groups` retains empty groups/order; `editor_recommendation_decisions`
+persists accepted/dismissed choices. Legacy `section.group` remains supported.
+No database migration is required. Advanced workbook round trips retain metadata.
+
+Recommendations reuse the existing matching standards/scoped published catalog;
+no inference service or fabricated suggestions are added. Users review/edit and
+accept into an editable draft, then save. Stable recommendation IDs and target
+label checks prevent duplicate additions. Published/disabled/used protections,
+survey snapshots and the survey-only Checklist required gate remain in effect.
+Import extra points and project assignment continue through their existing routes.
+
+All 605 core tests passed in 63.548 seconds. The additional focused 11-test editor run
+also verifies report branding. Browser checks at 1440/1024/390 widths cover exact source,
+tree operations/save/reload, recommendations/dismissal/retry, branding replacement
+and removal, published locks and keyboard selection with zero application errors.
+All 62 existing tables and 402 original photo hashes match the pre-change checkpoint
+`.local/backups/project-checkpoint-20261021-193725`; no operational fixtures seeded.
+
+Synthetic editor screenshots are `outputs/checklist-editor-20261021/` (ignored).
+Private QA receipts and isolated fixture database are `.local/editor-tree-qa/`.
+See `docs/development/CHECKLIST_EDITOR_RECEIPT.json` and the updated checklist guide.
+The five referenced layout screenshots were not attached to this request; the
+numbered requirements guided the layout. Existing whole-site AI/drawing benchmark
+limitations are unchanged. Review only; do not merge or deploy automatically.

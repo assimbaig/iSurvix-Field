@@ -24,6 +24,8 @@ def validate_definition(definition):
         raise ValidationError('A checklist must contain a sections list.')
     if not 1 <= len(definition['sections']) <= 100:
         raise ValidationError('Provide between 1 and 100 sections.')
+    from .editor_hierarchy import validate_metadata
+    validate_metadata(definition)
     if 'standard_catalog' in definition:
         from .standard_checklist_service import standard_metadata
         standard_metadata(definition)
@@ -62,6 +64,8 @@ def validate_definition(definition):
                 raise ValidationError('Required must be true or false.')
             if not isinstance(field.get('photo_required', False), bool):
                 raise ValidationError('Photo required must be true or false.')
+            if 'recommendation_source' in field and (not isinstance(field['recommendation_source'],str) or len(field['recommendation_source'])>1000):
+                raise ValidationError('Recommendation sources must be short text references.')
             if 'evidence_rules' in field:
                 from .evidence_rules import validate_evidence_rules
                 try:validate_evidence_rules(field['evidence_rules'])

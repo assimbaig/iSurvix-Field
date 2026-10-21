@@ -19,9 +19,13 @@ from .governance_views import guarded_write
 def context(request,**extra):
     allowed=service.guard(request.user)
     can_create=not is_super_admin(request.user)
+    from .checklist_lifecycle import table_rows
+    editable={row['id'] for row in table_rows(request.user) if row['can_edit']} if can_create else set()
     sources=[{'id':source.pk,'name':source.name,'version':source.version,'published':source.published,
-              'owned':source.created_by_id==request.user.pk,'disabled':source.disabled} for source in template_scope(request.user).order_by('-created_at')]
+              'owned':source.created_by_id==request.user.pk,'disabled':source.disabled,'editable':source.pk in editable} for source in template_scope(request.user).order_by('-created_at')]
     return {'can_create':can_create,'sources':sources,'wizard_step':1,'active_view':'checklists',
+        'selected_edit_source':request.POST.get('source_id','') if request.POST.get('action')=='edit' else request.GET.get('edit_source',''),
+        'selected_copy_source':request.POST.get('source_id','') if request.POST.get('action')=='replicate' else str(extra.get('copy_source','')),
         'allowed_industries':[{'code':code,'name':code.title()} for code in sorted(allowed)],
         'workflow_choices':[{'id':code,'label':code.replace('_',' ').title()} for code,industry in service.WORKFLOWS.items() if industry in allowed],**extra}
 
