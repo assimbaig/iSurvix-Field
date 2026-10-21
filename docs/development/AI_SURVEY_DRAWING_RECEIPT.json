@@ -1,0 +1,95 @@
+{
+  "at": "2026-10-21T15:24:50.621123+00:00",
+  "branch": "feat/ai-survey-drawings",
+  "base_branch": "feat/local-photo-pilot",
+  "scope": "Opt-in checklist-required Telecom surveys only; existing inspections and templates remain unchanged.",
+  "migrations": [
+    "0045_survey_checklist_drawing_pipeline",
+    "0046_template_company_drawing_logo"
+  ],
+  "packages": {
+    "Django": "6.1.2",
+    "Pillow": "10.4.0",
+    "openpyxl": "3.1.5",
+    "PyMuPDF": "2.0",
+    "ezdxf": "1.4.5",
+    "reportlab": "5.0.1",
+    "pydantic": "2.14.1"
+  },
+  "native_model": {
+    "name": "qwen3.5:4b",
+    "vision_verified": true,
+    "remote": false,
+    "new_model_downloaded": false
+  },
+  "verification": {
+    "full_core_suite": {
+      "passed": 581,
+      "failed": 0,
+      "seconds": 62.006
+    },
+    "django_check": "passed",
+    "migration_drift": "none",
+    "pip_check": "no broken requirements",
+    "javascript_and_launcher_syntax": "passed",
+    "desktop_mobile": {
+      "roles": 5,
+      "widths": [
+        1440,
+        390
+      ],
+      "horizontal_overflow": false,
+      "javascript_errors": 0,
+      "synthetic_isolated_database": true,
+      "actual_correction_apply_qa_release_gate": "passed"
+    },
+    "original_files_sha256_verified": 402,
+    "existing_business_tables_preserved": 11,
+    "zip_dxf_pdf_real_export_and_hash_tests": "passed"
+  },
+  "z93004": {
+    "total_source_photos": 378,
+    "native_pipeline_photos": 3,
+    "native_pipeline_seconds": 80.862,
+    "generated_checklist_items": 181,
+    "findings": 21,
+    "ready_for_review": true,
+    "full_site_complete": false,
+    "workbook_validated_image_placements": 247,
+    "workbook_validated_text_sources": 3,
+    "native_workbook_probes": [
+      {
+        "type": "workbook_cells",
+        "actual_image_sent": false,
+        "findings": 30,
+        "status": "valid"
+      },
+      {
+        "type": "workbook_image",
+        "actual_image_sent": true,
+        "findings": 2,
+        "status": "valid"
+      }
+    ],
+    "customer_approvals_created": false
+  },
+  "approval_controls": {
+    "engineer_application_explicit": true,
+    "qa_independent": true,
+    "team_lead_release_independent": true,
+    "original_survey_route_and_client_gate_required": true,
+    "ai_can_approve_or_release": false,
+    "clients_released_current_outputs_only": true
+  },
+  "samples": "samples/drawings/synthetic-survey/revision-001",
+  "limitations": [
+    "Full 378-photo and complete-workbook native benchmark outstanding.",
+    "No manufacturer reference geometry or engineering calculation/compliance engine.",
+    "Qualitative confidence is uncalibrated; human verification required.",
+    "Geometry requires sourced confirmed coordinates and explicit units; unsupported sheets are reported missing.",
+    "Renderer bounds:32sheets/20000entities; full findings retained in the processing record.",
+    "Video, old XLS, encrypted PDFs, macros, OLE/ActiveX and external workbook relationships unsupported."
+  ],
+  "merged": false,
+  "deployed": false
+}

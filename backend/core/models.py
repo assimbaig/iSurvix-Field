@@ -10,6 +10,8 @@ import uuid
 
 class ChecklistTemplate(models.Model):
 	"""An editable draft or an immutable, published checklist revision."""
+	checklist_required = models.BooleanField(default=False, help_text='Opt in survey types to AI checklist and drawing preparation. Inspection modules are excluded.')
+	company_logo = models.ImageField(upload_to='client_logos/', blank=True)
 	family_id = models.UUIDField(default=uuid.uuid4, editable=False)
 	version = models.PositiveIntegerField(default=1)
 	name = models.CharField(max_length=160)
@@ -35,16 +37,19 @@ class ChecklistTemplate(models.Model):
 		if self.pk:
 			previous = type(self).objects.get(pk=self.pk)
 			if previous.published:
-				fields = ['family_id', 'version', 'name', 'definition', 'published', 'client_left_name', 'client_right_name', 'client_left_logo', 'client_right_logo']
+				fields = ['family_id', 'version', 'name', 'definition', 'published', 'checklist_required', 'company_logo', 'client_left_name', 'client_right_name', 'client_left_logo', 'client_right_logo']
 				if any(getattr(previous, field) != getattr(self, field) for field in fields):
 					raise ValidationError('Published templates are locked. Duplicate this revision to make changes.')
 		return super().save(*args, **kwargs)
 
 	def branding(self):
-		return {'clients': [
+		result = {'clients': [
 			{'name': self.client_left_name, 'logo': self.client_left_logo.name or ''},
 			{'name': self.client_right_name, 'logo': self.client_right_logo.name or ''},
 		]}
+		if self.company_logo:
+			result['company_logo'] = self.company_logo.name
+		return result
 
 
 def project_template_upload_path(instance: "Project", filename: str) -> str:
@@ -255,6 +260,11 @@ class Checklist(models.Model):
 	updated_at = models.DateTimeField(auto_now=True)
 
 	def save(self, *args, **kwargs):
+		if self.pk and self.status == self.Status.SUBMITTED:
+			previous_status = type(self).objects.filter(pk=self.pk).values_list('status', flat=True).first()
+			if previous_status != self.Status.SUBMITTED:
+				from .survey_processing import require_engineer_review
+				require_engineer_review(self)
 		if self._state.adding and self.project_id:
 			if self.project.review_layers in (3,4):
 				if not isinstance(self.intake_metadata,dict):
@@ -536,3 +546,4 @@ from .evidence_models import EvidenceAnalysisRecord, EvidenceRuleRelease, Eviden
 from .evidence_models import EvidenceReviewBinding  # noqa: E402,F401
 from .checklist_import_models import ChecklistImportBatch  # noqa: E402,F401
 from .review_route_models import ReviewRoute, ReviewRouteEvent  # noqa: E402,F401
+from .survey_processing_models import SurveyDocument, SurveyUploadSession, SurveyProcessingRevision, SurveyProcessingJob, SurveySourceAnalysis, SurveyProcessingResult, SurveyProcessingEvent, SurveyDrawingSet  # noqa: E402,F401

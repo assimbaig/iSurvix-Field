@@ -161,6 +161,12 @@ def missing_required(checklist, evidence_checklist=None):
     linked = confirmed_placements(evidence_checklist or checklist)
     answers = (checklist.answer_data or {}).get('custom', {})
     missing = []
+    if getattr(source, 'checklist_template_id', None):
+        from .survey_processing import require_engineer_review
+        try:
+            require_engineer_review(source)
+        except ValidationError as exc:
+            missing.extend(exc.messages)
     if getattr(source,'pk',None) and PhotoJob.objects.filter(checklist_id=source.pk,
             schema=source.schema_snapshot,status__in=['queued','running']).exists():
         missing.append('Photo analysis is still active; wait for processing to finish before submission or approval')
@@ -190,7 +196,7 @@ def duplicate_revision(template, user):
     # Lock the stable first revision to serialize revision-number allocation.
     list(ChecklistTemplate.objects.select_for_update().filter(family_id=template.family_id).order_by('version')[:1])
     next_version = (ChecklistTemplate.objects.filter(family_id=template.family_id).aggregate(n=Max('version'))['n'] or 0) + 1
-    return ChecklistTemplate.objects.create(family_id=template.family_id, version=next_version, name=template.name, definition=deepcopy(template.definition), client_left_name=template.client_left_name, client_right_name=template.client_right_name, client_left_logo=template.client_left_logo.name, client_right_logo=template.client_right_logo.name, created_by=user)
+    return ChecklistTemplate.objects.create(family_id=template.family_id, version=next_version, name=template.name, definition=deepcopy(template.definition), checklist_required=template.checklist_required, company_logo=template.company_logo.name, client_left_name=template.client_left_name, client_right_name=template.client_right_name, client_left_logo=template.client_left_logo.name, client_right_logo=template.client_right_logo.name, created_by=user)
 
 
 def report_value(value):

@@ -1099,3 +1099,52 @@ Logs .local/fast-release-launch.*.log; UI and API unchanged routes. Final perfor
 quality limits, source links and live role results are in
 docs/development/FAST_PHOTO_ANALYSIS_RECEIPT.json. Latest browser checks include
 two-card pagination and lazy history at desktop/mobile widths.
+
+
+## 21 October 2026 integrated survey checklist and drawings
+
+Feature branch: `feat/ai-survey-drawings`, based on the saved/pushed
+`feat/local-photo-pilot` checkpoint 4c435fc. Do not merge or deploy automatically.
+
+The opt-in Checklist required setting belongs to published ChecklistTemplate
+revisions and applies only to Telecom surveys. Existing templates default False,
+so saved surveys and all inspection modules retain their existing behaviour.
+Draft templates now also support an assigned company logo. Additive migrations
+0045 and0046 were applied locally; existing data columns and all402 original
+photo SHA256 values were checked against the pre-change recovery checkpoint.
+
+New saved-survey route `/local/survey-processing/<id>/` contains submission,
+background progress, generated checklist and linked source evidence, editable
+extracted records, measured drawing records, rendered previews, private PDF/DXF/ZIP
+downloads and revision history. Start-iSurvix.cmd starts survey_processing_worker
+alongside the existing workers. Jobs persist image/document and checklist mapping
+checkpoints; no model download or cloud fallback is used. qwen3.5:4b local vision
+capability and installed drawing dependencies were verified.
+
+Engineer Apply checklist & complete review is explicit: valid reviewed answers and
+confirmed photo links are copied to the saved checklist, unrelated data/manual
+rejections preserved, and an append-only resulting-input digest receipt binds the
+unchanged original snapshot. Existing submit/required-field/approval controls
+still apply. QA must independently check the exact package; a different Team Lead
+releases only after the existing survey/optional Client route closes. Clients see
+released outputs only. AI cannot approve or release.
+
+Both exports use final shared A3 geometry, including title blocks, layers and
+versioned generic DXF blocks. All sheets have PNG previews. Unsupported sheet
+categories are listed rather than invented. Exact geometry needs source-bound,
+explicitly verified measured records; generic envelopes are Typical - verify
+against site. There is no verified manufacturer library or engineering design
+calculation engine. Complete drawing bundles include linked logo assets.
+
+Private native Z93004 pilot:3 realphotos ->181items/21findings/draftPDFDXF in
+80.862seconds. Its workbook validates247imageplacements+3textsources, and native
+cell-text/embedded-image probes passed. Full378-photo+wholeworkbook native
+benchmark and field accuracy remain outstanding. No real approvals were created.
+Native artifacts/receipts stay .local/survey-drawings-task; synthetic shareable
+samples are samples/drawings. Browser checks use isolated databases and records.
+
+Read docs/manual/AI_SURVEY_TEAM_GUIDE.md and
+docs/development/AI_SURVEY_DRAWING_PIPELINE.md. Private pre-change checkpoint:
+.local/backups/project-checkpoint-20261021-175047. Development verification receipt
+is docs/development/AI_SURVEY_DRAWING_RECEIPT.json. GitHub PR targets the existing
+feat/local-photo-pilot baseline, keeping this feature review separate from main.

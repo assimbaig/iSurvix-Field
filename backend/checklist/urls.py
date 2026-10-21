@@ -21,6 +21,7 @@ from django.urls import include, path
 from core import account_views
 
 urlpatterns = [
+    path('local/survey-processing/', include('core.survey_processing_urls')),
     path('admin/', account_views.retired_admin),
     path('admin/<path:asset>', account_views.retired_admin),
     path('', include('core.urls')),

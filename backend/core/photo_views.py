@@ -38,6 +38,41 @@ def api_errors(view):
 def error(exc, status=400):
     return JsonResponse({'error': '; '.join(exc.messages) if isinstance(exc, ValidationError) else str(exc)}, status=status)
 
+
+def track_survey_upload(view):
+    @wraps(view)
+    def tracked(request, checklist_id):
+        from .survey_processing import enabled, upload_session
+        from .survey_processing_models import SurveyUploadSession
+        c = survey_access(request, checklist_id, edit=True)['checklist']
+        session = None
+        if enabled(c):
+            token = request.POST.get('processing_upload_token')
+            if token:
+                if not SurveyUploadSession.objects.filter(token=token, checklist=c, actor=request.user, finished_at__isnull=True).exists():
+                    raise ValidationError('The survey upload session is closed or belongs to another user.')
+            else:
+                session = upload_session(request, checklist_id)
+        try:
+            return view(request, checklist_id)
+        finally:
+            if session:
+                from django.utils import timezone
+                SurveyUploadSession.objects.filter(token=session.token).update(finished_at=timezone.now())
+    return tracked
+
+
+@require_POST
+@api_errors
+def processing_upload_session(request, checklist_id):
+    from .survey_processing import enabled, upload_session
+    c = survey_access(request, checklist_id, edit=True)['checklist']
+    if not enabled(c):
+        return JsonResponse({'enabled': False})
+    data = body(request)
+    session = upload_session(request, checklist_id, data.get('token'))
+    return JsonResponse({'enabled': True, 'token': str(session.token)})
+
 def body(request):
     if len(request.body)>30000:
         raise ValueError('Request too large.')
@@ -91,6 +126,7 @@ def state(request, checklist_id):
 
 @require_POST
 @api_errors
+@track_survey_upload
 def upload(request, checklist_id):
     survey_access(request,checklist_id,edit=True)
     from .field_photo_service import GROUPS

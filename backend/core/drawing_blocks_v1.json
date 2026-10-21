@@ -1,0 +1,35 @@
+{
+  "version": "isurvix-generic-symbols-1",
+  "approval": "application drawing convention; no manufacturer geometry",
+  "blocks": {
+    "cabinet": {
+      "label": "Generic cabinet envelope",
+      "basis": "Measured overall envelope only; internal equipment not represented",
+      "entities": [
+        {"kind": "polyline", "points": [[0,0],[1,0],[1,1],[0,1]], "closed": true},
+        {"kind": "line", "points": [[0.5,0],[0.5,1]]}
+      ]
+    },
+    "antenna": {
+      "label": "Generic antenna envelope",
+      "basis": "Measured overall envelope only; radome profile not manufacturer verified",
+      "entities": [
+        {"kind": "polyline", "points": [[0.1,0],[0.9,0],[1,0.08],[1,0.92],[0.9,1],[0.1,1],[0,0.92],[0,0.08]], "closed": true}
+      ]
+    },
+    "platform": {
+      "label": "Generic platform envelope",
+      "basis": "Measured overall envelope only; no structural member or connection design",
+      "entities": [
+        {"kind": "polyline", "points": [[0,0],[1,0],[1,1],[0,1]], "closed": true}
+      ]
+    },
+    "dish": {
+      "label": "Generic dish envelope",
+      "basis": "Measured envelope only; manufacturer profile and brackets not represented",
+      "entities": [
+        {"kind": "circle", "center": [0.5,0.5], "radius": 0.5}
+      ]
+    }
+  }
+}
