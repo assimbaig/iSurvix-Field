@@ -1,0 +1,27 @@
+{
+  "clearly_synthetic": true,
+  "real_site_data": false,
+  "source": "Actual integrated Django/native-Ollama pilot using written synthetic test records",
+  "approval": "Distinct synthetic Engineer, QA and Team Lead test accounts; not engineering certification",
+  "model": "qwen3.5:4b",
+  "pdf_pages": 4,
+  "geometry_digest": "f62c844221e1eb3add8d508c33e623ab3bd755af9d3336c34e30760282b8fd60",
+  "files": {
+    "geometry.json": "6ffa5fb598dc9e79b513d566e5482172e2dcb0d818948a869ce9e38a348ff90b",
+    "survey-drawings.pdf": "297d087d83577a4d6892d8b5cdba35656b42ea663a9f48f958ee028e78f9325f",
+    "sv-001.dxf": "658bce420f603c1e4b318b1f3000238232052eab5987c2f46f4e703ccfcb320e",
+    "sv-001.png": "e0c2c6ba9540792d2216edbf4623704457e889be15fc965c4c7a807a0bb930a0",
+    "sv-002.dxf": "070e16fc966b1e2eb86756a3bb1bcd202b4e828560117a9a534201c33818f085",
+    "sv-002.png": "1762fb4158b8e2e187871b2e85e2d0cc7956707fc50f59e97dc686e8d7c9fddc",
+    "sv-004.dxf": "525c566931cc0425f1e423ca1546484f19b9a8ea677d152473dc50e6a8e31bb0",
+    "sv-004.png": "1e557cb845bd0e59f3fd5f87a650e744a37ff9f5e78f3a8ee621e432a8da8189",
+    "sv-006.dxf": "a0216883a6eb91ebd06bcfa4ebf967dec8d30958db1e6311ac89d0b23dd4e06b",
+    "sv-006.png": "8da4a3dc9b10fe15a8754d3054cd6a8bac2899ba192cbf5f727df165e11d2366"
+  },
+  "limitations": [
+    "Generic measured envelope only; not verified manufacturer geometry",
+    "Missing tower measurement and condition remain explicit",
+    "Unsupported categories are not generated",
+    "No construction, commissioning or engineering-compliance use"
+  ]
+}

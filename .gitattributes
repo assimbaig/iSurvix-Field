@@ -2,3 +2,6 @@
 # Preserve document artifacts byte-for-byte.
 *.pdf binary
 *.docx binary
+# Native export samples contain recorded byte hashes; do not change line endings.
+/samples/drawings/integration-verification-20261021/*.dxf binary
+/samples/drawings/integration-verification-20261021/*.json -text whitespace=cr-at-eol

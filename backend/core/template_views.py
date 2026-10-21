@@ -74,21 +74,16 @@ def template_builder(request, template_id=None, wizard_mode=False):
     template = get_object_or_404(template_scope(request.user), pk=template_id) if template_id else None
     route = 'checklist_wizard_edit' if wizard_mode else 'checklist_template_edit'
     submitted_definition = None
+    editor_unsaved = False
+    stored_assets = []
     response_status = 200
     if request.method == 'POST':
         try:
             action = request.POST.get('action')
             if action in {'create_original', 'create_blank'}:
                 definition = default_definition() if action == 'create_original' else {'title': 'Custom checklist', 'sections': [{'id': 'general', 'title': 'General information', 'fields': [{'id': 'site_id', 'label': 'Site ID', 'type': 'text', 'system': 'site_id', 'required': True}]}]}
-                template = ChecklistTemplate.objects.create(name=definition['title'], definition=definition, created_by=request.user)
-                if action == 'create_original':
-                    from pathlib import Path
-                    from django.conf import settings
-                    for slot, filename in [('left', 'nokia.png'), ('right', 'tawal.png')]:
-                        logo = Path(settings.BASE_DIR) / 'static' / 'core' / 'img' / filename
-                        if logo.exists():
-                            getattr(template, f'client_{slot}_logo').save(filename, ContentFile(logo.read_bytes()), save=False)
-                    template.save()
+                template = ChecklistTemplate.objects.create(name=definition['title'], definition=definition, created_by=request.user,
+                    client_left_name='',client_right_name='')
                 return redirect(route, template_id=template.id)
             if not template:
                 raise ValidationError('Choose a checklist template first.')
@@ -124,6 +119,9 @@ def template_builder(request, template_id=None, wizard_mode=False):
                         raise ValidationError('Keep the source standard configuration when editing its draft.')
                     definition['wizard_context']=expected_context
                     validate_definition(definition)
+                # A later name/logo/storage error must not discard a valid tree.
+                # This remains an in-memory render candidate until save succeeds.
+                submitted_definition = definition
                 name = request.POST.get('name', '').strip()
                 if not name or len(name) > 160:
                     raise ValidationError('Provide a template name of at most 160 characters.')
@@ -155,6 +153,7 @@ def template_builder(request, template_id=None, wizard_mode=False):
                         template.company_logo = ''
                     if 'company_logo' in uploads:
                         template.company_logo.save('company.png', ContentFile(uploads['company_logo']), save=False)
+                        stored_assets.append(template.company_logo.name)
                     for slot in ['left', 'right']:
                         if f'client_{slot}_name' in request.POST:
                             setattr(template, f'client_{slot}_name', request.POST.get(f'client_{slot}_name', '').strip()[:80])
@@ -163,27 +162,44 @@ def template_builder(request, template_id=None, wizard_mode=False):
                             setattr(template, attr, '')
                         if attr in uploads:
                             getattr(template, attr).save(f'client-{slot}.png', ContentFile(uploads[attr]), save=False)
+                            stored_assets.append(getattr(template, attr).name)
                     template.published = action == 'publish'
                     template.save()
                 messages.success(request, 'Revision published and locked.' if template.published else 'Draft saved.')
             else:
                 raise ValidationError('Unknown template action.')
             return redirect(route, template_id=template.id)
-        except (ValidationError, ValueError, TypeError) as error:
-            messages.error(request, '; '.join(error.messages) if isinstance(error, ValidationError) else 'Invalid template data.')
+        except (ValidationError, ValueError, TypeError, OSError) as error:
+            # Filesystem writes do not participate in the database transaction.
+            # Remove only newly written files from this failed request; retain
+            # every previously configured logo and the user's unsaved controls.
+            for name in stored_assets:
+                try:
+                    default_storage.delete(name)
+                except OSError:
+                    pass
+            if template:
+                template.refresh_from_db()
+            response_status = 409 if response_status == 409 else 400
+            editor_unsaved = submitted_definition is not None
+            explanation = '; '.join(error.messages) if isinstance(error, ValidationError) else 'Local storage is unavailable. Your entered changes remain unsaved; reselect replacement logo files before retrying.' if isinstance(error, OSError) else 'Invalid template data.'
+            messages.error(request, explanation)
     token=template_edit_digest(template) if template else ''
     if response_status==409:
         # Keep the stale token: retry must never silently overwrite a newer draft.
         token=request.POST.get('wizard_expected_digest','')
+    if editor_unsaved:
         from copy import copy
         template=copy(template)
         template.name=request.POST.get('name',template.name)
+        if request.POST.get('processing_setting_present') == '1':
+            template.checklist_required=request.POST.get('checklist_required') == 'on'
         for slot in ('left','right'):
             setattr(template,f'client_{slot}_name',request.POST.get(f'client_{slot}_name',getattr(template,f'client_{slot}_name')))
     from .access import company_id_for
     from .models import Company
     company=Company.objects.filter(pk=company_id_for(request.user)).first()
-    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'template_locked':bool(template and (template.published or template.disabled or template.checklists.exists())), 'definition': submitted_definition if submitted_definition is not None else template.definition if template else None, 'projects': project_scope(request.user), 'wizard_mode':wizard_mode,'wizard_step':3 if template and template.published else 2,'wizard_expected_digest':token,'editor_company_name':company.name if company else 'Company','active_view':'checklists'},status=response_status)
+    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'template_locked':bool(template and (template.published or template.disabled or template.checklists.exists())), 'definition': submitted_definition if submitted_definition is not None else template.definition if template else None, 'projects': project_scope(request.user), 'wizard_mode':wizard_mode,'wizard_step':3 if template and template.published else 2,'wizard_expected_digest':token,'editor_company_name':company.name if company else 'Company','active_view':'checklists','editor_unsaved':editor_unsaved},status=response_status)
 
 
 @require_http_methods(['GET'])

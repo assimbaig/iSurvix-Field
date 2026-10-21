@@ -1,11 +1,13 @@
 """Survey-only evidence-to-draft pipeline. Inference never approves a survey."""
 import hashlib
 import json
+import logging
 import math
 import re
 import uuid
 from copy import deepcopy
 from datetime import timedelta
+from decimal import Decimal, InvalidOperation, localcontext
 from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -15,6 +17,7 @@ from django.db import transaction
 from django.db.models import Max, Q
 from django.http import Http404
 from django.urls import reverse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from .access import role_for, can_access_project
 from .models import Checklist, Profile
@@ -28,6 +31,7 @@ STAGES = {
 }
 ACTIVE = set(STAGES) - {'ready_for_review', 'failed'}
 PIPELINE_VERSION = 'survey-pipeline-1'
+logger = logging.getLogger(__name__)
 
 
 def digest(data):
@@ -121,6 +125,8 @@ def validate_submission(c, uploads_finished):
         raise ValidationError('Confirm that all survey data and uploads are complete.')
     if not c.site_id.strip() or not c.schema_snapshot.get('sections'):
         raise ValidationError('Provide the site ID and an administrator-approved checklist.')
+    from .roadmap_service import require_qualified_template
+    require_qualified_template(c)
     if c.survey_upload_sessions.filter(finished_at__isnull=True).exists():
         raise ValidationError('Uploads are still in progress. Finish or close your upload session first.')
     allowed = {f['id']: f for s in c.checklist_template.definition['sections'] for f in s['fields']}
@@ -179,7 +185,7 @@ def retry(request, checklist_id, revision_id):
         c, flags = access(request, checklist_id)
         if not flags['can_submit']:
             raise PermissionDenied('Only the assigned Engineer can retry processing.')
-        job = SurveyProcessingJob.objects.select_for_update().get(revision_id=revision_id, revision__checklist=c)
+        job = get_object_or_404(SurveyProcessingJob.objects.select_for_update(), revision_id=revision_id, revision__checklist=c)
         if not current(job.revision):
             raise ValidationError('Survey inputs changed. Submit a new revision; the previous revision is preserved.')
         if job.status == 'failed':
@@ -202,7 +208,8 @@ def claim():
     now = timezone.now()
     with transaction.atomic():
         job = SurveyProcessingJob.objects.select_for_update().filter(
-            Q(status='queued') | Q(status__in=ACTIVE, lease_until__lt=now)).order_by('pk').first()
+            Q(status='queued') | Q(status__in=ACTIVE, lease_until__lt=now) |
+            Q(status__in=ACTIVE, lease_until__isnull=True)).order_by('pk').first()
         if not job:
             return None
         job.lease_owner = uuid.uuid4().hex
@@ -223,7 +230,8 @@ def progress(job, status=None, **values):
             setattr(saved, name, value)
         if status:
             saved.status = status
-        saved.lease_until = timezone.now() + timedelta(seconds=max(300, getattr(settings, 'OLLAMA_TIMEOUT', 180) + 120))
+        if saved.status in ACTIVE:
+            saved.lease_until = timezone.now() + timedelta(seconds=max(300, getattr(settings, 'OLLAMA_TIMEOUT', 180) + 120))
         saved.save()
         job.completed, job.total = saved.completed, saved.total
 
@@ -232,11 +240,71 @@ def tokens(value):
     return set(re.findall(r'[a-z0-9]+', str(value).lower())) - {'the', 'of', 'and', 'for', 'to', 'a', 'is', 'site', 'photo'}
 
 
+def numeric_evidence_value(field, finding):
+    """Convert an explicitly recorded unit, never silently reinterpret a number.
+
+    Only a small dimensionally compatible conversion table is supported. Unknown
+    or incompatible units remain visible findings requiring a human correction.
+    """
+    value = finding.get('value')
+    expected = str(field.get('unit', '')).strip().casefold()
+    observed = str(finding.get('unit', '')).strip().casefold()
+    try:
+        number = Decimal(str(value))
+        if not number.is_finite():
+            raise InvalidOperation()
+        if number and abs(number.adjusted()) > 10000:
+            raise ValidationError('The recorded number exceeds the supported field length.')
+    except InvalidOperation as exc:
+        raise ValidationError('The recorded measurement is not a finite number.') from exc
+    def formatted(value):
+        if not value:
+            return '0'
+        if abs(value.adjusted()) > 10000:
+            raise ValidationError('The recorded number exceeds the supported field length.')
+        text = format(value, 'f')
+        if '.' in text:
+            text = text.rstrip('0').rstrip('.')
+        if len(text) > 10000:
+            raise ValidationError('The recorded number exceeds the supported field length.')
+        return text
+    if not expected:
+        return formatted(number), observed
+    if not observed:
+        raise ValidationError('The recorded value is missing its measurement unit.')
+    if expected == observed:
+        return formatted(number), expected
+    conversions = {
+        'mm': ('length', Decimal('.001')), 'cm': ('length', Decimal('.01')),
+        'm': ('length', Decimal(1)), 'km': ('length', Decimal(1000)),
+        'mv': ('voltage', Decimal('.001')), 'v': ('voltage', Decimal(1)), 'kv': ('voltage', Decimal(1000)),
+        'ma': ('current', Decimal('.001')), 'a': ('current', Decimal(1)),
+        'w': ('power', Decimal(1)), 'kw': ('power', Decimal(1000)),
+        'hz': ('frequency', Decimal(1)), 'khz': ('frequency', Decimal(1000)),
+        'mhz': ('frequency', Decimal(1000000)), 'ghz': ('frequency', Decimal(1000000000)),
+        'deg': ('angle', Decimal(1)), 'degrees': ('angle', Decimal(1)), '°': ('angle', Decimal(1)),
+    }
+    source, target = conversions.get(observed), conversions.get(expected)
+    if not source or not target or source[0] != target[0]:
+        raise ValidationError('The recorded unit does not match the checklist unit; confirm the intended value and unit.')
+    try:
+        # Exact powers-of-ten conversion must not round a recorded long decimal
+        # to the default Decimal context's 28 significant digits.
+        with localcontext() as context:
+            context.prec = max(28, len(number.as_tuple().digits) + 32)
+            converted = number * source[1] / target[1]
+    except InvalidOperation as exc:
+        raise ValidationError('The recorded measurement is not a finite number.') from exc
+    return formatted(converted), expected
+
+
 def prepare_checklist(snapshot, reconciliation):
     """Complete published structure; conservative mapping leaves ambiguity visible."""
     fields = [(s, f) for s in snapshot['schema']['sections'] for f in s['fields']]
+    known_ids = {field['id'] for _, field in fields}
     proposals = []
-    conflicts = reconciliation.get('conflicts', [])
+    conflicts = deepcopy(reconciliation.get('conflicts', []))
+    missing = deepcopy(reconciliation.get('missing', []))
     for section, field in fields:
         value = snapshot['site_id'] if field.get('system') == 'site_id' else snapshot['answers'].get('custom', {}).get(field['id'])
         reported_value = deepcopy(value)
@@ -248,9 +316,22 @@ def prepare_checklist(snapshot, reconciliation):
             hint = str(finding.get('field_hint') or finding.get('component') or '')
             words = tokens(hint)
             score = len(words & label) / max(1, len(words))
-            if hint == field['id'] or len(words & label) >= 2 and score >= .8:
+            if hint == field['id'] or hint not in known_ids and len(words & label) >= 2 and score >= .8:
                 matches.append(finding)
-        supported = [x for x in matches if x.get('value') not in (None, '', [], {})]
+        supported = [deepcopy(x) for x in matches if x.get('value') not in (None, '', [], {})]
+        unit = str(field.get('unit', ''))
+        if field['type'] == 'number':
+            compatible = []
+            for finding in supported:
+                try:
+                    finding['value'], observed_unit = numeric_evidence_value(field, finding)
+                    finding['unit'] = observed_unit
+                    unit = unit or observed_unit
+                    compatible.append(finding)
+                except ValidationError as exc:
+                    missing.append({'field_id': field['id'], 'source_id': finding.get('source_id', ''),
+                                    'message': '; '.join(exc.messages)})
+            supported = compatible
         answers = {json.dumps(x['value'], sort_keys=True) for x in supported}
         status = 'Reported' if value not in (None, '', [], {}) else 'Missing'
         if len(answers) == 1 and value in (None, '', [], {}) and field['type'] not in {'photo', 'inspection'}:
@@ -272,7 +353,14 @@ def prepare_checklist(snapshot, reconciliation):
             from .survey_evidence import _normalised_value
             return _normalised_value(entry)
         answers = {str(comparison(x)) for x in supported}
-        conflict = len(answers) > 1 or reported_value not in (None, '', [], {}) and any(str(x['value']) != str(reported_value) for x in supported)
+        def same_reported(entry):
+            if field['type'] == 'number':
+                try:
+                    return Decimal(str(entry['value'])) == Decimal(str(reported_value))
+                except InvalidOperation:
+                    return False
+            return str(entry['value']) == str(reported_value)
+        conflict = len(answers) > 1 or reported_value not in (None, '', [], {}) and any(not same_reported(x) for x in supported)
         if conflict:
             status = 'Needs review'
             conflicts.append({'field_id': field['id'], 'message': 'Submitted data or evidence contains conflicting values. An Engineer must resolve this item.'})
@@ -287,9 +375,10 @@ def prepare_checklist(snapshot, reconciliation):
             'proposed_answer': value, 'value': value, 'status': status, 'sources': sources,
             'confidence': 'high' if supported and all(x.get('confidence') == 'high' for x in supported) and not conflict else 'low',
             'accepted': False, 'conflict': conflict,
+            'unit': unit,
             'reason': 'Check the original evidence before acceptance.' if matches else 'Submitted data; verify it.' if status == 'Reported' else 'No supported answer was extracted.'})
     return {'checklist_items': proposals, 'findings': reconciliation.get('findings', []),
-        'conflicts': conflicts, 'missing': reconciliation.get('missing', []),
+        'conflicts': conflicts, 'missing': missing,
         'suggested_items': reconciliation.get('suggested_items', []), 'drawing_records': []}
 
 
@@ -307,7 +396,10 @@ def reviewed_payload(revision):
         elif event.action == 'geometry':
             payload['drawing_records'] = event.payload['drawing_records']
         elif event.action == 'accept_additional':
-            payload.setdefault('accepted_additional_items', []).extend(event.payload.get('items', []))
+            accepted = payload.setdefault('accepted_additional_items', [])
+            for item in event.payload.get('items', []):
+                if item not in accepted:
+                    accepted.append(item)
         elif event.action == 'technical_reject':
             payload['review_cycle'] = event.pk
             for item in payload['checklist_items']:
@@ -318,8 +410,22 @@ def reviewed_payload(revision):
                 if change:
                     finding.update(change)
                     if finding.get('field_hint') in by_id:
-                        by_id[finding['field_hint']].update(value=change['value'], proposed_answer=change['value'],
-                            accepted=False, status='Needs review', conflict=False, reason=event.reason)
+                        value = change['value']
+                        unit = change.get('unit', '')
+                        conflict = False
+                        reason = event.reason
+                        field = next(f for section in revision.snapshot['schema']['sections'] for f in section['fields'] if f['id'] == finding['field_hint'])
+                        if field['type'] == 'number' and value not in (None, ''):
+                            try:
+                                value, unit = numeric_evidence_value(field, finding)
+                            except ValidationError as exc:
+                                # Older human events may contain incompatible units.
+                                # Preserve their audit record and keep recovery usable.
+                                value, conflict = None, True
+                                finding['verification_status'] = 'needs_review'
+                                reason = '; '.join(exc.messages)
+                        by_id[finding['field_hint']].update(value=value, proposed_answer=value, unit=unit,
+                            accepted=False, status='Needs review', conflict=conflict, reason=reason)
     return payload
 
 
@@ -331,11 +437,12 @@ def drawing_branding(revision):
     branding = revision.snapshot.get('branding', {})
     result = {'project_id': revision.snapshot['project_id']}
     clients = branding.get('clients', [])
-    paths = [x.get('logo') for x in clients if isinstance(x, dict) and x.get('logo')]
     # Only snapshotted assigned logos are used, never default client artwork.
-    for index, name in enumerate(paths[:2]):
+    for index, client in enumerate(clients[:2]):
+        if not isinstance(client, dict) or not client.get('logo'):
+            continue
         try:
-            result['client_logo' if index == 0 else 'partner_logo'] = default_storage.path(name)
+            result['client_logo' if index == 0 else 'partner_logo'] = default_storage.path(client['logo'])
         except (ValueError, NotImplementedError):
             pass
     if branding.get('company_logo'):
@@ -362,6 +469,7 @@ def render_drawing_set(revision, payload, released=False, actor=None):
         if item.get('accepted'):
             findings.append({'field_hint': item['id'], 'component': item['label'], 'value': item['value'],
                 'label': item['label'], 'field': item['id'],
+                'unit': item.get('unit', ''),
                 'status': item['status'], 'verification_status': 'confirmed' if item['status'] == 'Confirmed from evidence' else 'needs_review',
                 'confidence': item['confidence'], 'sources': item['sources'], 'notes': item.get('reason', '')})
     geometry = build_geometry(snapshot, findings)
@@ -481,10 +589,13 @@ def process_next():
         progress(job, 'preparing_drawings')
         with transaction.atomic():
             progress(job)
+            if digest(result.payload) != result.digest:
+                raise ValidationError('Saved processing output failed integrity verification.')
             render_drawing_set(job.revision, result.payload)
         progress(job, 'ready_for_review', error='', lease_owner='', lease_until=None)
     except InferenceBusy:
         SurveyProcessingJob.objects.filter(pk=job.pk, lease_owner=job.lease_owner).update(status='queued', lease_owner='', lease_until=None)
+        return False  # Let the independent worker back off while shared inference is busy.
     except Exception as exc:
         # Do not expose prompts, document contents, paths or raw model text.
         code = type(exc).__name__
@@ -500,6 +611,7 @@ def process_next():
         elif isinstance(exc, (ConnectionError, TimeoutError)) or type(exc).__name__ == 'URLError':
             safe = 'The local Ollama service is offline or timed out. Start the configured local service, then retry; completed sources are preserved.'
         SurveyProcessingJob.objects.filter(pk=job.pk, lease_owner=job.lease_owner).update(status='failed', error=safe, lease_owner='', lease_until=None)
+        logger.warning('Survey processing failed: job=%s revision=%s error_type=%s', job.pk, job.revision_id, code)
     return True
 
 
@@ -529,10 +641,12 @@ def release_gate(revision, payload):
 def review(request, checklist_id, revision_id, decision, ids=None, corrections=None, reason='', drawing_records=None):
     from .template_service import field_map, validate_answer
     from .template_views import require_field_editable
+    if not isinstance(reason, str) or not isinstance(decision, str) or corrections is not None and not isinstance(corrections, dict):
+        raise ValidationError('Provide a valid review decision, correction object and reason.')
     with transaction.atomic():
         Checklist.objects.select_for_update().get(pk=checklist_id)
         c, flags = access(request, checklist_id)
-        revision = SurveyProcessingRevision.objects.select_for_update().get(pk=revision_id, checklist=c)
+        revision = get_object_or_404(SurveyProcessingRevision.objects.select_for_update(), pk=revision_id, checklist=c)
         if revision.processing_job.status != 'ready_for_review' or not current(revision):
             raise ValidationError('Review requires a completed current revision. Submit changed survey inputs again.')
         payload = reviewed_payload(revision)
@@ -576,10 +690,15 @@ def review(request, checklist_id, revision_id, decision, ids=None, corrections=N
             for ident in ids:
                 if ident not in known or not isinstance((corrections or {}).get(ident), dict):
                     raise ValidationError('Choose an extracted record from this submission.')
+                if known[ident].get('field_hint') in field_map(c):
+                    require_field_editable(c, known[ident]['field_hint'])
                 change = corrections[ident]
                 value, unit = change.get('value'), change.get('unit', known[ident].get('unit', ''))
                 if not isinstance(unit, str) or len(unit) > 40 or len(json.dumps(value, allow_nan=False)) > 8000:
                     raise ValidationError('The corrected value or measurement unit is invalid.')
+                target = field_map(c).get(known[ident].get('field_hint'))
+                if target and target['type'] == 'number' and value not in (None, ''):
+                    numeric_evidence_value(target, {**known[ident], 'value': value, 'unit': unit})
                 updates[ident] = {'value': value, 'unit': unit, 'verification_status': 'confirmed',
                     'measured': False, 'corrected_by': request.user.pk, 'correction_reason': reason[:4000]}
             SurveyProcessingEvent.objects.create(revision=revision, actor=request.user, action='record', reason=reason[:4000], payload={'findings': updates})
@@ -627,10 +746,15 @@ def review(request, checklist_id, revision_id, decision, ids=None, corrections=N
             if not reason.strip():
                 raise ValidationError('Explain acceptance of additional checklist proposals.')
             proposals = payload.get('suggested_items', [])
-            chosen = [proposals[i] for i in (ids or []) if type(i) is int and 0 <= i < len(proposals)]
-            if not chosen:
+            if not isinstance(ids, list) or not ids or any(type(i) is not int or not 0 <= i < len(proposals) for i in ids):
                 raise ValidationError('Select a suggested item.')
-            SurveyProcessingEvent.objects.create(revision=revision, actor=request.user, action=decision, reason=reason[:4000], payload={'items': chosen})
+            accepted = payload.get('accepted_additional_items', [])
+            chosen = []
+            for i in ids:
+                if proposals[i] not in accepted and proposals[i] not in chosen:
+                    chosen.append(proposals[i])
+            if chosen:
+                SurveyProcessingEvent.objects.create(revision=revision, actor=request.user, action=decision, reason=reason[:4000], payload={'items': chosen})
             return revision
         if decision not in {'accept', 'correct', 'reject'} or not isinstance(ids, list) or not 1 <= len(ids) <= 3000 or len(set(ids)) != len(ids):
             raise ValidationError('Choose checklist items and a supported review decision.')
@@ -660,7 +784,7 @@ def review(request, checklist_id, revision_id, decision, ids=None, corrections=N
                 updates[ident] = {'accepted': True, 'status': status, 'value': value, 'proposed_answer': value, 'conflict': False, 'reason': reason[:4000]}
         # Decisions populate this generated revision, never silently overwrite the
         # source survey or invalidate its immutable submission. Export is explicit.
-        SurveyProcessingEvent.objects.create(revision=revision, actor=request.user, action=decision, reason=reason[:4000], payload={'items': updates})
+        SurveyProcessingEvent.objects.get_or_create(revision=revision, actor=request.user, action=decision, reason=reason[:4000], payload={'items': updates})
         return revision
 
 

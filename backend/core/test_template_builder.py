@@ -94,14 +94,15 @@ class ChecklistBuilderTests(TestCase):
         self.assertEqual(self.l.get(url).status_code, 403)
         self.assertEqual(Client().get(url).status_code, 403)
 
-    def test_original_copy_populates_real_client_logos(self):
+    def test_new_original_structure_requires_explicit_project_branding(self):
         response = self.a.post(reverse('checklist_templates'), {'action': 'create_original'})
         self.assertEqual(response.status_code, 302)
         t = ChecklistTemplate.objects.latest('id')
-        self.assertTrue(t.client_left_logo.name)
-        self.assertTrue(t.client_right_logo.name)
-        self.assertEqual(t.client_left_name, 'Nokia')
-        self.assertEqual(t.client_right_name, 'TAWAL')
+        self.assertFalse(t.client_left_logo.name)
+        self.assertFalse(t.client_right_logo.name)
+        self.assertEqual(t.client_left_name, '')
+        self.assertEqual(t.client_right_name, '')
+        self.assertEqual(t.definition, default_definition())
 
     def test_add_remove_sections_fields_and_replace_logos(self):
         definition = deepcopy(self.definition)
@@ -117,7 +118,7 @@ class ChecklistBuilderTests(TestCase):
 
     def test_invalid_image_is_rejected(self):
         response = self.a.post(reverse('checklist_template_edit', args=[self.template.id]), {'action': 'save', 'name': self.template.name, 'definition': json.dumps(self.definition), 'client_left_logo': SimpleUploadedFile('fake.png', b'not an image', content_type='image/png')})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         self.template.refresh_from_db()
         self.assertFalse(self.template.client_left_logo.name)
 

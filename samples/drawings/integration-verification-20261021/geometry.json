@@ -1,0 +1,4092 @@
+{
+  "version": "survey-drawings-1",
+  "blocks_version": "isurvix-generic-symbols-1",
+  "page_mm": [
+    420.0,
+    297.0
+  ],
+  "project_id": 1,
+  "project": "SYNTHETIC integrated survey project",
+  "site_id": "SYN-AI-20261021",
+  "survey_id": 1,
+  "date": "2026-10-21",
+  "warnings": [],
+  "missing_information": [
+    "Shelter, equipment and cable routes: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Antenna levels and sectors: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Enlarged mounting connections: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Power single-line records: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Rectifier and MDB distribution: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Roxtec and hatchplate arrangements: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Grounding arrangement: no supported records; obtain applicable measurements, equipment details and evidence."
+  ],
+  "sheets": [
+    {
+      "key": "register",
+      "title": "Drawing register and verification notes",
+      "number": "SV-001",
+      "scale": "Not to Scale",
+      "entities": [
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              8,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              289
+            ],
+            [
+              8,
+              289
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "iSurvix | Survey evidence drawings",
+          "x": 14,
+          "y": 281,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SYN-AI-20261021 / Drawing register and verification notes",
+          "x": 14,
+          "y": 273,
+          "height": 4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              268
+            ],
+            [
+              406,
+              268
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Evidence record only. No structural capacity, electrical safety or code compliance assessment.",
+          "x": 14,
+          "y": 65,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Unknown dimensions and concealed connections have not been inferred. Review sources before use.",
+          "x": 14,
+          "y": 59.5,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "NORTH: not established unless recorded in the source.",
+          "x": 14,
+          "y": 48,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Use the stated scale only. Do not scale evidence schedules.",
+          "x": 14,
+          "y": 42,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Survey documentation. Each drawing is evidence-bound and requires authorised technical review.",
+          "x": 14,
+          "y": 263,
+          "height": 2.5,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              14,
+              254
+            ],
+            [
+              406,
+              254
+            ],
+            [
+              406,
+              262
+            ],
+            [
+              14,
+              262
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded item",
+          "x": 16,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Finding / verification status",
+          "x": 121,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Source evidence",
+          "x": 301,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              241.2
+            ],
+            [
+              406,
+              241.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              254.0
+            ],
+            [
+              14,
+              241.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              254.0
+            ],
+            [
+              119,
+              241.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              254.0
+            ],
+            [
+              299,
+              241.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              254.0
+            ],
+            [
+              406,
+              241.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-002 | Site layout",
+          "x": 16,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "1 sheet(s) | Measured records + verification schedule",
+          "x": 121,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "2 recorded findings; sources linked in geometry.json",
+          "x": 301,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              228.4
+            ],
+            [
+              406,
+              228.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              241.2
+            ],
+            [
+              14,
+              228.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              241.2
+            ],
+            [
+              119,
+              228.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              241.2
+            ],
+            [
+              299,
+              228.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              241.2
+            ],
+            [
+              406,
+              228.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-003 | Shelter, equipment and cable routes",
+          "x": 16,
+          "y": 238.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 238.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 238.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              215.6
+            ],
+            [
+              406,
+              215.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              228.4
+            ],
+            [
+              14,
+              215.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              228.4
+            ],
+            [
+              119,
+              215.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              228.4
+            ],
+            [
+              299,
+              215.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              228.4
+            ],
+            [
+              406,
+              215.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-004 | Tower elevation, sections and platforms",
+          "x": 16,
+          "y": 225.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "1 sheet(s) | Evidence schedule only / Not to Scale",
+          "x": 121,
+          "y": 225.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "1 recorded findings; sources linked in geometry.json",
+          "x": 301,
+          "y": 225.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              202.8
+            ],
+            [
+              406,
+              202.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              215.6
+            ],
+            [
+              14,
+              202.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              215.6
+            ],
+            [
+              119,
+              202.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              215.6
+            ],
+            [
+              299,
+              202.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              215.6
+            ],
+            [
+              406,
+              202.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-005 | Antenna levels and sectors",
+          "x": 16,
+          "y": 212.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 212.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 212.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              190.0
+            ],
+            [
+              406,
+              190.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              202.8
+            ],
+            [
+              14,
+              190.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              202.8
+            ],
+            [
+              119,
+              190.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              202.8
+            ],
+            [
+              299,
+              190.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              202.8
+            ],
+            [
+              406,
+              190.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-006 | Equipment schedule and mounting records",
+          "x": 16,
+          "y": 199.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "1 sheet(s) | Evidence schedule only / Not to Scale",
+          "x": 121,
+          "y": 199.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "5 recorded findings; sources linked in geometry.json",
+          "x": 301,
+          "y": 199.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              177.2
+            ],
+            [
+              406,
+              177.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              190.0
+            ],
+            [
+              14,
+              177.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              190.0
+            ],
+            [
+              119,
+              177.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              190.0
+            ],
+            [
+              299,
+              177.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              190.0
+            ],
+            [
+              406,
+              177.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-007 | Enlarged mounting connections",
+          "x": 16,
+          "y": 186.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 186.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 186.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              164.4
+            ],
+            [
+              406,
+              164.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              177.2
+            ],
+            [
+              14,
+              164.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              177.2
+            ],
+            [
+              119,
+              164.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              177.2
+            ],
+            [
+              299,
+              164.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              177.2
+            ],
+            [
+              406,
+              164.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-008 | Power single-line records",
+          "x": 16,
+          "y": 174.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 174.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 174.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              151.6
+            ],
+            [
+              406,
+              151.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              164.4
+            ],
+            [
+              14,
+              151.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              164.4
+            ],
+            [
+              119,
+              151.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              164.4
+            ],
+            [
+              299,
+              151.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              164.4
+            ],
+            [
+              406,
+              151.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-009 | Rectifier and MDB distribution",
+          "x": 16,
+          "y": 161.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 161.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 161.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              138.8
+            ],
+            [
+              406,
+              138.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              151.6
+            ],
+            [
+              14,
+              138.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              151.6
+            ],
+            [
+              119,
+              138.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              151.6
+            ],
+            [
+              299,
+              138.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              151.6
+            ],
+            [
+              406,
+              138.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-010 | Roxtec and hatchplate arrangements",
+          "x": 16,
+          "y": 148.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 148.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 148.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              126.0
+            ],
+            [
+              406,
+              126.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              138.8
+            ],
+            [
+              14,
+              126.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              138.8
+            ],
+            [
+              119,
+              126.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              138.8
+            ],
+            [
+              299,
+              126.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              138.8
+            ],
+            [
+              406,
+              126.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-011 | Grounding arrangement",
+          "x": 16,
+          "y": 135.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not generated - supporting information missing",
+          "x": 121,
+          "y": 135.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No geometry or connections assumed",
+          "x": 301,
+          "y": 135.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              14,
+              107
+            ],
+            [
+              406,
+              107
+            ],
+            [
+              406,
+              115
+            ],
+            [
+              14,
+              115
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded item",
+          "x": 16,
+          "y": 109.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Finding / verification status",
+          "x": 121,
+          "y": 109.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Source evidence",
+          "x": 301,
+          "y": 109.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              99
+            ],
+            [
+              406,
+              99
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              107
+            ],
+            [
+              14,
+              99
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              107
+            ],
+            [
+              119,
+              99
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              107
+            ],
+            [
+              299,
+              99
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              107
+            ],
+            [
+              406,
+              99
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Design basis",
+          "x": 16,
+          "y": 103.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No structural/electrical design performed. No governing design code or load combinations claimed.",
+          "x": 121,
+          "y": 103.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "A design basis and separate calculations are needed for engineering design.",
+          "x": 301,
+          "y": 103.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              91
+            ],
+            [
+              406,
+              91
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              99
+            ],
+            [
+              14,
+              91
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              99
+            ],
+            [
+              119,
+              91
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              99
+            ],
+            [
+              299,
+              91
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              99
+            ],
+            [
+              406,
+              91
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Survey origin",
+          "x": 16,
+          "y": 95.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Survey 1 | 2026-10-21",
+          "x": 121,
+          "y": 95.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "3 linked evidence references",
+          "x": 301,
+          "y": 95.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              83
+            ],
+            [
+              406,
+              83
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              91
+            ],
+            [
+              14,
+              83
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              91
+            ],
+            [
+              119,
+              83
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              91
+            ],
+            [
+              299,
+              83
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              91
+            ],
+            [
+              406,
+              83
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Drawing symbols",
+          "x": 16,
+          "y": 87.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "isurvix-generic-symbols-1",
+          "x": 121,
+          "y": 87.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Generic measured envelopes; Typical - verify against site.",
+          "x": 301,
+          "y": 87.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              75
+            ],
+            [
+              406,
+              75
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              83
+            ],
+            [
+              14,
+              75
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              83
+            ],
+            [
+              119,
+              75
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              83
+            ],
+            [
+              299,
+              75
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              83
+            ],
+            [
+              406,
+              75
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Verification",
+          "x": 16,
+          "y": 79.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "7 missing sheet categories; 0 warnings",
+          "x": 121,
+          "y": 79.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Review missing information and conflicts before release.",
+          "x": 301,
+          "y": 79.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              214,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              62
+            ],
+            [
+              214,
+              62
+            ]
+          ],
+          "closed": true,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              18
+            ],
+            [
+              412,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              30
+            ],
+            [
+              412,
+              30
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              42
+            ],
+            [
+              412,
+              42
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              52
+            ],
+            [
+              412,
+              52
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              280,
+              8
+            ],
+            [
+              280,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              346,
+              8
+            ],
+            [
+              346,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Project: SYNTHETIC integrated survey project",
+          "x": 217,
+          "y": 55,
+          "height": 2.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Site: SYN-AI-20261021",
+          "x": 217,
+          "y": 45,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Drawing register and verification notes",
+          "x": 217,
+          "y": 34,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-001 | Rev 002 | 2026-10-21 | Sheet 1/4",
+          "x": 217,
+          "y": 25,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Scale: Not to Scale",
+          "x": 217,
+          "y": 20.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Prepared: synthetic_integration_engineer",
+          "x": 216,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Checked: synthetic_integration_qa",
+          "x": 282,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Approved: synthetic_integration_lead",
+          "x": 348,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Revision 002 | 2026-10-21 | Authorised release",
+          "x": 14,
+          "y": 32,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Previous output revisions remain preserved in the survey history.",
+          "x": 14,
+          "y": 26,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "RELEASED - Survey record only",
+          "x": 14,
+          "y": 12,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        }
+      ],
+      "findings": [],
+      "sheet_no": 1
+    },
+    {
+      "key": "site_layout",
+      "title": "Site layout",
+      "number": "SV-002",
+      "scale": "1:20 at A3",
+      "entities": [
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              8,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              289
+            ],
+            [
+              8,
+              289
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "iSurvix | Survey evidence drawings",
+          "x": 14,
+          "y": 281,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SYN-AI-20261021 / Site layout",
+          "x": 14,
+          "y": 273,
+          "height": 4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              268
+            ],
+            [
+              406,
+              268
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Evidence record only. No structural capacity, electrical safety or code compliance assessment.",
+          "x": 14,
+          "y": 65,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Unknown dimensions and concealed connections have not been inferred. Review sources before use.",
+          "x": 14,
+          "y": 59.5,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "NORTH: not established unless recorded in the source.",
+          "x": 14,
+          "y": 48,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Use the stated scale only. Do not scale evidence schedules.",
+          "x": 14,
+          "y": 42,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "block",
+          "x": 24.0,
+          "y": 98.0,
+          "width": 60.0,
+          "height": 100.0,
+          "layer": "EQUIPMENT",
+          "sources": [
+            {
+              "source_id": "photo:1"
+            }
+          ],
+          "block_version": "isurvix-generic-symbols-1",
+          "block_key": "cabinet",
+          "definition": {
+            "label": "Generic cabinet envelope",
+            "basis": "Measured overall envelope only; internal equipment not represented",
+            "entities": [
+              {
+                "kind": "polyline",
+                "points": [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1,
+                    0
+                  ],
+                  [
+                    1,
+                    1
+                  ],
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "closed": true
+              },
+              {
+                "kind": "line",
+                "points": [
+                  [
+                    0.5,
+                    0
+                  ],
+                  [
+                    0.5,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "text",
+          "text": "C-01 verified test envelope",
+          "x": 24.0,
+          "y": 94.0,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": [
+            {
+              "source_id": "photo:1"
+            }
+          ]
+        },
+        {
+          "kind": "text",
+          "text": "Measured record diagram - scale 1:20 at A3",
+          "x": 20,
+          "y": 256,
+          "height": 2.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Generic envelopes: Typical - verify against site.",
+          "x": 20,
+          "y": 80,
+          "height": 2.1,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              24,
+              88
+            ],
+            [
+              74,
+              88
+            ]
+          ],
+          "layer": "DIMENSIONS",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              24,
+              86
+            ],
+            [
+              24,
+              90
+            ]
+          ],
+          "layer": "DIMENSIONS",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              74,
+              86
+            ],
+            [
+              74,
+              90
+            ]
+          ],
+          "layer": "DIMENSIONS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "0",
+          "x": 24,
+          "y": 82.5,
+          "height": 2.1,
+          "layer": "DIMENSIONS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "1000 mm",
+          "x": 65.2472,
+          "y": 82.5,
+          "height": 2.1,
+          "layer": "DIMENSIONS",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              210,
+              254
+            ],
+            [
+              406,
+              254
+            ],
+            [
+              406,
+              262
+            ],
+            [
+              210,
+              262
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded item",
+          "x": 212,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Finding / verification status",
+          "x": 267,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Source evidence",
+          "x": 348,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              210,
+              243.4
+            ],
+            [
+              406,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              210,
+              254.0
+            ],
+            [
+              210,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              265,
+              254.0
+            ],
+            [
+              265,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              346,
+              254.0
+            ],
+            [
+              346,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              254.0
+            ],
+            [
+              406,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Site ID",
+          "x": 212,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SYN-AI-20261021 | Confirmed from evidence",
+          "x": 267,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:1 | original; evidence photo:2 |",
+          "x": 348,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "original",
+          "x": 348,
+          "y": 248.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              210,
+              232.8
+            ],
+            [
+              406,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              210,
+              243.4
+            ],
+            [
+              210,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              265,
+              243.4
+            ],
+            [
+              265,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              346,
+              243.4
+            ],
+            [
+              346,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              243.4
+            ],
+            [
+              406,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "C-01 verified test envelope",
+          "x": 212,
+          "y": 240.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Confirmed measured record (m); site_measured",
+          "x": 267,
+          "y": 240.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:1",
+          "x": 348,
+          "y": 240.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              214,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              62
+            ],
+            [
+              214,
+              62
+            ]
+          ],
+          "closed": true,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              18
+            ],
+            [
+              412,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              30
+            ],
+            [
+              412,
+              30
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              42
+            ],
+            [
+              412,
+              42
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              52
+            ],
+            [
+              412,
+              52
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              280,
+              8
+            ],
+            [
+              280,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              346,
+              8
+            ],
+            [
+              346,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Project: SYNTHETIC integrated survey project",
+          "x": 217,
+          "y": 55,
+          "height": 2.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Site: SYN-AI-20261021",
+          "x": 217,
+          "y": 45,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Site layout",
+          "x": 217,
+          "y": 34,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-002 | Rev 002 | 2026-10-21 | Sheet 2/4",
+          "x": 217,
+          "y": 25,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Scale: 1:20 at A3",
+          "x": 217,
+          "y": 20.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Prepared: synthetic_integration_engineer",
+          "x": 216,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Checked: synthetic_integration_qa",
+          "x": 282,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Approved: synthetic_integration_lead",
+          "x": 348,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Revision 002 | 2026-10-21 | Authorised release",
+          "x": 14,
+          "y": 32,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Previous output revisions remain preserved in the survey history.",
+          "x": 14,
+          "y": 26,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "RELEASED - Survey record only",
+          "x": 14,
+          "y": 12,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        }
+      ],
+      "findings": [
+        {
+          "label": "Site ID",
+          "answer": "SYN-AI-20261021 | Confirmed from evidence",
+          "sources": [
+            {
+              "source_id": "photo:1",
+              "reference": "original"
+            },
+            {
+              "source_id": "photo:2",
+              "reference": "original"
+            }
+          ],
+          "confidence": "low",
+          "verification_status": "Confirmed from evidence"
+        },
+        {
+          "label": "C-01 verified test envelope",
+          "answer": "Confirmed measured record (m); site_measured",
+          "sources": [
+            {
+              "source_id": "photo:1"
+            }
+          ]
+        }
+      ],
+      "measured_record_count": 1,
+      "sheet_no": 2
+    },
+    {
+      "key": "tower_elevation",
+      "title": "Tower elevation, sections and platforms",
+      "number": "SV-004",
+      "scale": "Not to Scale",
+      "entities": [
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              8,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              289
+            ],
+            [
+              8,
+              289
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "iSurvix | Survey evidence drawings",
+          "x": 14,
+          "y": 281,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SYN-AI-20261021 / Tower elevation, sections and platforms",
+          "x": 14,
+          "y": 273,
+          "height": 4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              268
+            ],
+            [
+              406,
+              268
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Evidence record only. No structural capacity, electrical safety or code compliance assessment.",
+          "x": 14,
+          "y": 65,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Unknown dimensions and concealed connections have not been inferred. Review sources before use.",
+          "x": 14,
+          "y": 59.5,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "NORTH: not established unless recorded in the source.",
+          "x": 14,
+          "y": 48,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Use the stated scale only. Do not scale evidence schedules.",
+          "x": 14,
+          "y": 42,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Evidence schedule - no unsupported positions, concealed connections or exact profiles.",
+          "x": 14,
+          "y": 263,
+          "height": 2.5,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              14,
+              254
+            ],
+            [
+              406,
+              254
+            ],
+            [
+              406,
+              262
+            ],
+            [
+              14,
+              262
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded item",
+          "x": 16,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Finding / verification status",
+          "x": 121,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Source evidence",
+          "x": 301,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              243.4
+            ],
+            [
+              406,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              254.0
+            ],
+            [
+              14,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              254.0
+            ],
+            [
+              119,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              254.0
+            ],
+            [
+              299,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              254.0
+            ],
+            [
+              406,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded tower height",
+          "x": 16,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not recorded | Missing",
+          "x": 121,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:1 | original",
+          "x": 301,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              214,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              62
+            ],
+            [
+              214,
+              62
+            ]
+          ],
+          "closed": true,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              18
+            ],
+            [
+              412,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              30
+            ],
+            [
+              412,
+              30
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              42
+            ],
+            [
+              412,
+              42
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              52
+            ],
+            [
+              412,
+              52
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              280,
+              8
+            ],
+            [
+              280,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              346,
+              8
+            ],
+            [
+              346,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Project: SYNTHETIC integrated survey project",
+          "x": 217,
+          "y": 55,
+          "height": 2.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Site: SYN-AI-20261021",
+          "x": 217,
+          "y": 45,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Tower elevation, sections and platforms",
+          "x": 217,
+          "y": 34,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-004 | Rev 002 | 2026-10-21 | Sheet 3/4",
+          "x": 217,
+          "y": 25,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Scale: Not to Scale",
+          "x": 217,
+          "y": 20.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Prepared: synthetic_integration_engineer",
+          "x": 216,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Checked: synthetic_integration_qa",
+          "x": 282,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Approved: synthetic_integration_lead",
+          "x": 348,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Revision 002 | 2026-10-21 | Authorised release",
+          "x": 14,
+          "y": 32,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Previous output revisions remain preserved in the survey history.",
+          "x": 14,
+          "y": 26,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "RELEASED - Survey record only",
+          "x": 14,
+          "y": 12,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        }
+      ],
+      "findings": [
+        {
+          "label": "Recorded tower height",
+          "answer": "Not recorded | Missing",
+          "sources": [
+            {
+              "source_id": "photo:1",
+              "reference": "original"
+            }
+          ],
+          "confidence": "low",
+          "verification_status": "Missing"
+        }
+      ],
+      "measured_record_count": 0,
+      "sheet_no": 3
+    },
+    {
+      "key": "equipment_schedule",
+      "title": "Equipment schedule and mounting records",
+      "number": "SV-006",
+      "scale": "Not to Scale",
+      "entities": [
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              8,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              289
+            ],
+            [
+              8,
+              289
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "iSurvix | Survey evidence drawings",
+          "x": 14,
+          "y": 281,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SYN-AI-20261021 / Equipment schedule and mounting records",
+          "x": 14,
+          "y": 273,
+          "height": 4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              268
+            ],
+            [
+              406,
+              268
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Evidence record only. No structural capacity, electrical safety or code compliance assessment.",
+          "x": 14,
+          "y": 65,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Unknown dimensions and concealed connections have not been inferred. Review sources before use.",
+          "x": 14,
+          "y": 59.5,
+          "height": 2.25,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "NORTH: not established unless recorded in the source.",
+          "x": 14,
+          "y": 48,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Use the stated scale only. Do not scale evidence schedules.",
+          "x": 14,
+          "y": 42,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Evidence schedule - no unsupported positions, concealed connections or exact profiles.",
+          "x": 14,
+          "y": 263,
+          "height": 2.5,
+          "layer": "WARNINGS",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              14,
+              254
+            ],
+            [
+              406,
+              254
+            ],
+            [
+              406,
+              262
+            ],
+            [
+              14,
+              262
+            ]
+          ],
+          "closed": true,
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded item",
+          "x": 16,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Finding / verification status",
+          "x": 121,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Source evidence",
+          "x": 301,
+          "y": 256.3,
+          "height": 2.5,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              243.4
+            ],
+            [
+              406,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              254.0
+            ],
+            [
+              14,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              254.0
+            ],
+            [
+              119,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              254.0
+            ],
+            [
+              299,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              254.0
+            ],
+            [
+              406,
+              243.4
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Survey contact",
+          "x": 16,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Synthetic Engineer | Reported",
+          "x": 121,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "No source - needs verification",
+          "x": 301,
+          "y": 250.9,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              232.8
+            ],
+            [
+              406,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              243.4
+            ],
+            [
+              14,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              243.4
+            ],
+            [
+              119,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              243.4
+            ],
+            [
+              299,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              243.4
+            ],
+            [
+              406,
+              232.8
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Cabinet manufacturer",
+          "x": 16,
+          "y": 240.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "TestCo | Confirmed from evidence",
+          "x": 121,
+          "y": 240.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:1 | original",
+          "x": 301,
+          "y": 240.3,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              222.2
+            ],
+            [
+              406,
+              222.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              232.8
+            ],
+            [
+              14,
+              222.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              232.8
+            ],
+            [
+              119,
+              222.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              232.8
+            ],
+            [
+              299,
+              222.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              232.8
+            ],
+            [
+              406,
+              222.2
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded cabinet width",
+          "x": 16,
+          "y": 229.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "1.2 m | Confirmed from evidence",
+          "x": 121,
+          "y": 229.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:1 | original",
+          "x": 301,
+          "y": 229.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              211.6
+            ],
+            [
+              406,
+              211.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              222.2
+            ],
+            [
+              14,
+              211.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              222.2
+            ],
+            [
+              119,
+              211.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              222.2
+            ],
+            [
+              299,
+              211.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              222.2
+            ],
+            [
+              406,
+              211.6
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Recorded cabinet height",
+          "x": 16,
+          "y": 219.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "2 m | Confirmed from evidence",
+          "x": 121,
+          "y": 219.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:1 | original",
+          "x": 301,
+          "y": 219.1,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              201.0
+            ],
+            [
+              406,
+              201.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              14,
+              211.6
+            ],
+            [
+              14,
+              201.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              119,
+              211.6
+            ],
+            [
+              119,
+              201.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              299,
+              211.6
+            ],
+            [
+              299,
+              201.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              406,
+              211.6
+            ],
+            [
+              406,
+              201.0
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Cabinet inspection result",
+          "x": 16,
+          "y": 208.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Not recorded | Missing",
+          "x": 121,
+          "y": 208.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "evidence photo:2 | original",
+          "x": 301,
+          "y": 208.5,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "polyline",
+          "points": [
+            [
+              214,
+              8
+            ],
+            [
+              412,
+              8
+            ],
+            [
+              412,
+              62
+            ],
+            [
+              214,
+              62
+            ]
+          ],
+          "closed": true,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              18
+            ],
+            [
+              412,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              30
+            ],
+            [
+              412,
+              30
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              42
+            ],
+            [
+              412,
+              42
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              214,
+              52
+            ],
+            [
+              412,
+              52
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              280,
+              8
+            ],
+            [
+              280,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "line",
+          "points": [
+            [
+              346,
+              8
+            ],
+            [
+              346,
+              18
+            ]
+          ],
+          "layer": "BORDER",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Project: SYNTHETIC integrated survey project",
+          "x": 217,
+          "y": 55,
+          "height": 2.4,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Site: SYN-AI-20261021",
+          "x": 217,
+          "y": 45,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Equipment schedule and mounting records",
+          "x": 217,
+          "y": 34,
+          "height": 2.6,
+          "layer": "TITLE",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "SV-006 | Rev 002 | 2026-10-21 | Sheet 4/4",
+          "x": 217,
+          "y": 25,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Scale: Not to Scale",
+          "x": 217,
+          "y": 20.7,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Prepared: synthetic_integration_engineer",
+          "x": 216,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Checked: synthetic_integration_qa",
+          "x": 282,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Approved: synthetic_integration_lead",
+          "x": 348,
+          "y": 12,
+          "height": 2.1,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Revision 002 | 2026-10-21 | Authorised release",
+          "x": 14,
+          "y": 32,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "Previous output revisions remain preserved in the survey history.",
+          "x": 14,
+          "y": 26,
+          "height": 2.2,
+          "layer": "TEXT",
+          "sources": []
+        },
+        {
+          "kind": "text",
+          "text": "RELEASED - Survey record only",
+          "x": 14,
+          "y": 12,
+          "height": 3.4,
+          "layer": "TITLE",
+          "sources": []
+        }
+      ],
+      "findings": [
+        {
+          "label": "Survey contact",
+          "answer": "Synthetic Engineer | Reported",
+          "sources": [],
+          "confidence": "low",
+          "verification_status": "Reported"
+        },
+        {
+          "label": "Cabinet manufacturer",
+          "answer": "TestCo | Confirmed from evidence",
+          "sources": [
+            {
+              "source_id": "photo:1",
+              "reference": "original"
+            }
+          ],
+          "confidence": "low",
+          "verification_status": "Confirmed from evidence"
+        },
+        {
+          "label": "Recorded cabinet width",
+          "answer": "1.2 m | Confirmed from evidence",
+          "sources": [
+            {
+              "source_id": "photo:1",
+              "reference": "original"
+            }
+          ],
+          "confidence": "low",
+          "verification_status": "Confirmed from evidence"
+        },
+        {
+          "label": "Recorded cabinet height",
+          "answer": "2 m | Confirmed from evidence",
+          "sources": [
+            {
+              "source_id": "photo:1",
+              "reference": "original"
+            }
+          ],
+          "confidence": "low",
+          "verification_status": "Confirmed from evidence"
+        },
+        {
+          "label": "Cabinet inspection result",
+          "answer": "Not recorded | Missing",
+          "sources": [
+            {
+              "source_id": "photo:2",
+              "reference": "original"
+            }
+          ],
+          "confidence": "low",
+          "verification_status": "Missing"
+        }
+      ],
+      "measured_record_count": 0,
+      "sheet_no": 4
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "photo:1",
+      "reference": "original"
+    },
+    {
+      "source_id": "photo:2",
+      "reference": "original"
+    },
+    {
+      "source_id": "photo:1"
+    }
+  ],
+  "record_type": "Survey evidence drawings; no engineering certification",
+  "revision": 2,
+  "released": true,
+  "prepared_by": "synthetic_integration_engineer",
+  "checked_by": "synthetic_integration_qa",
+  "approved_by": "synthetic_integration_lead",
+  "digest": "f62c844221e1eb3add8d508c33e623ab3bd755af9d3336c34e30760282b8fd60"
+}

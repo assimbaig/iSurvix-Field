@@ -1,0 +1,727 @@
+{
+  "title": "iSurvix Field integrated implementation and independent verification requirements",
+  "created_at": "2026-10-21T17:48:55.434Z",
+  "source": "Original user implementation instruction in current conversation; relevant outstanding survey handoffs reviewed as intent only.",
+  "branch": "feat/integrated-survey-verification",
+  "rule": "Verified requires executed current behavior evidence. Static functions, buttons, historical receipts and passing mocks alone do not qualify. Root updates actual_result/status using concrete receipts. Blocked requires exact evidence, required input/access and checks unable to run.",
+  "total": 89,
+  "requirements": [
+    {
+      "id": "BASE-01",
+      "expected_behavior": "Use actual existing project and applicable repository/Agency instructions before editing.",
+      "implementation_location": "F:/iSurvix/iSurvix-Field; F:/iSurvix/.codex/agents; docs/LOCAL_CODEX_HANDOFF.md",
+      "verification_method": "Read cwd, applicable AGENTS.md, installed role TOML developer_instructions and current handoffs; retain command receipt.",
+      "actual_result": "Cwd verified. No AGENTS.md found at F:/, F:/iSurvix, repository or under F:/iSurvix. Installed Orchestrator/Software Architect profiles read fully using UTF-8 TOML parsing; handoffs inspected.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-02",
+      "expected_behavior": "Record current branch, commit, changes and unpushed commits without overwriting work.",
+      "implementation_location": "Git repository",
+      "verification_method": "git status --short; git branch --show-current; git log -1; rev-list against tracking branch.",
+      "actual_result": "Initial branch feat/site-task-intake, commit4ce27bd91e463de3a40a457ef2cec4dfd7afb2e5, clean tree, 0 ahead/behind. Root created feat/integrated-survey-verification preserving specialist edits.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-03",
+      "expected_behavior": "Compare the actual local application tip to GitHub safely.",
+      "implementation_location": "origin/feat/site-task-intake",
+      "verification_method": "git ls-remote --heads origin and compare exact branch tip; no reset/pull/merge.",
+      "actual_result": "Live GitHub branch tip matched initial local4ce27bd91e463de3a40a457ef2cec4dfd7afb2e5.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-04",
+      "expected_behavior": "Identify actual application, editor, wizard and processing routes the user runs.",
+      "implementation_location": "backend/checklist/urls.py; backend/core/urls.py; governance_urls.py; runtime8000",
+      "verification_method": "Inspect listening process command; resolve named routes; HTTP-load authorized entry/editor/wizard/processing pages.",
+      "actual_result": "Actual authenticated browser loads of /governance/tasks/, /devadmin/checklist-wizard/, /devadmin/checklist-templates/<id>/, /local/photos/<id>/, /custom-checklist/<id>/ and /local/survey-processing/<id>/. The operational stack is Django, not frontend/dist.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-05",
+      "expected_behavior": "Preserve all local databases and existing survey records.",
+      "implementation_location": "Established recovery workflow; .local",
+      "verification_method": "Consistent pre-change SQLite backup/integrity check; compare old business values after tests excluding documented legitimate user edits.",
+      "actual_result": "data-preservation.json: all53 existing core tables byte-for-value unchanged; pre/post SQLite integrity_check=ok. Synthetic tests use separate SQLite/media.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-06",
+      "expected_behavior": "Preserve original uploads/evidence and branding files.",
+      "implementation_location": "MEDIA_ROOT; PhotoEvidence; branding_snapshot",
+      "verification_method": "Checkpoint original file manifest and hashes; compare all preexisting original bytes after changes.",
+      "actual_result": "data-preservation.json:806 original/media/branding files hash-identical to pre-change ZIP; no missing files.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-07",
+      "expected_behavior": "Preserve configuration, private credentials and uncommitted changes under F:.",
+      "implementation_location": "Repository and .local",
+      "verification_method": "Pre-change source/config manifest plus Git diff; inspect ignored/private paths excluded from source delivery.",
+      "actual_result": "data-preservation.json:12 private/config files hash-identical; starting worktree was clean; coordinated specialist edits retained under the existing F: root.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-08",
+      "expected_behavior": "Create a recoverable checkpoint with repository-established workflow.",
+      "implementation_location": "scripts/recovery tools; .local/backups",
+      "verification_method": "Run established checkpoint; verify archive CRC, SQLite integrity, manifests and recovery instructions.",
+      "actual_result": "Established .local/save_project_checkpoint.py executed before editing: project-checkpoint-20261021-204352,465 source files, consistent SQLite backup, complete original media/private archive; ZIP CRC verified. Restore not executed.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-09",
+      "expected_behavior": "Read handoffs as intent and independently verify claimed capabilities.",
+      "implementation_location": "docs/LOCAL_CODEX_HANDOFF.md; architecture-findings.json",
+      "verification_method": "Record each current executed check; do not import prior passing receipts as present success.",
+      "actual_result": "Rechecked old handoff claims through fresh actual editor, photo, native processing and independent QA runs; found and repaired missing-policy crash and misleading opt-in legacy-analysis states.",
+      "status": "Verified"
+    },
+    {
+      "id": "BASE-10",
+      "expected_behavior": "Keep existing application and unrelated features; no rebuild or destructive replacement.",
+      "implementation_location": "Existing Django application and Git diff",
+      "verification_method": "Audit final diff, regressions and preservation receipt for unrelated removals/schema/data rewriting.",
+      "actual_result": "Existing routes/models/inventories retained. Focused diff uses existing Django services/templates/worker. No model/schema replacement; full regression suite and unchanged live records verify preservation.",
+      "status": "Verified"
+    },
+    {
+      "id": "LEDGER-01",
+      "expected_behavior": "Maintain every requirement with expected behavior, location, verification, actual result and allowed status.",
+      "implementation_location": "docs/development/INTEGRATED_VERIFICATION_REQUIREMENTS.json",
+      "verification_method": "Validate JSON schema/required keys and IDs; update each result only from executed evidence.",
+      "actual_result": "This JSON has88 unique requirements, all six requested columns and allowed statuses; review evidence paths remain local/private and sanitized delivery receipt records summaries.",
+      "status": "Verified"
+    },
+    {
+      "id": "LEDGER-02",
+      "expected_behavior": "Mark Verified only after actual behavior; retain exact external blockers.",
+      "implementation_location": "Requirements ledger and final report",
+      "verification_method": "Independent reviewer compares current evidence and statuses to original full user instruction.",
+      "actual_result": "Runtime/browser/native/source-hash receipts are distinguished from deterministic fault tests and unexecuted full-site/manufacturer accuracy benchmarks. No static-only capability is recorded as executed.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-01",
+      "expected_behavior": "Open exact selected draft and revision even when Replicate selector differs.",
+      "implementation_location": "checklist_wizard_views.py; template_views.py; checklist_wizard.html",
+      "verification_method": "Browser set Edit selector to5G7 draft and Replicate to other published template; open and compare route/DB identity.",
+      "actual_result": "Exact5G7 PK/revision loaded independently from Replicate source; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-02",
+      "expected_behavior": "Sidebar, name, revision status and field set remain synchronized.",
+      "implementation_location": "template_builder.html; template_builder.js",
+      "verification_method": "Browser inspect selected aria-current/sidebar, heading/revision/status and stable field IDs against selected DB template.",
+      "actual_result": "Sidebar/name/revision/field IDs synchronized; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-03",
+      "expected_behavior": "Saving and refreshing preserve exact selected revision and values.",
+      "implementation_location": "template_views.py:template_builder",
+      "verification_method": "Edit selected unused draft, save, reload and inspect canonical URL, DB values and sidebar.",
+      "actual_result": "Save/reload retains exact revision and data; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-04",
+      "expected_behavior": "Edit existing draft and Replicate show separate desktop columns with divider and stack on mobile.",
+      "implementation_location": "checklist_wizard.html; checklist_editor.css",
+      "verification_method": "Desktop/mobile screenshots plus geometry assertions for two columns/divider and single-column mobile.",
+      "actual_result": "Desktop1px divider/two columns;390 mobile stack; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-05",
+      "expected_behavior": "Revision/name/actions and checklist-required/help fit two compact desktop rows.",
+      "implementation_location": "template_builder.html; checklist_editor.css",
+      "verification_method": "Desktop bounding boxes for two header rows; responsive wrapping without clipped controls.",
+      "actual_result": "Two actual desktop header rows47.39px+36px; tree begins346px; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-06",
+      "expected_behavior": "Branding summary is compact/collapsed with names and previews; expanded controls align Company/Left/Right.",
+      "implementation_location": "template_builder.html; checklist_editor.css",
+      "verification_method": "Browser collapsed initial state, summary preview/name display and three-column expanded geometry at desktop; mobile scroll check.",
+      "actual_result": "Branding collapsed with names/thumbnails; expanded three aligned columns; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-07",
+      "expected_behavior": "Logo upload, replacement, explicit removal and refresh persistence work without unintended logo loss.",
+      "implementation_location": "template_views.py; template_service.py",
+      "verification_method": "Upload three distinct synthetic logos; replace one/remove one/save/refresh and compare unchanged logo names/hashes.",
+      "actual_result": "Actual replace/remove keeps unchanged company logo; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-08",
+      "expected_behavior": "Historical revision branding and applicable reports retain saved assets and correct slots.",
+      "implementation_location": "branding_snapshot; survey_processing.py:drawing_branding; exports",
+      "verification_method": "Create saved synthetic survey, change later template branding and inspect old outputs; test left-only/right-only/both logo positions.",
+      "actual_result": "Saved revision/branding locks and actual PDF/DXF right-only slot/image counts tested; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-09",
+      "expected_behavior": "Display genuine expandable Group -> Section -> Field hierarchy with selected-node highlighting.",
+      "implementation_location": "checklist_editor_state.js; template_builder.js",
+      "verification_method": "Browser expand/collapse each level and inspect indentation/icons/selected state and keyboard behavior.",
+      "actual_result": "Expandable hierarchy with selected node and keyboard entry; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-10",
+      "expected_behavior": "Selecting each hierarchy node opens relevant adjacent properties.",
+      "implementation_location": "template_builder.js; template_builder.html",
+      "verification_method": "Select group/section/field, edit its name/properties and ensure other nodes stay unchanged.",
+      "actual_result": "Group/Section/Field selection opens matching properties; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-11",
+      "expected_behavior": "Add and rename groups, sections and fields.",
+      "implementation_location": "checklist_editor_state.js; template_builder.js",
+      "verification_method": "Browser add every node level, rename, save/refresh and compare DB.",
+      "actual_result": "Add/rename all three levels in browser; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-12",
+      "expected_behavior": "Group selected and Ungroup preserve all contained sections/fields.",
+      "implementation_location": "checklist_editor_state.js; editor_hierarchy.py",
+      "verification_method": "Group multiple sections then ungroup, save/reload, compare stable IDs/counts/complete field metadata.",
+      "actual_result": "Group/Ungroup retains sections/fields; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-13",
+      "expected_behavior": "Move sections among valid groups or ungrouped and prevent invalid parent relationships.",
+      "implementation_location": "checklist_editor_state.js; editor_hierarchy.py",
+      "verification_method": "Browser move valid section; direct invalid-parent definition rejected server-side; refresh preserves valid arrangement.",
+      "actual_result": "Move sections between groups and ungrouped; server rejects invalid schema parents; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-14",
+      "expected_behavior": "Reorder groups, sections and fields accurately through save/refresh.",
+      "implementation_location": "checklist_editor_state.js; template_views.py",
+      "verification_method": "Move siblings at each level; save and compare JSON order/tree after refresh, including empty groups.",
+      "actual_result": "Group/section/field ordering survives save/reload; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-15",
+      "expected_behavior": "Tree edits preserve stable field IDs, required/evidence rules, saved answers and evidence mappings.",
+      "implementation_location": "editor_hierarchy.py; template_service.py; saved Checklist snapshots",
+      "verification_method": "Compare before/after IDs/rules for editable draft and unchanged answers/photo mappings on existing saved surveys.",
+      "actual_result": "Stable IDs/evidence rules/required settings preserved; historical answers and links unchanged; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-16",
+      "expected_behavior": "Real Recommended additions show field, target group/section, reason/source and honest loading/empty/error states.",
+      "implementation_location": "editor_recommendations.py; template_builder.js",
+      "verification_method": "Actual scoped recommendations response displayed; search/page/retry; controlled endpoint error and empty catalog.",
+      "actual_result": "Actual recommendations source/reason/target render; empty/error fallback tests plus honest request failures; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-17",
+      "expected_behavior": "Review/edit/accept/dismiss additions persist once at intended editable-draft target.",
+      "implementation_location": "checklist_editor_state.js; template_builder.js",
+      "verification_method": "Edit recommendation label/target, accept/save/refresh, verify one field; dismiss/restore, retry duplicate and check decisions.",
+      "actual_result": "Browser edits target/label, accepts once, dismisses, saves/reloads decisions without duplicate field; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "EDITOR-18",
+      "expected_behavior": "Published/disabled/used revisions stay locked and old surveys remain unchanged.",
+      "implementation_location": "models.py:ChecklistTemplate; template_views.py; checklist_wizard_views.py",
+      "verification_method": "Attempt normal/direct POST mutations on protected revisions and compare historical snapshots/answers.",
+      "actual_result": "Published/disabled/used revisions locked by actual UI/API tests; original live survey records unchanged; receipts .local/integration-ux-qa/browser-result.json and save-error-result.json; focused editor HTTP tests.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-01",
+      "expected_behavior": "Integrated workflow only for published Telecom survey revisions with Checklist required enabled.",
+      "implementation_location": "survey_processing.py:enabled/access; models.py:ChecklistTemplate",
+      "verification_method": "Create actual isolated opted-in/opt-out survey records and request state/actions; verify enabled only when appropriate.",
+      "actual_result": "Real opt-in/excluded HTTP tests and browser photo-copy-result.json: published Telecom survey with checklist_required opens integrated area; excluded survey is404 there and preserves its original photo actions.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-02",
+      "expected_behavior": "Preserve Telecom inspection, Construction inspection and other excluded survey behavior.",
+      "implementation_location": "survey_processing.py:enabled; template_views.py:custom_submit; legacy workflow",
+      "verification_method": "Exercise excluded records through existing save/submit/review; integrated processing404 without altering ordinary rules.",
+      "actual_result": "Actual HTTP regressions exercise Telecom/Construction inspections with their proper industry projects and verify unchanged Upload & analyze controls. Existing workflow regressions pass.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-03",
+      "expected_behavior": "Use real database/API records and server permissions, not demo storage, in working workflow.",
+      "implementation_location": "survey_processing_views.py; survey_processing_models.py; survey_processing.js",
+      "verification_method": "Browser upload/submit/review/export then independently query DB; review workflow scripts for demo storage participation.",
+      "actual_result": "browser-upload-submit.json and browser-review-export.json: authenticated browser uploads, snapshot/job/result/events/answers and actual PDF/DXF downloads persist in real isolated Django SQLite/media, with no frontend demo storage.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-04",
+      "expected_behavior": "Retain full selected checklist, inventories, versioning and review decisions.",
+      "implementation_location": "Checklist.schema_snapshot; prepare_checklist; inventory models",
+      "verification_method": "Compare selected full field/inventory counts and IDs with generated results and preserved existing records.",
+      "actual_result": "Editor browser preserves field IDs/evidence rules/history; full original checklist/inventory model is retained. Current live schema_snapshot, answers, approvals and all53 core tables unchanged by integration work.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-05",
+      "expected_behavior": "Validate site inputs and all uploads-finished before immutable submission.",
+      "implementation_location": "survey_processing.py:validate_submission; SurveyUploadSession",
+      "verification_method": "Attempt missing required survey_input, missing evidence, unconfirmed/open upload session; valid completed input creates one snapshot.",
+      "actual_result": "Actual HTTP tests reject missing required input, open uploads, missing template qualification and missing independent coordinate reference with zero new jobs. Explicit valid input queues a persistent revision.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-06",
+      "expected_behavior": "At least200 photos/site upload in bounded batches with understandable validation.",
+      "implementation_location": "photo_views.py; photo_service.py; PHOTO_MAX_PER_SITE",
+      "verification_method": "Upload200 distinct generated images through actual HTTP <=20/batch; inspect count/progress and over-batch/size errors.",
+      "actual_result": "Independent capacity-browser.json/capacity-originals.json:200 realJPEGs in10 requests of20, progressive20..200 counts,100% upload,200 records after refresh, originals match inputs. Native200-photo throughput is not benchmarked.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-07",
+      "expected_behavior": "Preserve original image bytes, filename and available EXIF; inference uses separate normalized images.",
+      "implementation_location": "photo_service.py:prepare_image; survey_evidence.py:_image/extract_sources",
+      "verification_method": "Compare uploaded original SHA/filename/EXIF; inspect normalized dimensions and model payload image hash without mutating originals.",
+      "actual_result": "200 original file hashes match inputs; missing EXIF stays absent. Real EXIF extraction/validation tests preserve supplied tags and originals; normalized JPEG previews/inference copies are separate. Native vision receipt records165769 actual image bytes.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-08",
+      "expected_behavior": "Submit creates durable uniquely numbered immutable snapshot and persistent job.",
+      "implementation_location": "SurveyProcessingRevision; SurveyProcessingJob; submit",
+      "verification_method": "Submit actual saved survey, inspect snapshot/digest/job DB rows; mutation refused and snapshot retained.",
+      "actual_result": "Browser submit saved immutable snapshot, source hashes, numbered revision and one persistent job; native result remains unaccepted before human actions. Database readback confirms real records.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-09",
+      "expected_behavior": "Repeated identical submission does not duplicate jobs or outputs.",
+      "implementation_location": "submit; unique_survey_processing_snapshot; render_drawing_set",
+      "verification_method": "Double-click/replay submit and worker completion; compare revision/job/output identity and counts.",
+      "actual_result": "Browser repeated submission returned one saved revision/job; explicit review acceptance repeat tests retain one receipt; render idempotence tests and drawing edition readback retain previous outputs.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-10",
+      "expected_behavior": "Changed survey inputs create new revision and preserve previous outputs/reviews.",
+      "implementation_location": "submit/current/matches_revision",
+      "verification_method": "Complete prior revision; edit answers/upload evidence, resubmit and verify new number with unchanged previous snapshot/artifacts.",
+      "actual_result": "browser-resubmit-history.json: changed explicitly recorded synthetic reference creates revision2/current job3 and retains revision1 accepted results plus13 prior drawing-sheet entries.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-11",
+      "expected_behavior": "Independent local worker runs automatically and reports correct durable progress stages.",
+      "implementation_location": "survey_processing_worker; process_next; survey_processing.js",
+      "verification_method": "Launch actual worker process; browser observe queued -> evidence -> checklist -> drawings -> review and DB stage/count updates.",
+      "actual_result": "Actual native background workers persist Queued/Analysing/Preparing/Ready states. Worker crash plus a competing job demonstrates queued busy backoff; fresh independent process completes5/5 sources. Startup script starts independent worker; current live-process refresh is separately blocked (RUNTIME-01).",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-12",
+      "expected_behavior": "Recover interrupted processing after restart using persisted checkpoints.",
+      "implementation_location": "claim/progress; source_analyses; source mapping cache",
+      "verification_method": "Stop isolated worker after source checkpoint, expire/reclaim lease, restart and verify completed sources not resent and outputs not duplicated.",
+      "actual_result": "recovery-native.json: real isolated process tree killed after photo:203 durable checkpoint; actual five-minute lease expires without alteration; new worker resumes5/5 after restart, retaining identical cached source digest, one immutable result and one draft set.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-13",
+      "expected_behavior": "Failure messages and explicit retry preserve completed work.",
+      "implementation_location": "process_next; retry; survey_processing.js",
+      "verification_method": "Cause controlled failure after one persisted source; UI error/retry; same revision resumes without losing valid source/output history.",
+      "actual_result": "Actual unreachable local11499 endpoint stores Failed with safe offline message; authenticated retry reuses same job/revision. Native restart then completes with empty error and retained earlier checkpoint; attempts3 recorded.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-14",
+      "expected_behavior": "Use only configured local Ollama/model and establish actual vision support.",
+      "implementation_location": "photo_service.py:verify_vision; survey_evidence.py:_vision_check; local_ai.py",
+      "verification_method": "Read installed model tags/capabilities and send real permitted image; capture model/digest and actual successful response.",
+      "actual_result": "native-vision.json: configured qwen3.5:4b reports vision; actual165769-byte authorised Z93004 photo request completed27.59s and described visible sign/fence/tower. No model download.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-15",
+      "expected_behavior": "Send actual bounded photo/document image content, never filenames/counts as analysis.",
+      "implementation_location": "survey_evidence.py:extract_sources/analyse_source",
+      "verification_method": "Real native image-bearing request through processing adapter; assert images[] count1 and successful interpretable result/source mapping.",
+      "actual_result": "Actual native photo response and complete survey pilot consume real base64 JPEG content. Transport regressions additionally verify bounded image arrays and source IDs; full-resolution images are not sent together.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-16",
+      "expected_behavior": "No paid/cloud inference, silent model downloads or public Ollama exposure.",
+      "implementation_location": "local_ai.py:ollama; launch scripts; configured endpoints",
+      "verification_method": "Inspect runtime loopback listeners/URL redirect guards, error tests for remote URLs/model aliases, process/network artifacts.",
+      "actual_result": "Installed model only; actual show/tags request and loopback listeners verified. Endpoint/redirect/cloud-alias refusal tests pass; no cloud fallback or model pull was added or performed.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-17",
+      "expected_behavior": "Support PDF pages, supported workbook text/embedded images and sketches as evidence.",
+      "implementation_location": "survey_evidence.py:_document_sources; validate_document",
+      "verification_method": "Upload actual generated PDF/XLSX/sketch; inspect extracted sources and native page/image/text processing with references.",
+      "actual_result": "Native recovered job completes both photos, PDF page, workbook cell-text and embedded image; source IDs recorded. Complete5/5 evidence sources plus two native mapping checkpoints; originals unchanged and no macros/formulas executed.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-18",
+      "expected_behavior": "Strictly validate AI responses, stable selected field IDs, source references, reasons and uncertainty.",
+      "implementation_location": "EvidenceResponse; MappingResponse; prepare_checklist",
+      "verification_method": "Real native response and malformed/unknown-field/foreign-source negative cases; DB results retain IDs/references/confidence/reasons.",
+      "actual_result": "Native proposals map to selected schema stable IDs and retain original source/finding keys, reasons and confidence. Malformed/truncated/unknown-ID/incompatible-unit responses are refused or left missing in executed validation tests; actual correction saves units explicitly.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-19",
+      "expected_behavior": "Insufficient evidence/missing/conflicting facts remain visible and unsupported values are withheld.",
+      "implementation_location": "reconcile_results; prepare_checklist; workspace",
+      "verification_method": "Use no-answer and conflicting measurements; check missing statuses/source links; do not invent a winning measurement/compliance value.",
+      "actual_result": "Native first pilot withheld cabinet dimensions with omitted response units and left tower/condition Missing. Actual Engineer corrections reconcile recorded mm to checklist metres; explicit missing dispositions and conflict regressions retain unresolved information.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-20",
+      "expected_behavior": "Apply proposals only after explicit Engineer review and completion confirmation.",
+      "implementation_location": "review; apply_reviewed_checklist; sp-apply-confirmation",
+      "verification_method": "Before acceptance and after item accept compare original answers unchanged; explicit completion persists reviewed values/links.",
+      "actual_result": "Actual browser explicitly corrects extracted records, batch accepts selected proposals, checks application confirmation and applies saved answers/links. Before application all native result proposals are unaccepted; AI performs no approval action.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-21",
+      "expected_behavior": "Recheck current authorization, approved-section locks and stale inputs when applying.",
+      "implementation_location": "access/current/require_field_editable/apply_reviewed_checklist",
+      "verification_method": "Revoke assignment, lock section and change answers after generation; server refuses stale/unauthorized edits and preserves locked data.",
+      "actual_result": "Real-record HTTP tests recheck inactive/wrong/foreign users, approved-section locks and stale digest. Actual changed-reference resubmission preserves prior revision as noncurrent and requires new review.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-22",
+      "expected_behavior": "Retain append-only audit and prevent duplicate accepted checklist/additional results.",
+      "implementation_location": "SurveyProcessingEvent; reviewed_payload; review",
+      "verification_method": "Replay acceptance/additional/completion; reload and assert once-only effective results and stable audit receipts.",
+      "actual_result": "Append-only DB events retain corrections/reasons/actors; repeated regular/additional acceptance and uploads are idempotent in actual HTTP/service tests. Native browser corrections and application are independently read back from DB.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-23",
+      "expected_behavior": "AI never invents or approves measurements, ratings/readings, compliance or engineering approval.",
+      "implementation_location": "SYSTEM_PROMPT; prepare_checklist; drawing validation; human roles",
+      "verification_method": "Inspect actual response/proposals; unsupported uncalibrated dimensions withheld, no auto answers/signatures and human-only release enforced.",
+      "actual_result": "Native unsupported measurements withheld, source-bound corrections and separate human approval gates exercised. No compliance/electrical/structural design result is inferred from a photo. This verifies guard behavior, not universal model factual accuracy.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-24",
+      "expected_behavior": "Drawings use source-bound confirmed measurements with explicit units and identify missing dimensions.",
+      "implementation_location": "survey_processing.py:geometry; survey_drawings.py:_validated_records",
+      "verification_method": "Review measured source record; render confirmed geometry; reject false/foreign source/missing units and inspect missing-data notes.",
+      "actual_result": "Actual Engineer confirms written synthetic source origin/dimensions, saves a1.2m by2m generic cabinet envelope and downloads shared exports. Missing tower measurement is explicitly Not recorded | Missing; unsupported categories listed, no concealed geometry generated.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-25",
+      "expected_behavior": "PDF/DXF share geometry, readable sheet conventions, correct branding and previews.",
+      "implementation_location": "survey_drawings.py; drawing_blocks_v1.json; render_outputs",
+      "verification_method": "Render every sheet, visually inspect and compare final geometry digest/entity coverage, PDF vector objects, DXF readback and logo slots.",
+      "actual_result": "Actual exported4-page vectorPDF and allDXF audit clean; text records match shared geometry. Missing labels/scale endpoint tests and independent full-page visual checks pass. Real assigned-logo images/right-only slots verified in PDF/DXF. Actual released outputs are checked for released titleblocks, reviewer fields, readable previews and retained prior editions.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-26",
+      "expected_behavior": "Follow existing drawing references if supplied; do not invent exact site/manufacturer geometry.",
+      "implementation_location": "Private authorized references; survey_drawings.py; samples",
+      "verification_method": "Inventory available references and compare drawing package; report missing manufacturer/design evidence specifically.",
+      "actual_result": "Authorised Z93004 source listing contains378 JPG,1 XLSX,1 MP4 and no supplied DWG/DXF/PDF manufacturer/site drawing reference. Existing versioned generic CAD blocks reused and labelled Typical; unsupported exact profiles/sheets withheld. Verified fallback behavior; exact manufacturer geometry remains unavailable without approved references.",
+      "status": "Verified"
+    },
+    {
+      "id": "SURVEY-27",
+      "expected_behavior": "Engineer -> independent QA -> Team Lead -> Client when required precedes authorized release.",
+      "implementation_location": "review/release_gate; quality_workflow.py; review_route_service.py",
+      "verification_method": "Complete real isolated three-/four-layer routes with distinct users; download draft/released exports according to roles.",
+      "actual_result": "Actual three-layer browser Engineer->QA->TL closes and releases; separate four-layer native/browser test project2/task4 goes Engineer->QA->TL->named Client, separate exact-package QA and authorised TLrelease. Premature release409, Client draft404, final Client PDF/DXF/ZIP200. Three distinct synthetic approval actors verified in DB.",
+      "status": "Verified"
+    },
+    {
+      "id": "AGENTS-01",
+      "expected_behavior": "Actually use installed architecture/integration Agency role.",
+      "implementation_location": "F:/iSurvix/.codex/agents/agents-orchestrator.toml; engineering-software-architect.toml",
+      "verification_method": "Read installed full profiles and inspect audit output/task ownership.",
+      "actual_result": "Actual /root/integration_architecture invocation used installed Agents Orchestrator plus fully read Software Architect TOML; scoped architecture findings and initial88-row ledger delivered.",
+      "status": "Verified"
+    },
+    {
+      "id": "AGENTS-02",
+      "expected_behavior": "Actually use installed Django/data/permissions and local evidence mapping roles.",
+      "implementation_location": "Installed backend/AI profiles; integration_backend agent",
+      "verification_method": "Read role profiles, clear owned files, concrete implemented changes/tests and handoff reviewed by root.",
+      "actual_result": "Actual /root/integration_backend worker applied fully read installed Backend Architect and AI Engineer profiles. Named callable backend role unavailable, mapped honestly to worker; owned services/views/regressions only.",
+      "status": "Verified"
+    },
+    {
+      "id": "AGENTS-03",
+      "expected_behavior": "Actually use installed UI/usability roles on working application.",
+      "implementation_location": "Installed UX/frontend profiles; integration_ux agent",
+      "verification_method": "Record profile read, owned files, real browser journeys, screenshots and implementation handoff.",
+      "actual_result": "Actual /root/integration_ux used installed UX Architect role plus fully read UX Researcher/Frontend instructions. Owned templates/static UI; ran own isolated browser checks.",
+      "status": "Verified"
+    },
+    {
+      "id": "AGENTS-04",
+      "expected_behavior": "Independent QA reviews original requirements and implemented behavior, not implementer summary alone.",
+      "implementation_location": "Installed API Tester/UI Finish-Gate Reviewer; original user instruction",
+      "verification_method": "Spawn fresh independent reviewer after edits, with ownership separate and original request/ledger; record findings/pass-fail evidence.",
+      "actual_result": "Separate /root/independent_qa API Tester read installed UI Finish-Gate Reviewer and original instruction, added7 real HTTP/export regressions and independently found/rechecked defects; final review records scope-specific gates.",
+      "status": "Verified"
+    },
+    {
+      "id": "AGENTS-05",
+      "expected_behavior": "Coordinate file ownership, preserve others' edits and repair QA findings in bounded loops.",
+      "implementation_location": "Agent messages; Git diff; requirement ledger",
+      "verification_method": "Verify explicit file assignments, no reversions/conflicts, defect -> fix -> affected retest and final independent outcome.",
+      "actual_result": "Clear backend/UI/root-drawings/independent-QA ownership shared through messages. QA found incompatible-unit poisoning, document retry-at-capacity, HTML escaping, missing-policy and misleading photo status; fixes and affected reruns recorded.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-01",
+      "expected_behavior": "Wrong/mismatched checklist identity and stale concurrent editor saves are refused.",
+      "implementation_location": "template_views.py:template_builder",
+      "verification_method": "POST selected route with wrong hidden PK/version or stale digest; assert409 and unchanged target/other revisions.",
+      "actual_result": "Fresh editor browser selects5G7 while Replicate points to a different template; exact identity/save/refresh passes. Real stale-token/wrong-ID/published editor endpoint regressions refuse changes.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-02",
+      "expected_behavior": "Unauthenticated, inactive, foreign-project/company and wrong-role access denied.",
+      "implementation_location": "survey_access; processing access/views",
+      "verification_method": "Actual HTTP role matrix including anonymous/foreign/super/client; verify no private data leakage or DB writes.",
+      "actual_result": "Actual HTTP smoke anonymous302 and authorized200/private-no-store; wrong-role/missing-project/inactive/foreign-revision actions denied in real saved-record tests. Client-hidden draft/release behavior checked independently.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-03",
+      "expected_behavior": "Corrupt images, MIME/content mismatch and excessive image/file sizes fail safely.",
+      "implementation_location": "photo_service.py:prepare_image; validate_document",
+      "verification_method": "Upload corrupt/truncated/wrong-format/over-limit bytes; clear4xx error and no partial originals/records.",
+      "actual_result": "Actual browser corruptJPEG returns400 with retained originals; real invalid-image/MIME/size/21-photo request tests reject batches atomically with understandable errors.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-04",
+      "expected_behavior": "Duplicate uploads are idempotent including duplicates at capacity.",
+      "implementation_location": "PhotoEvidence.sha256; SurveyDocument uniqueness; photo upload",
+      "verification_method": "Replay same photo/document bytes and boundary cap requests; compare record/file counts and error details.",
+      "actual_result": "Actual200-photo browser duplicate replay retains original IDs/count; real50-document capacity duplicate retry test now succeeds without adding files. Same-request hash dedup tested.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-05",
+      "expected_behavior": "Missing EXIF remains missing and does not generate invented capture/GPS.",
+      "implementation_location": "photo_service.py; metadata UI; survey_evidence",
+      "verification_method": "Upload valid generated no-EXIF file; inspect stored metadata and frontend unavailable labels; no guessed date/GPS.",
+      "actual_result": "Independent200-file original/metadata readback confirms absent EXIF remains absent; browser distinguishes unavailable capture/GPS. No time/location fabricated.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-06",
+      "expected_behavior": "Unavailable/busy/unsupported local model produces recoverable honest states.",
+      "implementation_location": "verify_vision; process_next; retry",
+      "verification_method": "Controlled offline endpoint, occupied inference lease and installed nonvision response; inspect failed/queued state and successful recovery.",
+      "actual_result": "recovery-native.json records actual unreachable11499 endpoint persistent Failed and retry. A killed worker lease caused actual competing new-job backoff to Queued. Unsupported/nonlocal model and busy guards have deterministic service tests; only installed vision model was used in native positives.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-07",
+      "expected_behavior": "Malformed/truncated/contradictory AI output is rejected without applying or caching invalid answers.",
+      "implementation_location": "EvidenceResponse; MappingResponse",
+      "verification_method": "Meaningful invalid-schema/done_reason length/unknownID/duplicate bindings tests and controlled local endpoint failure through actual job.",
+      "actual_result": "Executed malformed/truncated/schema-invalid native response validation tests leave zero applied/cached invalid results; numerical incompatible units withheld. Native missing-unit response in actual pilot remained Missing, requiring correction.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-08",
+      "expected_behavior": "Interrupted/retried jobs cannot double-claim, repeat cached source processing or duplicate final outputs.",
+      "implementation_location": "claim/progress/process_next",
+      "verification_method": "Actual independent worker interruption/restart; lease-claim contention and retained cache/output counts.",
+      "actual_result": "Real killed-worker recovery preserves cached digest, one immutable result and one drawing set; competing new job queues while lease busy. New worker after real expiry resumes5/5 sources; idempotence and doubleclaim saved-record regressions also pass.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-09",
+      "expected_behavior": "Stale survey answers and changed original evidence invalidate prior review/release.",
+      "implementation_location": "current/verify_originals; output guards",
+      "verification_method": "Modify isolated answer/original after draft; accept/release refuse; original previous snapshot preserved.",
+      "actual_result": "Actual changed reference creates fresh current revision with prior outputs noncurrent. Saved-record tests reject stale answers, changed source bytes and tampered output downloads/releases.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-10",
+      "expected_behavior": "Approved-section edits through answer, record-correction or mapping endpoints remain locked.",
+      "implementation_location": "require_field_editable; review; apply_reviewed_checklist",
+      "verification_method": "Approve isolated section then attempt item accept, extracted-record correction and source application; values/links unchanged.",
+      "actual_result": "Independent HTTP and backend regressions deny approved-section answer, extracted-record correction and mapping edits without changing committed answers/evidence/approvals.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-11",
+      "expected_behavior": "Save/storage failure is visible and preserves previous committed data.",
+      "implementation_location": "template editor/save JS; processing guarded errors; atomic render_outputs",
+      "verification_method": "Cause controlled save/storage failure in isolated environment; UI clear failure/retry, no false success and no partial committed revision.",
+      "actual_result": "Actual corrupt-logo save returns400 retaining entered tree/name/required/client inputs, preserves DB/logos; corrected retry persists. Actual benign upload-session write plus failed-refresh injection reports confirmed save and pauses replay until Refresh.",
+      "status": "Verified"
+    },
+    {
+      "id": "NEG-12",
+      "expected_behavior": "Refresh restores editor hierarchy/selection and processing progress/reviews from server.",
+      "implementation_location": "editor UI state; processing state",
+      "verification_method": "Refresh during queued/active/review and editor after save; compare exact selected PK/version, DB counts/status/decisions.",
+      "actual_result": "Fresh editor and survey browser reload restores selected PK/version/tree/order/recommendations and accepted saved results. Interrupted job progress persists in separate DB across worker processes.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-01",
+      "expected_behavior": "Run repository checks, migration drift and meaningful current regression tests.",
+      "implementation_location": "backend/manage.py; existing core tests; JS modules",
+      "verification_method": "Run Django check, makemigrations --check --dry-run, full relevant suite and JS syntax; retain exact commands/results.",
+      "actual_result": "Final frozen fullcore666/666 PASS67.790s; independent131/131 focused PASS; Django0issues, migrationsNochanges, pipNobrokenrequirements, fourJSsyntax and gitdiffcheck passed. Noappchangesafter this test freeze.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-02",
+      "expected_behavior": "Add meaningful regression tests for discovered behavior instead of weakening tests.",
+      "implementation_location": "core/test_*; specialist added tests",
+      "verification_method": "Review new test assertions against defects and run them; ensure no skip/suppression/weakened guard introduced.",
+      "actual_result": "Meaningful new real HTTP/database/export regressions added for all discovered defects. Existing invalid-save status assertions strengthened200->400; no skips, error suppression or removed features.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-03",
+      "expected_behavior": "Complete actual browser upload -> native AI -> Engineer accepted result -> export.",
+      "implementation_location": "Isolated real Django records/server/browser/worker",
+      "verification_method": "Use authenticated browser from saved survey; upload, submit, observe actual local worker, accept and explicitly apply, download/render PDF/DXF.",
+      "actual_result": "browser-upload-submit.json +browser-review-export.json: actual authenticated upload, persistent queue, native local inference, typed Engineer correction/accept/application and real PDF/DXF/bundle downloads after reload.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-04",
+      "expected_behavior": "Desktop/mobile layouts have no clipping/overflow and essential controls remain accessible.",
+      "implementation_location": "Editor, wizard, photos and processing CSS/templates",
+      "verification_method": "Actual browser screenshots at1440/1024/390 and keyboard/focus/navigation; adjust UI issues and repeat.",
+      "actual_result": "Editor/processing/gallery checked1440/1024/390 widths, keyboard tree entry and visible action titles. IndependentQA/browser screenshots show no outer overflow/JS errors; gallery36->72 progressive thumbnails for200 photos.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-05",
+      "expected_behavior": "Inspect logs, browser console, failed HTTP requests and independent DB persistence.",
+      "implementation_location": "Runtime logs; CDP/browser events; SQLite readback",
+      "verification_method": "Collect console/request errors; inspect4xx expected vs unexpected5xx, worker exceptions and persisted answers/evidence/events.",
+      "actual_result": "Independent CDP/HTTP/DB receipts report runtime errors/failed requests, actual saved answers/events/source counts; old missing-policy500 and corrupt400 are documented expected/fixed failures. Final runtime smoke checked separately.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-06",
+      "expected_behavior": "Reread full original instruction and repeat independent QA/repair loop until verified or precise blocker.",
+      "implementation_location": "Original user instruction; ledger; QA findings",
+      "verification_method": "Final requirement-by-requirement audit; fix actionable defects and rerun affected checks without claiming universal absence of bugs.",
+      "actual_result": "Root and independentQA reread original instruction/all88 original rows; QA repaired/rechecked actualAPI/UI/native/export findings. Functional gatesPASS for current tested workflow; one additional live-process refresh blocker is explicitRUNTIME-01, not hidden.",
+      "status": "Verified"
+    },
+    {
+      "id": "CHECK-07",
+      "expected_behavior": "Record full-site benchmark and field accuracy honestly; distinguish initial retrieval from full vision.",
+      "implementation_location": "Z93004 benchmark; handoff outstanding requirements",
+      "verification_method": "If available run authorized full scope or precise bounded sample; report photos/docs actually analyzed, time and unsatisfied full-site/accuracy checks.",
+      "actual_result": "Full source directory has378 photos+workbook+video. Current native proof is real Z93004 image request and labelled synthetic complete-workflow/document pilot; earlier3-photo/181-field pilot remains historical. Full378-photo+247-image workbook native throughput and field/manufacturer accuracy have NOT been benchmarked or claimed.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-01",
+      "expected_behavior": "Preserve project and local data beneath F:/iSurvix/iSurvix-Field.",
+      "implementation_location": "Git diff; .local; output manifests",
+      "verification_method": "Inspect created/modified paths and compare prechange checkpoint; no accidental relocation/deletion.",
+      "actual_result": "All source, recovery snapshots, synthetic DB/media, normalized images, logs and generated outputs remain beneath existing F:/iSurvix/iSurvix-Field. No relocation or replacement.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-02",
+      "expected_behavior": "Do not merge, deploy, force-push or publicly expose Ollama.",
+      "implementation_location": "Git/log commands; active listeners; final receipt",
+      "verification_method": "Review executed mutations and listeners; source feature branch only, no remote deployment/public binding.",
+      "actual_result": "No merge, deployment, force push, data deletion or public Ollama exposure performed. Changes remain a focused feature branch; ordinary publication state disclosed independently.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-03",
+      "expected_behavior": "Report verified/total requirements and honest limitations/blockers.",
+      "implementation_location": "Final ledger and concise final report",
+      "verification_method": "Calculate exact status counts from updated ledger; enumerate blocker evidence, needed input/access and checks not run.",
+      "actual_result": "Sanitized INTEGRATED_VERIFICATION_RECEIPT.json and this ledger report88verified/89total (one additional runtime blocker); fullbenchmark/native200throughput/manufactureraccuracy explicitly unclaimed.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-04",
+      "expected_behavior": "Report actual changes, bugs fixed, tests and real workflow evidence.",
+      "implementation_location": "Git diff; tests; browser/worker receipts",
+      "verification_method": "Crosscheck final report against executed command outcomes and defect regression evidence, no unexecuted passing claims.",
+      "actual_result": "INTEGRATED_VERIFICATION_RECEIPT.json records exactchangedbehavior, discovered/fixedbugs, currenttests/native/browser3and4layerapproval, recovery/data evidence and exact remaining runtimeblocker.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-05",
+      "expected_behavior": "Record current feature branch, commit and recoverable checkpoint details.",
+      "implementation_location": "Git and established checkpoint workflow",
+      "verification_method": "Commit focused source changes if appropriate; verify HEAD/status, archive CRC/SQLite integrity and disclose remote push status separately.",
+      "actual_result": "Implementation committed as c28e921073b01e1d204a0e40e71703248090e5cd on feat/integrated-survey-verification. Established post-change checkpoint project-checkpoint-20261021-211747 verified ZIP CRC and492source files, consistent SQLite, originals and private configuration. Pre-change204352 retained. Final documentation commit and remote state recorded separately in NEXT_SESSION/final report; no merge/deployment/force push.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-06",
+      "expected_behavior": "Provide exact safe Windows startup and independent worker commands.",
+      "implementation_location": "Start-iSurvix.cmd; Start-iSurvix.ps1; management command",
+      "verification_method": "Verify commands match actual settings/ports/model and avoid duplicate running server/workers; report direct commands as well as launcher.",
+      "actual_result": "Updated docs/manual/AI_SURVEY_TEAM_GUIDE.md includes GUI launcher plus exact .local Python app/worker --settings=checklist.settings_local commands and local11435/11434 option. These match executed isolated worker/app commands. Existing live-process restart is explicitly blocked separately.",
+      "status": "Verified"
+    },
+    {
+      "id": "DELIVERY-07",
+      "expected_behavior": "Provide updated screenshots and applicable sample outputs without exposing customer evidence/credentials.",
+      "implementation_location": "outputs; private receipts; approved synthetic artifacts",
+      "verification_method": "Open files and inspect readability; only clearly labelled synthetic shareable screenshots/outputs linked publicly.",
+      "actual_result": "Seven inspected screenshots include mobiletree and editableproperties; four actual released synthetic vectorPDF/DXF sheets/previews/sharedgeometry and portableZIP are in samples/drawings/integration-verification-20261021. No customer originals/cookies included.",
+      "status": "Verified"
+    },
+    {
+      "id": "RUNTIME-01",
+      "expected_behavior": "Refresh already-running local app/worker onto verified source, preserving operational data and jobs.",
+      "implementation_location": "Existing loopback8000 app and survey_processing_worker processes",
+      "verification_method": "Check no live active jobs, scoped restart and fresh live-port smoke.",
+      "actual_result": "Automatic approval review rejected the combined scoped existing-process stop/restart command: blocked by policy. Command did not execute; original8000/worker processes preserved. Current source was fully tested in isolated Django8886. Needs normal local app/worker restart or permitted process-management access. Restarted live-imported-module smoke could not run. See private runtime-restart-blocker.json.",
+      "status": "Blocked"
+    }
+  ],
+  "updated_at": "2026-10-21T18:18:55.377641+00:00",
+  "counts": {
+    "Verified": 88,
+    "Blocked": 1
+  }
+}

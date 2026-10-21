@@ -147,3 +147,33 @@ XLS files, macros, external workbook relationships, OLE/ActiveX and encrypted PD
 are unsupported. A named local PC and GPU benchmark is not an online deployment
 or a guarantee of five fully verified photos per second. No merge or deployment is
 part of this change.
+
+### Integration verification follow-up (21 October 2026)
+
+The current repair/evidence ledger is
+`docs/development/INTEGRATED_VERIFICATION_REQUIREMENTS.json`. This supersedes old
+test-count claims only where the new receipt records an executed replacement check.
+It records exact editor selection, failed-save retention, compact layout, hierarchy,
+recommendations, opt-in photo intake, native vision, explicit application and release.
+
+Measurements now require compatible recorded units before numeric checklist mapping;
+bounded Decimal conversion preserves recorded precision. Human record corrections are
+validated before append-only storage. Accepted dimensions retain units in PDF/DXF,
+and absent dimensions display **Not recorded | Missing**. The scale bar labels use
+separate anchored endpoints. Previously saved drawing editions are preserved.
+
+Repeated additional acceptance and document retries at capacity are idempotent.
+Malformed corrections, foreign revisions and approved-field edits fail explicitly.
+The current independent submission qualification and coordinate-reference checks run
+before a new AI job. Checklist-required photo intake links directly to the integrated
+submission area and does not offer a second legacy analysis queue.
+
+Template failures return an error status and retain valid posted draft inputs while
+leaving stored records/logos intact. Processing mutations reject HTML login responses;
+unavailable reads pause further changes until refresh, and a confirmed write followed
+by a failed read is reported distinctly. Progress reaches 100% only at review readiness.
+
+Private raw browser/native/worker receipts are in `.local/integrated-verification`,
+`.local/integration-ux-qa`, `.local/integration-backend-qa` and
+`.local/integrated-independent-qa`. These contain synthetic sessions and must not be
+committed. Share only the sanitized receipt and clearly synthetic sample artifacts.
