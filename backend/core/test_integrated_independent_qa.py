@@ -172,4 +172,3 @@ class IndependentIntegratedQATests(TestCase):
                 self.assertFalse(drawing.audit().has_errors)
                 inserted = list(drawing.modelspace().query('IMAGE'))
                 self.assertEqual([(x.dxf.insert.x, x.dxf.insert.y) for x in inserted], [(337, 53), (373, 43)])
-

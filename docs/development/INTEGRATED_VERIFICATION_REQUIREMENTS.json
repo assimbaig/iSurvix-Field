@@ -691,8 +691,8 @@
       "expected_behavior": "Record current feature branch, commit and recoverable checkpoint details.",
       "implementation_location": "Git and established checkpoint workflow",
       "verification_method": "Commit focused source changes if appropriate; verify HEAD/status, archive CRC/SQLite integrity and disclose remote push status separately.",
-      "actual_result": "Feature branch feat/integrated-survey-verification, base4ce27bd and pre-change204352 checkpoint recorded; final commit/checkpoint pending.",
-      "status": "In progress"
+      "actual_result": "Implementation committed as c28e921073b01e1d204a0e40e71703248090e5cd on feat/integrated-survey-verification. Established post-change checkpoint project-checkpoint-20261021-211747 verified ZIP CRC and492source files, consistent SQLite, originals and private configuration. Pre-change204352 retained. Final documentation commit and remote state recorded separately in NEXT_SESSION/final report; no merge/deployment/force push.",
+      "status": "Verified"
     },
     {
       "id": "DELIVERY-06",
@@ -719,10 +719,9 @@
       "status": "Blocked"
     }
   ],
-  "updated_at": "2026-10-21T18:16:36.027115+00:00",
+  "updated_at": "2026-10-21T18:18:55.377641+00:00",
   "counts": {
-    "Verified": 87,
-    "In progress": 1,
+    "Verified": 88,
     "Blocked": 1
   }
 }

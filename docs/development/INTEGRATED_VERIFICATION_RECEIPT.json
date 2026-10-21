@@ -78,5 +78,9 @@
   "prechange_checkpoint": ".local/backups/project-checkpoint-20261021-204352",
   "merged": false,
   "deployed": false,
-  "force_pushed": false
+  "force_pushed": false,
+  "implementation_commit": "c28e921073b01e1d204a0e40e71703248090e5cd",
+  "postchange_checkpoint": ".local/backups/project-checkpoint-20261021-211747",
+  "postchange_checkpoint_source_files": 492,
+  "sample_bytes_preserved_in_git": true
 }
