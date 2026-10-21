@@ -137,7 +137,8 @@ def analysis_state(checklist):
     """Processing completion comes from durable jobs, even when no drafts were found."""
     from .models import PhotoJob
     source_ids=set(checklist.photo_evidence.values_list('pk',flat=True))
-    analyzed=set()
+    from .survey_processing import processed_photo_ids
+    analyzed=processed_photo_ids(checklist)
     current_matching=set()
     from .photo_metadata import MATCHER_VERSION
     active=0

@@ -120,7 +120,7 @@ def template_builder(request, template_id=None, wizard_mode=False):
                 if not name or len(name) > 160:
                     raise ValidationError('Provide a template name of at most 160 characters.')
                 # Verify all files before storing or mutating the revision.
-                uploads = {slot: image_bytes(request.FILES[slot]) for slot in ['client_left_logo', 'client_right_logo'] if slot in request.FILES}
+                uploads = {slot: image_bytes(request.FILES[slot]) for slot in ['client_left_logo', 'client_right_logo', 'company_logo'] if slot in request.FILES}
                 with transaction.atomic():
                     if scoped_definition:
                         from .governance_views import lock_governance
@@ -140,6 +140,12 @@ def template_builder(request, template_id=None, wizard_mode=False):
                     if template.published:
                         raise ValidationError('This revision was published in another window. Duplicate it to edit.')
                     template.name, template.definition = name, definition
+                    if request.POST.get('processing_setting_present') == '1':
+                        template.checklist_required = request.POST.get('checklist_required') == 'on'
+                    if request.POST.get('remove_company_logo') == 'on':
+                        template.company_logo = ''
+                    if 'company_logo' in uploads:
+                        template.company_logo.save('company.png', ContentFile(uploads['company_logo']), save=False)
                     for slot in ['left', 'right']:
                         setattr(template, f'client_{slot}_name', request.POST.get(f'client_{slot}_name', '').strip()[:80])
                         attr = f'client_{slot}_logo'
@@ -169,9 +175,9 @@ def template_builder(request, template_id=None, wizard_mode=False):
 
 def template_edit_digest(template):
     from .checklist_wizard_service import digest
-    return digest({'name':template.name,'definition':template.definition,'published':template.published,
+    return digest({'name':template.name,'definition':template.definition,'published':template.published,'checklist_required':template.checklist_required,
                    'version':template.version,'left_name':template.client_left_name,'right_name':template.client_right_name,
-                   'left_logo':template.client_left_logo.name,'right_logo':template.client_right_logo.name})
+                   'left_logo':template.client_left_logo.name,'right_logo':template.client_right_logo.name,'company_logo':template.company_logo.name})
 
 
 @require_http_methods(['GET'])
@@ -179,9 +185,9 @@ def template_logo(request, template_id, slot):
     if not is_template_admin(request):
         return HttpResponse(status=403)
     template = get_object_or_404(template_scope(request.user), pk=template_id)
-    if slot not in ['left', 'right']:
+    if slot not in ['left', 'right', 'company']:
         raise Http404()
-    logo = getattr(template, f'client_{slot}_logo')
+    logo = template.company_logo if slot == 'company' else getattr(template, f'client_{slot}_logo')
     if not logo or not default_storage.exists(logo.name):
         raise Http404()
     response = FileResponse(default_storage.open(logo.name, 'rb'), content_type='image/png')

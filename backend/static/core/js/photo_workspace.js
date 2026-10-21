@@ -141,16 +141,18 @@
     if (!group) { message('Choose Civil, Electrical or Tower before uploading.'); return; }
     if (!files.length || files.length > photoLimit || files.some(f => f.size > 5 * 1024 * 1024 || (!['image/jpeg','image/png','image/webp'].includes(f.type) && !/\.(jpe?g|png|webp)$/i.test(f.name)))) { message(`Choose at most ${photoLimit} JPEG, PNG or WebP files, each 5 MB or smaller.`); return; }
     const button = el('upload-button'), progress = el('upload-progress'); button.disabled = true; progress.hidden = false; progress.value = 0;
-    let count = 0, duplicates = 0, uploadError='';
+    let count = 0, duplicates = 0, uploadError='', uploadToken=null;
     try {
+      uploadToken=(await request('upload-session/', {})).token || null;
       for (let start = 0; start < files.length; start += 20) {
         const batch = new FormData(); batch.append('group', group); files.slice(start, start + 20).forEach(f => batch.append('files', f));
-        const result = await request('upload/', batch); result.photos.filter(p=>!p.duplicate).forEach(p=>pendingAnalysis.add(p.id)); count += result.photos.length; duplicates += result.photos.filter(p => p.duplicate).length;
+        if(uploadToken)batch.append('processing_upload_token',uploadToken);
+        const result = await request('upload/', batch); if(!uploadToken)result.photos.filter(p=>!p.duplicate).forEach(p=>pendingAnalysis.add(p.id)); count += result.photos.length; duplicates += result.photos.filter(p => p.duplicate).length;
         progress.value = count / files.length * 100; message(`${count}/${files.length} processed · ${duplicates} exact duplicates.`);
       }
       el('photo-files').value = ''; if(el('photo-camera'))el('photo-camera').value=''; cameraFiles=null; if(el('photo-picked'))el('photo-picked').textContent='Photo group uploaded. Choose more photos when ready.';
     } catch (e) { uploadError=`${count} files processed before interruption. Existing uploads are preserved. ${e.message}`;message(uploadError); }
-    finally { await queueUploadedGroup();button.disabled=false;await refresh();if(uploadError)message(uploadError+' Successfully uploaded originals remain available for analysis.'); }
+    finally { if(uploadToken){try{await request('upload-session/',{token:uploadToken});}catch(e){uploadError+=' Upload session remains open: '+e.message;}} await queueUploadedGroup();button.disabled=false;await refresh();if(uploadError)message(uploadError+' Successfully uploaded originals remain available for analysis.'); }
   };
   if(el('photo-camera'))el('photo-camera').onchange=()=>{cameraFiles=Array.from(el('photo-camera').files);el('photo-picked').textContent=cameraFiles.length+' camera photo selected';};
   el('photo-files').onchange=()=>{cameraFiles=null;if(el('photo-picked'))el('photo-picked').textContent=el('photo-files').files.length+' gallery photos selected';};

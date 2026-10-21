@@ -1,0 +1,72 @@
+{
+  "version": "survey-drawings-1",
+  "revision": 1,
+  "released": false,
+  "geometry_digest": "0293421192f2fc2e22f8e1eb85989f27e75e36b3b9fa1733bd2afef54f8530a1",
+  "output_dir": ".",
+  "geometry": "geometry.json",
+  "pdf": "survey-drawings.pdf",
+  "bundle": "survey-drawings.zip",
+  "sheets": [
+    {
+      "key": "register",
+      "number": "SV-001",
+      "title": "Drawing register and verification notes",
+      "scale": "Not to Scale",
+      "sheet_no": 1,
+      "dxf": "sv-001.dxf",
+      "preview": "sv-001.png",
+      "entity_count": 147
+    },
+    {
+      "key": "site_layout",
+      "number": "SV-002",
+      "title": "Site layout",
+      "scale": "1:50 at A3",
+      "sheet_no": 2,
+      "dxf": "sv-002.dxf",
+      "preview": "sv-002.png",
+      "entity_count": 75
+    },
+    {
+      "key": "antenna_arrangement",
+      "number": "SV-005",
+      "title": "Antenna levels and sectors",
+      "scale": "Not to Scale",
+      "sheet_no": 3,
+      "dxf": "sv-005.dxf",
+      "preview": "sv-005.png",
+      "entity_count": 39
+    },
+    {
+      "key": "equipment_schedule",
+      "number": "SV-006",
+      "title": "Equipment schedule and mounting records",
+      "scale": "Not to Scale",
+      "sheet_no": 4,
+      "dxf": "sv-006.dxf",
+      "preview": "sv-006.png",
+      "entity_count": 39
+    },
+    {
+      "key": "grounding",
+      "number": "SV-011",
+      "title": "Grounding arrangement",
+      "scale": "Not to Scale",
+      "sheet_no": 5,
+      "dxf": "sv-011.dxf",
+      "preview": "sv-011.png",
+      "entity_count": 39
+    }
+  ],
+  "warnings": [],
+  "missing_information": [
+    "Shelter, equipment and cable routes: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Tower elevation, sections and platforms: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Enlarged mounting connections: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Power single-line records: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Rectifier and MDB distribution: no supported records; obtain applicable measurements, equipment details and evidence.",
+    "Roxtec and hatchplate arrangements: no supported records; obtain applicable measurements, equipment details and evidence."
+  ],
+  "assets": []
+}

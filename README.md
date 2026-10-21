@@ -1,5 +1,10 @@
 # iSurvix Field
 
+The opt-in saved-survey **AI Checklist & Drawings** workflow is documented in the
+[team guide](docs/manual/AI_SURVEY_TEAM_GUIDE.md), with
+[implementation and worker instructions](docs/development/AI_SURVEY_DRAWING_PIPELINE.md)
+and [synthetic PDF/DXF samples](samples/drawings/README.md).
+
 Telecom survey and inspection, construction inspection pilot controls, checklist configuration, evidence and governed review.
 
 The current local application runs through `Start-iSurvix.ps1` at `http://127.0.0.1:8000/local/`. It uses Django, SQLite and a verified local Ollama vision model. Its code, database, originals and private recovery checkpoints stay under `F:\iSurvix\iSurvix-Field`. The static frontend preview below is retained historical source; it is not the current operational application.
