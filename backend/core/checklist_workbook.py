@@ -144,6 +144,9 @@ def parse_workbook(data):
     try:workbook=load_workbook(BytesIO(data),read_only=True,data_only=False,keep_links=False)
     except Exception:_error('Workbook',0,'file','Unable to read this .xlsx workbook.')
     try:
+        if workbook.sheetnames==['Checklist']:
+            from .checklist_simple_workbook import parse_simple
+            return parse_simple(workbook,data)
         tables={};totalrows=0
         for sheet in workbook:
             if sheet.title not in HEADERS:_error(sheet.title,1,'sheet','Unknown worksheet.')

@@ -15,7 +15,10 @@ class ProjectForm(forms.ModelForm):
     def __init__(self,*args,actor=None,**kwargs):
         self.actor=actor
         super().__init__(*args,**kwargs)
-        self.fields['checklist_template'].queryset=ChecklistTemplate.objects.filter(published=True)
+        available=Q(published=True,disabled=False)
+        if self.instance.pk and self.instance.checklist_template_id:
+            available |= Q(pk=self.instance.checklist_template_id)
+        self.fields['checklist_template'].queryset=ChecklistTemplate.objects.filter(available)
         self.fields['industry'].required=False
         self.fields['industry'].choices=[('', 'Choose an industry'),*IndustryCatalog.objects.filter(is_active=True).values_list('code','name')]
         if actor and role_for(actor)==Profile.Roles.ADMIN:
@@ -28,7 +31,7 @@ class ProjectForm(forms.ModelForm):
             self.fields['industry'].choices=[(industry.code,industry.name)] if industry else []
             self.fields['industry'].initial=industry.code if industry else ''
             self.fields['industry'].disabled=True
-            self.fields['checklist_template'].queryset=template_scope(actor).filter(published=True)
+            self.fields['checklist_template'].queryset=template_scope(actor).filter(available)
             self.instance.company_id=company
             self.instance.industry=industry.code if industry else ''
             self.instance.administrator=actor

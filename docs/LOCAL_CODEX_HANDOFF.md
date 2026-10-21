@@ -1148,3 +1148,40 @@ docs/development/AI_SURVEY_DRAWING_PIPELINE.md. Private pre-change checkpoint:
 .local/backups/project-checkpoint-20261021-175047. Development verification receipt
 is docs/development/AI_SURVEY_DRAWING_RECEIPT.json. GitHub PR targets the existing
 feat/local-photo-pilot baseline, keeping this feature review separate from main.
+
+## 21 October 2026: guided checklist creation and lifecycle table
+
+Branch `feat/checklist-guided-wizard` extends `feat/ai-survey-drawings` without
+merging or deploying. Admin Checklists navigation opens the internally scrolling
+library at `/devadmin/checklist-templates/`; the dedicated action route is
+`/devadmin/checklist-library/`. Search, status filters, 25-row pagination, selection,
+icon tooltips and confirmed atomic lifecycle actions use actual scoped records.
+
+Wizard new-from-zero now recommends sections first, then checkpoints only after
+section acceptance. Standards are combined with up to 100 recent enabled,
+published templates in the Admin's existing scope and matching workflow. Counts
+rank suggestions; drafts, foreign definitions and site answers do not teach it.
+Each generated structure remains an unpublished draft until explicit publication.
+Custom sections and typed/required/photo-required checkpoints are supported.
+
+Migration0047 adds ChecklistTemplate.disabled, default False. Every template used
+by any saved task is structurally locked and cannot unpublish/delete. Unused
+published templates can explicitly unpublish before edits. Disabling stops new
+assignments but preserves historical work and current project defaults. Deletion
+requires an unused unpublished draft with no project/historical references.
+New task creation locks and rechecks its source template against lifecycle races.
+
+One-sheet sample download: Wizard workbook `?format=simple`. Reusable authored
+sample lives in `backend/static/core/templates/iSurvix_Checklist_One_Page.xlsx`.
+It supports section/point, type, required answer, photo, choices, units and help.
+Existing safe preview/explicit commit/replay handling remains. Import extra points
+can append a reviewed matching-workflow workbook to an unused draft without
+replacing its existing fields; stale target changes are refused.
+
+Final594core tests passed60.688seconds; Django/migration/JS checks passed. Actual
+synthetic browser creation/import/publish/unpublish/delete passed at1440/390 with
+zero application JS errors and no outer-page overflow. Before/after comparisons
+match all old columns of62live tables and402originalphoto SHA256s. No operational
+test accounts, tasks, template changes or approvals were seeded. Checkpoint before
+changes: `.local/backups/project-checkpoint-20261021-190149`. Private browser/test
+receipts: `.local/guided-wizard-qa`. See docs/manual/CHECKLIST_CREATION_GUIDE.md.
