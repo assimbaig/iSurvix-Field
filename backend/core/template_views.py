@@ -13,6 +13,7 @@ from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 from PIL import Image, UnidentifiedImageError
 
 from .models import Checklist, ChecklistTemplate, Profile, Project, WorkAssignment
@@ -63,6 +64,7 @@ def image_bytes(upload):
 
 
 @require_http_methods(['GET', 'POST'])
+@never_cache
 def template_builder(request, template_id=None, wizard_mode=False):
     if not is_template_admin(request):
         return HttpResponse('Admin access required.', status=403)
@@ -90,6 +92,9 @@ def template_builder(request, template_id=None, wizard_mode=False):
                 return redirect(route, template_id=template.id)
             if not template:
                 raise ValidationError('Choose a checklist template first.')
+            if request.POST.get('editor_template_id') not in (None,str(template.pk)) or request.POST.get('editor_version') not in (None,str(template.version)):
+                response_status=409
+                raise ValidationError('The submitted checklist or revision does not match this editor. Reopen the intended draft.')
             if action == 'duplicate':
                 template = duplicate_revision(template, request.user)
                 return redirect(route, template_id=template.id)
@@ -133,7 +138,7 @@ def template_builder(request, template_id=None, wizard_mode=False):
                             raise PermissionDenied('This draft is no longer in your permitted project scope.')
                     template = ChecklistTemplate.objects.select_for_update().get(pk=template.pk)
                     require_editable(request.user,template)
-                    if wizard_mode:
+                    if wizard_mode or 'wizard_expected_digest' in request.POST:
                         from .checklist_wizard_service import digest,guard
                         guard(request.user,True)
                         expected=request.POST.get('wizard_expected_digest')
@@ -151,7 +156,8 @@ def template_builder(request, template_id=None, wizard_mode=False):
                     if 'company_logo' in uploads:
                         template.company_logo.save('company.png', ContentFile(uploads['company_logo']), save=False)
                     for slot in ['left', 'right']:
-                        setattr(template, f'client_{slot}_name', request.POST.get(f'client_{slot}_name', '').strip()[:80])
+                        if f'client_{slot}_name' in request.POST:
+                            setattr(template, f'client_{slot}_name', request.POST.get(f'client_{slot}_name', '').strip()[:80])
                         attr = f'client_{slot}_logo'
                         if request.POST.get(f'remove_{attr}') == 'on':
                             setattr(template, attr, '')
@@ -174,7 +180,24 @@ def template_builder(request, template_id=None, wizard_mode=False):
         template.name=request.POST.get('name',template.name)
         for slot in ('left','right'):
             setattr(template,f'client_{slot}_name',request.POST.get(f'client_{slot}_name',getattr(template,f'client_{slot}_name')))
-    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'template_locked':bool(template and (template.published or template.disabled or template.checklists.exists())), 'definition': submitted_definition if submitted_definition is not None else template.definition if template else None, 'projects': project_scope(request.user), 'wizard_mode':wizard_mode,'wizard_step':3 if template and template.published else 2,'wizard_expected_digest':token},status=response_status)
+    from .access import company_id_for
+    from .models import Company
+    company=Company.objects.filter(pk=company_id_for(request.user)).first()
+    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'template_locked':bool(template and (template.published or template.disabled or template.checklists.exists())), 'definition': submitted_definition if submitted_definition is not None else template.definition if template else None, 'projects': project_scope(request.user), 'wizard_mode':wizard_mode,'wizard_step':3 if template and template.published else 2,'wizard_expected_digest':token,'editor_company_name':company.name if company else 'Company','active_view':'checklists'},status=response_status)
+
+
+@require_http_methods(['GET'])
+@never_cache
+def template_recommendations(request,template_id):
+    if not is_template_admin(request):return JsonResponse({'message':'Project Admin access required.'},status=403)
+    template=get_object_or_404(template_scope(request.user),pk=template_id)
+    try:
+        from .editor_recommendations import additions
+        result=additions(request.user,template)
+        result['locked']=bool(template.published or template.disabled or template.checklists.exists())
+        return JsonResponse(result)
+    except (ValidationError,ValueError) as error:
+        return JsonResponse({'message':'; '.join(error.messages) if isinstance(error,ValidationError) else str(error),'recommendations':[]},status=422)
 
 
 def template_edit_digest(template):

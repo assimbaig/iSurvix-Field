@@ -1,0 +1,125 @@
+{
+  "feature": "Checklist Template Editor exact revision, compact layout, tree and recommended additions",
+  "branch": "feat/checklist-editor-tree",
+  "base": "feat/checklist-guided-wizard",
+  "routes": [
+    "/devadmin/checklist-wizard/",
+    "/devadmin/checklist-wizard/<template_id>/",
+    "/devadmin/checklist-templates/<template_id>/",
+    "/devadmin/checklist-templates/<template_id>/recommendations/"
+  ],
+  "migration": {
+    "required": false,
+    "reason": "Existing section.group plus optional validated JSON editor_groups and editor_recommendation_decisions; existing IDs and snapshots retained."
+  },
+  "checks": {
+    "core_tests": {
+      "passed": 605,
+      "failed": 0,
+      "seconds": 63.548
+    },
+    "final_editor_tests": {
+      "passed": 11,
+      "failed": 0,
+      "seconds": 1.267,
+      "includes_saved_branding_report_export": true
+    },
+    "django_check": "pass",
+    "migration_drift": "none",
+    "javascript_syntax": "pass",
+    "node_state_mutation_checks": "pass",
+    "git_diff_check": "pass"
+  },
+  "browser": {
+    "synthetic": true,
+    "checks": [
+      "exact selected draft and revision synchronized independently of replication form",
+      "add/rename groups sections fields; group, ungroup, move and reorder",
+      "save/refresh preserves order, IDs, evidence rules, accepted addition once and dismissal",
+      "branding replacement and explicit removal preserve company logo",
+      "published editor locked"
+    ],
+    "screenshots": [
+      "editor-desktop.png",
+      "editor-branding-desktop.png",
+      "editor-mobile.png",
+      "editor-mobile-workspace.png",
+      "wizard-existing-desktop.png",
+      "wizard-existing-mobile.png"
+    ],
+    "layout": [
+      {
+        "width": 1440,
+        "scroll": 1432,
+        "revision": {
+          "x": 218,
+          "y": 205.96875,
+          "width": 1193,
+          "height": 47.390625,
+          "top": 205.96875,
+          "right": 1411,
+          "bottom": 253.359375,
+          "left": 218
+        },
+        "workflow": {
+          "x": 218,
+          "y": 253.359375,
+          "width": 1193,
+          "height": 36,
+          "top": 253.359375,
+          "right": 1411,
+          "bottom": 289.359375,
+          "left": 218
+        },
+        "brandingOpen": false,
+        "treeTop": 346.359375
+      },
+      {
+        "width": 390,
+        "scroll": 390,
+        "brandingOpen": false
+      }
+    ],
+    "javascriptErrors": [],
+    "draftId": 40,
+    "recommendationId": "rec_140f2c6b1272f083cfaa"
+  },
+  "additional_browser": {
+    "synthetic": true,
+    "phone": {
+      "width": 390,
+      "scroll": 390,
+      "workspaceTop": 0.359375,
+      "propertiesHeight": 479.796875
+    },
+    "tabletWidth": 1024,
+    "recommendationNetworkErrorRetry": true,
+    "treeKeyboardSelection": true,
+    "javascriptErrors": []
+  },
+  "preservation": {
+    "old_columns_unchanged_in_tables": 62,
+    "all_tables_preserved": true,
+    "original_sha256_verified": 402,
+    "integrity": "ok",
+    "existing_templates_disabled": false,
+    "migration": "none; backward-compatible optional JSON editor metadata"
+  },
+  "screenshots": {
+    "folder": "outputs/checklist-editor-20261021",
+    "data": "Isolated synthetic accounts, project, draft and logos; no operational fixtures."
+  },
+  "runtime": {
+    "local_url": "http://127.0.0.1:8000/local/",
+    "home_status": 200,
+    "new_unauthenticated_recommendations_status": 403,
+    "current_editor_javascript_status": 200,
+    "web_app_restarted": true,
+    "workers_restarted": false
+  },
+  "limitations": [
+    "Five referenced layout screenshots were absent from the current request; implemented the numbered descriptions and captured the result.",
+    "Recommendations use the existing standard and scoped published checklist library; no new model or model training is introduced.",
+    "Review only; not merged or deployed."
+  ]
+}

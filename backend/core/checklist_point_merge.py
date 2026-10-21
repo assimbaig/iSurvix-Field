@@ -6,7 +6,8 @@ from .template_service import validate_definition
 
 
 def merged_definition(target, records, marker):
-    definition=deepcopy(target.definition)
+    from .editor_hierarchy import merge_group_names
+    definition=merge_group_names(deepcopy(target.definition),[record['definition'] for record in records])
     sections={s['title'].strip().casefold():s for s in definition['sections']}
     existing_ids={field['id'] for section in definition['sections'] for field in section['fields']}
     for record in records:

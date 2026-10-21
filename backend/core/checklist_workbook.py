@@ -31,9 +31,9 @@ HEADERS={
  'Rooms':['checklist_key','type','name','floor'],
  '_Lists':['list','value'],
 }
-ROOT_EXTRA={'title','description','technical_notice','topic_sources','wizard_context'}
+ROOT_EXTRA={'title','description','technical_notice','topic_sources','wizard_context','editor_groups','editor_recommendation_decisions'}
 SECTION_EXTRA={'group','description','purpose','room'}
-FIELD_EXTRA={'description','unit','equipment_type','operator','excel_row','group','purpose','room_context'}
+FIELD_EXTRA={'description','unit','equipment_type','operator','excel_row','group','purpose','room_context','recommendation_source'}
 COLUMN_EXTRA={'description','unit'}
 WORKFLOWS={'telecom_survey':'telecom','telecom_inspection':'telecom','construction_inspection':'construction'}
 
@@ -88,6 +88,10 @@ def _extras(value,allowed,sheet,row,target):
         if key in target:_error(sheet,row,'extra_json',f'{key} is already specified in its column.')
         if key=='excel_row':
             if type(item) is not int or not 1<=item<=100000:_error(sheet,row,'extra_json','excel_row must be a positive integer.')
+        elif key in {'editor_groups','editor_recommendation_decisions'}:
+            from .editor_hierarchy import validate_metadata
+            try:validate_metadata({key:item,'sections':[]})
+            except ValidationError as error:_error(sheet,row,'extra_json','; '.join(error.messages))
         elif key=='wizard_context':
             if not isinstance(item,dict) or set(item)!={'version','industry','workflow_type'} or type(item.get('version')) is not int or item['version']!=1 or item.get('workflow_type') not in WORKFLOWS or WORKFLOWS[item['workflow_type']]!=item.get('industry'):_error(sheet,row,'extra_json','Invalid wizard context.')
         elif key in {'room','room_context'}:
