@@ -1,4 +1,4 @@
-﻿"""Representative real ORM data in an isolated database, never operational records."""
+"""Representative real ORM data in an isolated database, never operational records."""
 from pathlib import Path
 import os,sys,json,time,statistics
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'.local/survey-progress-benchmark';OUT.mkdir(parents=True,exist_ok=True)
@@ -68,4 +68,3 @@ for label,url in paths.items():
     receipt['requests'][label]={'url':url,'samples':samples,'median_ms':round(statistics.median(s['ms'] for s in samples),3),'median_queries':statistics.median(s['queries'] for s in samples),'bytes':samples[-1]['bytes']}
 (OUT/f'performance-{phase}.json').write_text(json.dumps(receipt,indent=2),encoding='utf-8')
 print(json.dumps(receipt))
-

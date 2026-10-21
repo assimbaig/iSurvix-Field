@@ -1735,9 +1735,167 @@
     "file": "F:\\iSurvix\\iSurvix-Field\\.local\\release-hardening\\runtime\\branding-visual\\branding-page.png"
   },
   "requirements_summary": {
-    "Verified": 61,
+    "Verified": 64,
     "Blocked": 3,
     "Failed": 0,
-    "In progress": 3
+    "In progress": 0
+  },
+  "final": {
+    "full_suite": "729 passed / 0 failed / 0 errors / 0 skipped in 256.156s; isolated real Django DB/media/cache; zero external network attempts;32 controlled in-process HTTP connections.",
+    "full_suite_command": ".local\\venv\\Scripts\\python.exe scripts\\run_backend_tests.py --verbosity 2",
+    "full_suite_log": ".local/release-hardening-qa/final-full-release.log",
+    "checks": "All10 required Django/migration/pip/diff/frontend VM/active JS syntax commands passed. Benchmark seed/run and Python compilation also passed.",
+    "check_results": [
+      {
+        "label": "django-check",
+        "command": [
+          "F:\\iSurvix\\iSurvix-Field\\.local\\venv\\Scripts\\python.exe",
+          "backend/manage.py",
+          "check",
+          "--settings=checklist.settings_local"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field",
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      },
+      {
+        "label": "migration-drift",
+        "command": [
+          "F:\\iSurvix\\iSurvix-Field\\.local\\venv\\Scripts\\python.exe",
+          "backend/manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run",
+          "--settings=checklist.settings_local"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field",
+        "exit_code": 0,
+        "stdout": "No changes detected\n",
+        "stderr": ""
+      },
+      {
+        "label": "dependencies",
+        "command": [
+          "F:\\iSurvix\\iSurvix-Field\\.local\\venv\\Scripts\\python.exe",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field",
+        "exit_code": 0,
+        "stdout": "No broken requirements found.\n",
+        "stderr": ""
+      },
+      {
+        "label": "diff-check",
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "warning: in the working copy of 'backend/checklist/urls_local.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/survey_checklist_mapping.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/survey_processing.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/survey_processing_models.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/survey_processing_urls.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/survey_processing_views.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/test_photo_search.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/test_quality_workflow.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/core/test_survey_checklist_mapping.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/deploy.sh', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'backend/static/core/js/survey_processing.js', LF will be replaced by CRLF the next time Git touches it\n"
+      },
+      {
+        "label": "check-preview.cjs",
+        "command": [
+          "node",
+          "check-preview.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\frontend",
+        "exit_code": 0,
+        "stdout": "{\n  \"rendered_screens\": 61,\n  \"checks\": [\n    \"all roles and views render\",\n    \"all checklist sections render\",\n    \"rapid field changes both persist\",\n    \"equipment removal persists\",\n    \"approved answers stay locked\",\n    \"required submission transitions\",\n    \"review comment and approval transition\",\n    \"asset presence\",\n    \"mobile and print stylesheet rules\",\n    \"full 172-row FDED copy\",\n    \"add and remove fields and sections\",\n    \"custom dropdown and required field\",\n    \"editable client branding\",\n    \"publish and assign revision\",\n    \"existing survey schema and logos frozen\",\n    \"future survey uses new revision\",\n    \"admin-only template changes\"\n  ],\n  \"browser_layout_QA\": false\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "check-engineer.cjs",
+        "command": [
+          "node",
+          "check-engineer.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\frontend",
+        "exit_code": 0,
+        "stdout": "{\n  \"screens\": 13,\n  \"checks\": [\n    \"latest logo on all role shells\",\n    \"assigned-site filtering\",\n    \"pending and complete lists\",\n    \"no engineer review or management navigation\",\n    \"unassigned site navigation and writes blocked\",\n    \"submitted records read-only\",\n    \"returned work editable\",\n    \"custom checklist retained\",\n    \"reviewer controls retained\"\n  ],\n  \"browser_layout_QA\": false\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "check-workspace.cjs",
+        "command": [
+          "node",
+          "check-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\frontend",
+        "exit_code": 0,
+        "stdout": "{\n  \"screens\": 39,\n  \"checks\": [\n    \"three review types\",\n    \"multi-section approval\",\n    \"duplicate approval prevented\",\n    \"approved field and shared field locks\",\n    \"unapproved fields editable\",\n    \"engineer cannot approve\",\n    \"rejection reason required\",\n    \"full rejection unlocks and logs history\",\n    \"full approval locks all sections\",\n    \"template required-field validation\",\n    \"template fields locked\",\n    \"persisted audit history\"\n  ],\n  \"browser_layout_QA\": false\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "check-site-routing.cjs",
+        "command": [
+          "node",
+          "check-site-routing.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\frontend",
+        "exit_code": 0,
+        "stdout": "{\n  \"screens\": 12,\n  \"checks\": [\n    \"Sites defaults to summary and list\",\n    \"one Site ID link per row\",\n    \"Sites wizard read-only even for Under Review records\",\n    \"view-only mutation and decision guards\",\n    \"Review lists only Under Review\",\n    \"review wizard rejects other statuses\",\n    \"partial decisions leave review queue\",\n    \"Under Review label supported\",\n    \"wizard resumes per Site ID and mode\",\n    \"URL restores correct site and section\",\n    \"engineer workflow retained\"\n  ],\n  \"browser_layout_QA\": false\n}\n",
+        "stderr": ""
+      },
+      {
+        "label": "survey_processing.js",
+        "command": [
+          "node",
+          "--check",
+          "backend/static/core/js/survey_processing.js"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "label": "photo_workspace.js",
+        "command": [
+          "node",
+          "--check",
+          "backend/static/core/js/photo_workspace.js"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "git": "Implementation commit 7ebade61148b58e5c7c898171b5541d920049ce7; feature branch feat/secure-outbound-survey-workers; pushed draftPR8: https://github.com/assimbaig/iSurvix-Field/pull/8. No merge/deployment.",
+    "pull_request": {
+      "at": "2026-10-21T19:19:58.628869+00:00",
+      "url": "https://github.com/assimbaig/iSurvix-Field/pull/8",
+      "number": 8,
+      "branch": "feat/secure-outbound-survey-workers",
+      "base": "feat/checklist-editor-tree",
+      "commit": "7ebade61148b58e5c7c898171b5541d920049ce7",
+      "draft": true,
+      "merged": false,
+      "deployed": false
+    },
+    "versions": {
+      "python": "3.12.10",
+      "Django": "6.1.2",
+      "Pillow": "10.4.0",
+      "openpyxl": "3.1.5",
+      "PyMuPDF": "2.0",
+      "ezdxf": "1.4.5",
+      "reportlab": "5.0.1",
+      "pydantic": "2.14.1",
+      "fastembed": "0.9.0"
+    },
+    "limitations": [
+      "Actual VPS/TLS provisioning requires server access.",
+      "Verified manufacturer/site measurements are not supplied.",
+      "Full-site Z93004 accuracy/throughput remains unverified; bounded benchmark is separate."
+    ],
+    "note": "A following evidence-only commit records this final receipt and removes a trailing blank line from the benchmark helper."
   }
 }
