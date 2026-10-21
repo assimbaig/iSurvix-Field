@@ -149,7 +149,9 @@ class QualityWorkflowTests(TestCase):
         from pathlib import Path
         from django.core.files.base import ContentFile
         from .models import PhotoEvidence,ProjectMembership
-        with tempfile.TemporaryDirectory(dir=Path('.local').resolve()) as media,override_settings(MEDIA_ROOT=media):
+        temporary_root=Path(__file__).resolve().parents[2]/'.local'/'tmp'
+        temporary_root.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temporary_root) as media,override_settings(MEDIA_ROOT=media):
             original=b'synthetic original frozen source'
             photo=PhotoEvidence.objects.create(checklist=self.c,filename='frozen.png',sha256=hashlib.sha256(original).hexdigest(),metadata={'format':'PNG'})
             photo.original.save('frozen.png',ContentFile(original),save=True)

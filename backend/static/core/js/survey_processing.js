@@ -10,7 +10,8 @@
   const stageCodes = ['queued', 'analysing_evidence', 'preparing_checklist', 'preparing_drawings', 'ready_for_review'];
   let state = {}, selectedRevisionId = '', page = 0, busy = false, polling = false, stateStale = false, renderedSignature = '', correctionItem = null, correctionMode = 'checklist';
   let geometryRecords = [], geometryDirty = false, geometryEditIndex = -1, geometryRevisionId = '';
-  let pollTimer, refreshPending = null;
+  let pollTimer, refreshPending = null, pollFailures = 0, idlePolls = 0, progressSignature = '', detailToken = '', activeTab = 'checklist', sectionLoading = false;
+  let documentUploadToken = '', documentHeartbeatTimer = null;
   const pageSize = 30;
   const display = value => {
     if (value === undefined || value === null || value === '') return 'Not recorded';
@@ -73,6 +74,10 @@
     for (const [key, value] of Object.entries(fields)) form.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
     try {
       const payload = await request(form);
+      if (name === 'submit' && (payload.revision_id || payload.revision?.id)) {
+        selectedRevisionId = String(payload.revision_id || payload.revision.id);
+        const url = new URL(window.location.href); url.searchParams.set('revision_id', selectedRevisionId); history.replaceState(null, '', url);
+      }
       const refreshed = await refresh(true);
       feedback(refreshed ? payload.message || success : 'The server saved this action, but its updated state could not be loaded. Use Refresh before continuing. Do not repeat the action.', !refreshed);
       return payload;
@@ -104,6 +109,7 @@
       if (url) { link.href = url; link.target = '_blank'; link.rel = 'noopener'; }
       if (thumb) {
         const image = node('img'); image.src = thumb; image.alt = `Evidence: ${label}`; image.loading = 'lazy';
+        image.addEventListener('error', () => { image.replaceWith(node('small', 'Preview unavailable')); link.title = 'Preview could not load. Open the original evidence to inspect it.'; });
         link.append(image);
       }
       link.append(node('span', label));
@@ -121,7 +127,7 @@
     const stageProgress = {queued: 0, analysing_evidence: 5 + evidenceProgress * 75, preparing_checklist: 85, preparing_drawings: 95, ready_for_review: 100, released: 100, failed: evidenceProgress * 80};
     const percentage = Number(active?.progress ?? stageProgress[status] ?? 0);
     byId('sp-progress').value = Number.isFinite(percentage) ? Math.max(0, Math.min(100, percentage)) : 0;
-    byId('sp-counts').textContent = active ? `Revision ${active.revision} · ${completed} of ${total} evidence units processed${state.upload_state?.inflight ? ' · Uploads are still in progress' : ''}` : 'Complete saved survey inputs and finish uploads before submitting.';
+    byId('sp-counts').textContent = active ? `Revision ${active.revision} · ${completed} of ${total} evidence units processed${state.upload_state?.inflight ? ' · Uploads are still open' : ''}${active.message ? ` · ${active.message}` : ''}` : 'Complete saved survey inputs and finish uploads before submitting.';
     const error = byId('sp-error');
     error.hidden = !active?.error;
     error.textContent = active?.error || '';
@@ -272,6 +278,7 @@
       if (preview) {
         const link = node('a', null, 'sp-drawing-preview'); link.href = pdf || preview; link.target = '_blank'; link.rel = 'noopener'; link.title = `Open ${drawing.title || 'drawing'} preview`;
         const image = node('img'); image.src = preview; image.alt = `${drawing.title || 'Drawing'} sheet preview`; image.loading = 'lazy'; link.append(image); card.append(link);
+          image.addEventListener('error', () => { image.replaceWith(node('p', 'Drawing preview could not load. Open the PDF or use Refresh to retry.', 'sp-muted')); });
       } else card.append(node('p', 'Preview is not available.', 'sp-muted'));
       const downloads = node('div', null, 'sp-drawing-downloads');
       for (const [label, url] of [['PDF', pdf], ['Editable DXF', dxf], ['drawing bundle', sourceUrl(drawing.bundle_url)]]) if (url) {
@@ -316,30 +323,50 @@
     if (byId('sp-additional-accept')) byId('sp-additional-accept').disabled = true;
   }
   function renderDocuments() {
-    const wrapper = byId('sp-document-list'); if (!wrapper) return;
-    wrapper.replaceChildren();
-    for (const document of array(state.documents)) {
+    const wrapper = byId('sp-document-list');
+    if (wrapper) wrapper.replaceChildren();
+    for (const document of wrapper ? array(state.documents) : []) {
       const item = node('li'), url = sourceUrl(document.url);
       const name = document.filename || document.name || `Document ${document.id}`;
       if (url) { const link = node('a', name); link.href = url; link.target = '_blank'; link.rel = 'noopener'; item.append(link); } else item.append(node('span', name));
       if (document.created_at || document.status) item.append(node('small', [document.status, document.created_at].filter(Boolean).join(' · ')));
       wrapper.append(item);
     }
-    let sessions = byId('sp-upload-sessions');
-    if (!sessions) { sessions = node('div'); sessions.id = 'sp-upload-sessions'; wrapper.after(sessions); }
+    const sessions = byId('sp-upload-sessions');
+    if (!sessions) return;
+    const savedReasons = new Map(Array.from(sessions.querySelectorAll('[data-recovery-token]')).map(input => [input.dataset.recoveryToken, input.value]));
     sessions.replaceChildren();
-    const tokens = array(state.upload_state?.own_tokens);
-    if (tokens.length) {
-      sessions.append(node('h3', 'Your open upload sessions'), node('p', 'Only close a session after its upload has stopped. Active uploads in other windows must finish first.', 'sp-muted'));
-      tokens.forEach((token, index) => {
+    const open = array(state.upload_state?.sessions);
+    sessions.hidden = !open.length;
+    if (!open.length) return;
+    sessions.append(node('h3', 'Open upload sessions'), node('p', 'Completed files are preserved. Active transfers must finish before their session can close. Recover an abandoned session only after confirming its upload has stopped.', 'sp-muted'));
+    open.forEach((session, index) => {
+      const card = node('section', null, 'sp-upload-session');
+      const label = {active: 'Active upload', stale: 'No recent upload activity', interrupted: 'Interrupted upload'}[session.status] || 'Open upload';
+      card.append(node('strong', `${label} · ${session.actor || `Session ${index + 1}`}`));
+      if (session.last_activity) card.append(node('small', `Last activity: ${new Date(session.last_activity).toLocaleString()}`, 'sp-muted'));
+      if (session.active_batches) card.append(node('p', `${session.active_batches} transfer batch(es) protected until completion or lease expiry.`, 'sp-muted'));
+      if (session.status === 'active' && session.recovery_wait_seconds) card.append(node('p', `Recovery becomes available after the transfer stops and its activity lease expires. Recheck in approximately ${Math.ceil(Number(session.recovery_wait_seconds) / 60)} minute(s).`, 'sp-muted'));
+      if (session.recoverable) {
+        const form = node('form'), reasonLabel = node('label', 'Reason for recovering this abandoned upload'), reason = node('textarea');
+        reason.rows = 2; reason.required = true; reason.minLength = 5; reason.maxLength = 1000;
+        reason.dataset.recoveryToken = session.token; reason.value = savedReasons.get(session.token) || '';
+        reason.setAttribute('aria-label', `Recovery reason for ${session.actor || `session ${index + 1}`}`);
+        reasonLabel.append(reason);
+        const button = node('button', 'Recover abandoned upload'); button.type = 'submit'; button.dataset.allowed = 'true'; button.disabled = busy || stateStale;
+        form.append(reasonLabel, button);
+        form.addEventListener('submit', event => { event.preventDefault(); if (form.reportValidity()) action('recover_upload', {token: session.token, reason: reason.value.trim()}, 'Abandoned upload closed. Completed evidence is preserved.'); });
+        card.append(form);
+      } else if (session.can_finish) {
         const form = node('form'), label = node('label', null, 'sp-check'), check = node('input'); check.type = 'checkbox'; check.required = true;
-        label.append(check, node('span', `Upload session ${index + 1} has stopped or was cancelled`));
-        const button = node('button', 'Close my interrupted upload'); button.type = 'submit'; button.title = 'Close this stopped upload session; saved files are preserved'; button.disabled = busy;
+        label.append(check, node('span', 'I confirm this upload has stopped in every window'));
+        const button = node('button', 'Close my stopped upload'); button.type = 'submit'; button.dataset.allowed = 'true'; button.disabled = busy || stateStale;
         form.append(label, button);
-        form.addEventListener('submit', event => { event.preventDefault(); if (form.reportValidity()) action('finish_upload', {token}, 'Interrupted upload session closed. Saved files are preserved.'); });
-        sessions.append(form);
-      });
-    }
+        form.addEventListener('submit', event => { event.preventDefault(); if (form.reportValidity()) action('finish_upload', {token: session.token}, 'Upload session closed. Completed evidence is preserved.'); });
+        card.append(form);
+      }
+      sessions.append(card);
+    });
   }
   function renderGeometry(revision) {
     const wrapper = byId('sp-geometry-records'); if (!wrapper) return;
@@ -382,10 +409,10 @@
     const active = activeStatuses.has(statusKey(state.active?.status));
     const submit = byId('sp-submit-form')?.querySelector('button'); if (submit) submit.disabled = busy || stateStale || active || Boolean(state.upload_state?.inflight);
     const upload = byId('sp-document-form')?.querySelector('button'); if (upload) upload.disabled = busy || stateStale;
-    root.querySelectorAll('#sp-upload-sessions button').forEach(button => { button.disabled = busy || stateStale; });
+    root.querySelectorAll('#sp-upload-sessions button').forEach(button => { button.disabled = busy || stateStale || button.dataset.allowed !== 'true'; });
     byId('sp-refresh').disabled = polling || busy;
     byId('sp-retry').disabled = busy || stateStale;
-    byId('sp-revision').disabled = busy;
+    byId('sp-revision').disabled = busy || polling || sectionLoading;
     const correctionSave = byId('sp-correction-form').querySelector('button[type=submit]');
     if (correctionSave) correctionSave.disabled = busy || stateStale;
     root.querySelectorAll('[data-additional-index]').forEach(check => { check.disabled = busy || !editable(revision) || check.dataset.reviewed === 'true'; });
@@ -410,15 +437,103 @@
       const scroller = root.querySelector('#sp-checklist-panel .sp-table-scroll'), top = scroller.scrollTop, left = scroller.scrollLeft;
       const validIds = new Set(array(revision?.checklist_items).filter(item => !item.accepted && !item.locked).map(itemId));
       for (const id of selected) if (!validIds.has(id)) selected.delete(id);
-      renderChecklist(); renderRecords(revision); renderGaps(revision); renderDrawings(revision); renderHistory(revision); renderAdditional(revision); renderGeometry(revision);
+      renderChecklist(); renderAdditional(revision); renderActiveSection();
       scroller.scrollTop = top; scroller.scrollLeft = left;
       renderedSignature = signature;
     }
     updateControls();
+    renderPagination();
+  }
+  function renderActiveSection() {
+    const revision = currentRevision();
+    if (activeTab === 'records') renderRecords(revision);
+    if (activeTab === 'gaps') renderGaps(revision);
+    if (activeTab === 'drawings') { renderDrawings(revision); renderGeometry(revision); }
+    if (activeTab === 'history') renderHistory(revision);
+  }
+  const pageCount = meta => Number(meta?.total_pages ?? meta?.pages ?? 1);
+  function renderPagination() {
+    const revision = currentRevision();
+    for (const [section, targetId, label] of [['findings', 'sp-records', 'extracted records'], ['events', 'sp-history', 'review events'], ['drawings', 'sp-drawings', 'drawing editions']]) {
+      const target = byId(targetId);
+      let controls = byId(`sp-more-${section}`);
+      if (!controls) { controls = node('div', null, 'sp-pagination sp-load-more'); controls.id = `sp-more-${section}`; target.after(controls); }
+      const meta = revision?.pagination?.[section];
+      controls.hidden = !meta || Number(meta.page || 1) >= pageCount(meta);
+      const signature = JSON.stringify([selectedRevisionId, meta, sectionLoading, polling, busy]);
+      if (controls.dataset.signature === signature) continue;
+      controls.dataset.signature = signature;
+      controls.replaceChildren();
+      if (controls.hidden) continue;
+      const button = node('button', `Load more ${label}`); button.type = 'button'; button.disabled = sectionLoading || polling || busy;
+      button.addEventListener('click', () => loadPage(section));
+      controls.append(node('span', `Page ${meta.page || 1} of ${pageCount(meta)} · ${meta.total || 0} ${label}`), button);
+    }
+    const history = state.pagination?.history;
+    const more = byId('sp-more-revisions');
+    if (more) { more.hidden = !history || Number(history.page || 1) >= pageCount(history); more.disabled = sectionLoading || polling || busy; }
+  }
+  function detailsUrl(extra = {}) {
+    const url = new URL(root.dataset.stateUrl, window.location.origin);
+    url.searchParams.set('compact', '1');
+    if (selectedRevisionId) url.searchParams.set('revision_id', selectedRevisionId);
+    for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, String(value));
+    return url;
+  }
+  async function getJson(url) {
+    const response = await fetch(url, {credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}});
+    if (!(response.headers.get('content-type') || '').includes('application/json')) throw new Error('The server returned an unexpected page. Sign in again if your session has expired.');
+    const payload = await response.json();
+    if (!response.ok) throw new Error(errorMessage(payload));
+    return payload.state || payload;
+  }
+  const progressKeys = ['status', 'label', 'completed', 'total', 'error', 'ready_for_review', 'message'];
+  function mergeSummary(revision, summary) {
+    const next = {...revision};
+    for (const key of progressKeys) if (Object.prototype.hasOwnProperty.call(summary, key)) next[key] = summary[key];
+    return next;
+  }
+  async function loadPage(section) {
+    if (sectionLoading || polling || busy) return;
+    const revisionId = selectedRevisionId, revision = currentRevision();
+    const meta = section === 'history' ? state.pagination?.history : revision?.pagination?.[section];
+    if (!meta || Number(meta.page || 1) >= pageCount(meta)) return;
+    sectionLoading = true; updateControls(); renderPagination();
+    try {
+      const nextPage = Number(meta.page || 1) + 1;
+      const payload = await getJson(detailsUrl(section === 'history' ? {history_page: nextPage} : {section, page: nextPage}));
+      if (String(revisionId) !== String(selectedRevisionId)) return;
+      if (section === 'history') {
+        const known = new Map(array(state.revisions).map(item => [String(item.id), item]));
+        for (const incoming of array(payload.revisions)) {
+          const previous = known.get(String(incoming.id));
+          known.set(String(incoming.id), previous ? mergeSummary(previous, incoming) : incoming);
+        }
+        state.revisions = Array.from(known.values()).sort((a, b) => Number(b.revision) - Number(a.revision));
+        state.pagination = {...state.pagination, history: payload.pagination?.history};
+        renderRevisions();
+      } else {
+        const incoming = array(payload.revisions).find(item => String(item.id) === String(revisionId));
+        if (!incoming || !Array.isArray(incoming[section]) || !incoming.pagination?.[section]) throw new Error('The server did not return the requested saved page.');
+        const key = item => section === 'drawings' ? `${item.id}:${item.number || item.drawing_number || item.title}` : String(item.id || item.finding_key || item.key || JSON.stringify(item));
+        const known = new Map(array(revision[section]).map(item => [key(item), item]));
+        for (const item of incoming[section]) known.set(key(item), item);
+        revision[section] = Array.from(known.values());
+        revision.pagination = {...revision.pagination, [section]: incoming.pagination[section]};
+        const target = byId({findings: 'sp-records', events: 'sp-history', drawings: 'sp-drawings'}[section]), top = target.scrollTop;
+        renderActiveSection(); target.scrollTop = top;
+        renderedSignature = JSON.stringify(revision);
+      }
+      feedback('The next saved page has been loaded.');
+    } catch (error) { feedback(`Could not load more saved ${section === 'history' ? 'revisions' : section}. ${error.message} Use the same Load more action to retry.`, true); }
+    finally { sectionLoading = false; updateControls(); renderPagination(); }
   }
   function schedule() {
     clearTimeout(pollTimer);
-    if (!document.hidden && activeStatuses.has(statusKey(state.active?.status))) pollTimer = setTimeout(() => refresh(), 3000);
+    if (!document.hidden && (activeStatuses.has(statusKey(state.active?.status)) || state.upload_state?.inflight)) {
+      const delay = pollFailures ? Math.min(30000, 3000 * 2 ** Math.min(pollFailures, 4)) : Math.min(15000, 3000 + idlePolls * 1500);
+      pollTimer = setTimeout(() => refresh(), delay);
+    }
   }
   async function refresh(force = false) {
     if (refreshPending) {
@@ -434,20 +549,40 @@
   async function readState(force) {
     polling = true; updateControls();
     try {
-      const response = await fetch(root.dataset.stateUrl, {credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}});
-      if (!(response.headers.get('content-type') || '').includes('application/json')) throw new Error('The server returned an unexpected page. Sign in again if your session has expired.');
-      const payload = await response.json();
-      if (!response.ok) throw new Error(errorMessage(payload));
       const recovered = stateStale;
-      stateStale = false;
-      state = payload.state || payload;
-      render(force);
+      if (force || !root.dataset.progressUrl) {
+        const payload = await getJson(detailsUrl());
+        state = payload;
+        if (!selectedRevisionId && payload.selected_revision_id) selectedRevisionId = String(payload.selected_revision_id);
+        detailToken = payload.detail_token || '';
+        stateStale = false; render(true);
+      } else {
+        const payload = await getJson(root.dataset.progressUrl);
+        if (payload.active && payload.queue_message) payload.active.message = payload.queue_message;
+        const signature = JSON.stringify([payload.active?.id, payload.active?.status, payload.active?.completed, payload.active?.total, payload.upload_state]);
+        idlePolls = signature === progressSignature ? Math.min(idlePolls + 1, 8) : 0; progressSignature = signature;
+        const needsDetail = recovered || !currentRevision() || currentRevision().detailed === false || (payload.detail_token && payload.detail_token !== detailToken);
+        if (needsDetail) {
+          state = await getJson(detailsUrl());
+          detailToken = state.detail_token || payload.detail_token || '';
+          stateStale = false; render(true);
+        } else {
+          const summaries = new Map(array(payload.revisions).map(item => [String(item.id), item]));
+          state.revisions = array(state.revisions).map(item => summaries.has(String(item.id)) ? mergeSummary(item, summaries.get(String(item.id))) : item);
+          if (payload.active) state.active = mergeSummary(state.active?.id === payload.active.id ? state.active : payload.active, payload.active);
+          const uploadsChanged = JSON.stringify(state.upload_state) !== JSON.stringify(payload.upload_state);
+          state.upload_state = payload.upload_state || state.upload_state;
+          stateStale = false; renderStatus(); renderRevisions(); if (uploadsChanged) renderDocuments(); updateControls();
+        }
+      }
+      pollFailures = 0;
       if (recovered && !busy) feedback('Saved processing state refreshed. Review the current results before continuing.');
       return true;
-    } catch (error) { stateStale = true; feedback(`Could not refresh processing state. ${error.message} Use Refresh to retry; changes are paused until the saved state is available.`, true); return false; }
-    finally { polling = false; updateControls(); schedule(); }
+    } catch (error) { pollFailures++; stateStale = true; feedback(`Could not refresh processing state. ${error.message} Changes are paused until the saved state is available. Use Refresh to retry${activeStatuses.has(statusKey(state.active?.status)) ? '; automatic status retries use a longer interval' : ''}.`, true); return false; }
+    finally { polling = false; updateControls(); renderPagination(); schedule(); }
   }
   function switchTab(name, focus = false) {
+    activeTab = name;
     root.querySelectorAll('[data-tab]').forEach(tab => {
       const active = tab.dataset.tab === name;
       tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1;
@@ -455,6 +590,7 @@
       if (active && focus) tab.focus();
     });
     history.replaceState(null, '', `#${name}`);
+    renderActiveSection(); renderPagination();
   }
   root.querySelector('.sp-tabs').addEventListener('click', event => { const tab = event.target.closest('[data-tab]'); if (tab) switchTab(tab.dataset.tab); });
   root.querySelector('.sp-tabs').addEventListener('keydown', event => {
@@ -466,17 +602,19 @@
     switchTab(tabs[target].dataset.tab, true);
   });
   byId('sp-refresh').addEventListener('click', () => refresh(true));
+  byId('sp-more-revisions')?.addEventListener('click', () => loadPage('history'));
   byId('sp-sidebar-toggle')?.addEventListener('click', event => {
     const open = event.currentTarget.getAttribute('aria-expanded') !== 'true';
     event.currentTarget.setAttribute('aria-expanded', String(open));
     byId('sp-sidebar').classList.toggle('is-open', open);
   });
   byId('sp-retry').addEventListener('click', () => action('retry', {revision_id: state.active?.id || selectedRevisionId}, 'Processing retry queued.'));
-  byId('sp-revision').addEventListener('change', event => {
+  byId('sp-revision').addEventListener('change', async event => {
     if (busy) { event.target.value = selectedRevisionId; return; }
     if (geometryDirty && !window.confirm('Discard unsaved measured drawing edits and open another saved revision?')) { event.target.value = selectedRevisionId; return; }
     selectedRevisionId = event.target.value; selected.clear(); page = 0; geometryDirty = false; geometryEditIndex = -1;
-    render(true);
+    const url = new URL(window.location.href); url.searchParams.set('revision_id', selectedRevisionId); history.replaceState(null, '', url);
+    render(true); await refresh(true);
   });
   byId('sp-search').addEventListener('input', () => { page = 0; renderChecklist(); });
   byId('sp-filter').addEventListener('change', () => { page = 0; renderChecklist(); });
@@ -604,19 +742,28 @@
   byId('sp-document-form')?.addEventListener('submit', async event => {
     event.preventDefault(); if (busy || stateStale || !event.target.reportValidity()) return;
     if (byId('sp-documents').files.length > 5) { feedback('Choose up to five supporting documents per upload. You can upload another batch afterwards.', true); return; }
-    busy = true; updateControls(); let token = '';
+    busy = true; updateControls(); let token = '', uploadFailed = false, heartbeatPending = false;
     const progress = byId('sp-upload-progress'), status = byId('sp-upload-status'); progress.hidden = false; progress.value = 0;
     try {
       const start = new FormData(); start.set('action', 'start_upload'); const started = await request(start); token = started.token || started.upload_token || '';
+      documentUploadToken = token;
+      if (token) documentHeartbeatTimer = setInterval(async () => {
+        if (heartbeatPending || !documentUploadToken) return;
+        heartbeatPending = true;
+        try { const heartbeat = new FormData(); heartbeat.set('action', 'heartbeat_upload'); heartbeat.set('token', token); await request(heartbeat); }
+        catch (error) { status.textContent = `Upload activity could not be confirmed. ${error.message} Completed files remain preserved.`; }
+        finally { heartbeatPending = false; }
+      }, 30000);
       const form = new FormData(event.target); form.set('action', 'upload_document'); if (token) form.set('token', token);
       status.textContent = 'Uploading supporting documents…';
       const result = await uploadRequest(form, value => { progress.value = value; status.textContent = `Uploading supporting documents · ${Math.round(value)}%`; });
       status.textContent = result.message || 'Supporting documents saved. Submit the survey when all uploads are complete.';
       event.target.reset(); feedback('Supporting documents uploaded. Originals are preserved.');
-    } catch (error) { status.textContent = error.message; feedback(error.message, true); }
+    } catch (error) { uploadFailed = true; status.textContent = error.message; feedback(error.message, true); }
     finally {
+      clearInterval(documentHeartbeatTimer); documentHeartbeatTimer = null; documentUploadToken = '';
       if (token) {
-        try { const finish = new FormData(); finish.set('action', 'finish_upload'); finish.set('token', token); await request(finish); }
+        try { const finish = new FormData(); finish.set('action', uploadFailed ? 'interrupt_upload' : 'finish_upload'); finish.set('token', token); await request(finish); }
         catch (error) { feedback(`Upload completion could not be recorded. ${error.message}`, true); }
       }
       busy = false; progress.hidden = true; await refresh(true); updateControls();
@@ -685,8 +832,15 @@
   });
   byId('sp-geometry-reason')?.addEventListener('input', event => event.target.setCustomValidity(''));
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pollTimer); else refresh(); });
+  window.addEventListener('pagehide', () => {
+    if (!documentUploadToken) return;
+    const form = new FormData(); form.set('action', 'interrupt_upload'); form.set('token', documentUploadToken);
+    fetch(root.dataset.actionUrl, {method: 'POST', credentials: 'same-origin', keepalive: true, headers: {'X-CSRFToken': csrf(), 'Accept': 'application/json'}, body: form}).catch(() => {});
+  });
   window.addEventListener('beforeunload', event => { if (geometryDirty) { event.preventDefault(); event.returnValue = ''; } });
   try { state = JSON.parse(byId('survey-processing-state')?.textContent || '{}'); } catch (_) { state = {}; }
+  selectedRevisionId = new URL(window.location.href).searchParams.get('revision_id') || String(state.selected_revision_id || '');
+  detailToken = state.detail_token || '';
   const initialTab = window.location.hash.slice(1);
   root.querySelectorAll('button').forEach(button => { if (!button.title) button.title = button.textContent.trim(); });
   if (isClient) {

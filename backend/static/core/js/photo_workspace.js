@@ -6,7 +6,7 @@
   const readOnly = app.dataset.readonly === 'true';
   const checklistProcessingEnabled = app.dataset.checklistProcessing === 'true';
   let photoLimit = Number(app.dataset.photoLimit) || 500;
-  let cameraFiles = null, queueBusy=false;
+  let cameraFiles = null, queueBusy=false, activeUploadToken=null, uploadHeartbeatTimer=null;
   let visibleLimit=36, activeField=null;
   function visiblePhotos(){if(!activeField)return state.photos;const ids=new Set((state.mappings||[]).filter(m=>m.field_id===activeField&&["proposed","confirmed","manual"].includes(m.status)).map(m=>m.photo_id));return state.photos.filter(p=>ids.has(p.id));}
   const pendingAnalysis=new Set();
@@ -142,10 +142,19 @@
     if (!group) { message('Choose Civil, Electrical or Tower before uploading.'); return; }
     if (!files.length || files.length > photoLimit || files.some(f => f.size > 5 * 1024 * 1024 || (!['image/jpeg','image/png','image/webp'].includes(f.type) && !/\.(jpe?g|png|webp)$/i.test(f.name)))) { message(`Choose at most ${photoLimit} JPEG, PNG or WebP files, each 5 MB or smaller.`); return; }
     const button = el('upload-button'), progress = el('upload-progress'); button.disabled = true; progress.hidden = false; progress.value = 0;
-    let count = 0, duplicates = 0, uploadError='', uploadToken=null;
+    let count = 0, duplicates = 0, uploadError='', uploadToken=null, heartbeatPending=false, heartbeatError='';
     try {
       uploadToken=(await request('upload-session/', {})).token || null;
+      activeUploadToken=uploadToken;
+      if(uploadToken)uploadHeartbeatTimer=setInterval(async()=>{
+        if(heartbeatPending||!activeUploadToken)return;
+        heartbeatPending=true;
+        try{await request('upload-session/',{action:'heartbeat',token:uploadToken});heartbeatError='';}
+        catch(error){heartbeatError=error.message;message('Upload activity could not be confirmed. Completed photos are preserved. '+error.message);}
+        finally{heartbeatPending=false;}
+      },30000);
       for (let start = 0; start < files.length; start += 20) {
+        if(heartbeatError)throw new Error('Upload session needs checking before the next batch. '+heartbeatError);
         const batch = new FormData(); batch.append('group', group); files.slice(start, start + 20).forEach(f => batch.append('files', f));
         if(uploadToken)batch.append('processing_upload_token',uploadToken);
         const result = await request('upload/', batch); if(!checklistProcessingEnabled&&!uploadToken)result.photos.filter(p=>!p.duplicate).forEach(p=>pendingAnalysis.add(p.id)); count += result.photos.length; duplicates += result.photos.filter(p => p.duplicate).length;
@@ -153,7 +162,7 @@
       }
       el('photo-files').value = ''; if(el('photo-camera'))el('photo-camera').value=''; cameraFiles=null; if(el('photo-picked'))el('photo-picked').textContent='Photo group uploaded. Choose more photos when ready.';
     } catch (e) { uploadError=`${count} files processed before interruption. Existing uploads are preserved. ${e.message}`;message(uploadError); }
-    finally { if(uploadToken){try{await request('upload-session/',{token:uploadToken});}catch(e){uploadError+=' Upload session remains open: '+e.message;}} await queueUploadedGroup();button.disabled=false;await refresh();if(uploadError)message(uploadError+(checklistProcessingEnabled?' Successfully uploaded originals are preserved. Finish the remaining uploads, then submit this survey in AI Checklist & Drawings to start analysis.':' Successfully uploaded originals remain available for analysis.'));else if(checklistProcessingEnabled)message(`${count}/${files.length} files uploaded · ${duplicates} exact duplicates. Photos uploaded. Submit this survey in AI Checklist & Drawings to start analysis.`); }
+    finally { clearInterval(uploadHeartbeatTimer);uploadHeartbeatTimer=null;activeUploadToken=null;if(uploadToken){try{await request('upload-session/',{token:uploadToken,action:uploadError?'interrupt':'finish'});}catch(e){uploadError+=' Upload session remains open: '+e.message;}} await queueUploadedGroup();button.disabled=false;await refresh();if(uploadError)message(uploadError+(checklistProcessingEnabled?' Successfully uploaded originals are preserved. Open AI Checklist & Drawings to recover the interrupted upload session, finish remaining uploads, then submit this survey.':' Successfully uploaded originals remain available for analysis.'));else if(checklistProcessingEnabled)message(`${count}/${files.length} files uploaded · ${duplicates} exact duplicates. Photos uploaded. Submit this survey in AI Checklist & Drawings to start analysis.`); }
   };
   if(el('photo-camera'))el('photo-camera').onchange=()=>{cameraFiles=Array.from(el('photo-camera').files);el('photo-picked').textContent=cameraFiles.length+' camera photo selected';};
   el('photo-files').onchange=()=>{cameraFiles=null;if(el('photo-picked'))el('photo-picked').textContent=el('photo-files').files.length+' gallery photos selected';};
@@ -173,5 +182,9 @@
   // Appearance is controlled centrally by the bottom-left system menu.
   if(el('photo-more'))el('photo-more').onclick=()=>{visibleLimit+=36;render();};
   window.photoWorkspace={request,refresh,getState:()=>state,getCurrent:()=>current,message,readOnly,selectPhoto:id=>{const photo=state.photos.find(p=>p.id===id);if(photo){const index=visiblePhotos().findIndex(p=>p.id===id);if(index>=visibleLimit){visibleLimit=Math.ceil((index+1)/36)*36;render();}showPhoto(photo);}},getVisiblePhotos:visiblePhotos,filterField:id=>{activeField=id||null;visibleLimit=36;render();}};
+  window.addEventListener('pagehide',()=>{
+    if(!activeUploadToken)return;
+    fetch(base+'upload-session/',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json','X-CSRFToken':token,'Accept':'application/json'},body:JSON.stringify({action:'interrupt',token:activeUploadToken})}).catch(()=>{});
+  });
   refresh(); setInterval(refresh, 6000); document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 })();

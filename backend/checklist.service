@@ -8,13 +8,17 @@ User=YOUR_USER
 Group=www-data
 WorkingDirectory=/home/YOUR_USER/CHECKLIST_APP
 Environment="PATH=/home/YOUR_USER/CHECKLIST_APP/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=checklist.settings"
+EnvironmentFile=/etc/isurvix-field.env
+UMask=0077
 ExecStart=/home/YOUR_USER/CHECKLIST_APP/venv/bin/gunicorn \
           --config /home/YOUR_USER/CHECKLIST_APP/gunicorn_config.py \
           checklist.wsgi:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
-TimeoutStopSec=5
+TimeoutStopSec=120
 PrivateTmp=true
+NoNewPrivileges=true
 Restart=always
 RestartSec=10
 

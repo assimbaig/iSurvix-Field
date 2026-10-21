@@ -116,6 +116,52 @@ class NativeBindingTests(SimpleTestCase):
             field('manufacturer', 'Cabinet manufacturer'), field('model', 'Cabinet model number')])))[0]
 
     @patch('core.survey_checklist_mapping.local_ai.ollama')
+    def test_native_schema_constrains_exact_source_keys_and_template_fields(self, ollama):
+        batch = self.batch()
+        ollama.return_value = native()
+        mapping.bind_batch(batch, 'synthetic-local-model')
+        output_schema = ollama.call_args.args[1]['format']
+        decisions = output_schema['properties']['decisions']
+        self.assertEqual(decisions['required'], ['photo:17:finding:1'])
+        self.assertEqual(set(decisions['properties']), {'photo:17:finding:1'})
+        self.assertFalse(decisions['additionalProperties'])
+        targets = output_schema['$defs']['Decision']['properties']['field_id']['anyOf']
+        self.assertEqual(targets[0]['enum'], ['manufacturer', 'model'])
+        self.assertEqual(targets[1]['type'], 'null')
+        expected = len(mapping.SYSTEM) + len(mapping._user_content(batch)) + len(json.dumps(output_schema))
+        self.assertEqual(mapping.prompt_size(batch), expected)
+
+    @patch('core.survey_checklist_mapping.local_ai.ollama')
+    def test_unique_native_decisions_normalize_to_existing_proposals_or_unassigned(self, ollama):
+        for target in ['manufacturer', None]:
+            ollama.return_value = {'message': {'content': json.dumps({'decisions': {
+                'photo:17:finding:1': {'field_id': target, 'reason': 'Checked manufacturer evidence, or explicitly uncertain.'}}})}}
+            result = mapping.bind_batch(self.batch(), 'synthetic-local-model')
+            self.assertEqual(result['unassigned'], [] if target else ['photo:17:finding:1'])
+            self.assertEqual(len(result['bindings']), 1 if target else 0)
+            if target:
+                self.assertEqual(result['bindings'][0]['field_id'], target)
+                self.assertEqual(result['bindings'][0]['verification_status'], 'needs_review')
+
+    @patch('core.survey_checklist_mapping.local_ai.ollama')
+    def test_native_decision_objects_reject_duplicate_keys_unknown_ids_missing_or_extra_data(self, ollama):
+        valid = {'field_id': 'manufacturer', 'reason': 'Legible manufacturer label.'}
+        bad = [
+            {'decisions': {}}, {'decisions': []},
+            {'decisions': {'foreign': valid}},
+            {'decisions': {'photo:17:finding:1': {**valid, 'field_id': 'foreign'}}},
+            {'decisions': {'photo:17:finding:1': {'field_id': None, 'reason': ''}}},
+            {'decisions': {'photo:17:finding:1': {**valid, 'approved': True}}},
+            {'decisions': {'photo:17:finding:1': valid}, 'approved': True},
+        ]
+        raw_duplicate = '{"decisions":{"photo:17:finding:1":{"field_id":"manufacturer","reason":"First"},"photo:17:finding:1":{"field_id":null,"reason":"Second"}}}'
+        for content in [*[json.dumps(value) for value in bad], raw_duplicate]:
+            with self.subTest(content=content):
+                ollama.return_value = {'message': {'content': content}}
+                with self.assertRaises(mapping.MappingError):
+                    mapping.bind_batch(self.batch(), 'synthetic-local-model')
+
+    @patch('core.survey_checklist_mapping.local_ai.ollama')
     def test_actual_raw_cabinet_observation_binds_to_manufacturer_as_proposal(self, ollama):
         batch = self.batch()
         original = deepcopy(batch)

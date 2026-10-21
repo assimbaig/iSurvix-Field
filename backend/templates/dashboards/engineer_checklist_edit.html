@@ -86,7 +86,7 @@
                     <div class="image-grid mt-3">
                         {% for img in q.images %}
                         <div class="image-tile">
-                            <img src="/media/{{ img }}" alt="Uploaded">
+                            <img src="{% url 'private_checklist_file' checklist.id %}?path={{ img|urlencode }}" alt="Uploaded">
                         </div>
                         {% endfor %}
                     </div>

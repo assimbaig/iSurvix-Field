@@ -1,5 +1,28 @@
 # iSurvix Field: local Codex development brief
 
+## Release hardening verification — 21 October 2026
+
+The current feature branch is `feat/secure-outbound-survey-workers`, based on the
+reviewed `79d9772`. Read `docs/RELEASE_HARDENING.md` and the requirement/evidence
+ledgers under `docs/development/RELEASE_HARDENING_*` before using older results.
+
+This release adds private media delivery, audited abandoned-upload recovery,
+lightweight progress/lazy details and an authenticated outbound PC worker bridge.
+Installed Agency specialists implemented scoped areas and independent QA reviewed
+the original requirements, Nginx, concurrency, browser flows and native processing.
+The final native PDF/workbook job processed nine sources and produced real draft
+PDF/DXF outputs after strict per-source mapping decisions fixed duplicate bindings.
+
+Operational records, uploads, approval state and the original port8000 process were
+preserved. Verification used isolated databases/media and loopback services. Before
+normal local startup after updating, preserve a checkpoint and review/apply additive
+migrations0048–0050. The operational database was not migrated during this task.
+
+Remaining external dependencies are actual VPS access/TLS setup, verified
+manufacturer CAD/approved measurements, and a field-reviewed full-site Z93004
+benchmark reference. The bounded Z93004 result is not full-site accuracy or sustained
+native-throughput verification. Do not merge or deploy automatically.
+
 ## Current integration verification - 21 October 2026
 
 Use `docs/development/INTEGRATED_VERIFICATION_REQUIREMENTS.json` and

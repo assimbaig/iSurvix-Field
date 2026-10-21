@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError as SchemaErro
 
 from . import evidence_pipeline, local_ai
 
-VERSION = 'survey-checklist-mapping-v1'
+VERSION = 'survey-checklist-mapping-v2'
 MAX_FINDINGS = 12
 MAX_CANDIDATES = 40
 MAX_PROMPT_CHARS = 12_000
@@ -35,7 +35,8 @@ One finding can have at most one proposed field binding. Use only supplied keys 
 field IDs. When ambiguous, unsupported, irrelevant or conflicting, leave unassigned.
 Do not invent values, compliance, measurements, checklist fields or human approvals.
 Return the required JSON object. These are proposed locations requiring human review;
-mapping does not confirm evidence or approve a checklist.'''
+mapping does not confirm evidence or approve a checklist. Return one decision for
+each supplied finding key. Use a null field_id when the finding is unassigned.'''
 
 
 class MappingError(ValueError):
@@ -184,9 +185,68 @@ class MappingResponse(BaseModel):
     unassigned: list[str] = Field(default_factory=list, max_length=MAX_FINDINGS)
 
 
+class Decision(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    field_id: str | None = Field(max_length=160)
+    reason: str = Field(min_length=1, max_length=600)
+
+    @field_validator('reason')
+    @classmethod
+    def meaningful_reason(cls, value):
+        if not value.strip():
+            raise ValueError('A decision needs a reason.')
+        return value.strip()
+
+
+def response_schema(batch):
+    """Constrain native generation to this immutable batch's real identifiers.
+
+    Long document/page keys are easy for a small model to abbreviate. JSON syntax
+    alone is insufficient: decoding must use the same closed ID sets that the
+    independent response validator checks. Duplicate/contradictory bindings still
+    fail validation; these constraints never accept or repair a guessed match.
+    """
+    keys = [item['finding_key'] for item in batch.get('findings', [])]
+    fields = [item['id'] for item in batch.get('catalog', [])]
+    decision = Decision.model_json_schema()
+    decision['properties']['field_id']['anyOf'][0]['enum'] = fields
+    return {'type': 'object', 'properties': {'decisions': {'type': 'object',
+        'properties': {key: {'$ref': '#/$defs/Decision'} for key in keys},
+        'required': keys, 'additionalProperties': False}}, 'required': ['decisions'],
+        'additionalProperties': False, '$defs': {'Decision': decision}}
+
+
+def _unique_object(pairs):
+    data = {}
+    for key, value in pairs:
+        if key in data:
+            raise ValueError('Repeated JSON property.')
+        data[key] = value
+    return data
+
+
+def _decode_response(content, keys):
+    raw = json.loads(content, object_pairs_hook=_unique_object)
+    if isinstance(raw, dict) and 'decisions' in raw:
+        decisions = raw['decisions']
+        if set(raw) != {'decisions'} or not isinstance(decisions, dict) or set(decisions) != set(keys):
+            raise ValueError('Unexpected or missing finding decision.')
+        bindings, unassigned = [], []
+        for key in keys:
+            decision = Decision.model_validate(decisions[key])
+            if decision.field_id is None:
+                unassigned.append(key)
+            else:
+                bindings.append({'finding_key': key, **decision.model_dump()})
+        return MappingResponse.model_validate({'bindings': bindings, 'unassigned': unassigned})
+    # Retained integrations return the canonical list contract. They retain the
+    # same strict unknown/repeated/contradictory binding checks below.
+    return MappingResponse.model_validate(raw)
+
+
 def prompt_size(batch):
     """Count instructions, evidence JSON and output schema in the 12k bound."""
-    return len(SYSTEM) + len(_user_content(batch)) + len(json.dumps(MappingResponse.model_json_schema()))
+    return len(SYSTEM) + len(_user_content(batch)) + len(json.dumps(response_schema(batch)))
 
 
 def mapping_batches(analyses, schema):
@@ -284,7 +344,7 @@ def bind_batch(batch, model, base_url=None):
     from django.conf import settings
     endpoint = base_url if base_url is not None else getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
     response = local_ai.ollama('/api/chat', {'model': model, 'stream': False, 'think': False,
-        'format': MappingResponse.model_json_schema(), 'messages': [
+        'format': response_schema(batch), 'messages': [
             {'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': _user_content(batch)}],
         'options': {'temperature': 0, 'num_ctx': 8192, 'num_predict': 1800}}, base_url=endpoint)
     try:
@@ -293,8 +353,8 @@ def bind_batch(batch, model, base_url=None):
         content = response['message']['content']
         if not isinstance(content, str) or len(content) > 30_000:
             raise MappingError('The local model returned an invalid checklist mapping response.')
-        parsed = MappingResponse.model_validate_json(content)
-    except (KeyError, TypeError, SchemaError) as exc:
+        parsed = _decode_response(content, keys)
+    except (KeyError, TypeError, ValueError, SchemaError) as exc:
         raise MappingError('The local model returned invalid checklist bindings; no evidence was confirmed.') from exc
     bindings, seen = [], set()
     for binding in parsed.bindings:

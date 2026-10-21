@@ -5,8 +5,10 @@ from . import account_views
 from . import standard_checklist_views
 from . import checklist_wizard_views
 from .legacy_routes import protected_legacy
+from .private_files import checklist_file
 
 urlpatterns = [
+    path('private/checklists/<int:checklist_id>/file/', checklist_file, name='private_checklist_file'),
     path('governance/industries/',include('core.industry_urls')),
     path('work/review-routes/',include('core.review_route_urls')),
     path('devadmin/checklist-wizard/',checklist_wizard_views.wizard,name='checklist_wizard'),

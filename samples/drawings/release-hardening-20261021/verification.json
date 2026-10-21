@@ -1,0 +1,97 @@
+{
+  "synthetic": true,
+  "real_site_data": false,
+  "record": {
+    "checklist": 1,
+    "label": "synthetic-measured",
+    "released": true,
+    "pages": 5,
+    "pdf_checks": [
+      {
+        "page": 1,
+        "inside_sheet": true,
+        "text_characters": 2813,
+        "draft_or_released_label": true
+      },
+      {
+        "page": 2,
+        "inside_sheet": true,
+        "text_characters": 1173,
+        "draft_or_released_label": true
+      },
+      {
+        "page": 3,
+        "inside_sheet": true,
+        "text_characters": 1041,
+        "draft_or_released_label": true
+      },
+      {
+        "page": 4,
+        "inside_sheet": true,
+        "text_characters": 1059,
+        "draft_or_released_label": true
+      },
+      {
+        "page": 5,
+        "inside_sheet": true,
+        "text_characters": 1427,
+        "draft_or_released_label": true
+      }
+    ],
+    "dxf_checks": [
+      {
+        "file": "sv-001.dxf",
+        "entities": 147,
+        "audit_errors": 0
+      },
+      {
+        "file": "sv-002.dxf",
+        "entities": 56,
+        "audit_errors": 0
+      },
+      {
+        "file": "sv-003.dxf",
+        "entities": 39,
+        "audit_errors": 0
+      },
+      {
+        "file": "sv-004.dxf",
+        "entities": 39,
+        "audit_errors": 0
+      },
+      {
+        "file": "sv-006.dxf",
+        "entities": 79,
+        "audit_errors": 0
+      }
+    ],
+    "geometry_digest": "d35c1f31710130c53795bd0bd8b0f490b84392b471548cceba3c26f98201c5a7",
+    "source_refs_retained": true,
+    "rendered_pages": [
+      "F:\\iSurvix\\iSurvix-Field\\samples\\drawings\\release-hardening-20261021\\checked-page-01.png",
+      "F:\\iSurvix\\iSurvix-Field\\samples\\drawings\\release-hardening-20261021\\checked-page-02.png",
+      "F:\\iSurvix\\iSurvix-Field\\samples\\drawings\\release-hardening-20261021\\checked-page-03.png",
+      "F:\\iSurvix\\iSurvix-Field\\samples\\drawings\\release-hardening-20261021\\checked-page-04.png",
+      "F:\\iSurvix\\iSurvix-Field\\samples\\drawings\\release-hardening-20261021\\checked-page-05.png"
+    ],
+    "files": {
+      "geometry.json": "316787706b9fded154cb6daecd001f5f6750729d9fe5ebb4ef7910feb88890b0",
+      "survey-drawings.pdf": "0e523a9b15fae250db8bfff6f37f6b2f408b821bbe6ce1044ac7865e84e3d68e",
+      "sv-001.dxf": "d6667547f415c7f4a07cdc60bf6dfa5e2e4a8a635079e620134260345f968fd4",
+      "sv-001.png": "59372ac66434d2d7c069ee8040b4bc97eeba1302b75b970428cc5f0f0ada499e",
+      "sv-002.dxf": "452f7555093349b8e826efaa49d0d0b368d466697f3ef9a2cc79eb1ad46c53a8",
+      "sv-002.png": "dcb61a52d74dc0cd91b044787b3bb6bbd86b34e73bde7438dcb327c6a48032a1",
+      "sv-003.dxf": "3123ba85618190c6088a73880a737ed6a62b9b119a45bbd31bd4ae23092b946e",
+      "sv-003.png": "d0f80e255e6fde109f80334e56498d8d939e7e961b6f127a4b172319cb19a9ea",
+      "sv-004.dxf": "68fd5b1b87b60abcd54007d2efef3fe47f47233f0507953c9cb29122e5d5a9fa",
+      "sv-004.png": "164f3950bc4427e7a8340af3b1f60923627201075eee3763ef196b616cbc9158",
+      "sv-006.dxf": "26f4be6f86efe2f0eab29da6d065963b39a50e74daaf637fba6ba34280a92c00",
+      "sv-006.png": "1b7a016f12b97093563b2327ce6facf84f9cfab411547f5a1474de9ece1203ff"
+    }
+  },
+  "limitations": [
+    "Generic human-verified cabinet envelope only; not manufacturer geometry",
+    "Optional tower dimension and condition remain missing",
+    "Release is a synthetic workflow exercise, not engineering certification"
+  ]
+}
