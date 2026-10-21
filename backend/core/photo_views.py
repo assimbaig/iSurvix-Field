@@ -105,8 +105,9 @@ def workspace(request, checklist_id):
     checklist=access['checklist']
     from .field_intake_service import site_information_fields
     from .access import role_for
+    from .survey_processing import enabled
     internal=role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER','TEAM_LEAD'}
-    return render(request,'dashboards/photo_workspace.html',{'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':settings.OLLAMA_MODEL})
+    return render(request,'dashboards/photo_workspace.html',{'checklist_processing_enabled':enabled(checklist),'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':settings.OLLAMA_MODEL})
 
 @require_GET
 @api_errors
@@ -186,6 +187,9 @@ def evidence(request,checklist_id,photo_id,variant):
 @api_errors
 def enqueue(request,checklist_id):
     c=survey_access(request,checklist_id,edit=True)['checklist']
+    from .survey_processing import enabled
+    if enabled(c):
+        raise ValidationError('Submit this survey in AI Checklist & Drawings to start analysis. Uploaded originals are preserved.')
     try:
         data=body(request)
         ids=data.get('photo_ids')

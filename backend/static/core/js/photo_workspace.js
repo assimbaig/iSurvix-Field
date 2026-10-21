@@ -4,6 +4,7 @@
   if (!app) return;
   const el = id => document.getElementById(id);
   const readOnly = app.dataset.readonly === 'true';
+  const checklistProcessingEnabled = app.dataset.checklistProcessing === 'true';
   let photoLimit = Number(app.dataset.photoLimit) || 500;
   let cameraFiles = null, queueBusy=false;
   let visibleLimit=36, activeField=null;
@@ -118,7 +119,7 @@
     document.dispatchEvent(new CustomEvent('photo-state', {detail:state}));
   }
   async function queueUploadedGroup(){
-    if(readOnly||queueBusy||!pendingAnalysis.size)return;
+    if(readOnly||checklistProcessingEnabled||queueBusy||!pendingAnalysis.size)return;
     queueBusy=true;const ids=Array.from(pendingAnalysis);
     try{await request('enqueue/',{photo_ids:ids,queue_when_busy:true});ids.forEach(id=>pendingAnalysis.delete(id));message('Photo group uploaded and durably queued. Groups wait their turn for the local worker; review proposed links when analysis finishes.');await refresh();}
     catch(error){ids.forEach(id=>pendingAnalysis.delete(id));message('Originals uploaded, but analysis did not start: '+error.message+' Use Analyze unprocessed photos to retry.');}
@@ -147,12 +148,12 @@
       for (let start = 0; start < files.length; start += 20) {
         const batch = new FormData(); batch.append('group', group); files.slice(start, start + 20).forEach(f => batch.append('files', f));
         if(uploadToken)batch.append('processing_upload_token',uploadToken);
-        const result = await request('upload/', batch); if(!uploadToken)result.photos.filter(p=>!p.duplicate).forEach(p=>pendingAnalysis.add(p.id)); count += result.photos.length; duplicates += result.photos.filter(p => p.duplicate).length;
+        const result = await request('upload/', batch); if(!checklistProcessingEnabled&&!uploadToken)result.photos.filter(p=>!p.duplicate).forEach(p=>pendingAnalysis.add(p.id)); count += result.photos.length; duplicates += result.photos.filter(p => p.duplicate).length;
         progress.value = count / files.length * 100; message(`${count}/${files.length} processed · ${duplicates} exact duplicates.`);
       }
       el('photo-files').value = ''; if(el('photo-camera'))el('photo-camera').value=''; cameraFiles=null; if(el('photo-picked'))el('photo-picked').textContent='Photo group uploaded. Choose more photos when ready.';
     } catch (e) { uploadError=`${count} files processed before interruption. Existing uploads are preserved. ${e.message}`;message(uploadError); }
-    finally { if(uploadToken){try{await request('upload-session/',{token:uploadToken});}catch(e){uploadError+=' Upload session remains open: '+e.message;}} await queueUploadedGroup();button.disabled=false;await refresh();if(uploadError)message(uploadError+' Successfully uploaded originals remain available for analysis.'); }
+    finally { if(uploadToken){try{await request('upload-session/',{token:uploadToken});}catch(e){uploadError+=' Upload session remains open: '+e.message;}} await queueUploadedGroup();button.disabled=false;await refresh();if(uploadError)message(uploadError+(checklistProcessingEnabled?' Successfully uploaded originals are preserved. Finish the remaining uploads, then submit this survey in AI Checklist & Drawings to start analysis.':' Successfully uploaded originals remain available for analysis.'));else if(checklistProcessingEnabled)message(`${count}/${files.length} files uploaded · ${duplicates} exact duplicates. Photos uploaded. Submit this survey in AI Checklist & Drawings to start analysis.`); }
   };
   if(el('photo-camera'))el('photo-camera').onchange=()=>{cameraFiles=Array.from(el('photo-camera').files);el('photo-picked').textContent=cameraFiles.length+' camera photo selected';};
   el('photo-files').onchange=()=>{cameraFiles=null;if(el('photo-picked'))el('photo-picked').textContent=el('photo-files').files.length+' gallery photos selected';};

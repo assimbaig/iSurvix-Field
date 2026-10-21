@@ -1,0 +1,82 @@
+{
+  "at": "2026-10-21T18:16:36.027115+00:00",
+  "branch": "feat/integrated-survey-verification",
+  "base_commit": "4ce27bd91e463de3a40a457ef2cec4dfd7afb2e5",
+  "implementation": "Existing Django records, templates, auth/project policies and local Ollama; no replacement app, paid fallback, migration or dependency changes",
+  "requirements": {
+    "verified": 88,
+    "total": 89,
+    "blocked": 1,
+    "note": "88 instruction/evidence rows verified; one additional live-runtime refresh follow-up explicitly blocked by automatic approval review"
+  },
+  "tests": {
+    "full_core": {
+      "count": 666,
+      "seconds": 67.79,
+      "passed": true
+    },
+    "independent_focused": {
+      "count": 131,
+      "passed": true
+    },
+    "django_check": "passed",
+    "migration_drift": "No changes detected",
+    "pip_check": "No broken requirements found",
+    "javascript_syntax": "4 modified JS files passed",
+    "git_diff_check": "passed"
+  },
+  "real_workflows": [
+    "Actual configured qwen3.5:4b vision request with165769bytes from authorisedZ93004photo; visibleobjects described;27.59s",
+    "Independent browser200realJPEG uploads in10batchesof20;progress20..200;duplicates/corruptinput handled;originalhashes preserved;36->72thumbnail loading",
+    "Native two-photo survey, record/unit correction, explicitaccept/application, changed-input revision with previous outputs preserved, fullthree-layerQA/TLclosure and release",
+    "Independent native one-photo four-layerproject: all7proposals unaccepted initially, explicitEngineerreview/apply, QA->TL->namedClientclosure, exact-packageQA, authorizedTLrelease;ClientPDF/DXF/ZIP downloads",
+    "PrematureTLrelease409 and namedClientdraftPDF404;three-layertaskunassignedClient404;foreign/wrong/inactiveuserguards",
+    "Real local-modelofflinefailure, retry, actualworkerprocesscrash aftersourcecheckpoint, natural five-minute leaseexpiry, freshworker resumes5/5 includingPDF/workbooktext/embeddedimage;cachedsourcehash retained",
+    "Four actual vectorPDF sheets visually inspected;allDXFs audited;entitydigests shared;Missingmeasurements/units/scale/readabletitleblocks verified",
+    "Editor exactPK/revision, tree/group/ungroup/order, recommendations once, branding, publishedlocks, failedsave retention/retry and mobile editable controls verified in currentbrowser"
+  ],
+  "bugs_fixed": [
+    "Recorded-unit conversion and incompatible-unit correction package poisoning; preserve exact bounded decimal values",
+    "Known stable field ID could bind a second similarly labelled field",
+    "Accepted measurement units missing from drawings; missing dimensions ambiguously shown as unit-only; scale label alignment",
+    "Duplicate additional acceptance/audit events and supporting-document retries failing at capacity",
+    "Right-only client logo shifted to left; new unassigned templates incorrectly inherited Nokia/TAWAL; subset copying omitted company logo",
+    "Valid staged editor inputs lost after invalidlogo/storage error; errors previously returned misleading200",
+    "Stale read allowed further actions; HTMLloginpage treated as successfulsave; revision/filterchanges during mutation; progress prematurely100%",
+    "Missing review policy caused actual activity-page500",
+    "Opt-in photo page showed disconnected legacyanalysis progress/actions and wrongreviewlink",
+    "AI jobs started before existing qualification/coordinate-reference requirements were met"
+  ],
+  "data_preservation": {
+    "media_files_hashed": 806,
+    "private_config_files_hashed": 12,
+    "file_differences": [],
+    "core_tables_compared": 53,
+    "changed_core_tables": [],
+    "sqlite_integrity": "ok",
+    "live_data_modified_by_verification": false
+  },
+  "runtime_blocker": {
+    "action": "Restart the existing local port8000 app and survey worker onto the verified source",
+    "automatic_approval_result": "Rejected: blocked by policy",
+    "executed": false,
+    "existing_processes_preserved": true,
+    "verified_runtime": "Current application code was browser/native tested in the isolated Django instance on127.0.0.1:8886 with separate synthetic SQLite/media",
+    "input_or_access_required": "Normal local app/worker restart, or permitted process-management access; no credentials, model download or database replacement is needed",
+    "unable_to_run": "Restarted live port8000 app/worker smoke against current imported modules",
+    "no_deployment_merge_or_force_push": true
+  },
+  "limits": [
+    "Full378-photoZ93004 plus complete247-image workbook native benchmark not executed; native200-photo sustained processing throughput unbenchmarked",
+    "No manufacturer/site accuracy or engineering-compliance claim; no supplied approved DWG/DXF/PDF reference in the authorised site source folder; exact profiles require verified references",
+    "Confidence qualitative/uncalibrated; generic measured envelopes and supported evidence schedules only; unknown geometry withheld",
+    "Existing live8000/worker importedmodules not restarted; current code verified in isolated realDjango runtimes. No operational surveys approved or modified during tests"
+  ],
+  "screenshots": "docs/images/integrated-verification-20261021",
+  "samples": "samples/drawings/integration-verification-20261021",
+  "guide": "docs/manual/AI_SURVEY_TEAM_GUIDE.md",
+  "prechange_checkpoint": ".local/backups/project-checkpoint-20261021-204352",
+  "merged": false,
+  "deployed": false,
+  "force_pushed": false
+}

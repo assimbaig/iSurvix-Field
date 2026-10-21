@@ -1,10 +1,7 @@
 """Shared standard library; scoped Admin copies remain ordinary editable drafts."""
 import json
 from copy import deepcopy
-from pathlib import Path
-from django.conf import settings
 from django.core.exceptions import ValidationError,PermissionDenied
-from django.core.files.base import ContentFile
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render,redirect
@@ -41,7 +38,6 @@ def library(request):
     if request.method=='GET':return page(request)
     if is_super_admin(request.user):
         raise PermissionDenied('Super Admin administers the shared catalog. Project Admins create and publish project checklist drafts.')
-    stored=[]
     try:
         try:size=int(request.META.get('CONTENT_LENGTH') or 0)
         except (TypeError,ValueError):raise ValidationError('Invalid checklist request length.')
@@ -62,21 +58,13 @@ def library(request):
         with transaction.atomic():
             lock_governance(request.user);entry_for(request.user,key)
             draft=ChecklistTemplate(name=name.strip(),definition=deepcopy(definition),created_by=request.user,
-                client_left_name='Nokia' if key=='telecom_survey_default' else '',
-                client_right_name='TAWAL' if key=='telecom_survey_default' else '')
-            if key=='telecom_survey_default':
-                for slot,filename in [('left','nokia.png'),('right','tawal.png')]:
-                    asset=Path(settings.BASE_DIR)/'static/core/img'/filename
-                    if asset.is_file():
-                        field=getattr(draft,f'client_{slot}_logo')
-                        field.save(filename,ContentFile(asset.read_bytes()),save=False);stored.append(field)
+                client_left_name='',client_right_name='')
             draft.save()
             audit(request.user,'standard_checklist_draft_created',getattr(request.user.profile,'project',None),
                 template_id=draft.pk,standard_key=key,standard_version=1,
                 room_count=len(rooms),section_count=len(definition['sections']))
         return redirect('checklist_wizard_edit' if data.get('wizard')=='1' or request.GET.get('wizard')=='1' else 'checklist_template_edit',template_id=draft.pk)
     except (ValidationError,ValueError,TypeError) as error:
-        for field in stored:field.delete(save=False)
         message='; '.join(error.messages) if isinstance(error,ValidationError) else str(error)
         if request.content_type=='application/json':return JsonResponse({'error':message},status=400)
         return page(request,error=message,status=400)

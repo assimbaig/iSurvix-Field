@@ -95,3 +95,41 @@ migrations and starts the application plus its independent survey worker. Keep t
 PC and Ollama running during processing. Restarting preserves queued jobs; an
 interrupted active job resumes after its lease expires, normally five minutes.
 Keep the `.local` folder: it contains your database, photos, documents and outputs.
+
+For a developer starting each process separately, open two terminals in
+`F:\iSurvix\iSurvix-Field`. Run this in the application terminal:
+
+```powershell
+.local\venv\Scripts\python.exe backend\manage.py runserver 127.0.0.1:8000 --noreload --settings=checklist.settings_local
+```
+
+Run this in the worker terminal (Ollama must already be running locally):
+
+```powershell
+$env:ISURVIX_PHOTO_OLLAMA_URL='http://127.0.0.1:11435'
+.local\venv\Scripts\python.exe backend\manage.py survey_processing_worker --settings=checklist.settings_local
+```
+
+Port 11435 is the existing independent photo-model service started by the normal
+launcher. If starting with only the standard local Ollama service on 11434, omit
+the environment-variable line. Use one worker/launcher instance; do not start a
+second copy while the normal launcher is already running.
+
+## Review and recovery tips
+
+For a checklist-required survey, **Upload photos** preserves the selected group;
+analysis starts when you use **Submit for AI processing** in **AI Checklist & Drawings**.
+Complete the assigned site inputs, coordinate reference and review-team setup first.
+The ordinary inspection and non-checklist survey photo workflow keeps its existing
+upload-and-analyse controls.
+
+Check recorded measurement units against the source. Compatible units are converted
+to the checklist unit; unsupported or missing units remain for review. For example,
+1200 mm becomes 1.2 m when the checklist requests metres. A missing measurement stays
+**Missing**, including in the drawing schedule. A reviewed photo alone does not
+establish a compliant result.
+
+If a save succeeds but the refreshed state cannot load, the interface reports the
+confirmed save and pauses further changes. Use **Refresh** before continuing. If a
+template save rejects an invalid logo, your entered draft remains visible with an
+unsaved warning; fix the file and save again. Existing saved logos remain intact.

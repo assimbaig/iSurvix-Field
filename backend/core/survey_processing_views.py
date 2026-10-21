@@ -178,7 +178,11 @@ def action(request, checklist_id):
                 c, checked = pipeline.access(request, checklist_id)
                 if not checked['can_submit']:
                     raise ValidationError('The survey is no longer editable.')
-                if c.survey_documents.count() + len(prepared) > 50:
+                # Retries and repeated files do not consume extra capacity.
+                # Count distinct new hashes while holding the survey write lock.
+                existing_hashes = set(c.survey_documents.values_list('sha256', flat=True))
+                new_hashes = {item['sha256'] for item in prepared} - existing_hashes
+                if len(existing_hashes) + len(new_hashes) > 50:
                     raise ValidationError('Use at most 50 supporting documents per survey.')
                 for item in prepared:
                     if c.survey_documents.filter(sha256=item['sha256']).exists():

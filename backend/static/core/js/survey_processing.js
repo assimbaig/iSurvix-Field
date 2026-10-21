@@ -8,9 +8,9 @@
   const selected = new Set();
   const activeStatuses = new Set(['queued', 'analysing_evidence', 'preparing_checklist', 'preparing_drawings']);
   const stageCodes = ['queued', 'analysing_evidence', 'preparing_checklist', 'preparing_drawings', 'ready_for_review'];
-  let state = {}, selectedRevisionId = '', page = 0, busy = false, polling = false, renderedSignature = '', correctionItem = null, correctionMode = 'checklist';
+  let state = {}, selectedRevisionId = '', page = 0, busy = false, polling = false, stateStale = false, renderedSignature = '', correctionItem = null, correctionMode = 'checklist';
   let geometryRecords = [], geometryDirty = false, geometryEditIndex = -1, geometryRevisionId = '';
-  let pollTimer;
+  let pollTimer, refreshPending = null;
   const pageSize = 30;
   const display = value => {
     if (value === undefined || value === null || value === '') return 'Not recorded';
@@ -37,7 +37,7 @@
   const csrf = () => root.querySelector('[name=csrfmiddlewaretoken]')?.value || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
   const currentRevision = () => array(state.revisions).find(revision => String(revision.id) === String(selectedRevisionId)) || null;
   const ready = revision => revision && !activeStatuses.has(statusKey(revision.status)) && statusKey(revision.status) !== 'failed' && array(revision.checklist_items).length > 0;
-  const editable = revision => canReview && ready(revision) && revision.current !== false && !revision.released && statusKey(revision.status) !== 'released';
+  const editable = revision => !stateStale && canReview && ready(revision) && revision.current !== false && !revision.released && statusKey(revision.status) !== 'released';
   const feedback = (message, error = false) => {
     const target = byId('sp-feedback');
     target.textContent = message;
@@ -57,12 +57,14 @@
       method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf(), 'Accept': 'application/json'}, body: form
     });
     const contentType = response.headers.get('content-type') || '';
-    const payload = contentType.includes('application/json') ? await response.json() : null;
-    if (!response.ok) throw new Error(payload ? errorMessage(payload) : `Request failed (${response.status}). Refresh the page if your session has expired.`);
-    return payload || {};
+    if (!contentType.includes('application/json')) throw new Error(`The server did not confirm this action (${response.status}). Refresh the page and sign in again if your session has expired.`);
+    const payload = await response.json();
+    if (!response.ok) { const error = new Error(errorMessage(payload)); error.status = response.status; throw error; }
+    return payload;
   }
   async function action(name, fields = {}, success = 'Saved.') {
     if (busy) return null;
+    if (stateStale) { feedback('Refresh the saved processing state before making another change.', true); return null; }
     busy = true;
     root.setAttribute('aria-busy', 'true');
     updateControls();
@@ -71,11 +73,12 @@
     for (const [key, value] of Object.entries(fields)) form.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
     try {
       const payload = await request(form);
-      feedback(payload.message || success);
-      await refresh(true);
+      const refreshed = await refresh(true);
+      feedback(refreshed ? payload.message || success : 'The server saved this action, but its updated state could not be loaded. Use Refresh before continuing. Do not repeat the action.', !refreshed);
       return payload;
     } catch (error) {
-      feedback(error.message, true);
+      if (!error.status) stateStale = true;
+      feedback(error.status ? error.message : `${error.message} The save outcome is unconfirmed. Use Refresh to check the saved state before retrying.`, true);
       return null;
     } finally {
       busy = false;
@@ -114,13 +117,15 @@
     const label = isClient && array(active?.drawings).some(drawing => drawing.released) ? 'Released outputs available' : active?.label || active?.status || 'Not submitted';
     byId('sp-status').textContent = label;
     const total = Number(active?.total || 0), completed = Number(active?.completed || 0);
-    const percentage = Number(active?.progress ?? (total ? completed / total * 100 : 0));
+    const status = statusKey(active?.status), evidenceProgress = total ? Math.max(0, Math.min(1, completed / total)) : 0;
+    const stageProgress = {queued: 0, analysing_evidence: 5 + evidenceProgress * 75, preparing_checklist: 85, preparing_drawings: 95, ready_for_review: 100, released: 100, failed: evidenceProgress * 80};
+    const percentage = Number(active?.progress ?? stageProgress[status] ?? 0);
     byId('sp-progress').value = Number.isFinite(percentage) ? Math.max(0, Math.min(100, percentage)) : 0;
     byId('sp-counts').textContent = active ? `Revision ${active.revision} · ${completed} of ${total} evidence units processed${state.upload_state?.inflight ? ' · Uploads are still in progress' : ''}` : 'Complete saved survey inputs and finish uploads before submitting.';
     const error = byId('sp-error');
     error.hidden = !active?.error;
     error.textContent = active?.error || '';
-    const status = statusKey(active?.status), stageIndex = stageCodes.indexOf(status);
+    const stageIndex = stageCodes.indexOf(status);
     byId('sp-stages').querySelectorAll('li').forEach((item, index) => {
       item.classList.toggle('is-current', index === stageIndex);
       item.classList.toggle('is-complete', stageIndex > index || status === 'released');
@@ -128,7 +133,7 @@
     });
     const retry = byId('sp-retry');
     retry.hidden = !(root.dataset.canSubmit === 'true' && status === 'failed');
-    retry.disabled = busy;
+    retry.disabled = busy || stateStale;
   }
   function renderRevisions() {
     const revisions = array(state.revisions);
@@ -179,7 +184,9 @@
       const label = node('td'); label.append(node('strong', itemLabel(item)), node('small', item.section || 'Checklist'));
       if (item.proposed_addition) label.append(node('small', 'Proposed addition — not part of published template'));
       tr.append(label);
-      const answer = node('td'); answer.append(node('span', display(item.accepted ? item.value : item.proposed_answer ?? item.value)), document.createElement('br'));
+      const proposedValue = item.accepted ? item.value : item.proposed_answer ?? item.value;
+      const answerText = display(proposedValue) + (item.unit && normalStatus(item.status) !== 'not_applicable' && proposedValue !== null && proposedValue !== undefined && proposedValue !== '' ? ` ${item.unit}` : '');
+      const answer = node('td'); answer.append(node('span', answerText), document.createElement('br'));
       const badge = node('span', item.status || 'Needs review', 'sp-status-pill'); badge.dataset.state = normalStatus(item.status); answer.append(badge);
       if (item.reason) answer.append(node('small', item.reason));
       tr.append(answer);
@@ -292,13 +299,17 @@
   function renderAdditional(revision) {
     const panel = byId('sp-additional-proposals'), wrapper = byId('sp-additional-items');
     const proposals = array(revision?.suggested_items);
+    const accepted = new Set(array(revision?.accepted_additional_items).map(item => JSON.stringify(item)));
     panel.hidden = !proposals.length; wrapper.replaceChildren();
     proposals.forEach((proposal, index) => {
       const row = node('div', null, 'sp-record');
+      const reviewed = accepted.has(JSON.stringify(proposal));
       if (editable(revision)) {
         const label = node('label', null, 'sp-check'), check = node('input'); check.type = 'checkbox'; check.dataset.additionalIndex = String(index);
+        check.dataset.reviewed = String(reviewed); check.disabled = reviewed || busy;
         label.append(check, node('span', proposal.label || proposal.title || display(proposal))); row.append(label);
       } else row.append(node('strong', proposal.label || proposal.title || display(proposal)));
+      if (reviewed) row.append(node('strong', 'Reviewed addition - accepted into this package', 'sp-status-pill'));
       if (proposal.reason || proposal.description) row.append(node('p', proposal.reason || proposal.description));
       row.append(sourceLinks(proposal.sources)); wrapper.append(row);
     });
@@ -367,12 +378,18 @@
       ['sp-technical-approve', root.dataset.canTechnicalReview === 'true' && isReady && revision?.current !== false && !revision?.released && revision?.engineer_complete && !revision?.technical_approved && permissions.can_technical_review !== false],
       ['sp-technical-reject', root.dataset.canTechnicalReview === 'true' && isReady && revision?.current !== false && !revision?.released],
       ['sp-release', root.dataset.canRelease === 'true' && isReady && !array(revision?.drawings).some(drawing => drawing.released && drawing.current !== false) && (revision?.can_release === true || state.can_release === true || permissions.can_release === true)]
-    ]) if (byId(id)) byId(id).disabled = busy || !allowed;
+    ]) if (byId(id)) byId(id).disabled = busy || stateStale || !allowed;
     const active = activeStatuses.has(statusKey(state.active?.status));
-    const submit = byId('sp-submit-form')?.querySelector('button'); if (submit) submit.disabled = busy || active || Boolean(state.upload_state?.inflight);
-    const upload = byId('sp-document-form')?.querySelector('button'); if (upload) upload.disabled = busy;
-    root.querySelectorAll('#sp-upload-sessions button').forEach(button => { button.disabled = busy; });
-    byId('sp-refresh').disabled = polling;
+    const submit = byId('sp-submit-form')?.querySelector('button'); if (submit) submit.disabled = busy || stateStale || active || Boolean(state.upload_state?.inflight);
+    const upload = byId('sp-document-form')?.querySelector('button'); if (upload) upload.disabled = busy || stateStale;
+    root.querySelectorAll('#sp-upload-sessions button').forEach(button => { button.disabled = busy || stateStale; });
+    byId('sp-refresh').disabled = polling || busy;
+    byId('sp-retry').disabled = busy || stateStale;
+    byId('sp-revision').disabled = busy;
+    const correctionSave = byId('sp-correction-form').querySelector('button[type=submit]');
+    if (correctionSave) correctionSave.disabled = busy || stateStale;
+    root.querySelectorAll('[data-additional-index]').forEach(check => { check.disabled = busy || !editable(revision) || check.dataset.reviewed === 'true'; });
+    if (byId('sp-additional-accept')) byId('sp-additional-accept').disabled = busy || !editable(revision) || !root.querySelector('[data-additional-index]:checked:not(:disabled)');
     const summary = byId('sp-review-summary');
     if (summary) summary.textContent = revision?.release_blocker || state.release_blocker || revision?.review_summary || 'Accept or correct checklist proposals, complete engineer review, then obtain QA technical review. Release also requires the existing survey approval workflow to close.';
     root.querySelectorAll('[data-accept-item],[data-correct-item],[data-correct-record]').forEach(button => { button.disabled = busy || !editable(revision); });
@@ -404,15 +421,30 @@
     if (!document.hidden && activeStatuses.has(statusKey(state.active?.status))) pollTimer = setTimeout(() => refresh(), 3000);
   }
   async function refresh(force = false) {
-    if (polling) return;
+    if (refreshPending) {
+      if (!force) return refreshPending;
+      await refreshPending;
+      return refresh(true);
+    }
+    const pending = readState(force);
+    refreshPending = pending;
+    try { return await pending; }
+    finally { if (refreshPending === pending) refreshPending = null; }
+  }
+  async function readState(force) {
     polling = true; updateControls();
     try {
       const response = await fetch(root.dataset.stateUrl, {credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}});
+      if (!(response.headers.get('content-type') || '').includes('application/json')) throw new Error('The server returned an unexpected page. Sign in again if your session has expired.');
       const payload = await response.json();
       if (!response.ok) throw new Error(errorMessage(payload));
+      const recovered = stateStale;
+      stateStale = false;
       state = payload.state || payload;
       render(force);
-    } catch (error) { feedback(`Could not refresh processing state. ${error.message} Use Refresh to retry.`, true); }
+      if (recovered && !busy) feedback('Saved processing state refreshed. Review the current results before continuing.');
+      return true;
+    } catch (error) { stateStale = true; feedback(`Could not refresh processing state. ${error.message} Use Refresh to retry; changes are paused until the saved state is available.`, true); return false; }
     finally { polling = false; updateControls(); schedule(); }
   }
   function switchTab(name, focus = false) {
@@ -441,6 +473,7 @@
   });
   byId('sp-retry').addEventListener('click', () => action('retry', {revision_id: state.active?.id || selectedRevisionId}, 'Processing retry queued.'));
   byId('sp-revision').addEventListener('change', event => {
+    if (busy) { event.target.value = selectedRevisionId; return; }
     if (geometryDirty && !window.confirm('Discard unsaved measured drawing edits and open another saved revision?')) { event.target.value = selectedRevisionId; return; }
     selectedRevisionId = event.target.value; selected.clear(); page = 0; geometryDirty = false; geometryEditIndex = -1;
     render(true);
@@ -474,7 +507,7 @@
     if (!correctionItem) return;
     correctionMode = 'checklist';
     byId('sp-correction-title').textContent = 'Correct checklist answer';
-    byId('sp-correction-label').textContent = itemLabel(correctionItem);
+    byId('sp-correction-label').textContent = itemLabel(correctionItem) + (correctionItem.unit ? ` (${correctionItem.unit})` : '');
     byId('sp-correction-answer').value = display(correctionItem.value ?? correctionItem.proposed_answer).replace(/^Not recorded$/, '');
     byId('sp-correction-status').value = ['missing', 'not_applicable'].includes(normalStatus(correctionItem.status)) ? normalStatus(correctionItem.status) : 'recorded';
     byId('sp-correction-reason').value = '';
@@ -569,7 +602,7 @@
     });
   }
   byId('sp-document-form')?.addEventListener('submit', async event => {
-    event.preventDefault(); if (busy || !event.target.reportValidity()) return;
+    event.preventDefault(); if (busy || stateStale || !event.target.reportValidity()) return;
     if (byId('sp-documents').files.length > 5) { feedback('Choose up to five supporting documents per upload. You can upload another batch afterwards.', true); return; }
     busy = true; updateControls(); let token = '';
     const progress = byId('sp-upload-progress'), status = byId('sp-upload-status'); progress.hidden = false; progress.value = 0;
@@ -590,12 +623,12 @@
     }
   });
   byId('sp-additional-items').addEventListener('change', () => {
-    if (byId('sp-additional-accept')) byId('sp-additional-accept').disabled = busy || !root.querySelector('[data-additional-index]:checked');
+    if (byId('sp-additional-accept')) byId('sp-additional-accept').disabled = busy || !editable(currentRevision()) || !root.querySelector('[data-additional-index]:checked:not(:disabled)');
   });
   byId('sp-additional-accept')?.addEventListener('click', async () => {
     const reason = byId('sp-additional-reason').value.trim();
     if (!reason) { byId('sp-additional-reason').setCustomValidity('Explain why the selected additional checklist proposals are applicable.'); byId('sp-additional-reason').reportValidity(); return; }
-    const ids = Array.from(root.querySelectorAll('[data-additional-index]:checked')).map(check => Number(check.dataset.additionalIndex));
+    const ids = Array.from(root.querySelectorAll('[data-additional-index]:checked:not(:disabled)')).map(check => Number(check.dataset.additionalIndex));
     await action('review', {revision_id: selectedRevisionId, decision: 'accept_additional', finding_ids: ids, reason}, 'Selected additions accepted into this generated package. The published template is unchanged.');
   });
   byId('sp-additional-reason')?.addEventListener('input', event => event.target.setCustomValidity(''));
@@ -618,7 +651,7 @@
     syncGeometryKind();
   }
   byId('sp-geometry-form')?.addEventListener('submit', event => {
-    event.preventDefault(); if (!event.target.reportValidity()) return;
+    event.preventDefault(); if (busy || !editable(currentRevision()) || !event.target.reportValidity()) return;
     const values = Object.fromEntries(geometryIds.map(key => [key, byId(`sp-geometry-${key}`).value]));
     const record = {sheet: values.sheet, kind: values.kind, label: values.label.trim(), tag: values.label.trim(), equipment_type: values.equipment.trim(), x: Number(values.x), y: Number(values.y), width: Number(values.width), height: Number(values.height), unit: values.unit, source_id: values.source, verified: true};
     if (record.kind === 'equipment' && (record.width <= 0 || record.height <= 0)) { feedback('Equipment envelopes require positive measured width and height.', true); return; }
@@ -635,7 +668,7 @@
   });
   byId('sp-geometry-cancel')?.addEventListener('click', resetGeometryForm);
   byId('sp-geometry-records')?.addEventListener('click', event => {
-    const button = event.target.closest('[data-geometry-action]'); if (!button) return;
+    const button = event.target.closest('[data-geometry-action]'); if (!button || busy || !editable(currentRevision())) return;
     const index = Number(button.dataset.geometryIndex), record = geometryRecords[index]; if (!record) return;
     if (button.dataset.geometryAction === 'remove') { geometryRecords.splice(index, 1); geometryDirty = true; resetGeometryForm(); renderGeometry(currentRevision()); return; }
     geometryEditIndex = index;

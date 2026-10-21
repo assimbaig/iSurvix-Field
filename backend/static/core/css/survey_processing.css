@@ -5,3 +5,6 @@
 .sp-gap,.sp-record,.sp-heading>div{min-width:0;overflow-wrap:anywhere}
 .sp-apply-confirmation{max-width:360px}.sp-apply-confirmation>button{width:100%;margin-top:5px}.sp-apply-confirmation .sp-check{font-size:12px!important}.sp-dialog input:not([type=checkbox]){display:block;width:100%;margin-top:5px;border:1px solid #c7d3e0;border-radius:4px;padding:7px 9px;font:inherit}
 .sp-sidebar-toggle{display:none}@media(max-width:760px){.sp-sidebar-toggle{display:block;width:100%;text-align:left;margin:8px 0 12px}.sp-sidebar{display:none}.sp-sidebar.is-open{display:grid}}
+
+/* Share the task heading with other workspaces; keep a single page title. */
+.sp-page-tools{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:8px 0 12px}.sp-page-tools>.sp-nav{flex:1;margin:0}.sp-page-tools>#sp-refresh{flex:0 0 auto;margin-top:2px}#survey-processing label{font-size:12px}#survey-processing button{font-size:12px;line-height:1.35;min-height:30px}#survey-processing h2{font-size:15px}#survey-processing h3{font-size:13px}@media(max-width:600px){.sp-page-tools{gap:5px}.sp-page-tools .sp-nav a{padding:8px 6px;font-size:11px}.sp-page-tools>#sp-refresh{padding:7px}}

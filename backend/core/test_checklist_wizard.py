@@ -143,7 +143,7 @@ class ChecklistWizardTests(TestCase):
         refused=self.client.post(reverse('checklist_wizard_edit',args=[self.source.pk]),
             {'action':'save','name':'Forbidden published overwrite','definition':json.dumps(self.source.definition),
              'wizard_expected_digest':published.context['wizard_expected_digest']})
-        self.assertEqual(refused.status_code,200)
+        self.assertEqual(refused.status_code,400)
         self.assertFalse(ChecklistTemplate.objects.filter(name='Forbidden published overwrite').exists())
         self.assertIn(self.client.get(reverse('checklist_wizard_edit',args=[self.foreign.pk])).status_code,[403,404])
         self.assertEqual(self.before(),before)

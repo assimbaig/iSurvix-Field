@@ -79,7 +79,8 @@ def create_blank(actor,name,industry,workflow):
         definition={'title':valid_name(name),'wizard_context':context,'sections':[
             {'id':'general','title':'General information','fields':[
                 {'id':'site_id','label':'Site ID','type':'text','system':'site_id','required':True}]}]}
-        template=ChecklistTemplate.objects.create(name=valid_name(name),definition=definition,created_by=actor)
+        template=ChecklistTemplate.objects.create(name=valid_name(name),definition=definition,created_by=actor,
+            client_left_name='',client_right_name='')
         audit(actor,'checklist_wizard_create',template_id=template.pk)
         return template
 
@@ -176,7 +177,8 @@ def commit_import(actor,batch_id,expected_digest):
             target.definition=merged_definition(target,batch.payload['checklists'],batch.upload_sha256)
             target.save(update_fields=['definition']);templates=[target]
         else:
-            templates=[ChecklistTemplate.objects.create(name=item['name'],definition=deepcopy(item['definition']),created_by=actor)
+            templates=[ChecklistTemplate.objects.create(name=item['name'],definition=deepcopy(item['definition']),created_by=actor,
+                       client_left_name='',client_right_name='')
                        for item in batch.payload['checklists']]
         batch.created_template_ids=[item.pk for item in templates];batch.committed_at=timezone.now()
         batch.save(update_fields=['created_template_ids','committed_at'])

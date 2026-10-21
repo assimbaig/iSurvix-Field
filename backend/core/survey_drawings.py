@@ -258,7 +258,10 @@ def _measured_entities(records, blocks):
     out.append(_label(f'Measured record diagram - scale 1:{denominator} at A3', 20, 256, 2.4,'TITLE',max_width=182))
     out.append(_label('Generic envelopes: Typical - verify against site.',20,80,2.1,'WARNINGS',max_width=185))
     # Real scale bar in paper mm (labels are model mm, never guessed site distances).
-    out.extend([_line(24,88,74,88,'DIMENSIONS'), _line(24,86,24,90,'DIMENSIONS'), _line(74,86,74,90,'DIMENSIONS'), _label(f'0                       {50*denominator:g} mm',24,92,2.1,max_width=80)])
+    distance_label = f'{50*denominator:g} mm'
+    out.extend([_line(24,88,74,88,'DIMENSIONS'), _line(24,86,24,90,'DIMENSIONS'), _line(74,86,74,90,'DIMENSIONS'),
+        _label('0',24,82.5,2.1,'DIMENSIONS',max_width=20),
+        _label(distance_label,74-stringWidth(distance_label,'Helvetica',2.1),82.5,2.1,'DIMENSIONS',max_width=80)])
     return out, f'1:{denominator} at A3'
 
 
@@ -295,10 +298,11 @@ def build_geometry(snapshot: dict, findings: list) -> dict:
         key = _category(finding)
         label = _text(finding.get('label') or finding.get('field') or finding.get('component') or finding.get('field_hint') or finding.get('key') or finding.get('category') or 'Evidence finding',95)
         value = finding.get('value', finding.get('answer', finding.get('description', 'Not recorded')))
-        status = _text(finding.get('verification_status') or finding.get('status') or 'Needs review',35)
+        status = _text(finding.get('status') or finding.get('verification_status') or 'Needs review',35)
         sources = _sources(finding)
         unit = _text(finding.get('unit'),15)
-        answer = f"{_text(value,230)}{(' '+unit) if unit else ''} | {status}"
+        missing_value = value in (None, '', [], {})
+        answer = f"{'Not recorded' if missing_value else _text(value,230)}{(' '+unit) if unit and not missing_value else ''} | {status}"
         if finding.get('conflict') or finding.get('conflicts'):
             answer += ' | CONFLICT - resolve before release'
             warnings.append(f'{label}: conflicting evidence; no authoritative value selected.')

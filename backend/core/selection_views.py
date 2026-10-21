@@ -1,9 +1,6 @@
 """Admin item picker: source snapshots stay immutable, selections become new drafts."""
 import re
-from pathlib import Path
-from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404,redirect,render
@@ -45,7 +42,6 @@ def select_checklist(request):
     value=request.POST.get('source','') if request.method=='POST' else request.GET.get('source','')
     name=request.POST.get('name','') if request.method=='POST' else ''
     selected=request.POST.getlist('field_ids') if request.method=='POST' else []
-    stored=[]
     definition=default_definition()
     source_id=''
     source_name='Full original FDED checklist'
@@ -59,29 +55,20 @@ def select_checklist(request):
                 return HttpResponse('Project administration access is required.',status=403)
             definition,source,source_id,source_name=selection_source(request.user,value,lock=True)
             chosen=subset_definition(definition,selected,name)
-            attrs={'name':name.strip(),'definition':chosen,'published':False,'version':1,'created_by':request.user}
+            attrs={'name':name.strip(),'definition':chosen,'published':False,'version':1,'created_by':request.user,
+                   'client_left_name':'','client_right_name':''}
             if source:
+                attrs['company_logo']=source.company_logo.name
                 for slot in ('left','right'):
                     attrs[f'client_{slot}_name']=getattr(source,f'client_{slot}_name')
                     attrs[f'client_{slot}_logo']=getattr(source,f'client_{slot}_logo').name
             draft=ChecklistTemplate(**attrs)
-            if source is None:
-                for slot,filename in [('left','nokia.png'),('right','tawal.png')]:
-                    asset=Path(settings.BASE_DIR)/'static'/'core'/'img'/filename
-                    if asset.is_file():
-                        field=getattr(draft,f'client_{slot}_logo')
-                        field.save(filename,ContentFile(asset.read_bytes()),save=False)
-                        stored.append(field)
             draft.save()
             profile=getattr(request.user,'profile',None)
             ordered_ids=[field['id'] for section in chosen['sections'] for field in section['fields']]
             audit(request.user,'template_subset_created',getattr(profile,'project',None),template_id=draft.pk,source_id=source.pk if source else 'original',source_name=source_name,selected_field_ids=ordered_ids,field_count=len(ordered_ids),section_count=len(chosen['sections']))
             return redirect('checklist_template_edit',template_id=draft.pk)
     except Exception as exc:
-        # Only files created for the built-in branding are ours to remove.
-        # Saved source branding remains referenced and is never altered/deleted.
-        for field in stored:
-            field.delete(save=False)
         if isinstance(exc,ValidationError):
             return selection_response(request,definition,source_id,source_name,name,selected,'; '.join(exc.messages),status=400)
         raise

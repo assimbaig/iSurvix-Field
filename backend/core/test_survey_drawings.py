@@ -37,6 +37,34 @@ class SurveyDrawingTests(TestCase):
         self.assertFalse(any(e['layer']=='EQUIPMENT' for s in result['sheets'] for e in s['entities']))
         self.assertIn('No structural/electrical design',str(result))
 
+    def test_missing_measurement_is_explicit_in_geometry_pdf_and_dxf(self):
+        geometry=build_geometry(self.snapshot(),[self.sourced(field='Tower height',value=None,unit='m',
+            status='Missing',verification_status='needs_review')])
+        sheet=next(s for s in geometry['sheets'] if s['key']=='tower_elevation')
+        self.assertEqual(sheet['findings'][0]['answer'],'Not recorded | Missing')
+        with working_directory() as temp:
+            result=render_outputs(geometry,Path(temp))
+            with pymupdf.open(result['pdf']) as document:
+                text=' '.join(page.get_text() for page in document)
+                self.assertIn('Not recorded | Missing',text)
+                self.assertNotIn('m | needs_review',text)
+            drawing=ezdxf.readfile(next(s['dxf'] for s in result['sheets'] if s['number']==sheet['number']))
+            labels=[e.dxf.text for e in drawing.modelspace().query('TEXT')]
+            self.assertIn('Not recorded | Missing',labels)
+
+    def test_measured_scale_labels_align_with_separate_bar_endpoints(self):
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+        snapshot=self.snapshot();snapshot['drawing_records']=[self.record()]
+        geometry=build_geometry(snapshot,[])
+        sheet=next(s for s in geometry['sheets'] if s['key']=='site_layout')
+        bar=next(e for e in sheet['entities'] if e.get('points')==[[24,88],[74,88]])
+        labels=[e for e in sheet['entities'] if e['kind']=='text' and e['layer']=='DIMENSIONS']
+        origin=next(e for e in labels if e['text']=='0')
+        end=next(e for e in labels if e['text'].endswith(' mm'))
+        self.assertEqual(origin['x'],bar['points'][0][0])
+        self.assertAlmostEqual(end['x']+stringWidth(end['text'],'Helvetica',end['height']),bar['points'][1][0],places=3)
+        self.assertLess(end['y']+end['height'],86)
+
     def test_unconfirmed_measurement_or_concealed_connection_never_drawn(self):
         data=self.snapshot();rec=self.record();rec['verification_status']='Needs review'
         connection=self.sourced(kind='connection',sheet='grounding',points=[[0,0],[1000,1000]],unit='mm',verification_status='confirmed',measurement_basis='recorded')

@@ -1,5 +1,41 @@
 # iSurvix Field: local Codex development brief
 
+## Current integration verification - 21 October 2026
+
+Use `docs/development/INTEGRATED_VERIFICATION_REQUIREMENTS.json` and
+`INTEGRATED_VERIFICATION_RECEIPT.json` for the current evidence, rather than the
+older baseline statements below. Work is on `feat/integrated-survey-verification`.
+
+The existing editor and integrated survey pipeline were repaired and independently
+verified. The final core suite passed **666 tests**; Django, migration-drift, pip
+and modified JavaScript syntax checks passed. Real browser/native-model checks
+completed both three- and four-layer approval routes, including explicit Engineer
+application, independent QA, named Client where required and authorised release.
+Native crash/restart recovery also completed photo, PDF, workbook cell and embedded
+image sources after natural lease expiry. Actual 200-photo browser intake passed;
+this is not a sustained 200-photo native-inference benchmark.
+
+Live operational data stayed unchanged: 53 core tables, 806 stored files and 12
+private/config files match the pre-change checkpoint
+`.local/backups/project-checkpoint-20261021-204352`. Existing published revisions,
+approvals, branding and originals are preserved. All approval tests used separate,
+clearly synthetic Django records and media. Sample outputs and seven screenshots
+are under `samples/drawings/integration-verification-20261021` and
+`docs/images/integrated-verification-20261021`.
+
+One runtime follow-up is blocked: automatic approval review rejected restarting
+the existing port8000 app and survey worker with **blocked by policy**. That command
+did not execute. Preserve those running processes; their imported Python modules
+may remain older until a normal permitted local restart. The tested current source
+ran in isolated Django instances on8886/8887. No merge, deployment, force-push,
+customer approval or database replacement was performed.
+
+Full 378-photo Z93004 plus complete-workbook native timing, field accuracy and
+manufacturer geometry remain unbenchmarked/unverified. No approved DWG/DXF/PDF
+reference was supplied in that site's source folder. Generic measured envelopes
+are explicitly labelled; missing dimensions/unsupported sheets remain visible.
+Use the updated `docs/manual/AI_SURVEY_TEAM_GUIDE.md` for exact startup commands.
+
 ## Workspace and current state
 
 Keep the existing Windows checkout and all project runtime data under

@@ -7,8 +7,9 @@
  const uid=prefix=>prefix+'_'+crypto.randomUUID().replaceAll('-','').slice(0,20);
  const storageKey='isurvix-template-editor:'+form.dataset.templateId+':'+form.dataset.version;
  let stored={};try{stored=JSON.parse(sessionStorage.getItem(storageKey)||'{}')}catch{}
- let selected=stored.selected||{kind:'section',id:model.schema.sections[0].id},dirty=false,recItems=[],recPage=1,remoteLocked=false;
+ let selected=stored.selected||{kind:'section',id:model.schema.sections[0].id},dirty=form.dataset.unsaved==='true',recItems=[],recPage=1,remoteLocked=false;
  const expanded=new Set(stored.expanded||[...model.groups().map(g=>'g:'+g),'g:','s:'+model.schema.sections[0].id]);
+ if(dirty)form.dataset.dirty='true';
  const checked=new Set(),recEdits=new Map();
  const message=(text,error=false)=>{const node=document.getElementById('editor-status');node.textContent=text;node.classList.toggle('is-error',error)};
  const markDirty=()=>{dirty=true;form.dataset.dirty='true'};
@@ -123,7 +124,7 @@
  document.getElementById('editor-rec-previous').addEventListener('click',()=>{recPage--;renderRecommendations()});document.getElementById('editor-rec-next').addEventListener('click',()=>{recPage++;renderRecommendations()});
  async function loadRecommendations(){const status=document.getElementById('editor-rec-status'),retry=document.getElementById('editor-rec-retry');retry.hidden=true;status.textContent='Loading available recommendations…';try{
   const response=await fetch(form.dataset.recommendationsUrl,{credentials:'same-origin',cache:'no-store'});let payload;try{payload=await response.json()}catch{throw Error('Recommendation data is unavailable ('+response.status+').')}
-  if(!response.ok)throw Error(payload.message||'Recommendations are unavailable.');if(String(payload.template_id)!==form.dataset.templateId||String(payload.version)!==form.dataset.version)throw Error('Recommendations belong to another checklist revision. Refresh this editor.');
+  if(!response.ok)throw Error(payload.error||payload.message||'Recommendations are unavailable.');if(String(payload.template_id)!==form.dataset.templateId||String(payload.version)!==form.dataset.version)throw Error('Recommendations belong to another checklist revision. Refresh this editor.');
   recItems=payload.recommendations||[];remoteLocked=!!payload.locked;status.textContent=recItems.length?(locked||remoteLocked?'Read-only suggestions. Open an editable draft to accept additions.':'Review additions from standards and permitted published checklists. Accepting updates this draft; save to keep it.'):'No additions are available from current standards and permitted published checklists.';renderRecommendations();
  }catch(error){recItems=[];status.textContent=error.message;retry.hidden=false;renderRecommendations()}}
  document.getElementById('editor-rec-retry').addEventListener('click',loadRecommendations);
