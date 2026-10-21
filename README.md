@@ -80,6 +80,10 @@ Read `docs/INTEGRATION_AND_DEPLOYMENT.md` before staging or production deploymen
 
 ## Current status
 
+Project Admins can manage checklist status and creation through the compact
+checklist table. See the [guided checklist creation manual](docs/manual/CHECKLIST_CREATION_GUIDE.md)
+for section/checkpoint recommendations, safe unpublishing, and the one-page Excel import.
+
 The updated frontend is published at https://isurvix-survey-redesign.mirza-assim.chatgpt.site/ . Transferring code here does not deploy to Hostinger or connect the preview to Django.
 
 The original application audit identified legacy permission and data-integrity problems. The checklist-builder update is not a blanket remediation of those older routes. Enforce authentication, project/site scope, view-only access and approval locks on the server, and verify those legacy paths before production use.

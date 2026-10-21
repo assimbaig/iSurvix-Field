@@ -66,6 +66,9 @@ def image_bytes(upload):
 def template_builder(request, template_id=None, wizard_mode=False):
     if not is_template_admin(request):
         return HttpResponse('Admin access required.', status=403)
+    if template_id is None and (request.method == 'GET' or request.POST.get('action') in {'unpublish','delete','disable','enable'}):
+        from .checklist_wizard_views import library
+        return library(request)
     template = get_object_or_404(template_scope(request.user), pk=template_id) if template_id else None
     route = 'checklist_wizard_edit' if wizard_mode else 'checklist_template_edit'
     submitted_definition = None
@@ -91,7 +94,7 @@ def template_builder(request, template_id=None, wizard_mode=False):
                 template = duplicate_revision(template, request.user)
                 return redirect(route, template_id=template.id)
             if action == 'assign':
-                if not template.published:
+                if not template.published or template.disabled:
                     raise ValidationError('Publish this revision before assigning it to a project.')
                 project = get_object_or_404(project_scope(request.user), pk=request.POST.get('project_id'))
                 project.checklist_template = template
@@ -99,9 +102,9 @@ def template_builder(request, template_id=None, wizard_mode=False):
                 messages.success(request, 'Assigned to the project. Existing surveys retain their previous template.')
             elif action in {'save', 'publish'}:
                 from .access import is_super_admin
-                if not is_super_admin(request.user) and template.created_by_id != request.user.pk:
-                    raise ValidationError('Duplicate this template into your own draft before editing it.')
-                if template.published:
+                from .checklist_lifecycle import require_editable
+                require_editable(request.user,template)
+                if template.published or template.disabled or template.checklists.exists():
                     raise ValidationError('Published revisions are locked. Duplicate this revision to edit.')
                 definition = json.loads(request.POST.get('definition', '{}'))
                 validate_definition(definition)
@@ -129,6 +132,7 @@ def template_builder(request, template_id=None, wizard_mode=False):
                         if not template_scope(request.user).filter(pk=template.pk).exists():
                             raise PermissionDenied('This draft is no longer in your permitted project scope.')
                     template = ChecklistTemplate.objects.select_for_update().get(pk=template.pk)
+                    require_editable(request.user,template)
                     if wizard_mode:
                         from .checklist_wizard_service import digest,guard
                         guard(request.user,True)
@@ -137,7 +141,7 @@ def template_builder(request, template_id=None, wizard_mode=False):
                             submitted_definition=definition
                             response_status=409
                             raise ValidationError('This draft changed in another window. Your entered structure is retained below. Reload the current draft before saving again.')
-                    if template.published:
+                    if template.published or template.disabled or template.checklists.exists():
                         raise ValidationError('This revision was published in another window. Duplicate it to edit.')
                     template.name, template.definition = name, definition
                     if request.POST.get('processing_setting_present') == '1':
@@ -170,12 +174,12 @@ def template_builder(request, template_id=None, wizard_mode=False):
         template.name=request.POST.get('name',template.name)
         for slot in ('left','right'):
             setattr(template,f'client_{slot}_name',request.POST.get(f'client_{slot}_name',getattr(template,f'client_{slot}_name')))
-    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'definition': submitted_definition if submitted_definition is not None else template.definition if template else None, 'projects': project_scope(request.user), 'wizard_mode':wizard_mode,'wizard_step':3 if template and template.published else 2,'wizard_expected_digest':token},status=response_status)
+    return render(request, 'dashboards/template_builder.html', {'templates': template_scope(request.user), 'selected_template': template, 'template_locked':bool(template and (template.published or template.disabled or template.checklists.exists())), 'definition': submitted_definition if submitted_definition is not None else template.definition if template else None, 'projects': project_scope(request.user), 'wizard_mode':wizard_mode,'wizard_step':3 if template and template.published else 2,'wizard_expected_digest':token},status=response_status)
 
 
 def template_edit_digest(template):
     from .checklist_wizard_service import digest
-    return digest({'name':template.name,'definition':template.definition,'published':template.published,'checklist_required':template.checklist_required,
+    return digest({'name':template.name,'definition':template.definition,'published':template.published,'disabled':template.disabled,'checklist_required':template.checklist_required,
                    'version':template.version,'left_name':template.client_left_name,'right_name':template.client_right_name,
                    'left_logo':template.client_left_logo.name,'right_logo':template.client_right_logo.name,'company_logo':template.company_logo.name})
 

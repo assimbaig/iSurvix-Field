@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-21",
+  "branch": "feat/checklist-guided-wizard",
+  "base_branch": "feat/ai-survey-drawings",
+  "changes": [
+    "Compact Admin checklist table with filters, pagination, selection, icon labels/tooltips and explicit atomic lifecycle actions",
+    "Section recommendations, explicit section acceptance, checkpoint recommendations and custom typed points before draft creation",
+    "Adaptive suggestions from standards and the 100 most recent permitted enabled published templates of the same workflow",
+    "Unused published templates can unpublish before editing; every template used by saved work remains structurally protected",
+    "Disabled templates stop new assignments while retaining saved work and existing project settings",
+    "Single-sheet editable XLSX sample with answer/photo requirements, choices, units, help and dropdowns",
+    "Reviewed idempotent imports can create drafts or append points to an unused draft with stale-target protection"
+  ],
+  "migration": "0047_checklist_disabled_state",
+  "verification": {
+    "full_core_tests": 594,
+    "failed_tests": 0,
+    "seconds": 60.688,
+    "django_check": "passed",
+    "migration_drift": "none",
+    "javascript_syntax": "passed",
+    "browser": {
+      "isolated_synthetic_database": true,
+      "widths": [1440,390],
+      "horizontal_page_overflow": false,
+      "vertical_outer_page_overflow": false,
+      "internal_table_scrolling": true,
+      "javascript_errors": 0,
+      "actions": ["section and checkpoint acceptance", "custom required photo point", "wrong-workflow import refused", "one-page preview and append", "publish", "unpublish", "confirmed delete"]
+    },
+    "workbook": {"worksheets": 1, "example_points": 5, "dropdowns": 5, "formulas": 0, "visual_inspection": "passed", "advanced_round_trip": "passed"},
+    "preservation": {"old_columns_unchanged_in_tables": 62, "original_sha256_verified": 402, "sqlite_integrity": "ok", "existing_templates_disabled": false}
+  },
+  "learning_limits": [
+    "Library adaptation changes suggestions and their ordering only; there is no model-weight training or automatic technical approval.",
+    "Only accessible published enabled templates of the selected workflow contribute; drafts and operational answers do not.",
+    "Recommendations are bounded to 100 sections and 3000 candidate points; larger libraries require a more specific standard/import.",
+    "One-page format handles simple fields; repeating tables and detailed evidence conditions remain in the advanced format."
+  ],
+  "production_test_records_created": false,
+  "merged": false,
+  "deployed": false
+}

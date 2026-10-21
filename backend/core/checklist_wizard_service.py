@@ -93,13 +93,14 @@ def replicate(actor,source_id,name):
         definition=deepcopy(source.definition)
         definition['wizard_context']=identity(actor,context['industry'],context['workflow_type'])
         template=ChecklistTemplate.objects.create(name=valid_name(name),definition=definition,created_by=actor,
+            checklist_required=source.checklist_required,company_logo=source.company_logo.name,
             client_left_name=source.client_left_name,client_right_name=source.client_right_name,
             client_left_logo=source.client_left_logo.name,client_right_logo=source.client_right_logo.name)
         audit(actor,'checklist_wizard_replicate',template_id=template.pk,source_id=source.pk)
         return template
 
 
-def preview_import(actor,upload):
+def preview_import(actor,upload,target_id=None):
     from .checklist_workbook import MAX_BYTES,parse_workbook
     from .governance_views import lock_governance,audit
     guard(actor,True)
@@ -115,6 +116,17 @@ def preview_import(actor,upload):
             item['definition']['wizard_context']=context
             validate_definition(item['definition'])
         payload={'checklists':parsed['checklists'],'warnings':parsed.get('warnings',[])}
+        if target_id:
+            from .checklist_lifecycle import require_editable
+            from .template_views import template_edit_digest
+            from .checklist_point_merge import merged_definition
+            target=get_object_or_404(template_scope(actor),pk=target_id)
+            require_editable(actor,target)
+            context=source_identity(target,actor)
+            if len(parsed['checklists'])!=1 or any(any(item[key]!=context[key] for key in ('industry','workflow_type')) for item in parsed['checklists']):
+                raise ValidationError('To add points, import one checklist matching the draft industry and workflow.')
+            merged_definition(target,parsed['checklists'],parsed['sha256'])
+            payload['append_target']={'id':target.pk,'name':target.name,'digest':template_edit_digest(target)}
         batch=ChecklistImportBatch.objects.create(created_by=actor,company_id=company_id_for(actor),
             filename=PurePath(upload.name.replace('\\','/')).name[:255],upload_sha256=parsed['sha256'],
             payload=payload,payload_digest=digest(payload),expires_at=timezone.now()+timedelta(minutes=30))
@@ -151,8 +163,21 @@ def commit_import(actor,batch_id,expected_digest):
             return batch
         if batch.expires_at<=timezone.now():
             raise ValidationError('This import preview expired. Validate the workbook again.')
-        templates=[ChecklistTemplate.objects.create(name=item['name'],definition=deepcopy(item['definition']),created_by=actor)
-                   for item in batch.payload['checklists']]
+        if batch.payload.get('append_target'):
+            from .checklist_lifecycle import require_editable
+            from .template_views import template_edit_digest
+            from .checklist_point_merge import merged_definition
+            info=batch.payload['append_target']
+            target=get_object_or_404(template_scope(actor),pk=info['id'])
+            target=ChecklistTemplate.objects.select_for_update().get(pk=target.pk)
+            require_editable(actor,target)
+            if template_edit_digest(target)!=info['digest']:
+                raise ValidationError('The target draft changed after this preview. Preview the workbook again.')
+            target.definition=merged_definition(target,batch.payload['checklists'],batch.upload_sha256)
+            target.save(update_fields=['definition']);templates=[target]
+        else:
+            templates=[ChecklistTemplate.objects.create(name=item['name'],definition=deepcopy(item['definition']),created_by=actor)
+                       for item in batch.payload['checklists']]
         batch.created_template_ids=[item.pk for item in templates];batch.committed_at=timezone.now()
         batch.save(update_fields=['created_template_ids','committed_at'])
         audit(actor,'checklist_import_commit',import_id=str(batch.pk),template_ids=batch.created_template_ids)
@@ -168,7 +193,7 @@ def preview_context(batch):
             'conditions_summary':f"{sum(bool(f.get('required')) for f in fields)} required; "
                 f"{sum(bool(f.get('photo_required')) for f in fields)} photo requirements; "
                 f"{sum('evidence_rules' in f for f in fields)} evidence rules"})
-    return {'id':str(batch.pk),'digest':batch.payload_digest,'filename':batch.filename,'expires_at':batch.expires_at,
+    return {'id':str(batch.pk),'digest':batch.payload_digest,'filename':batch.filename,'expires_at':batch.expires_at,'append_target':batch.payload.get('append_target'),
             'checklists':checklists,'warnings':batch.payload.get('warnings',[]),'committed':bool(batch.committed_at),
             'template_ids':batch.created_template_ids}
 

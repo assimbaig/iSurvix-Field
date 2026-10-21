@@ -1,0 +1,19 @@
+(()=>{'use strict';const app=document.getElementById('guided-wizard');if(!app)return;const form=document.getElementById('recommend-form');
+app.querySelectorAll('[data-select-recommend]').forEach(button=>button.addEventListener('click',()=>{app.querySelectorAll('[data-recommend-row]:not([hidden]) input[type="checkbox"]').forEach(box=>box.checked=button.dataset.selectRecommend==='true');}));
+document.getElementById('recommend-search')?.addEventListener('input',event=>{const query=event.target.value.toLocaleLowerCase();app.querySelectorAll('[data-recommend-row]').forEach(row=>row.hidden=!row.textContent.toLocaleLowerCase().includes(query));});
+function input(tag,label){const element=document.createElement(tag);element.setAttribute('aria-label',label);return element;}
+app.querySelectorAll('[data-add-point]').forEach(button=>button.addEventListener('click',()=>{const row=document.createElement('div');row.className='recommend-custom-row';row.dataset.section=button.dataset.addPoint;const label=input('input','Custom checkpoint');label.placeholder='Write your checkpoint';label.maxLength=3000;label.required=true;label.dataset.key='label';const type=input('select','Input type');type.dataset.key='type';for(const kind of ['text','textarea','number','date','select','inspection','photo']){const option=document.createElement('option');option.value=kind;option.textContent=kind;type.append(option);}const required=input('select','Answer required');required.dataset.key='required';for(const [value,text] of [['true','Required answer'],['false','Optional answer']]){const option=document.createElement('option');option.value=value;option.textContent=text;required.append(option);}const photo=input('select','Photo requirement');photo.dataset.key='photo_required';for(const [value,text] of [['false','Photo optional'],['true','Photo required']]){const option=document.createElement('option');option.value=value;option.textContent=text;photo.append(option);}const choices=input('input','Dropdown choices');choices.dataset.key='choices';choices.placeholder='Choice A | Choice B';choices.hidden=true;type.addEventListener('change',()=>{choices.hidden=type.value!=='select';choices.required=type.value==='select';});const remove=input('button','Remove custom checkpoint');remove.type='button';remove.textContent='×';remove.title='Remove this checkpoint';remove.addEventListener('click',()=>row.remove());row.append(label,type,required,photo,choices,remove);app.querySelector('[data-custom-list="'+button.dataset.addPoint+'"]').append(row);label.focus();}));
+const entered = JSON.parse(document.getElementById('entered-custom-points')?.textContent || 'null') || [];
+for (const values of entered) {
+  if (!values || typeof values !== 'object') continue;
+  const button = [...app.querySelectorAll('[data-add-point]')].find(item => item.dataset.addPoint === values.section);
+  if (!button) continue;
+  button.click();
+  const row = [...app.querySelectorAll('.recommend-custom-row')].at(-1);
+  for (const element of row.querySelectorAll('[data-key]')) {
+    const value = values[element.dataset.key];
+    if (typeof value === 'string' || typeof value === 'boolean') element.value = String(value);
+  }
+  row.querySelector('[data-key=type]').dispatchEvent(new Event('change'));
+}
+form.addEventListener('submit',event=>{if(event.submitter?.value==='recommend_sections')return;const hidden=document.getElementById('custom-items');if(hidden){const rows=[...app.querySelectorAll('.recommend-custom-row')].map(row=>{const result={section:row.dataset.section};row.querySelectorAll('[data-key]').forEach(element=>{result[element.dataset.key]=['required','photo_required'].includes(element.dataset.key)?element.value==='true':element.value;});return result;});hidden.value=JSON.stringify(rows);}document.getElementById('recommend-status').textContent='Validating your selected structure…';});})();

@@ -10,6 +10,7 @@ urlpatterns = [
     path('governance/industries/',include('core.industry_urls')),
     path('work/review-routes/',include('core.review_route_urls')),
     path('devadmin/checklist-wizard/',checklist_wizard_views.wizard,name='checklist_wizard'),
+    path('devadmin/checklist-library/',checklist_wizard_views.library,name='checklist_library'),
     path('devadmin/checklist-wizard/workbook/',checklist_wizard_views.workbook,name='checklist_wizard_workbook'),
     path('devadmin/checklist-wizard/<int:template_id>/',checklist_wizard_views.edit,name='checklist_wizard_edit'),
     path('devadmin/checklist-wizard/<int:template_id>/export/',checklist_wizard_views.export,name='checklist_wizard_export'),

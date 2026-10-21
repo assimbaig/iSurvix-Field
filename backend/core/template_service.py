@@ -60,6 +60,8 @@ def validate_definition(definition):
                 raise ValidationError('The linked Site ID field must remain a text field.')
             if not isinstance(field.get('required', False), bool):
                 raise ValidationError('Required must be true or false.')
+            if not isinstance(field.get('photo_required', False), bool):
+                raise ValidationError('Photo required must be true or false.')
             if 'evidence_rules' in field:
                 from .evidence_rules import validate_evidence_rules
                 try:validate_evidence_rules(field['evidence_rules'])

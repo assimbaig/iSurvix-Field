@@ -17,6 +17,7 @@ class ChecklistTemplate(models.Model):
 	name = models.CharField(max_length=160)
 	definition = models.JSONField(default=dict)
 	published = models.BooleanField(default=False)
+	disabled = models.BooleanField(default=False, help_text='Hide from new assignments while preserving existing work.')
 	client_left_name = models.CharField(max_length=80, default='Nokia', blank=True)
 	client_right_name = models.CharField(max_length=80, default='TAWAL', blank=True)
 	client_left_logo = models.ImageField(upload_to='client_logos/', blank=True)
@@ -36,11 +37,18 @@ class ChecklistTemplate(models.Model):
 		validate_definition(self.definition)
 		if self.pk:
 			previous = type(self).objects.get(pk=self.pk)
-			if previous.published:
-				fields = ['family_id', 'version', 'name', 'definition', 'published', 'checklist_required', 'company_logo', 'client_left_name', 'client_right_name', 'client_left_logo', 'client_right_logo']
-				if any(getattr(previous, field) != getattr(self, field) for field in fields):
-					raise ValidationError('Published templates are locked. Duplicate this revision to make changes.')
+			fields = ['family_id', 'version', 'name', 'definition', 'checklist_required', 'company_logo', 'client_left_name', 'client_right_name', 'client_left_logo', 'client_right_logo']
+			changed = any(getattr(previous, field) != getattr(self, field) for field in fields)
+			if previous.published and changed:
+				raise ValidationError('Unpublish an unused checklist before editing. Used checklists must be replicated.')
+			if previous.checklists.exists() and (changed or previous.published != self.published):
+				raise ValidationError('This checklist is in use and its published structure is protected. Replicate it to make changes.')
 		return super().save(*args, **kwargs)
+
+	def delete(self, *args, **kwargs):
+		if self.checklists.exists():
+			raise ValidationError('A checklist used by saved work cannot be deleted. Disable it instead.')
+		return super().delete(*args, **kwargs)
 
 	def branding(self):
 		result = {'clients': [
@@ -129,8 +137,10 @@ class Project(models.Model):
 			raise ValidationError('Choose a three-layer or four-layer project workflow.')
 		if self.client_organization_id and (self.client_organization.company_id!=self.company_id or self.client_organization.industry.code!=self.industry):
 			raise ValidationError('Client organization must match the project company and industry.')
-		if self.checklist_template_id and not self.checklist_template.published:
-			raise ValidationError('Projects may use published checklist revisions only.')
+		if self.checklist_template_id and (not self.checklist_template.published or self.checklist_template.disabled):
+			previous_template = type(self).objects.filter(pk=self.pk).values_list('checklist_template_id', flat=True).first() if self.pk else None
+			if previous_template != self.checklist_template_id:
+				raise ValidationError('Projects may select enabled, published checklist revisions only.')
 		if self.checklist_template_id:
 			from .standard_checklist_service import validate_standard_project
 			validate_standard_project(self.checklist_template,self)
@@ -274,7 +284,13 @@ class Checklist(models.Model):
 				self.client_review_required=self.project.review_layers==4
 			template = self.checklist_template or self.project.checklist_template
 			if template:
-				if not template.published:
+				# Serialize new assignments against unpublish/delete operations.
+				from django.db import transaction
+				if not transaction.get_connection().in_atomic_block:
+					with transaction.atomic():
+						return self.save(*args, **kwargs)
+				template = ChecklistTemplate.objects.select_for_update().get(pk=template.pk)
+				if not template.published or template.disabled:
 					raise ValidationError('Only a published checklist template can be assigned to a survey.')
 				from .standard_checklist_service import validate_standard_project
 				validate_standard_project(template,self.project,self.workflow_type)
