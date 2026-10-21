@@ -25,7 +25,7 @@ def assign_guard(actor):
 
 
 def catalog(actor):
-    projects=accessible_projects(actor).exclude(checklist_template__isnull=True).select_related('checklist_template').order_by('name')
+    projects=accessible_projects(actor).filter(checklist_template__published=True,checklist_template__disabled=False).select_related('checklist_template').order_by('name')
     return projects,[{'project_id':p.pk,'project_name':p.name,'fields':[f for f in general_fields(p.checklist_template.definition).values() if not f.get('system')]} for p in projects]
 
 
@@ -63,7 +63,8 @@ def bulk_assign(request):
             error='; '.join(exc.messages)
             status=409 if request.POST.get('action')=='commit' else 400
     projects,fields=catalog(request.user)
-    return render(request,'dashboards/assignment_bulk.html',{'bulk_projects':projects,'bulk_catalog':fields,'batch':batch,'error':error},status=status)
+    selected=request.POST.get('project') or request.GET.get('project','')
+    return render(request,'dashboards/assignment_bulk.html',{'active_view':'tasks','bulk_projects':projects,'bulk_catalog':fields,'batch':batch,'error':error,'selected_bulk_project':selected},status=status)
 
 
 @login_required(login_url='/login/')
@@ -79,7 +80,7 @@ def bulk_sample(request):
     fields=[fid for fid,f in general_fields(project.checklist_template.definition).items() if not f.get('system')]
     output=StringIO(newline='')
     writer=csv.writer(output)
-    writer.writerow(['project','engineer','site_id','latitude','longitude','description','quality_reviewer','workflow_type','governance_mode','asset_reference','coordinate_source','coordinate_crs','l2_reviewer','l3_approver','client_review_required','customer_reviewer','review_reason',*[f'field:{fid}' for fid in fields]])
+    writer.writerow(['project','engineer','site_id','site_name','address','city','region','latitude','longitude','description','quality_reviewer','workflow_type','governance_mode','asset_reference','coordinate_source','coordinate_crs','l2_reviewer','l3_approver','client_review_required','customer_reviewer','review_reason',*[f'field:{fid}' for fid in fields]])
     response=HttpResponse(output.getvalue(),content_type='text/csv; charset=utf-8')
     response['Content-Disposition']='attachment; filename="site-assignment-template.csv"'
     return response

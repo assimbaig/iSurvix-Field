@@ -17,6 +17,8 @@ from .template_service import validate_answer
 MAX_CSV_BYTES=1024*1024
 MAX_ROWS=200
 BASE_COLUMNS={'project','engineer','site_id','latitude','longitude','description','answers_json','general_info'}
+BASIC_SITE_COLUMNS={'site_name','address','city','region'}
+BASE_COLUMNS|=BASIC_SITE_COLUMNS
 CONTEXT_COLUMNS={'quality_reviewer','workflow_type','governance_mode','asset_reference','coordinate_source','coordinate_crs','l2_reviewer','l3_approver','client_review_required','customer_reviewer','review_reason'}
 BASE_COLUMNS|=CONTEXT_COLUMNS
 SCALAR_TYPES={'text','textarea','number','date','select'}
@@ -42,6 +44,42 @@ def validated_general_info(definition,values):
         validate_answer(field,value)
         result[fid]=value
     return result
+
+
+def validated_site_basics(values):
+    result={}
+    for key in BASIC_SITE_COLUMNS:
+        value=values.get(key,'')
+        if not isinstance(value,str) or len(value)>(1000 if key=='address' else 200):
+            raise ValidationError('Provide a short text value for '+key.replace('_',' ')+'.')
+        if value.strip():result[key]=value.strip()
+    return result
+
+
+def assignment_answers(definition,data):
+    """Map recorded site facts once; never overwrite explicit answers or decisions."""
+    import re
+    answers=validated_general_info(definition,data.get('general_info',{}))
+    basic=validated_site_basics(data.get('site_information',{}))
+    basic.update(latitude=str(data['latitude']),longitude=str(data['longitude']))
+    aliases={'site_id':{'siteid','sitecode','siteidentifier'},'site_name':{'sitename'},'address':{'address','siteaddress'},
+        'city':{'city','sitecity'},'region':{'region','siteregion'},
+        'latitude':{'latitude','sitelatitude','gpslatitude','lat'},
+        'longitude':{'longitude','sitelongitude','gpslongitude','lon'},
+        'coordinates':{'coordinates','gpscoordinates','sitecoordinates'},
+        'location':{'sitelocationregioncitycoordinates','sitelocationcoordinates'}}
+    values={**basic,'site_id':data['site_id'],'coordinates':basic['latitude']+', '+basic['longitude'],
+        'location':', '.join(str(basic[k]) for k in ('region','city','latitude','longitude') if basic.get(k))}
+    for fid,field in general_fields(definition).items():
+        if fid in answers or field.get('system'):continue
+        keys={re.sub(r'[^a-z0-9]','',str(v).lower()) for v in (fid,field['label'])}
+        kind=next((key for key,labels in aliases.items() if keys&labels),None)
+        value=values.get(kind)
+        if not value:continue
+        try:validate_answer(field,value)
+        except ValidationError:continue
+        answers[fid]=value
+    return answers,basic
 
 
 def survey_prefill_suggestions(checklist):
@@ -185,8 +223,9 @@ def create_assignment(actor,data,source):
     quality=data.get('l2_reviewer') if data.get('governance_mode')=='independent' else data.get('quality_reviewer')
     from .quality_workflow import require_quality_reviewer
     require_quality_reviewer(project.pk,quality,engineer.pk)
-    answers=validated_general_info(project.checklist_template.definition,data.get('general_info',{}))
+    answers,basic=assignment_answers(project.checklist_template.definition,data)
     metadata={'source':source,'created_by':actor.pk,'created_at':timezone.now().isoformat(),'prefilled_field_ids':list(answers)}
+    metadata['site_information']=basic
     from .industry_service import industry_family
     checklist=Checklist.objects.create(user=engineer,project=project,site_id=data['site_id'],answer_data={'custom':answers} if answers else {},intake_metadata=metadata,quality_reviewer=quality,workflow_type=data.get('workflow_type') or (Checklist.WorkflowType.CONSTRUCTION_INSPECTION if industry_family(project)==Project.Industry.CONSTRUCTION else Checklist.WorkflowType.TELECOM_SURVEY),governance_mode=data.get('governance_mode') or Checklist.GovernanceMode.LEGACY,asset_reference=data.get('asset_reference',''),coordinate_reference={'source':data.get('coordinate_source',''),'crs':data.get('coordinate_crs','')})
     if checklist.governance_mode==Checklist.GovernanceMode.INDEPENDENT:
@@ -242,8 +281,9 @@ def resolve_row(actor,row,default_project=''):
     if not form.is_valid():
         raise ValidationError([f'{key}: {message}' for key,messages in form.errors.items() for message in messages])
     data=form.cleaned_data
+    data['site_information']=validated_site_basics(row)
     normalized_context={key:(getattr(data.get(key),'pk',data.get(key)) or '') for key in CONTEXT_COLUMNS}
-    return data,{**normalized_context,'project_id':project.pk,'project_name':project.name,'engineer_id':engineer.pk,'engineer_name':engineer.username,'site_id':data['site_id'],'latitude':str(data['latitude']),'longitude':str(data['longitude']),'description':data['description'],'general_info':data['general_info']}
+    return data,{**normalized_context,'project_id':project.pk,'project_name':project.name,'engineer_id':engineer.pk,'engineer_name':engineer.username,'site_id':data['site_id'],'latitude':str(data['latitude']),'longitude':str(data['longitude']),'description':data['description'],'general_info':data['general_info'],'site_information':data['site_information']}
 
 
 def preview_csv(actor,upload,default_project=''):
@@ -267,6 +307,14 @@ def preview_csv(actor,upload,default_project=''):
     required={'engineer','site_id','latitude','longitude','description'}
     if not required.issubset(headers) or 'project' not in headers and not default_project:
         raise ValidationError('Required CSV columns: project, engineer, site_id, latitude, longitude, description.')
+    return preview_rows(actor,source_rows,default_project,filename=upload.name,raw=raw,headers=headers)
+
+
+def preview_rows(actor,source_rows,default_project='',*,filename='Entered sites',raw=b'',headers=None,entry_mode='bulk_csv'):
+    """Shared durable preview for CSV and the editable on-screen site table."""
+    if is_super_admin(actor):raise PermissionDenied('Super Admin cannot prepare engineering tasks.')
+    if not isinstance(source_rows,list) or not 1<=len(source_rows)<=MAX_ROWS:
+        raise ValidationError('Enter between 1 and 200 sites per batch.')
     rows=[]
     errors=[]
     fingerprints={}
@@ -274,13 +322,13 @@ def preview_csv(actor,upload,default_project=''):
     for number,row in enumerate(source_rows,start=2):
         if number>MAX_ROWS+1:
             raise ValidationError('Preview at most 200 CSV rows per batch.')
-        if None in row or any(v is None for v in row.values()):
+        if not isinstance(row,dict) or None in row or any(v is None for v in row.values()):
             errors.append({'row':number,'message':'The number of columns differs from the header.'})
             continue
         try:
             data,normalized=resolve_row(actor,row,default_project)
             fields=general_fields(data['project'].checklist_template.definition)
-            unknown=[h for h in headers if h not in BASE_COLUMNS and (h[6:] if h.startswith('field:') else h) not in fields]
+            unknown=[h for h in (headers or row.keys()) if h not in BASE_COLUMNS and (h[6:] if h.startswith('field:') else h) not in fields]
             if unknown:
                 raise ValidationError('Unknown general-information CSV columns: '+', '.join(unknown))
             if normalized['site_id'] in seen:
@@ -288,6 +336,7 @@ def preview_csv(actor,upload,default_project=''):
             seen.add(normalized['site_id'])
             fingerprints[str(data['project'].pk)]=schema_fingerprint(data['project'])
             normalized['row_number']=number
+            normalized['entry_mode']=entry_mode
             rows.append(normalized)
         except ValidationError as exc:
             errors.append({'row':number,'message':'; '.join(exc.messages)})
@@ -295,7 +344,7 @@ def preview_csv(actor,upload,default_project=''):
             errors.append({'row':number,'message':'This row is outside your assignment authority.'})
     if not rows and not errors:
         raise ValidationError('CSV contains no site rows.')
-    return AssignmentIntakeBatch.objects.create(requested_by=actor,source_filename=upload.name[:255],source_sha256=hashlib.sha256(raw).hexdigest(),rows=rows,errors=errors,schema_fingerprints=fingerprints,status='invalid' if errors else 'preview',expires_at=timezone.now()+timedelta(hours=1))
+    return AssignmentIntakeBatch.objects.create(requested_by=actor,source_filename=filename[:255],source_sha256=hashlib.sha256(raw).hexdigest(),rows=rows,errors=errors,schema_fingerprints=fingerprints,status='invalid' if errors else 'preview',expires_at=timezone.now()+timedelta(hours=1))
 
 
 @transaction.atomic
@@ -313,14 +362,14 @@ def commit_batch(actor,batch):
         raise ValidationError('Preview is invalid or expired; upload and validate it again.')
     validated=[]
     for row in batch.rows:
-        raw={**{key:row.get(key,'') for key in CONTEXT_COLUMNS},'project':row['project_id'],'engineer':row['engineer_name'],'site_id':row['site_id'],'latitude':row['latitude'],'longitude':row['longitude'],'description':row['description'],'general_info':row['general_info']}
+        raw={**{key:row.get(key,'') for key in CONTEXT_COLUMNS},**{key:row.get('site_information',{}).get(key,'') for key in BASIC_SITE_COLUMNS},'project':row['project_id'],'engineer':row['engineer_name'],'site_id':row['site_id'],'latitude':row['latitude'],'longitude':row['longitude'],'description':row['description'],'general_info':row['general_info']}
         data,_=resolve_row(actor,raw)
         if data['engineer'].pk!=row['engineer_id']:
             raise ValidationError('An Engineer account changed after preview; preview again.')
         if schema_fingerprint(data['project'])!=batch.schema_fingerprints[str(data['project'].pk)]:
             raise ValidationError('A project checklist changed after preview; create a new preview.')
         validated.append(data)
-    source={'kind':'bulk_csv','batch_id':batch.pk,'filename':batch.source_filename,'sha256':batch.source_sha256}
+    source={'kind':batch.rows[0].get('entry_mode','bulk_csv'),'batch_id':batch.pk,'filename':batch.source_filename,'sha256':batch.source_sha256}
     results=[create_assignment(actor,data,source).pk for data in validated]
     batch.status='committed'
     batch.result_ids=results

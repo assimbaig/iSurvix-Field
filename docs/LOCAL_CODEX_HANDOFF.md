@@ -1220,3 +1220,44 @@ See `docs/development/CHECKLIST_EDITOR_RECEIPT.json` and the updated checklist g
 The five referenced layout screenshots were not attached to this request; the
 numbered requirements guided the layout. Existing whole-site AI/drawing benchmark
 limitations are unchanged. Review only; do not merge or deploy automatically.
+
+## 21 October 2026: visible task creation and project site intake
+
+Branch `feat/site-task-intake` extends `feat/checklist-editor-tree`. Admin and Team
+Lead Overview/Tasks have a prominent Create task action; project cards also link
+single and bulk site entry. `/governance/tasks/new/` is the dedicated screen. It
+uses existing AssignmentForm, create_assignment, AssignmentIntakeBatch and frozen
+review routes; no new models or migrations. Other roles cannot create tasks.
+
+Single entry selects the project team, activity, source/CRS and recorded site data.
+Published template metadata supplies the default activity. Project three/four-layer
+rules remain authoritative and named reviewers are validated against active project
+membership. Inspection independence and existing qualification gates remain intact.
+The new UI does not expose per-task overrides of the project layer count.
+
+Bulk entry pastes IDs into an editable 200-row table, skips repeated pasted IDs and
+uses durable preview/atomic confirmed creation. Retrying the same confirmed batch
+returns the same results. Existing CSV preview/commit remains, adds named basic
+site columns and downloads its actual server template with review columns included.
+
+Recorded basics map deterministically to matching checklist general fields once;
+explicit preload values take precedence. Additional data remains in intake_metadata
+site_information. Original field IDs, published definitions, previous answers and
+approvals are not rewritten. No compliance or approval decisions are auto-filled.
+Task rows and Overview show the actual saved workflow and current stage, including
+one-step clarification returns. Site name appears beside its ID when recorded.
+
+Isolated browser checks exercise both roles, single/bulk entry, project switching,
+Client selection, duplicate paste/replay, mobile layout and Engineer delivery.
+Private QA and the pre-restart database snapshot are `.local/task-intake-qa`.
+Screenshots: `outputs/site-task-intake-20261021/` (synthetic data, ignored by Git).
+The recovery checkpoint before changes is
+`.local/backups/project-checkpoint-20261021-200810`. Live user sign-ins and edits to
+an existing draft occurred during development and were retained. Original business
+records and all 402 original-photo hashes remain; historical definitions/approvals
+are unchanged. Read the development receipt for final tests and delivery details.
+
+Final 617 core tests passed in 73.978 seconds; focused 42-test checks, Django,
+migration drift, JavaScript syntax and browser checks passed. Details are in
+`docs/development/SITE_TASK_INTAKE_RECEIPT.json`. The web app was restarted to load
+the new task routes; existing workers were left running. No merge or deployment.

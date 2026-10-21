@@ -1,0 +1,86 @@
+{
+  "feature": "Visible task creation and project site intake",
+  "branch": "feat/site-task-intake",
+  "base": "feat/checklist-editor-tree",
+  "routes": [
+    "/governance/tasks/",
+    "/governance/tasks/new/",
+    "/governance/?view=my_work",
+    "/governance/?view=projects",
+    "/governance/assign/bulk/"
+  ],
+  "changed_components": [
+    "Task explorer and Overview/project actions",
+    "Single-site and editable bulk-site creation screen",
+    "Existing assignment and durable preview/commit services",
+    "Recorded basic-information checklist preloads",
+    "Saved workflow/current-step presentation",
+    "Server CSV sample and project selection",
+    "Focused tests and user guidance"
+  ],
+  "checks": {
+    "core_tests": {
+      "passed": 617,
+      "failed": 0,
+      "seconds": 73.978
+    },
+    "focused_tests": {
+      "passed": 42,
+      "failed": 0
+    },
+    "django_check": "pass",
+    "migration_drift": "none",
+    "javascript_syntax": "pass",
+    "git_diff_check": "pass"
+  },
+  "browser": {
+    "synthetic": true,
+    "checks": [
+      "Admin main-page and task-list CTA create a site task with visible saved workflow",
+      "four-layer project preselects Client; two distinct bulk sites preview, commit and replay safely; pasted duplicate skipped",
+      "Team Lead can create a single site through the visible home action",
+      "Engineer receives created work and has no task-creation action; mobile layouts have no horizontal page overflow"
+    ],
+    "screenshots": [
+      "admin-home.png",
+      "create-single-desktop.png",
+      "tasks-desktop.png",
+      "bulk-preview-desktop.png",
+      "tasks-mobile.png",
+      "create-single-mobile.png"
+    ],
+    "sites": [
+      "SYN-SINGLE-3401981",
+      "SYN-BULK-A-3401981",
+      "SYN-BULK-B-3401981",
+      "SYN-LEAD-3401981"
+    ],
+    "javascriptErrors": []
+  },
+  "preservation": {
+    "all_original_business_records_retained": true,
+    "unchanged_tables": 57,
+    "tables_checked": 62,
+    "original_photo_hashes_verified": 402,
+    "sqlite_integrity": "ok",
+    "live_activity_retained": "Sign-ins, assignment progress and an existing draft answer edit occurred during development and were retained.",
+    "operational_test_data_created": false
+  },
+  "migration": {
+    "required": false,
+    "reason": "Existing assignment, intake batch, checklist and review-route models reused."
+  },
+  "runtime": {
+    "local_url": "http://127.0.0.1:8000/governance/tasks/new/",
+    "authentication_redirect_verified": true,
+    "web_restarted": true,
+    "workers_restarted": false
+  },
+  "screenshots": "outputs/site-task-intake-20261021 (isolated synthetic records)",
+  "constraints": [
+    "One batch has up to 200 sites and a shared project/team; CSV supports per-row team choices.",
+    "Recorded latitude/longitude, coordinate source and datum are required; unknown locations are not invented.",
+    "Existing project qualification, required evidence, AI review and approval gates remain in force.",
+    "Review only; no merge or deployment."
+  ]
+}

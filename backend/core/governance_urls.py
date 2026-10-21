@@ -1,6 +1,7 @@
 from django.urls import path
 from . import governance_views as v
 from . import task_explorer
+from . import task_creation
 from . import work_profile_views as professional
 from . import field_intake_views as intake
 from . import roadmap_views as roadmap
@@ -12,6 +13,7 @@ urlpatterns=[
     path('profile/experience/<int:experience_id>/',professional.experience_edit,name='work_profile_experience_edit'),
     path('profile/experience/<int:experience_id>/delete/',professional.experience_delete,name='work_profile_experience_delete'),
     path('tasks/',task_explorer.explorer,name='task_explorer'),
+    path('tasks/new/',task_creation.create,name='task_create'),
     path('tasks/',task_explorer.explorer,name='governance_tasks'),
     path('projects/<int:project_id>/client/',v.project_client,name='governance_project_client'),
     path('activities/<int:checklist_id>/review-policy/',roadmap.policy_assign,name='roadmap_policy_assign'),
