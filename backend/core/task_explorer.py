@@ -124,12 +124,15 @@ def explorer(request):
         return response
     page=Paginator(rows,25).get_page(request.GET.get('page'))
     ids=[row['task_pk'] for row in page if row['task_kind']=='checklist']
-    objects={c.pk:c for c in checklists.filter(pk__in=ids).select_related('project','review_policy__current_revision','work_assignment')}
+    objects={c.pk:c for c in checklists.filter(pk__in=ids).select_related('project','review_policy__current_revision','review_route_record','work_assignment')}
     back=reverse('task_explorer')+('?' + request.GET.urlencode() if request.GET else '')
     for row in page:
         c=objects.get(row['task_pk']) if row['task_kind']=='checklist' else None
         if c:
             row['stage']=c.workflow_label
+            from .task_presentation import workflow_steps
+            row['workflow_steps']=workflow_steps(c)
+            row['site_name']=(c.intake_metadata or {}).get('site_information',{}).get('site_name','')
             route='roadmap_activity' if c.governance_mode=='independent' else 'custom_checklist' if c.schema_snapshot else 'checklist_detail'
             row['review_url']=reverse(route,args=[c.pk])+'?'+urlencode({'return_to':back})
             row['url']=row['review_url']
@@ -166,6 +169,9 @@ def explorer(request):
         next_sort=column+'_desc' if data.get('sort')==column else column
         sort_links[column]=filter_link(sort=next_sort)
     sort_links['updated']=filter_link(sort='oldest' if data.get('sort','updated')=='updated' else 'updated')
-    response=render(request,'dashboards/task_explorer.html',{'sort_aria':sort_aria,'active_view':'tasks','selected_project_id':str(data['project'].pk) if data.get('project') else '', 'selected_industry':data.get('industry',''),'status_counts':status_counts,'module_tabs':module_tabs,'sort_links':sort_links,'form':form,'page_obj':page,'filter_query':query.urlencode(),'export_query':export_query.urlencode(),'is_client':client,'total':page.paginator.count})
+    create_query={'return_to':back}
+    if data.get('project'):create_query['project']=data['project'].pk
+    response=render(request,'dashboards/task_explorer.html',{'sort_aria':sort_aria,'active_view':'tasks','selected_project_id':str(data['project'].pk) if data.get('project') else '', 'selected_industry':data.get('industry',''),'status_counts':status_counts,'module_tabs':module_tabs,'sort_links':sort_links,'form':form,'page_obj':page,'filter_query':query.urlencode(),'export_query':export_query.urlencode(),'is_client':client,'total':page.paginator.count,
+        'can_create_tasks':role_for(request.user) in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD},'create_task_url':reverse('task_create')+'?'+urlencode(create_query)})
     response['Cache-Control']='private, no-store'
     return response

@@ -19,6 +19,11 @@ answers still follow their usual submission and approval validation.
 
 ## Engineer
 
+Project Admins and Team Leads create the assigned site from **Create task** on
+Overview or Tasks. Single-site entry and bulk site tables preload recorded site
+details; the saved project approval route applies to every created task. Engineers
+find this work in **My tasks**, with the current workflow step beside each site.
+
 1. Open the assigned saved survey. Complete site identification and required survey
    inputs. Save the survey before submitting it for processing.
 2. Upload photos in **Photos & matching**. Add PDF records, measured sketches,

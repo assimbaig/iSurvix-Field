@@ -1,0 +1,1 @@
+<ol class="task-flow" aria-label="Saved task workflow">{% for step in steps %}<li class="is-{{ step.state }}" {% if step.state == 'current' %}aria-current="step"{% endif %} title="{{ step.description }}">{{ step.label }}<span class="visually-hidden"> · {{ step.description }}</span></li>{% endfor %}</ol>

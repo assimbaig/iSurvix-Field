@@ -25,6 +25,31 @@ frequently used sections and checkpoints appear earlier. Drafts, disabled
 templates, foreign projects and survey answers do not teach this library.
 Suggestions always require your selection; they never change a published template.
 
+## Create site tasks after publishing
+
+Project Admins and Team Leads use **Create task** on Overview or Tasks. Under
+**Your projects / Projects & sites**, each project also has **Add site task** and
+**Add bulk sites** actions.
+
+Choose the project, activity and project team. The project determines the three-
+or four-layer review workflow; a four-layer project also needs its Client reviewer.
+For one site, enter its ID, recorded coordinates and available basic information,
+then select **Create task**. Record the coordinate source and datum accurately.
+
+For many sites, choose **Bulk sites**, paste one ID per line and complete the
+editable table. Duplicate pasted IDs are skipped. The chosen team applies to this
+batch. **Preview sites**, correct every error, then **Create site tasks**. A batch
+has at most 200 sites. Reconfirming the same preview does not duplicate tasks.
+Use **Import CSV** for per-row team choices and advanced preload fields.
+
+Recorded site details populate matching general-information checklist fields at
+creation and remain through submission and review. Additional supplied checklist
+values take precedence. Unmatched basic information is retained with the task;
+no inspection result or approval is filled automatically. Engineers can correct
+unlocked information before submission. Each site in Tasks displays its saved
+workflow and current step. Existing qualification and evidence requirements still
+apply before submission or approval.
+
 ## Status and safe changes
 
 | State | Available actions |
