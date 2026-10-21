@@ -127,8 +127,8 @@ def validate_submission(c, uploads_finished):
         raise ValidationError('Provide the site ID and an administrator-approved checklist.')
     from .roadmap_service import require_qualified_template
     require_qualified_template(c)
-    if c.survey_upload_sessions.filter(finished_at__isnull=True).exists():
-        raise ValidationError('Uploads are still in progress. Finish or close your upload session first.')
+    from .survey_upload_sessions import require_complete
+    require_complete(c)
     allowed = {f['id']: f for s in c.checklist_template.definition['sections'] for f in s['fields']}
     for section in c.schema_snapshot['sections']:
         for field in section['fields']:
@@ -166,18 +166,8 @@ def submit(request, checklist_id, uploads_finished):
 
 
 def upload_session(request, checklist_id, token=None):
-    with transaction.atomic():
-        Checklist.objects.select_for_update().get(pk=checklist_id)
-        c, flags = access(request, checklist_id)
-        if not flags['can_submit']:
-            raise PermissionDenied('Only the assigned Engineer can upload processing evidence.')
-        if token is None:
-            return SurveyUploadSession.objects.create(token=uuid.uuid4(), checklist=c, actor=request.user)
-        session = SurveyUploadSession.objects.get(token=token, checklist=c, actor=request.user)
-        if session.finished_at is None:
-            session.finished_at = timezone.now()
-            session.save(update_fields=['finished_at'])
-        return session
+    from .survey_upload_sessions import start, finish
+    return start(request, checklist_id) if token is None else finish(request, checklist_id, token)
 
 
 def retry(request, checklist_id, revision_id):
@@ -205,11 +195,14 @@ def worker_guard(revision):
 
 
 def claim():
+    from .remote_worker_models import RemoteWorkerProject
     now = timezone.now()
     with transaction.atomic():
         job = SurveyProcessingJob.objects.select_for_update().filter(
             Q(status='queued') | Q(status__in=ACTIVE, lease_until__lt=now) |
-            Q(status__in=ACTIVE, lease_until__isnull=True)).order_by('pk').first()
+            Q(status__in=ACTIVE, lease_until__isnull=True)).exclude(
+                revision__checklist__project_id__in=RemoteWorkerProject.objects.filter(enabled=True).values('project_id')
+            ).order_by('pk').first()
         if not job:
             return None
         job.lease_owner = uuid.uuid4().hex

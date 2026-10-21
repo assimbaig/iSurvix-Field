@@ -1,0 +1,553 @@
+{
+  "baseline": "79d977227e88db0ddab437aca3ffd3a6da5c60fb",
+  "branch": "feat/secure-outbound-survey-workers",
+  "checkpoint": ".local/backups/project-checkpoint-20261021-214141",
+  "requirements": [
+    {
+      "id": "operating.instructions",
+      "expected_behavior": "Read repository, installed Agency roles and handoffs",
+      "implementation": "docs/LOCAL_CODEX_HANDOFF.md",
+      "verification_method": "Actual file reads and assigned ownership",
+      "actual_result": "Repository/handoff and installed Orchestrator, AppSec/Backend, DevOps, UX/Frontend/Finish Gate and API Tester profiles read; ownership assigned before edits.",
+      "status": "Verified"
+    },
+    {
+      "id": "operating.version",
+      "expected_behavior": "Record current branch/commit/status and compare remote without reset",
+      "implementation": "git",
+      "verification_method": "git fetch/status/log/ahead-behind",
+      "actual_result": "Initial clean feat/integrated-survey-verification at79d9772; origin samebranch0/0 afterfetch; no reset. Dedicated featurebranch created from actual HEAD.",
+      "status": "Verified"
+    },
+    {
+      "id": "operating.checkpoint",
+      "expected_behavior": "Create recoverable pre-edit checkpoint and preserve original files/records",
+      "implementation": ".local/save_project_checkpoint.py",
+      "verification_method": "SQLite consistency, archive CRC and file hashes",
+      "actual_result": "Pre-edit checkpoint214141:492 sourcefiles, consistent SQLite and CRC-checked archive. Later preservation compared53 coretables,806mediafiles and12 private/configfiles unchanged.",
+      "status": "Verified"
+    },
+    {
+      "id": "operating.branch",
+      "expected_behavior": "Use dedicated feature branch; no production merge/deploy",
+      "implementation": "git",
+      "verification_method": "Branch and PR review",
+      "actual_result": "Dedicated feat/secure-outbound-survey-workers; no production deployment/merge/force-push. Git publication is tracked separately under delivery.git.",
+      "status": "Verified"
+    },
+    {
+      "id": "operating.isolation",
+      "expected_behavior": "All destructive tests use isolated databases/media; no operational approvals",
+      "implementation": "scripts/run_backend_tests.py",
+      "verification_method": "Inspect fixture settings and actual native/browser paths",
+      "actual_result": "All test/benchmark writes used separate .local fixture DB/media or Django testDB. Operational DB andoriginalsunchanged; nooperationalapprovals.",
+      "status": "Verified"
+    },
+    {
+      "id": "operating.agency",
+      "expected_behavior": "Use actual available installed roles with one file owner and independent QA",
+      "implementation": "Agency agent instructions",
+      "verification_method": "Agent invocation and independent review receipts",
+      "actual_result": "Actual five scoped agent responsibilities invoked; independent API Tester did original-spec audit, native Nginx repro, browser reads and real parallel HTTP uploads.",
+      "status": "Verified"
+    },
+    {
+      "id": "baseline.backend",
+      "expected_behavior": "Run baseline full backend suite",
+      "implementation": "backend/core/test_*.py",
+      "verification_method": "Full Django test command/log/counts",
+      "actual_result": "Ordinary baseline666passed253.596s. Strictbaseline reproducedfour fixture failures plusone harness falsepositive; cwd-sensitive fifth separately reproduced.",
+      "status": "Verified"
+    },
+    {
+      "id": "baseline.frontend",
+      "expected_behavior": "Run existing four frontend scripts",
+      "implementation": "frontend/check-*.cjs",
+      "verification_method": "Node VM command results, distinct from browser QA",
+      "actual_result": "Four retained frontend VM scripts passed; separate actual Django/Edge browser verification also performed.",
+      "status": "Verified"
+    },
+    {
+      "id": "baseline.checks",
+      "expected_behavior": "Run Django, migration drift and dependency checks",
+      "implementation": "backend/checklist",
+      "verification_method": "check; makemigrations --check --dry-run; pip check",
+      "actual_result": "Baseline check0issues; migrationdrift no changes; pip no broken requirements. Exactcommandreceipts retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "baseline.five-regressions",
+      "expected_behavior": "Reproduce all five named tests including cwd-sensitive historical PM",
+      "implementation": "backend/core/test_photo_{search,placements}.py; test_quality_workflow.py",
+      "verification_method": "Strict hermetic and backend-cwd reproductions",
+      "actual_result": "Reproduced private-manifest prerequisites(3), accidentalOllama discovery(1), backend-cwd.local fixture(1). Kept assertions and replaced only prerequisite fixtures.",
+      "status": "Verified"
+    },
+    {
+      "id": "baseline.test-isolation",
+      "expected_behavior": "Ordinary suite must not use private models/network/prior DB",
+      "implementation": "scripts/run_backend_tests.py",
+      "verification_method": "Full isolated run with network guard and empty model caches",
+      "actual_result": "Tracked isolated runner uses temporary realDjangoDB/media/cache and network guard; nativeintegration separate. The final whole-suite result is tracked separately under delivery.final-suite.",
+      "status": "Verified"
+    },
+    {
+      "id": "baseline.assertions",
+      "expected_behavior": "Keep intended assertions; native integration explicitly separate",
+      "implementation": "backend/core/test_*.py",
+      "verification_method": "Diff review and actual native receipt",
+      "actual_result": "No existing tests skipped/deleted/weakened. Independent review inspected fixture diffs; native tests use real Ollama separately.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.paths",
+      "expected_behavior": "Audit originals/previews/documents/outputs/legacy/branding",
+      "implementation": "backend/nginx_config.conf; core/private_files.py",
+      "verification_method": "Enumerate all live upload_to/storage paths",
+      "actual_result": "Originals/previews/docs/extractedpreviews/legacy/branding/PDF/DXF/PNG/ZIP+remoteinputs audited. Production photo URLs restored.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.nginx",
+      "expected_behavior": "Block every direct unauthorised /media path including new folders",
+      "implementation": "backend/nginx_config.conf",
+      "verification_method": "Actual disposable native Nginx baseline and fixed probes",
+      "actual_result": "Real official portableNginx baseline8/10privatecategories publicly200; fixedall10directfolders404. Independently repeated100authenticatedproxyrequests.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.anonymous",
+      "expected_behavior": "Anonymous cannot obtain private evidence/output bytes",
+      "implementation": "core/private_files.py; photo_views.py; survey_processing_views.py",
+      "verification_method": "Actual Nginx proxy and HTTP negative cases",
+      "actual_result": "Actual Nginx\u2192Django anonymous HTTP denied all10assettypes.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.scope",
+      "expected_behavior": "Foreign project and unassigned/wrong roles denied",
+      "implementation": "core/private_files.py; access.py",
+      "verification_method": "Actual Nginx proxy + authenticated Django tests",
+      "actual_result": "Foreign/unassignedusers anddraftClient denied across10assets in actualproxyrequests andregressiontests.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.authorised",
+      "expected_behavior": "Assigned Engineer/Lead/Admin retain exact byte access",
+      "implementation": "core/private_files.py; survey_processing_views.py",
+      "verification_method": "Native HTTP positive cases and hashes",
+      "actual_result": "AssignedEngineer/Lead/Admin realHTTP200matchedexact10filehashes, not justDjangomocks.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.client",
+      "expected_behavior": "Clients receive only current appropriately released outputs",
+      "implementation": "core/survey_processing_views.py",
+      "verification_method": "Client draft denial and synthetic released workflow",
+      "actual_result": "Actual assignedClient4layerreleasedPDF/DXF/ZIP200; sameClientretaineddraftPDF404; unassigned3layerClient404; internaldataabsent.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.production-routes",
+      "expected_behavior": "Production includes existing authenticated photo/review/worker routes",
+      "implementation": "backend/checklist/urls.py",
+      "verification_method": "Production URLconf actual HTTP serving",
+      "actual_result": "Actual nativeproxy used production URLconf andauthenticated photo/document/legacy/branding/output endpoints.",
+      "status": "Verified"
+    },
+    {
+      "id": "private-files.bytes",
+      "expected_behavior": "Existing evidence and outputs remain byte-identical",
+      "implementation": "local backup/media",
+      "verification_method": "Pre/post file hashes and database preservation comparison",
+      "actual_result": "806operationalmedia +12private/config hashes unchanged;53 coretables identical tocheckpoint214141;SQLiteintegrityok.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.reproduce",
+      "expected_behavior": "Interrupted A session blocks reassigned Engineer B before fix",
+      "implementation": "core/survey_processing.py",
+      "verification_method": "Original implementation review and regression fixture",
+      "actual_result": "Old openactor-owned sessions blockreassignedEngineer andcannotclose normally; regression reproducesandrecoveryunblockswithoutdeletingfiles.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.liveness",
+      "expected_behavior": "Track heartbeat, stale/interrupted state and active batches",
+      "implementation": "core/survey_upload_sessions.py; migration0048",
+      "verification_method": "Clock-controlled service tests and browser state",
+      "actual_result": "Heartbeat/stale/interrupted states,5minbrowser expiry/15minbatchlease, and30sactualbrowserheartbeatverified.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.protection",
+      "expected_behavior": "Never recover a genuinely active or concurrent transfer early",
+      "implementation": "core/survey_upload_sessions.py",
+      "verification_method": "Concurrent batches, heartbeat extension and delayed commit tests",
+      "actual_result": "Actualparallel2HTTPuploads protectedcounter2and1;finish/recoverdenieduntilbothcomplete. Delayedexpiredcommitafterrecoverydenied.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.scope",
+      "expected_behavior": "Assigned Engineer/project Admin/Lead may recover, revoked/foreign roles may not",
+      "implementation": "core/survey_upload_sessions.py",
+      "verification_method": "Reassignment/inactive and unauthorized regression tests",
+      "actual_result": "Reassigned/inactiveactor androle/scope negatives pass; actualAdmin andnewEngineer browserrecoveractionswork.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.audit",
+      "expected_behavior": "Reason-required immutable audit; idempotent finish/recovery",
+      "implementation": "core/survey_upload_sessions.py",
+      "verification_method": "Repeat requests and event count assertions",
+      "actual_result": "Reason-required append-only audit, repeatrecover/finish idempotence verified inservice/realbrowser/parallelHTTP.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.preserve",
+      "expected_behavior": "Recovery preserves completed evidence and submission safeguards",
+      "implementation": "core/survey_upload_sessions.py; photo_views.py",
+      "verification_method": "Files/count/hash checks and submission gating",
+      "actual_result": "Bothparalleloriginalhashesmatch; expiredlatecommitwritesnothing; previouscompletedfilesandsubmissiongatepreserved.",
+      "status": "Verified"
+    },
+    {
+      "id": "upload-recovery.ui",
+      "expected_behavior": "Normal interface exposes understandable recovery and keeps upload heartbeats",
+      "implementation": "static/core/js/{photo_workspace,survey_processing}.js",
+      "verification_method": "Desktop/mobile browser, active/stale messages/recovery action",
+      "actual_result": "Desktop/mobile actualrecoverypanel,activeprotection,30sheartbeat,pagehideinterrupt andcorruptdocumentfeedbackpassed.",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.measure-before",
+      "expected_behavior": "Measure representative request latency/query count/response bytes before edits",
+      "implementation": "local performance fixture",
+      "verification_method": "20 revisions/200 photos/8000 findings baseline receipt",
+      "actual_result": "20revisions/200photos/8000findings fixture: baseline1737.961ms,176queries,11715760bytes (5samplesmedian).",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.lightweight",
+      "expected_behavior": "Progress must not deserialize historical evidence/result/geometry",
+      "implementation": "core/survey_processing_views.py:progress",
+      "verification_method": "SQL inspection and bounded response regression test",
+      "actual_result": "ProgressSQLtest excludes snapshots/sources/results/geometry. Final7.118ms,12queries,4623bytes.",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.lazy",
+      "expected_behavior": "Selected revision detail plus pageable findings/events/output editions/history",
+      "implementation": "core/survey_processing_views.py:serialize",
+      "verification_method": "Pagination completeness, exact revision, stable sources, browser Load more",
+      "actual_result": "Exactselectedrevision,findings50\u2192100,events50\u219266,editions1\u21922,history30revisions+olderselectionrefresh verifiedbrowserandAPI.",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.polling",
+      "expected_behavior": "Only poll active jobs/open uploads; hidden pause and retry/backoff",
+      "implementation": "static/core/js/survey_processing.js",
+      "verification_method": "Real browser request log, hidden-tab and offline recovery checks",
+      "actual_result": "ActualEdgecountticknoheavyfetch;idlebackoff3\u21924.5s;hiddenrealbackgroundtabstops;networkfailure6.013sretryandmanualrecovery.",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.honest",
+      "expected_behavior": "Progress/errors/recovery messages reflect real saved state",
+      "implementation": "survey_processing.html; survey_processing.js",
+      "verification_method": "Actual queued/native/failed/offline UI states",
+      "actual_result": "Nativequeued/analysing/ready/failed states; expiredPCleasemessage fixedfromindependentrepro. Failedrefreshdisablesmutations.",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.checkpoints",
+      "expected_behavior": "Completed inference persists across retries/restart without repeating",
+      "implementation": "survey_processing.py; remote_worker_client.py",
+      "verification_method": "Interrupted worker/checkpoint/cache tests",
+      "actual_result": "Durabletask/source checkpoints andatomicPCcacheverified viarealHTTPdisconnect/transfer/cachetests; realfailednativeDOCretryranzeroimagecallswith3sourcecheckpointsretained.",
+      "status": "Verified"
+    },
+    {
+      "id": "performance.measure-after",
+      "expected_behavior": "Repeat same representative fixture after changes",
+      "implementation": "local performance fixture",
+      "verification_method": "Before/after timings, SQL counts and bytes receipt",
+      "actual_result": "Samefixturefinalfulllegacy1663.383ms/155queries/11716270B; selected63.975ms/28queries/423335B; progress7.118ms/12queries/4623B.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.scope",
+      "expected_behavior": "Integrated generation applies only to approved checklist-required surveys",
+      "implementation": "core/survey_processing.py:enabled",
+      "verification_method": "Opt-in/excluded/inspection tests",
+      "actual_result": "Excluded/nonpublished/nonrequired andinspection tests pass; onlyapprovedchecklist-requiredsurveyenabled.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.upload200",
+      "expected_behavior": "Bounded batches support 200 site photos, originals and available EXIF preserved",
+      "implementation": "core/photo_views.py; survey_evidence.py",
+      "verification_method": "Real 200-file capacity test; corrupt/duplicate/no-EXIF tests",
+      "actual_result": "Existingreal200-photo boundeduploadcapacitytestpasses;actualbrowser20-filetransfer/heartbeat plusduplicate/corrupt/noEXIF/originalbytes tests. Not sustainednative200throughput.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.jobs",
+      "expected_behavior": "Immutable submission, persistent queued job and retained input revisions",
+      "implementation": "core/survey_processing.py",
+      "verification_method": "Duplicate submit/changed input/retry/restart tests and actual UI submit",
+      "actual_result": "Actualbrowserimmutablesubmit+repeatonejob; changedinputsretainrevisions; approval/currentness/retry/restart regressiontests pass.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.vision",
+      "expected_behavior": "Verify installed qwen3.5:4b capability and deliver actual image bytes",
+      "implementation": "core/survey_evidence.py; local_ai.py",
+      "verification_method": "Native /api/show and actual chat image hashes/counts",
+      "actual_result": "Nativeqwen3.5:4b showedvision before actualimagecalls. SeparatePCdatabase+authenticatedHTTP2photos24.594s; imagebytecounts/hashesrecorded.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.documents",
+      "expected_behavior": "Analyse real PDF/workbook/sketch content and embedded images",
+      "implementation": "core/survey_evidence.py",
+      "verification_method": "Actual extraction fixtures + native bounded document probe",
+      "actual_result": "NativePDFpage/workbookcells/embeddedPNG reached actualmodel; sourcecheckpoints persisted. Final corrected mapping native completion recorded separately.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.mapping",
+      "expected_behavior": "Validate proposed findings bound to stable selected-template IDs and sources",
+      "implementation": "core/survey_checklist_mapping.py",
+      "verification_method": "Source/mapping validation tests and checked native results",
+      "actual_result": "StableIDs closeddecisionschema,duplicateJSONkey/unknown/missing/extra/repeated/cross-source validation; independentlyreviewed. Nativelegacyarrayrepeatsreproduced; correctedformatnativeprobe10uniquedecisions8.781s.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.uncertainty",
+      "expected_behavior": "Missing/unsupported/conflicting measurements remain uncertain; no invented compliance",
+      "implementation": "core/survey_evidence.py; survey_processing.py",
+      "verification_method": "Malformed/conflict/missing/uncalibrated evidence tests and reference comparison",
+      "actual_result": "Conflictingvalues remainneeds_review, unsupported exactdimensions withheld. NativeZandwrittendimensionmisses reported honestly; manualcorrectionexplicit.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.human",
+      "expected_behavior": "AI proposes only; explicit Engineer correction/acceptance applies answers",
+      "implementation": "core/survey_processing.py:review",
+      "verification_method": "Actual browser acceptance, persisted answers and audit",
+      "actual_result": "ActualEngineerbrowsermanual1.2m/2mcorrection,batchacceptance,explicitapply persistedanswers/evidence; originalextractionandmissingtower/conditionretained.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.locks",
+      "expected_behavior": "Recheck permissions, stale answers, approved sections and required review roles",
+      "implementation": "core/survey_processing.py; review_route_service.py",
+      "verification_method": "Unauthorized/stale/approved lock negatives + actual route",
+      "actual_result": "Auth/project/approvedsection/staleanswer/assignmentrevoke negative tests; actualfinalsurveyslocked. AIcannotreview/release.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.release",
+      "expected_behavior": "Draft drawings require technical approval and closed existing workflow before release",
+      "implementation": "core/survey_processing.py:release_gate",
+      "verification_method": "Synthetic 3/4-layer route tests + actual browser release",
+      "actual_result": "Realbrowser3layerEngineer\u2192QA\u2192TL and4layerEngineer\u2192QA\u2192TL\u2192namedClient; exactpackageQA+Leadrelease. IndependentClientdraftdenial/releaseddownloadsverified.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.idempotence",
+      "expected_behavior": "Retry does not duplicate job/findings/output editions or lose old assets",
+      "implementation": "core/survey_processing.py; remote_worker_service.py",
+      "verification_method": "Repeat submit/delivery, interrupted worker, retained source/output tests",
+      "actual_result": "Repeatnativebrowser submit reusedrevision/job; servercheckpointduplicate/rejectedoverwrite andimmutableoutputedition/retrytests pass; oldfailedDOCrevisionspreserved.",
+      "status": "Verified"
+    },
+    {
+      "id": "survey-workflow.active-ui",
+      "expected_behavior": "Actual saved Django records, no browser demo storage in operational workflow",
+      "implementation": "survey_processing.html; survey_processing.js",
+      "verification_method": "Real upload/submission/review/export browser run",
+      "actual_result": "ActiveDjangoworkspace realSQLiterecords/authenticatedactions; desktop/mobilebrowserupload\u2192submit\u2192nativeHTTP\u2192accept\u2192review\u2192release\u2192export.",
+      "status": "Verified"
+    },
+    {
+      "id": "drawings.consistency",
+      "expected_behavior": "PDF/DXF derive from shared confirmed geometry and units",
+      "implementation": "core/survey_drawings.py",
+      "verification_method": "Structural entity/coordinate comparison and actual render",
+      "actual_result": "Independent960DXFentities +488PDFtextorigins/fonts reconciledto sharedgeometry,sourcehashes/layers/units across13pages; audits0errors.",
+      "status": "Verified"
+    },
+    {
+      "id": "drawings.visual",
+      "expected_behavior": "Inspect every generated page for clipping/overlap/readability/branding",
+      "implementation": "core/survey_drawings.py",
+      "verification_method": "Rendered PDF + DXF layout/text structural checks",
+      "actual_result": "All13pagesrenderedandindependentlyinspected; noobservedclipping/overlap/missingglyph. Synthetic3logoPDF/DXFvisualprobe separately recorded.",
+      "status": "Verified"
+    },
+    {
+      "id": "drawings.limitations",
+      "expected_behavior": "Show Draft/Not to Scale/missing dimensions/source limitations; no invented manufacturer geometry",
+      "implementation": "core/survey_drawings.py",
+      "verification_method": "Actual exports and evidence notes",
+      "actual_result": "Actualsampleslabel generic/typicalverify,missingmeasurements,not-to-scaleunverifiedsheets andDraftvsReleasedsurveyrecord; noengineeringcomplianceclaim.",
+      "status": "Verified"
+    },
+    {
+      "id": "drawings.references",
+      "expected_behavior": "Use approved references where available; identify absent manufacturer/drawing sources",
+      "implementation": "project reference assets",
+      "verification_method": "Authorised Z93004 file inventory and reference dependency report",
+      "actual_result": "Available Z93004 reference PDFs are FOR REVIEW. No verifiedmanufacturerCAD/approveddimensionalbaseline was supplied; exactinstalledgeometry cannot be verified.",
+      "status": "Blocked",
+      "required_action": "Supply approvedmanufacturerblocks/dimensionalreferences andfield-verifiedmeasurements; no fabricatedreplacementgeometry generated."
+    },
+    {
+      "id": "drawings.z-inventory",
+      "expected_behavior": "Record available Z93004 input types/counts without modifying originals",
+      "implementation": "authorised Z93004 sources",
+      "verification_method": "Read-only inventory and hashes",
+      "actual_result": "Read-onlycurrentinventory378JPG,1XLSXwith150embeddedimages,1MP4,4PDF(twoidenticalcopiesof2FORREVIEWsets). Onecheckedphotohashunchanged.",
+      "status": "Verified"
+    },
+    {
+      "id": "drawings.z-benchmark",
+      "expected_behavior": "Checked native site benchmark: extraction errors/misses/unsupported values, time and corrections",
+      "implementation": "isolated Z93004 benchmark",
+      "verification_method": "Manual reference comparison, timing and checked checklist/PDF/DXF",
+      "actual_result": "Boundednative1photobenchmark31.313s andcheckedreference completed. Zamil/2airconditioners/printedGPSobserved; date/siteidmissed, address/GPSconflation flaggedconflict; no exactdimensions. Whole-siteaccuracy/correctiontime/throughput is outstanding.",
+      "status": "Blocked",
+      "required_action": "Provide a checked site-wide equipment inventory and measured dimensions/units/source locations for378photos+150embeddedimages, approved by the field reviewer. This checked reference is absent; the bounded one-photo run cannot establish whole-site extraction accuracy, correction time or sustained throughput."
+    },
+    {
+      "id": "hosting.outbound",
+      "expected_behavior": "VPS jobs/results and outbound authenticated PC input/result connection",
+      "implementation": "core/remote_worker_{service,client,views}.py",
+      "verification_method": "Actual HTTP integration; separate PC DB native run",
+      "actual_result": "26bridgeHTTP/service tests plus separatePCnativeHTTP jobs. NoVPSDBaccessfromPC; actualserverrenderedexistingdraftPDF/DXF.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.credentials",
+      "expected_behavior": "Scoped hashed expiring/revocable secrets, private provisioning and no token leaks",
+      "implementation": "core/remote_worker_service.py; provision_survey_worker.py",
+      "verification_method": "Expiry/revocation/foreign scope/provision-exclusive tests",
+      "actual_result": "Hash-onlyscopedexpiringcredential,revocation/inactiveAdmin/foreignproject/provision-exclusive/privateACL/redirecttestspass; nosecretprinted.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.leases",
+      "expected_behavior": "Leases, heartbeats and interruption/restart recovery",
+      "implementation": "core/remote_worker_service.py",
+      "verification_method": "Lease expiration, disconnect/reconnect and restart tests",
+      "actual_result": "10minutelease/20secondheartbeat,expiry/reclaim,interruptedtransfer/cache/restart/versionpinchecks pass. Actualofflinemessageverified.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.validate",
+      "expected_behavior": "Validated versioned source-bound results, duplicate delivery protection",
+      "implementation": "core/remote_worker_service.py",
+      "verification_method": "Malformed/forged source/unknown field/stale version/duplicate tests",
+      "actual_result": "StrictPydantic/sourceSHA/stableIDs/versionpin/line-endingnormalizedimplementationhash/duplicates/forgedapprovalnegative tests pass.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.offline",
+      "expected_behavior": "PC offline leaves jobs queued; website remains available",
+      "implementation": "core/survey_processing.py:claim; remote_worker_service.py",
+      "verification_method": "Offline queue + real website GET + no local claim test",
+      "actual_result": "Remotelyassignedqueuedjobs excludedfromordinarylocalclaim; authenticatedwebsiteGETworkswithoutPC; no paid/cloudfallback.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.transport",
+      "expected_behavior": "HTTPS remote, no public Ollama, no shared production DB; safe redirects/transfers",
+      "implementation": "core/remote_worker_client.py",
+      "verification_method": "Redirect, invalid HTTPS origin, partial transfer and native HTTP loopback test",
+      "actual_result": "HTTPSnonloopback enforced,redirectbearerforwardblocked,partialimagehashchecked; nativeHTTPloopbacksimulationusesindependentPCDB/Ollamaloopback.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.configuration",
+      "expected_behavior": "Reviewable Nginx/service/deployment instructions without automatic changes",
+      "implementation": "backend/deploy.sh; checklist.service; docs/REMOTE_SURVEY_WORKER.md",
+      "verification_method": "Config validation and command/document review",
+      "actual_result": "Validation-firstdeploy.sh,Bashsyntax,Django/env/servicechecks;nativeNginx actualtested. Exacthistoricalpath/domainreplacementdocumented.",
+      "status": "Verified"
+    },
+    {
+      "id": "hosting.vps-live",
+      "expected_behavior": "Install TLS/domain/env/private storage, scoped credential and worker on actual VPS",
+      "implementation": "external hosting",
+      "verification_method": "Actual server access, DNS/TLS and end-to-end network verification",
+      "actual_result": "NoVPSaccess,domain/TLSorproductioncredentialssupplied. Applicationbridge/config/integrationtestscompleted; noactualserverdeployment/publicHTTPSsmoketestexecuted.",
+      "status": "Blocked",
+      "required_action": "Serveroperator mustconfigureDNS/TLS/env/privatepaths,backup+migrate0048-50,installreviewedNginx/service,provisionproject-scopedcredentialandrunrealHTTPSsmoketest."
+    },
+    {
+      "id": "delivery.final-suite",
+      "expected_behavior": "Run final full suite after last relevant change; investigate all failures",
+      "implementation": "scripts/run_backend_tests.py",
+      "verification_method": "Final full log and pass/fail/error/skip counts",
+      "actual_result": "Pending current verification.",
+      "status": "In progress"
+    },
+    {
+      "id": "delivery.final-checks",
+      "expected_behavior": "Final frontend scripts, Django, migration drift, dependency and syntax checks",
+      "implementation": "backend; frontend; scripts",
+      "verification_method": "Exact final command receipts",
+      "actual_result": "Pending current verification.",
+      "status": "In progress"
+    },
+    {
+      "id": "delivery.browser",
+      "expected_behavior": "Desktop/mobile upload/review/recovery/history/export and console/request checks",
+      "implementation": "actual Django workspace",
+      "verification_method": "Screenshots + browser assertions and errors",
+      "actual_result": "14frontendactualchecks +rootnativeapprovalflows +independentread-only/clientbrowserchecks at1440/1024/390/320; noJSexceptions; mainfinalworkflow0failedHTTP.",
+      "status": "Verified"
+    },
+    {
+      "id": "delivery.independent",
+      "expected_behavior": "Independent QA audits original requirements and fixes are retested",
+      "implementation": "Agency API Tester reviewer",
+      "verification_method": "Independent findings/regressions/review receipt",
+      "actual_result": "IndependentAPIQAfoundexpiredremoteleasevisibilitybug,fixedandregressed; separatelyreproduced100Nginxrequests,paralleluploads,Clientreleaseprivacy andmappingdecodingvalidation.",
+      "status": "Verified"
+    },
+    {
+      "id": "delivery.samples",
+      "expected_behavior": "Provide checked checklist/PDF/DXF samples with honest limits",
+      "implementation": "outputs/release-hardening-20261021",
+      "verification_method": "Sanitized synthetic samples and private authorised benchmark",
+      "actual_result": "FivecheckedactualsyntheticmeasuredPDF/DXFsandlinkedgeometry+renderingsincluded; privateZdraftretainedlocally. No customer originals/sessions/credentials intrackedartifacts.",
+      "status": "Verified"
+    },
+    {
+      "id": "delivery.startup",
+      "expected_behavior": "Exact Windows app/local-worker/remote-worker/update instructions",
+      "implementation": "docs/RELEASE_HARDENING.md",
+      "verification_method": "Commands match available management commands/settings",
+      "actual_result": "GUIlauncherandexplicitWindowsapp/localworker/outboundworker/updatecommands documented; clarifybackup/migrationsbeforemanualstartup,operational8000notrestarted.",
+      "status": "Verified"
+    },
+    {
+      "id": "delivery.git",
+      "expected_behavior": "Feature commit/checkpoint and pull request, no merge/production deployment",
+      "implementation": "git/GitHub",
+      "verification_method": "Commit/push/PR URL and current status",
+      "actual_result": "Pending current verification.",
+      "status": "In progress"
+    }
+  ],
+  "updated_at": "2026-10-21T19:17:08.849242+00:00",
+  "summary": {
+    "Verified": 61,
+    "Blocked": 3,
+    "Failed": 0,
+    "In progress": 3
+  }
+}

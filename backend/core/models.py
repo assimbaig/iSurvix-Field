@@ -563,3 +563,4 @@ from .evidence_models import EvidenceReviewBinding  # noqa: E402,F401
 from .checklist_import_models import ChecklistImportBatch  # noqa: E402,F401
 from .review_route_models import ReviewRoute, ReviewRouteEvent  # noqa: E402,F401
 from .survey_processing_models import SurveyDocument, SurveyUploadSession, SurveyProcessingRevision, SurveyProcessingJob, SurveySourceAnalysis, SurveyProcessingResult, SurveyProcessingEvent, SurveyDrawingSet  # noqa: E402,F401
+from .remote_worker_models import RemoteWorkerProject, RemoteWorkerCredential, RemoteSurveyLease, RemoteSurveyTask  # noqa: E402,F401

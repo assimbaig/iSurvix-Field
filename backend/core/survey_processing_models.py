@@ -1,6 +1,7 @@
 """Additive survey processing: immutable inputs/results and append-only decisions."""
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from .revision_models import ImmutableRecord
 
 
@@ -22,6 +23,22 @@ class SurveyUploadSession(models.Model):
     checklist = models.ForeignKey('core.Checklist', on_delete=models.CASCADE, related_name='survey_upload_sessions')
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     finished_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    heartbeat_at = models.DateTimeField(default=timezone.now)
+    active_until = models.DateTimeField(null=True)
+    active_batches = models.PositiveIntegerField(default=0)
+    interrupted_at = models.DateTimeField(null=True)
+    recovered_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT,
+                                    related_name='recovered_survey_upload_sessions')
+    recovery_reason = models.CharField(max_length=1000, blank=True)
+
+
+class SurveyUploadSessionEvent(ImmutableRecord):
+    session = models.ForeignKey(SurveyUploadSession, on_delete=models.PROTECT, related_name='events')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    action = models.CharField(max_length=32)
+    reason = models.CharField(max_length=1000, blank=True)
+    payload = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
 
 

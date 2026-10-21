@@ -42,23 +42,14 @@ def error(exc, status=400):
 def track_survey_upload(view):
     @wraps(view)
     def tracked(request, checklist_id):
-        from .survey_processing import enabled, upload_session
-        from .survey_processing_models import SurveyUploadSession
+        from .survey_processing import enabled
+        from .survey_upload_sessions import upload_batch
         c = survey_access(request, checklist_id, edit=True)['checklist']
-        session = None
         if enabled(c):
-            token = request.POST.get('processing_upload_token')
-            if token:
-                if not SurveyUploadSession.objects.filter(token=token, checklist=c, actor=request.user, finished_at__isnull=True).exists():
-                    raise ValidationError('The survey upload session is closed or belongs to another user.')
-            else:
-                session = upload_session(request, checklist_id)
-        try:
-            return view(request, checklist_id)
-        finally:
-            if session:
-                from django.utils import timezone
-                SurveyUploadSession.objects.filter(token=session.token).update(finished_at=timezone.now())
+            with upload_batch(request, checklist_id, request.POST.get('processing_upload_token')) as session:
+                request._survey_upload_token = session.token
+                return view(request, checklist_id)
+        return view(request, checklist_id)
     return tracked
 
 
@@ -70,7 +61,16 @@ def processing_upload_session(request, checklist_id):
     if not enabled(c):
         return JsonResponse({'enabled': False})
     data = body(request)
-    session = upload_session(request, checklist_id, data.get('token'))
+    from . import survey_upload_sessions
+    operation = data.get('action', 'finish' if data.get('token') else 'start')
+    if operation == 'heartbeat':
+        session = survey_upload_sessions.heartbeat(request, checklist_id, data.get('token'))
+    elif operation == 'interrupt':
+        session = survey_upload_sessions.interrupt(request, checklist_id, data.get('token'))
+    elif operation in {'start', 'finish'}:
+        session = upload_session(request, checklist_id, data.get('token'))
+    else:
+        raise ValidationError('Unknown upload session action.')
     return JsonResponse({'enabled': True, 'token': str(session.token)})
 
 def body(request):
@@ -143,6 +143,9 @@ def upload(request, checklist_id):
         with transaction.atomic():
             c=Checklist.objects.select_for_update().get(pk=checklist_id)
             survey_access(request,checklist_id,edit=True)
+            if getattr(request, '_survey_upload_token', None):
+                from .survey_upload_sessions import require_batch_open
+                require_batch_open(c, request._survey_upload_token)
             # Serialize SQLite writers as well as databases supporting row locks.
             Checklist.objects.filter(pk=c.pk).update(updated_at=c.updated_at)
             hashes=set(c.photo_evidence.values_list('sha256',flat=True))

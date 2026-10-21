@@ -193,7 +193,9 @@ class PhotoPlacementTests(TestCase):
         job.photos.add(photo)
         self.assertEqual(analysis_state(self.c)['unprocessed_photo_ids'],[photo.pk])
     @patch('core.photo_views.verify_vision')
-    def test_opt_in_group_queue_survives_running_job_without_parallel_inference(self,vision):
+    @patch('core.evidence_pipeline.model_fingerprint',return_value='a'*64)
+    @patch('core.evidence_pipeline.tool_fingerprint',return_value='b'*64)
+    def test_opt_in_group_queue_survives_running_job_without_parallel_inference(self,tools,model,vision):
         first=self.upload()
         job=PhotoJob.objects.create(checklist=self.c,requested_by=self.user,model='fixture',schema=deepcopy(self.schema),status='running',total=1)
         job.photos.add(first)

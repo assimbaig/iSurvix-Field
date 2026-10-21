@@ -136,6 +136,14 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Production queues can be served independently of the outbound PC worker.
+# These defaults also keep the existing photo routes usable without a local model.
+LOCAL_AI_ENABLED = os.environ.get('ISURVIX_LOCAL_AI_ENABLED', 'False') == 'True'
+OLLAMA_BASE_URL = os.environ.get('ISURVIX_OLLAMA_URL', 'http://127.0.0.1:11434')
+PHOTO_OLLAMA_BASE_URL = os.environ.get('ISURVIX_PHOTO_OLLAMA_URL', OLLAMA_BASE_URL)
+OLLAMA_MODEL = os.environ.get('ISURVIX_AI_MODEL', 'qwen3.5:4b')
+OLLAMA_TIMEOUT = int(os.environ.get('ISURVIX_OLLAMA_TIMEOUT', '180'))
+
 
 # Logging
 LOGGING = {

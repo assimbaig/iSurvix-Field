@@ -6,6 +6,7 @@ from core import local_setup_views
 from core import account_views
 
 urlpatterns = [
+    path('api/survey-worker/v1/', include('core.remote_worker_urls')),
     path('local/survey-processing/', include('core.survey_processing_urls')),
     path('local/checklist-review/', include('core.checklist_ai_urls')),
     path('local/setup/', local_setup_views.setup, name='local_setup'),

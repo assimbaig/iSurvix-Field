@@ -196,8 +196,8 @@
                             <div class="mt-2 d-flex flex-wrap gap-2" id="images-{{ q.row }}">
                                 {% for img in q.images %}
                                 <div class="image-preview">
-                                    <img src="{{ img }}" alt="Image" style="cursor: pointer;"
-                                        onclick="viewImage('{{ img }}')">
+                                    <img src="{% url 'private_checklist_file' checklist.id %}?path={{ img|urlencode }}" alt="Image" style="cursor: pointer;"
+                                        onclick="viewImage(this.src)">
                                     <span class="remove-img" onclick="removeImage('{{ img }}', {{ q.row }})">×</span>
                                 </div>
                                 {% endfor %}
@@ -236,8 +236,8 @@
                             </div>
                             <div class="mt-2 d-flex flex-wrap gap-2" id="images-{{ q.row }}">
                                 {% for img in q.images %}
-                                <div class="image-preview"><img src="{{ img }}" style="cursor: pointer;"
-                                        onclick="viewImage('{{ img }}')"><span class="remove-img"
+                                <div class="image-preview"><img src="{% url 'private_checklist_file' checklist.id %}?path={{ img|urlencode }}" style="cursor: pointer;"
+                                        onclick="viewImage(this.src)"><span class="remove-img"
                                         onclick="removeImage('{{ img }}', {{ q.row }})">×</span></div>
                                 {% endfor %}
                             </div>
@@ -279,8 +279,8 @@
                             </div>
                             <div class="mt-2 d-flex flex-wrap gap-2" id="images-{{ q.row }}">
                                 {% for img in q.images %}
-                                <div class="image-preview"><img src="{{ img }}" style="cursor: pointer;"
-                                        onclick="viewImage('{{ img }}')"><span class="remove-img"
+                                <div class="image-preview"><img src="{% url 'private_checklist_file' checklist.id %}?path={{ img|urlencode }}" style="cursor: pointer;"
+                                        onclick="viewImage(this.src)"><span class="remove-img"
                                         onclick="removeImage('{{ img }}', {{ q.row }})">×</span></div>
                                 {% endfor %}
                             </div>
@@ -604,7 +604,7 @@
                         if (container && data.new_images) {
                             console.log('Adding', data.new_images.length, 'new images to display');
                             data.new_images.forEach(imgPath => {
-                                const fullPath = imgPath.startsWith('/media') ? imgPath : '/media/' + imgPath;
+                                const fullPath = "{% url 'private_checklist_file' checklist.id %}?path=" + encodeURIComponent(imgPath);
                                 console.log('Creating image element for:', fullPath);
 
                                 // Create image preview div
@@ -1663,7 +1663,7 @@
                             const container = document.getElementById('images-' + currentRow);
                             if (container && data.new_images && data.new_images.length > 0) {
                                 data.new_images.forEach(function (imgPath) {
-                                    const fullPath = imgPath.startsWith('/media/') ? imgPath : '/media/' + imgPath;
+                                    const fullPath = "{% url 'private_checklist_file' checklist.id %}?path=" + encodeURIComponent(imgPath);
                                     console.log('🖼️ Adding image:', fullPath);
 
                                     const imgDiv = document.createElement('div');

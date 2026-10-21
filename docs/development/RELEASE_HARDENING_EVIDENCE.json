@@ -1,0 +1,1743 @@
+{
+  "baseline": {
+    "review_baseline": "79d977227e88db0ddab437aca3ffd3a6da5c60fb",
+    "checkpoint": ".local/backups/project-checkpoint-20261021-214141",
+    "ordinary_baseline": {
+      "command": ".local\\venv\\Scripts\\python.exe backend\\manage.py test core --noinput --verbosity 2 --settings=checklist.settings_local",
+      "cwd": "F:\\iSurvix\\iSurvix-Field",
+      "tests": 666,
+      "passed": 666,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0,
+      "seconds": 253.596,
+      "log": "baseline-full.log",
+      "qualification": "Depends on this machine's installed model-cache availability and user Ollama discovery; not a clean-environment result."
+    },
+    "strict_hermetic_baseline": {
+      "command": ".local\\venv\\Scripts\\python.exe .local\\release-hardening-qa\\hermetic_runner.py",
+      "tests": 666,
+      "passed": 661,
+      "failed": 3,
+      "errored": 2,
+      "skipped": 0,
+      "seconds": 252.866,
+      "log": "hermetic-full-baseline.log",
+      "qualification": "One of the three failures was an over-strict QA socket guard blocking the test's own ephemeral HTTP server. It is a harness false positive, not an application defect. The tracked runner permits only HTTP listeners bound within the same process."
+    },
+    "reproductions": [
+      {
+        "tests": [
+          "core.test_photo_search.FastPhotoSearchTests.test_completed_index_is_reused_across_workers_and_readers",
+          "core.test_photo_search.FastPhotoSearchTests.test_server_paginates_two_results_and_rejects_foreign_activity",
+          "core.test_photo_search.FastPhotoSearchTests.test_fast_site_pass_includes_prior_photos_outside_resumed_deep_job"
+        ],
+        "root_cause": "Synthetic encoders and identity were mocked, but the untracked MODELS/manifest.json availability gate was not isolated.",
+        "fix": "Temporary manifest availability fixture and MODELS path scoped to each test's temporary media. Production cache/worker logic and all assertions retained."
+      },
+      {
+        "tests": [
+          "core.test_photo_placements.PhotoPlacementTests.test_opt_in_group_queue_survives_running_job_without_parallel_inference"
+        ],
+        "root_cause": "verify_vision was mocked, but processing_context still queried the user's real Ollama /api/tags and tool-model cache.",
+        "fix": "Scope synthetic model and tool fingerprints to this queue-contract test. Real persistent queue behavior and assertions retained."
+      },
+      {
+        "tests": [
+          "core.test_quality_workflow.QualityWorkflowTests.test_historical_pm_frozen_report_and_source_survive_upgrade_but_not_revocation"
+        ],
+        "root_cause": "TemporaryDirectory resolved .local from cwd; backend cwd lacks backend/.local.",
+        "fix": "Anchor temporary fixtures to repository-root .local/tmp. Historical snapshot, source bytes and revocation assertions retained.",
+        "before_log": "quality-backend-cwd-baseline.log",
+        "after_log": "quality-backend-cwd-fixed.log",
+        "after": "1 passed, 0 failed, 0 errors, 0 skipped; 0.174 seconds"
+      }
+    ],
+    "fixed_focused": {
+      "command": ".local\\venv\\Scripts\\python.exe scripts\\run_backend_tests.py core.test_photo_search core.test_photo_placements core.test_quality_workflow core.test_local_ai.LocalAITests.test_native_ollama_http_roundtrip --verbosity 1",
+      "tests": 38,
+      "passed": 38,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0,
+      "seconds": 3.205,
+      "external_network_attempts": 0,
+      "in_process_http_fixture_connections": 2,
+      "log": "tracked-runner-focused.log"
+    },
+    "frontend": {
+      "commands": [
+        "node check-preview.cjs",
+        "node check-engineer.cjs",
+        "node check-workspace.cjs",
+        "node check-site-routing.cjs"
+      ],
+      "cwd": "frontend",
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "log": "frontend-baseline.json",
+      "qualification": "Legacy frontend/dist VM checks, not actual Django browser-layout verification."
+    },
+    "pending": [
+      "Final full suite after remaining implementation",
+      "Independent application/security/browser review after owners complete their changes"
+    ]
+  },
+  "performance": {
+    "before": {
+      "phase": "baseline",
+      "synthetic": true,
+      "fixture": {
+        "revisions": 20,
+        "photos": 200,
+        "fields": 200,
+        "findings": 8000,
+        "sources": 4000,
+        "events": 400,
+        "drawing_editions": 40
+      },
+      "requests": {
+        "state": {
+          "url": "/local/survey-processing/1/state/",
+          "samples": [
+            {
+              "ms": 1858.812,
+              "queries": 176,
+              "bytes": 11715760
+            },
+            {
+              "ms": 1737.961,
+              "queries": 176,
+              "bytes": 11715760
+            },
+            {
+              "ms": 1701.517,
+              "queries": 176,
+              "bytes": 11715760
+            },
+            {
+              "ms": 1679.202,
+              "queries": 176,
+              "bytes": 11715760
+            },
+            {
+              "ms": 1806.107,
+              "queries": 176,
+              "bytes": 11715760
+            }
+          ],
+          "median_ms": 1737.961,
+          "median_queries": 176,
+          "bytes": 11715760
+        }
+      }
+    },
+    "after": {
+      "phase": "final",
+      "synthetic": true,
+      "fixture": {
+        "revisions": 20,
+        "photos": 200,
+        "fields": 200,
+        "findings": 8000,
+        "sources": 4000,
+        "events": 400,
+        "drawing_editions": 40
+      },
+      "requests": {
+        "state": {
+          "url": "/local/survey-processing/1/state/",
+          "samples": [
+            {
+              "ms": 1663.383,
+              "queries": 155,
+              "bytes": 11716270
+            },
+            {
+              "ms": 1649.88,
+              "queries": 155,
+              "bytes": 11716270
+            },
+            {
+              "ms": 1749.039,
+              "queries": 155,
+              "bytes": 11716270
+            },
+            {
+              "ms": 1681.328,
+              "queries": 155,
+              "bytes": 11716270
+            },
+            {
+              "ms": 1623.058,
+              "queries": 155,
+              "bytes": 11716270
+            }
+          ],
+          "median_ms": 1663.383,
+          "median_queries": 155,
+          "bytes": 11716270
+        },
+        "compact": {
+          "url": "/local/survey-processing/1/state/?compact=1",
+          "samples": [
+            {
+              "ms": 66.172,
+              "queries": 28,
+              "bytes": 423335
+            },
+            {
+              "ms": 67.607,
+              "queries": 28,
+              "bytes": 423335
+            },
+            {
+              "ms": 63.975,
+              "queries": 28,
+              "bytes": 423335
+            },
+            {
+              "ms": 62.035,
+              "queries": 28,
+              "bytes": 423335
+            },
+            {
+              "ms": 63.098,
+              "queries": 28,
+              "bytes": 423335
+            }
+          ],
+          "median_ms": 63.975,
+          "median_queries": 28,
+          "bytes": 423335
+        },
+        "progress": {
+          "url": "/local/survey-processing/1/progress/",
+          "samples": [
+            {
+              "ms": 8.949,
+              "queries": 12,
+              "bytes": 4623
+            },
+            {
+              "ms": 7.118,
+              "queries": 12,
+              "bytes": 4623
+            },
+            {
+              "ms": 7.746,
+              "queries": 12,
+              "bytes": 4623
+            },
+            {
+              "ms": 6.845,
+              "queries": 12,
+              "bytes": 4623
+            },
+            {
+              "ms": 6.64,
+              "queries": 12,
+              "bytes": 4623
+            }
+          ],
+          "median_ms": 7.118,
+          "median_queries": 12,
+          "bytes": 4623
+        }
+      }
+    }
+  },
+  "private_nginx": {
+    "nginx": "1.31.8 official portable Windows",
+    "django_urlconf": "checklist.urls",
+    "database": "isolated security.sqlite3; no operational approvals",
+    "checks": 100,
+    "results": [
+      {
+        "asset": "photo_original",
+        "actor": "anonymous",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_original",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "anonymous",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "photo_preview",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "anonymous",
+        "status": 302,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "document",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "anonymous",
+        "status": 302,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "extracted_preview",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "anonymous",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "legacy_attachment",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "anonymous",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "branding",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "anonymous",
+        "status": 302,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "pdf",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "anonymous",
+        "status": 302,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "dxf",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "anonymous",
+        "status": 302,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "preview",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "anonymous",
+        "status": 302,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "foreign",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "unassigned",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "client",
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "engineer",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "lead",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "admin",
+        "status": 200,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "anonymous",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "engineer",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      },
+      {
+        "asset": "bundle",
+        "actor": "admin",
+        "direct_media": true,
+        "status": 404,
+        "pass": true
+      }
+    ],
+    "original_and_generated_bytes_unchanged": true
+  },
+  "parallel_uploads": {
+    "synthetic": true,
+    "real_parallel_http_requests": 2,
+    "database": "F:\\iSurvix\\iSurvix-Field\\.local\\release-hardening-qa\\concurrency\\fresh.sqlite3",
+    "responses": [
+      201,
+      201
+    ],
+    "checks": [
+      "Two simultaneous actual HTTP image transfers registered; finish and Admin recovery denied",
+      "First request persists201; remaining batch stays active and cannot be recovered",
+      "Both requests persist exact original bytes; repeated final close records one event"
+    ],
+    "operational_records_touched": false
+  },
+  "preservation": {
+    "checkpoint": "F:\\iSurvix\\iSurvix-Field\\.local\\backups\\project-checkpoint-20261021-214141",
+    "media_files_hashed": 806,
+    "private_config_files_hashed": 12,
+    "file_differences": [],
+    "core_tables_compared": 53,
+    "changed_core_tables": [],
+    "baseline_business_row_counts": {
+      "core_geolocation": 0,
+      "core_checklistsection": 0,
+      "core_checklistimage": 0,
+      "core_electricaldata": 0,
+      "core_towerequipment": 0,
+      "core_dcpowersystemdata": 0,
+      "core_workassignment": 3,
+      "core_photoworkerlease": 4,
+      "core_photojob_photos": 1542,
+      "core_photodraft": 567,
+      "core_governancestate": 1,
+      "core_governanceaudit": 138,
+      "core_company": 3,
+      "core_projectmembership": 17,
+      "core_checklistaireview": 0,
+      "core_assignmentintakebatch": 0,
+      "core_photoplacement": 372,
+      "core_photoevidence": 402,
+      "core_photojob": 8,
+      "core_revisiondecision": 0,
+      "core_inspectionfinding": 0,
+      "core_findingevent": 0,
+      "core_workflowtemplatequalification": 0,
+      "core_profile": 7,
+      "core_checklist": 3,
+      "core_checklistreviewpolicy": 2,
+      "core_submissionrevision": 0,
+      "core_clientorganization": 2,
+      "core_workprofile": 5,
+      "core_professionalexperience": 0,
+      "core_evidenceanalysisrecord": 232,
+      "core_evidencecorrection": 3,
+      "core_evidencecorrectiondecision": 0,
+      "core_evidencerulerelease": 0,
+      "core_evidencereviewbinding": 0,
+      "core_checklistimportbatch": 0,
+      "core_project": 4,
+      "core_reviewroute": 2,
+      "core_reviewrouteevent": 2,
+      "core_projectinvitation": 2,
+      "core_industrycatalog": 3,
+      "core_photoobservation": 184,
+      "core_photosearchresult": 1536,
+      "core_photosearchvector": 1536,
+      "core_surveyprocessingresult": 0,
+      "core_surveyprocessingjob": 0,
+      "core_surveyprocessingevent": 0,
+      "core_surveyuploadsession": 0,
+      "core_surveydocument": 0,
+      "core_surveyprocessingrevision": 0,
+      "core_surveydrawingset": 0,
+      "core_surveysourceanalysis": 0,
+      "core_checklisttemplate": 5
+    },
+    "sqlite_integrity": "ok",
+    "live_data_modified_by_verification": false
+  },
+  "frontend": {
+    "synthetic": true,
+    "base_url": "http://127.0.0.1:8898",
+    "checks": [
+      "200-field real ORM checklist is paged; extracted records load50 then100 via authenticated section pagination without duplicate cards",
+      "66 real persisted decision-history events are recoverable through two pages",
+      "Two actual retained drawing editions load on demand; native app-rendered previews and PDF/DXF downloads return valid bytes",
+      "All30 revisions remain accessible; chosen previous revision persists in URL, saved details and sidebar after reload",
+      "Project Admin can see stale reassigned-account recovery; a separate genuinely active batch has no premature close/recover control",
+      "Assigned replacement Engineer recovers an inactive former Engineer session through actual UI with audit reason; repeat returns200; concurrent active session still blocks submission",
+      "390px mobile has no outer overflow, working survey tools drawer, accessible records tab and bounded internal checklist scroll",
+      "Real progress count changes update120/200 without a full details request; unchanged status polling backs off",
+      "Actual background browser tab stops progress polling",
+      "One synthetic checklist proposal is accepted explicitly through real authorised action and remains reviewed after reload; no survey or drawing approval/release was performed"
+    ],
+    "screenshots": [
+      "drawings-desktop.png",
+      "checklist-mobile.png",
+      "checklist-desktop.png"
+    ],
+    "requests": [
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609100767
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=30&section=findings&page=2",
+        "method": "GET",
+        "at": 1792609101461
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=30&section=events&page=2",
+        "method": "GET",
+        "at": 1792609101894
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=30&section=drawings&page=2",
+        "method": "GET",
+        "at": 1792609102418
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=30&history_page=2",
+        "method": "GET",
+        "at": 1792609102721
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=1",
+        "method": "GET",
+        "at": 1792609103038
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609103631
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/2/progress/",
+        "method": "GET",
+        "at": 1792609104094
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/2/state/?compact=1",
+        "method": "GET",
+        "at": 1792609104119
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/2/progress/",
+        "method": "GET",
+        "at": 1792609105083
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/2/state/?compact=1",
+        "method": "GET",
+        "at": 1792609105105
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/2/state/?compact=1",
+        "method": "GET",
+        "at": 1792609105830
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609106398
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609108759
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609111854
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609114887
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609119412
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609137741
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=30",
+        "method": "GET",
+        "at": 1792609137743
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/state/?compact=1&revision_id=30",
+        "method": "GET",
+        "at": 1792609138183
+      },
+      {
+        "url": "http://127.0.0.1:8898/local/survey-processing/1/progress/",
+        "method": "GET",
+        "at": 1792609138699
+      }
+    ],
+    "exports": [
+      {
+        "label": "Download PDF",
+        "status": 200,
+        "valid": true
+      },
+      {
+        "label": "Download Editable DXF",
+        "status": 200,
+        "valid": true
+      },
+      {
+        "label": "Download drawing bundle",
+        "status": 200,
+        "valid": true
+      }
+    ],
+    "progressIntervalsMs": [
+      3095,
+      3033,
+      4525
+    ],
+    "javascriptErrors": [],
+    "failedHttpResponses": []
+  },
+  "native_four_layer": {
+    "native": true,
+    "outbound_http": true,
+    "independent_pc_database": "F:\\iSurvix\\iSurvix-Field\\.local\\release-hardening\\runtime\\pc-inference-only.sqlite3",
+    "worked": true,
+    "seconds": 24.594,
+    "image_requests": 2,
+    "calls": [
+      {
+        "path": "/api/tags",
+        "images": [],
+        "seconds": 0.047,
+        "ok": true,
+        "capabilities": null
+      },
+      {
+        "path": "/api/show",
+        "images": [],
+        "seconds": 0.047,
+        "ok": true,
+        "capabilities": [
+          "completion",
+          "vision",
+          "tools",
+          "thinking"
+        ]
+      },
+      {
+        "path": "/api/show",
+        "images": [],
+        "seconds": 0.047,
+        "ok": true,
+        "capabilities": [
+          "completion",
+          "vision",
+          "tools",
+          "thinking"
+        ]
+      },
+      {
+        "path": "/api/tags",
+        "images": [],
+        "seconds": 0.047,
+        "ok": true,
+        "capabilities": null
+      },
+      {
+        "path": "/api/show",
+        "images": [],
+        "seconds": 0.046,
+        "ok": true,
+        "capabilities": [
+          "completion",
+          "vision",
+          "tools",
+          "thinking"
+        ]
+      },
+      {
+        "path": "/api/chat",
+        "images": [
+          {
+            "bytes": 79661,
+            "sha256": "4dc55faa7742acb2c8d171e99e1c81442a16c72a353dcfe2e228a14f6e98476b"
+          }
+        ],
+        "seconds": 9.391,
+        "ok": true,
+        "capabilities": null
+      },
+      {
+        "path": "/api/tags",
+        "images": [],
+        "seconds": 0.047,
+        "ok": true,
+        "capabilities": null
+      },
+      {
+        "path": "/api/show",
+        "images": [],
+        "seconds": 0.046,
+        "ok": true,
+        "capabilities": [
+          "completion",
+          "vision",
+          "tools",
+          "thinking"
+        ]
+      },
+      {
+        "path": "/api/chat",
+        "images": [
+          {
+            "bytes": 58150,
+            "sha256": "614f257b3c4e3684e5c5d607001cbd39db41789b03b811528a66c9b2620e1c50"
+          }
+        ],
+        "seconds": 3.25,
+        "ok": true,
+        "capabilities": null
+      },
+      {
+        "path": "/api/chat",
+        "images": [],
+        "seconds": 8.281,
+        "ok": true,
+        "capabilities": null
+      }
+    ]
+  },
+  "native_browser_release": {
+    "synthetic": true,
+    "checks": [
+      "Engineer saved survey submits into existing approval workflow after integrated review",
+      "Separate assigned QA approves saved survey and exact drawing/checklist package",
+      "Assigned Client closes the four-layer workflow after Engineer, QA and Team Lead",
+      "Independent Team Lead releases only after QA and final ordinary workflow",
+      "Client sees released outputs only, with no internal AI proposals/review comments"
+    ],
+    "layouts": [
+      {
+        "width": 1440,
+        "scroll": 1432
+      },
+      {
+        "width": 1024,
+        "scroll": 1016
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "errors": []
+  },
+  "drawing_review": {
+    "reviewer": "outbound_worker independent drawing inspection",
+    "results": [
+      {
+        "label": "synthetic-measured",
+        "sheets": 5,
+        "geometry_digest": "d35c1f31710130c53795bd0bd8b0f490b84392b471548cceba3c26f98201c5a7",
+        "file_hashes_rechecked": 12,
+        "checks": [
+          {
+            "sheet": "SV-001",
+            "pdf_texts_reconciled": 66,
+            "dxf_entities_reconciled": 147,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-002",
+            "pdf_texts_reconciled": 32,
+            "dxf_entities_reconciled": 56,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-003",
+            "pdf_texts_reconciled": 24,
+            "dxf_entities_reconciled": 39,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-004",
+            "pdf_texts_reconciled": 24,
+            "dxf_entities_reconciled": 39,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-006",
+            "pdf_texts_reconciled": 39,
+            "dxf_entities_reconciled": 79,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          }
+        ],
+        "configured_logo_entities": 0,
+        "visual_review": "All supplied rendered pages independently inspected: no clipping, overlaps or illegible/missing glyphs observed. Source limits and draft/release labels remain visible."
+      },
+      {
+        "label": "synthetic-client-release",
+        "sheets": 5,
+        "geometry_digest": "0cf6eee30e62694c35957482d40d35063f11bf985ef68f9381a77fae547f9e2f",
+        "file_hashes_rechecked": 12,
+        "checks": [
+          {
+            "sheet": "SV-001",
+            "pdf_texts_reconciled": 66,
+            "dxf_entities_reconciled": 147,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-002",
+            "pdf_texts_reconciled": 27,
+            "dxf_entities_reconciled": 47,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-003",
+            "pdf_texts_reconciled": 24,
+            "dxf_entities_reconciled": 39,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-004",
+            "pdf_texts_reconciled": 24,
+            "dxf_entities_reconciled": 39,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-006",
+            "pdf_texts_reconciled": 39,
+            "dxf_entities_reconciled": 79,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          }
+        ],
+        "configured_logo_entities": 0,
+        "visual_review": "All supplied rendered pages independently inspected: no clipping, overlaps or illegible/missing glyphs observed. Source limits and draft/release labels remain visible."
+      },
+      {
+        "label": "private-z93004-draft",
+        "sheets": 3,
+        "geometry_digest": "604c139e9420207f4015abc8f75fb0384812379bd324d5d7465c5a7ba77f575f",
+        "file_hashes_rechecked": 8,
+        "checks": [
+          {
+            "sheet": "SV-001",
+            "pdf_texts_reconciled": 66,
+            "dxf_entities_reconciled": 147,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-002",
+            "pdf_texts_reconciled": 27,
+            "dxf_entities_reconciled": 47,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          },
+          {
+            "sheet": "SV-006",
+            "pdf_texts_reconciled": 30,
+            "dxf_entities_reconciled": 55,
+            "pdf_dxf_positions_units_and_source_digests_match": true
+          }
+        ],
+        "configured_logo_entities": 0,
+        "visual_review": "All supplied rendered pages independently inspected: no clipping, overlaps or illegible/missing glyphs observed. Source limits and draft/release labels remain visible."
+      }
+    ],
+    "limits": [
+      "No manufacturer/site-accuracy certification. Verified CAD manufacturer references unavailable.",
+      "All three exported packages have no configured logos; branding placement is not visually exercised by these packages.",
+      "Z93004 package is a bounded one-photo unapproved draft, not a full-site throughput/accuracy benchmark.",
+      "Existing four source PDFs are present but are FOR REVIEW references; they are not verified manufacturer CAD blocks or an approved site measurement baseline."
+    ],
+    "focused_tests": {
+      "command": ".local\\venv\\Scripts\\python.exe scripts\\run_backend_tests.py core.test_survey_drawings.SurveyDrawingTests.test_project_branding_not_hardcoded_or_shared_between_projects core.test_survey_drawings.SurveyDrawingTests.test_dxf_and_pdf_share_all_final_entities_and_digest --verbosity 2",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 0.563,
+      "external_network_attempts": 0
+    }
+  },
+  "native_documents": {
+    "native": true,
+    "status": "ready_for_review",
+    "sources": 9,
+    "source_types": [
+      "pdf_page",
+      "workbook_cells",
+      "workbook_image"
+    ],
+    "checklist_items": 7,
+    "proposed_findings": 33,
+    "all_unaccepted": true,
+    "released": false,
+    "pdf_pages": 3,
+    "dxf_audit_errors": 0,
+    "retained_previous_revisions": 2,
+    "original_failed_source_checkpoints_unchanged": true,
+    "native_receipt": {
+      "native": true,
+      "outbound_http": true,
+      "independent_pc_database": "F:\\iSurvix\\iSurvix-Field\\.local\\release-hardening\\runtime\\pc-inference-only.sqlite3",
+      "worked": true,
+      "seconds": 143.469,
+      "image_requests": 6,
+      "calls": [
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.046,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.063,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [
+            {
+              "bytes": 42032,
+              "sha256": "932ed995ed47fa155321549bcabb576463e4639f85abdef5cc7844244959015a"
+            }
+          ],
+          "seconds": 10.14,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.063,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [],
+          "seconds": 4.218,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.063,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.062,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [
+            {
+              "bytes": 50205,
+              "sha256": "bf69086a01f9494837cdf7bcfa3e854a6399485e87cf858e9022892b16668915"
+            }
+          ],
+          "seconds": 3.407,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [
+            {
+              "bytes": 42032,
+              "sha256": "932ed995ed47fa155321549bcabb576463e4639f85abdef5cc7844244959015a"
+            }
+          ],
+          "seconds": 4.391,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [],
+          "seconds": 4.375,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [
+            {
+              "bytes": 50205,
+              "sha256": "bf69086a01f9494837cdf7bcfa3e854a6399485e87cf858e9022892b16668915"
+            }
+          ],
+          "seconds": 3.297,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.046,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [
+            {
+              "bytes": 42032,
+              "sha256": "932ed995ed47fa155321549bcabb576463e4639f85abdef5cc7844244959015a"
+            }
+          ],
+          "seconds": 4.485,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.046,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [],
+          "seconds": 4.219,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/tags",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/show",
+          "images": [],
+          "seconds": 0.047,
+          "ok": true,
+          "capabilities": [
+            "completion",
+            "vision",
+            "tools",
+            "thinking"
+          ]
+        },
+        {
+          "path": "/api/chat",
+          "images": [
+            {
+              "bytes": 50205,
+              "sha256": "bf69086a01f9494837cdf7bcfa3e854a6399485e87cf858e9022892b16668915"
+            }
+          ],
+          "seconds": 4.453,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/chat",
+          "images": [],
+          "seconds": 15.859,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/chat",
+          "images": [],
+          "seconds": 9.11,
+          "ok": true,
+          "capabilities": null
+        },
+        {
+          "path": "/api/chat",
+          "images": [],
+          "seconds": 7.641,
+          "ok": true,
+          "capabilities": null
+        }
+      ]
+    }
+  },
+  "branding_visual": {
+    "synthetic": true,
+    "three_logo_images_pdf": 3,
+    "three_logo_defs_dxf": 3,
+    "file": "F:\\iSurvix\\iSurvix-Field\\.local\\release-hardening\\runtime\\branding-visual\\branding-page.png"
+  },
+  "requirements_summary": {
+    "Verified": 61,
+    "Blocked": 3,
+    "Failed": 0,
+    "In progress": 3
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "protocol": "isurvix-survey-worker-v1",
+  "base_path": "/api/survey-worker/v1/",
+  "transport": "HTTPS, or loopback HTTP only for isolated tests",
+  "authentication": {
+    "header": "Authorization: Bearer <credential UUID hex>.<high-entropy secret>",
+    "scope": "Current provisioning Project Admin and explicitly assigned projects",
+    "expiry_hours_default": 720,
+    "expiry_hours_maximum": 2160,
+    "secret_storage": "SHA-256 server hash; exclusive OS-user-only local configuration file",
+    "revocation": "Rechecked on every input, result and heartbeat request",
+    "redirects": "Never followed by the PC client"
+  },
+  "compatibility": {
+    "versions": ["protocol", "pipeline", "evidence", "mapping", "implementation"],
+    "implementation": "SHA-256 of evidence and mapping module source bytes with CRLF normalized to LF for Windows/Linux compatibility",
+    "model": "Configured locally installed vision model; identity pinned per job",
+    "mismatch": "HTTP 409 before claim, or reject incompatible result without replacing a checkpoint"
+  },
+  "limits": {
+    "json_body_bytes": 262144,
+    "normalized_image_transfer_bytes": 4194304,
+    "source_count": 2000,
+    "lease_seconds": 600,
+    "client_heartbeat_seconds": 20,
+    "client_poll_backoff_seconds_maximum": 60
+  },
+  "endpoints": [
+    {"method": "POST", "path": "claim/", "body": ["versions", "model", "model_digest"], "response": "job=null when idle; otherwise job_id, lease, revision_id, snapshot_digest, model, lease_seconds"},
+    {"method": "POST", "path": "jobs/{job_id}/heartbeat/", "lease_header": "X-Worker-Lease", "response": "status and renewed lease duration"},
+    {"method": "POST", "path": "jobs/{job_id}/next/", "lease_header": "X-Worker-Lease", "response": "bounded source or mapping input with immutable input_digest; complete=true after server checklist/drawing preparation"},
+    {"method": "GET", "path": "jobs/{job_id}/tasks/{task_id}/image/", "lease_header": "X-Worker-Lease", "response": "authenticated normalized JPEG bytes with X-Evidence-SHA256"},
+    {"method": "POST", "path": "jobs/{job_id}/tasks/{task_id}/complete/", "lease_header": "X-Worker-Lease", "body": ["versions", "input_digest", "result"], "response": "accepted=true, duplicate, completed, total"},
+    {"method": "POST", "path": "jobs/{job_id}/failure/", "lease_header": "X-Worker-Lease", "body": ["code", "retryable"], "codes": ["local_unavailable", "invalid_response", "local_busy", "input_transfer"]}
+  ],
+  "result_rules": [
+    "Source SHA-256, source ID and selected model must match the server task",
+    "Observation schema, count, text lengths, finite values and source references are server-validated",
+    "Unknown checklist IDs are withheld; mapping targets must be present in the selected revision catalog",
+    "Measurements without explicit recorded evidence/unit are withheld",
+    "Source identity, finding keys, measured=false and needs_review are set by Django",
+    "Matching duplicate delivery is idempotent; a different checkpoint cannot replace an immutable result",
+    "Worker responses cannot contain authoritative file paths, human decisions, accepted answers or releases"
+  ],
+  "recovery": [
+    "The existing persistent SurveyProcessingJob and SurveySourceAnalysis remain authoritative",
+    "Queued jobs wait when the PC is offline",
+    "An expired lease is reclaimable and source/mapping checkpoints survive restart",
+    "The PC persists a hash-bound result before transmission and quarantines rejected cached results",
+    "Server evidence preparation and drawing failures produce an explicit failed job without deleting originals",
+    "The existing assigned-Engineer retry action is used for failed survey jobs"
+  ],
+  "errors": {"400": "Invalid bounded machine message", "403": "Invalid/expired/revoked credential or scoped lease", "404": "Scoped job/task unavailable", "405": "Wrong method", "409": "Incompatible version, immutable-input conflict or invalid result", "503": "Evidence store/server temporarily unavailable"}
+}

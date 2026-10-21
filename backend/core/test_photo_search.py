@@ -24,6 +24,13 @@ class FastPhotoSearchTests(TestCase):
         self.job=PhotoJob.objects.create(checklist=self.checklist,requested_by=self.engineer,schema=self.checklist.schema_snapshot,model='synthetic',total=1)
         self.job.photos.add(self.photo)
         self.enterContext(patch.object(search,'model_identity',return_value='d'*64))
+        # These are queue/cache contracts, not native-model installation tests.
+        # Keep the availability probe inside the same disposable fixture as the
+        # synthetic encoders so an untracked local model cache is never required.
+        models=search.Path(self.media.name)/'models'
+        models.mkdir()
+        (models/'manifest.json').write_text('{"fixture":"synthetic encoders"}',encoding='utf-8')
+        self.enterContext(patch.object(search,'MODELS',models))
         self.enterContext(patch.object(search,'STATE',search.Path(self.media.name)/'worker'))
         self.fields=[{'id':'base','label':'Foundation','section':'General','text':'A foundation'}]
         self.vector=[1.]+[0.]*511
