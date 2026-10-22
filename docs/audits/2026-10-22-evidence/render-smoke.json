@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/",
+    "status": 302,
+    "bytes": 0,
+    "html": false
+  },
+  {
+    "path": "/local/photos/1/",
+    "status": 200,
+    "bytes": 28196,
+    "html": true
+  }
+]

@@ -1,0 +1,14 @@
+Creating test database for alias 'default'...
+............................................................................................................................................................................................................................................................................................................................................................................................................................................................................Survey processing failed: job=1 revision=1 error_type=ValueError
+.....Survey processing failed: job=1 revision=1 error_type=RuntimeError
+.............................................Survey processing failed: job=1 revision=1 error_type=ValueError
+...........Survey processing failed: job=1 revision=1 error_type=EvidenceError
+................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 729 tests in 757.451s
+
+OK
+Destroying test database for alias 'default'...
+Found 729 test(s).
+System check identified no issues (0 silenced).
+Isolation: temporary database/media/model cache; zero external network attempts; 32 connections to in-process HTTP fixtures.

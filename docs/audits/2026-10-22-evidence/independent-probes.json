@@ -1,0 +1,78 @@
+{
+  "source": "b907601b8cac59cc111cb02f37489cc25073c866",
+  "checks": [
+    {
+      "expected_unit": "m",
+      "value": "1200",
+      "observed_unit": "mm",
+      "result": [
+        "1.2",
+        "m"
+      ]
+    },
+    {
+      "expected_unit": "V",
+      "value": "0.1",
+      "observed_unit": "kV",
+      "result": [
+        "100",
+        "v"
+      ]
+    },
+    {
+      "expected_unit": "V",
+      "value": "1",
+      "observed_unit": "MV",
+      "result": [
+        "0.001",
+        "v"
+      ]
+    },
+    {
+      "expected_unit": "Hz",
+      "value": "1",
+      "observed_unit": "mHz",
+      "result": [
+        "1000000",
+        "hz"
+      ]
+    },
+    {
+      "expected_unit": "m",
+      "value": "1",
+      "observed_unit": "V",
+      "result": {
+        "rejected": "['The recorded unit does not match the checklist unit; confirm the intended value and unit.']"
+      }
+    },
+    {
+      "expected_unit": "m",
+      "value": "NaN",
+      "observed_unit": "mm",
+      "result": {
+        "rejected": "['The recorded measurement is not a finite number.']"
+      }
+    },
+    {
+      "expected_unit": "m",
+      "value": "123456789012345678901234567890.123456789",
+      "observed_unit": "mm",
+      "result": [
+        "123456789012345678901234567.890123456789",
+        "m"
+      ]
+    }
+  ],
+  "arabic_drawing_text": {
+    "input": "موقع الرياض",
+    "output": "???? ??????"
+  },
+  "governance_mutability": {
+    "rewritten": "synthetic_rewritten",
+    "deleted": 1
+  },
+  "browser_paths": [
+    "/",
+    "/local/photos/1/"
+  ]
+}

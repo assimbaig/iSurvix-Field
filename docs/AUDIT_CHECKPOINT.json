@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "product": "Isurvix-iField",
+  "former_names": [
+    "Field",
+    "iSurvix Field"
+  ],
+  "repository": "assimbaig/iSurvix-Field",
+  "repository_id": 1422193579,
+  "policy": {
+    "batch_size": 5,
+    "unit": "distinct successful functional production release",
+    "exclude": [
+      "documentation only",
+      "preview",
+      "failed deployment",
+      "unchanged runtime redeployment",
+      "retry"
+    ],
+    "require_matching_source_and_receipt": true,
+    "human_review_required": true,
+    "carry_extra_releases": true,
+    "unmerged_report_pr_is_valid_audit_evidence": true
+  },
+  "source_baseline_report": {
+    "date": "2026-10-22",
+    "report_path": "docs/audits/2026-10-22-ifield-scope-audit.md",
+    "library_file_id": "libfile_4ecf54430da88191b061948d815bb6b3",
+    "library_file_name": "Isurvix_iField_Audit_2026_10_22.docx",
+    "report_available": true,
+    "report_version": 0,
+    "issue": "https://github.com/assimbaig/iSurvix-Field/issues/9",
+    "documentation_branch": "docs/ifield-scope-audit-2026-10-22",
+    "documentation_pr_base": "feat/secure-outbound-survey-workers",
+    "main_source": "2d9440cf22770521abc17a2b35c659c79aea0b36",
+    "development_source": "b907601b8cac59cc111cb02f37489cc25073c866",
+    "covered_pr_numbers": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "coverage": "source and isolated regression only; runtime and engineering acceptance remain distinct"
+  },
+  "production_baseline": null,
+  "qualifying_update_count": null,
+  "counter_status": "unverified",
+  "production_checkpoint_advanced": false,
+  "covered_production_release_ids": [],
+  "pending_extra_production_releases": null,
+  "pending_extra_explanation": "No complete production ledger is accessible; null means unknown, not an asserted zero.",
+  "excluded_preview_project": "appgprj_6acff557885c8191b6d7219ee82099d1",
+  "excluded_preview_releases": [
+    {
+      "version": 7,
+      "id": "appgdep_6ad222e5eca8819190ddfdc4d42628c4",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-16T13:14:09.864927+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_6cc612e6f58c8191bb5765766aed1f61",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    },
+    {
+      "version": 6,
+      "id": "appgdep_6ad21f29921c8191bd002d8eeda43711",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-16T12:58:13.759259+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_b08c6f2609048191be06bc3fb0c58b0e",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    },
+    {
+      "version": 5,
+      "id": "appgdep_6ad215793eec8191bbce1da03ab6f6d8",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-16T12:17:13.211183+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_f497a54566d08191bf70847ce6ab1572",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    },
+    {
+      "version": 4,
+      "id": "appgdep_6ad214ec851c8191a0954a384df44e33",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-16T12:14:37.797428+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_4c3a5fb38d8c8191a25160701fffb28a",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    },
+    {
+      "version": 3,
+      "id": "appgdep_6ad2114e952c81918cfd8ed6a8b8cf5a",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-16T11:59:10.803843+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_aff2c0e4134c8191ac4152619de369ad",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    },
+    {
+      "version": 2,
+      "id": "appgdep_6ad1fbdddec881918d68ee937c77a324",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-16T10:27:28.727800+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_3c24ed0529048191921f91d1c9b99173",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    },
+    {
+      "version": 1,
+      "id": "appgdep_6acff77a4f0c8191896360c7f0df633e",
+      "status": "succeeded",
+      "type": "publish",
+      "date": "2026-10-14T21:44:29.531152+00:00",
+      "version_id": "appgprj_6acff557885c8191b6d7219ee82099d1~appgver_39616e6577f88191bb132269481a4151",
+      "classification": "excluded_static_sample_preview",
+      "qualifying_production_release": false
+    }
+  ],
+  "verification_blocker": {
+    "id": "F04",
+    "first_reported": "2026-10-22",
+    "reported_once": true,
+    "reason": "Actual local/VPS successful production deployment receipts and installed source are unavailable; current main disagrees with PR3-8 merged history.",
+    "needed": "Canonical approved source and installed fingerprint, dated successful production receipt, included PRs, migration/TLS/private-file/role smoke and rollback evidence.",
+    "repeat_only_on_material_change": true
+  },
+  "open_findings": [
+    "F01",
+    "F02",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07",
+    "F08",
+    "F09",
+    "F10",
+    "F11",
+    "F12"
+  ],
+  "preserved_acceptance_blockers": [
+    "hosting.vps-live",
+    "drawings.references",
+    "drawings.z-benchmark"
+  ],
+  "manual": {
+    "path": "docs/manual/iSurvix_Field_Software_Manual.docx",
+    "pdf": "docs/manual/iSurvix_Field_Software_Manual.pdf",
+    "version": "1.7",
+    "date": "2026-10-22",
+    "rendered_pages": 19,
+    "visual_review": "all pages inspected; corrected version/date/limit and retained page fields"
+  },
+  "test_results": {
+    "main": {
+      "passed": 36,
+      "seconds": 75.686
+    },
+    "development": {
+      "passed": 729,
+      "seconds": 757.451,
+      "external_network_attempts": 0,
+      "fixture_connections": 32
+    },
+    "frontend_scripts_passed": 4,
+    "backend_js_syntax_files": 32,
+    "migrations": "fresh synthetic database migrated; no model drift",
+    "fresh_browser_acceptance": "unverified; missing Chromium and failed download"
+  },
+  "history": [
+    {
+      "date": "2026-10-22",
+      "kind": "initial_source_audit",
+      "report_path": "docs/audits/2026-10-22-ifield-scope-audit.md",
+      "production_checkpoint_advanced": false
+    }
+  ],
+  "next_action": "Read this report and any unmerged documentation PR before deciding another audit is due. Keep monitoring; do not repeat unchanged blockers or initial source baseline."
+}
