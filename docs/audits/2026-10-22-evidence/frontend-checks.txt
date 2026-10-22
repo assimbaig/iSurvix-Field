@@ -1,0 +1,73 @@
+{
+  "screens": 13,
+  "checks": [
+    "latest logo on all role shells",
+    "assigned-site filtering",
+    "pending and complete lists",
+    "no engineer review or management navigation",
+    "unassigned site navigation and writes blocked",
+    "submitted records read-only",
+    "returned work editable",
+    "custom checklist retained",
+    "reviewer controls retained"
+  ],
+  "browser_layout_QA": false
+}
+{
+  "rendered_screens": 61,
+  "checks": [
+    "all roles and views render",
+    "all checklist sections render",
+    "rapid field changes both persist",
+    "equipment removal persists",
+    "approved answers stay locked",
+    "required submission transitions",
+    "review comment and approval transition",
+    "asset presence",
+    "mobile and print stylesheet rules",
+    "full 172-row FDED copy",
+    "add and remove fields and sections",
+    "custom dropdown and required field",
+    "editable client branding",
+    "publish and assign revision",
+    "existing survey schema and logos frozen",
+    "future survey uses new revision",
+    "admin-only template changes"
+  ],
+  "browser_layout_QA": false
+}
+{
+  "screens": 12,
+  "checks": [
+    "Sites defaults to summary and list",
+    "one Site ID link per row",
+    "Sites wizard read-only even for Under Review records",
+    "view-only mutation and decision guards",
+    "Review lists only Under Review",
+    "review wizard rejects other statuses",
+    "partial decisions leave review queue",
+    "Under Review label supported",
+    "wizard resumes per Site ID and mode",
+    "URL restores correct site and section",
+    "engineer workflow retained"
+  ],
+  "browser_layout_QA": false
+}
+{
+  "screens": 39,
+  "checks": [
+    "three review types",
+    "multi-section approval",
+    "duplicate approval prevented",
+    "approved field and shared field locks",
+    "unapproved fields editable",
+    "engineer cannot approve",
+    "rejection reason required",
+    "full rejection unlocks and logs history",
+    "full approval locks all sections",
+    "template required-field validation",
+    "template fields locked",
+    "persisted audit history"
+  ],
+  "browser_layout_QA": false
+}
