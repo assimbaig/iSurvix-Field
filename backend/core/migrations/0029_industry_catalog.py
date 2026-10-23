@@ -6,10 +6,11 @@ from django.db import migrations, models
 def seed_catalog(apps,schema_editor):
     Catalog=apps.get_model('core','IndustryCatalog')
     Project=apps.get_model('core','Project')
+    alias=schema_editor.connection.alias
     labels={'telecom':'Telecom','construction':'Construction'}
-    codes=set(labels)|set(Project.objects.values_list('industry',flat=True))
+    codes=set(labels)|set(Project.objects.using(alias).values_list('industry',flat=True))
     for code in sorted(codes):
-        Catalog.objects.get_or_create(code=code,defaults={'name':labels.get(code,code),'is_active':True})
+        Catalog.objects.using(alias).get_or_create(code=code,defaults={'name':labels.get(code,code),'is_active':True})
 
 
 class Migration(migrations.Migration):

@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 def migrate_completed_to_final(apps, schema_editor):
     Checklist = apps.get_model("core", "Checklist")
-    Checklist.objects.filter(status="COMPLETED").update(status="FINAL")
+    Checklist.objects.using(schema_editor.connection.alias).filter(status="COMPLETED").update(status="FINAL")
 
 
 class Migration(migrations.Migration):

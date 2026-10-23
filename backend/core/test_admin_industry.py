@@ -1,4 +1,6 @@
 """Industry-bound administration is enforced behind every project selector."""
+from types import SimpleNamespace
+from django.db import connection
 from django.test import TestCase,override_settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -74,7 +76,7 @@ class AdminIndustryTests(TestCase):
         single.profile.company=self.company
         single.profile.save()
         migration=importlib.import_module('core.migrations.0030_admin_industry')
-        migration.bind_existing_admins(apps,None)
+        migration.bind_existing_admins(apps,SimpleNamespace(connection=connection))
         single.profile.refresh_from_db()
         self.assertEqual(single.profile.admin_industry_id,self.telecom.pk)
         self.assertFalse(single.profile.admin_industry_pending)

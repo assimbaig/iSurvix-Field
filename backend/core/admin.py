@@ -72,7 +72,7 @@ class ProfileAdmin(admin.ModelAdmin):
 		return () if is_super_admin(request.user) else ('admin_industry',)
 
 	def unlock_profiles(self, request, queryset):
-		queryset.update(is_locked=False, failed_attempts=0)
+		queryset.update(is_locked=False, failed_attempts=0, login_locked_until=None)
 	unlock_profiles.short_description = "Unlock selected profiles"
 
 

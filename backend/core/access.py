@@ -49,7 +49,8 @@ def accessible_projects(user):
         condition|=Q(pk=profile.project_id)
     projects=Project.objects.filter(condition,company_id=company_id_for(user))
     if role==Profile.Roles.ADMIN:
-        projects=projects.filter(administrator_id=user.pk)
+        delegated=active.filter(legacy_admin_access=True).values_list('project_id',flat=True)
+        projects=projects.filter(Q(administrator_id=user.pk)|Q(pk__in=delegated))
         industry=Profile.objects.filter(user=user).values_list('admin_industry__code',flat=True).first()
         if industry:projects=projects.filter(industry=industry)
     return projects.distinct()

@@ -8,6 +8,7 @@ from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from .models import Checklist, ChecklistTemplate, Profile, Project, WorkAssignment, ProjectInvitation, GovernanceAudit, Company, IndustryCatalog
+from .migration_test_utils import isolated_migration_database
 
 
 @override_settings(ROOT_URLCONF='checklist.urls_local', ALLOWED_HOSTS=['testserver'], SECURE_SSL_REDIRECT=False, PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
@@ -363,6 +364,7 @@ class ReviewWorkflowTests(TestCase):
 
 @override_settings(ROOT_URLCONF='checklist.urls_local', ALLOWED_HOSTS=['testserver'], SECURE_SSL_REDIRECT=False)
 class HistoricalReviewMigrationTests(TransactionTestCase):
+    @isolated_migration_database
     def test_routing_migration_preserves_historical_completed_activity(self):
         from django.db import connection
         from django.db.migrations.executor import MigrationExecutor

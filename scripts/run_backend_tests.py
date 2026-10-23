@@ -13,23 +13,60 @@ from pathlib import Path
 import socket
 import sys
 import tempfile
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@contextmanager
+def network_isolation(attempts, fixture_connections):
+    """Guard Python networking during Django startup as well as test execution."""
+    listeners = {}
+    original_bind, original_close = socket.socket.bind, socket.socket.close
+    original_connect, original_connect_ex = socket.socket.connect, socket.socket.connect_ex
+
+    def fixture_bind(sock, address):
+        result = original_bind(sock, address)
+        if isinstance(address, tuple) and address[0] in ('127.0.0.1', '::1', 'localhost'):
+            listeners[id(sock)] = sock.getsockname()[:2]
+        return result
+
+    def fixture_close(sock):
+        listeners.pop(id(sock), None)
+        return original_close(sock)
+
+    def guarded_connect(sock, address, operation=original_connect):
+        # Only listeners created inside this guard are fixtures; an independently
+        # running user Ollama instance (including loopback) remains out of scope.
+        if isinstance(address, tuple) and address[:2] in listeners.values():
+            fixture_connections.append(str(address))
+            return operation(sock, address)
+        attempts.append(str(address))
+        raise OSError('Ordinary tests cannot connect to external services; use an explicit integration check.')
+
+    with ExitStack() as guard:
+        guard.enter_context(patch.object(socket.socket, 'bind', fixture_bind))
+        guard.enter_context(patch.object(socket.socket, 'close', fixture_close))
+        guard.enter_context(patch.object(socket.socket, 'connect', guarded_connect))
+        guard.enter_context(patch.object(socket.socket, 'connect_ex',
+            lambda sock, address: guarded_connect(sock, address, original_connect_ex)))
+        yield
+
+
 def main():
+    # Native ONNX telemetry is outside Python's socket monkeypatches. Its
+    # documented opt-out must precede Django setup and any native imports.
+    os.environ['ORT_DISABLE_TELEMETRY'] = '1'
     sys.path.insert(0, str(ROOT / 'backend'))
     os.environ['DJANGO_SETTINGS_MODULE'] = 'checklist.settings_local'
     runs = ROOT / '.local' / 'test-runs'
     runs.mkdir(parents=True, exist_ok=True)
     attempts = []
     fixture_connections = []
-    listeners = {}
     exit_code = 0
-    with tempfile.TemporaryDirectory(prefix='ordinary-', dir=runs) as temporary:
+    with network_isolation(attempts, fixture_connections), tempfile.TemporaryDirectory(prefix='ordinary-', dir=runs) as temporary:
         state = Path(temporary)
         for key in ('HF_HOME', 'HF_HUB_CACHE', 'FASTEMBED_CACHE_PATH', 'TRANSFORMERS_CACHE'):
             os.environ[key] = str(state / key.lower())
@@ -62,36 +99,10 @@ def main():
         if not parsed.args:
             test_arguments = ['core', *test_arguments]
 
-        original_bind, original_close = socket.socket.bind, socket.socket.close
-        original_connect, original_connect_ex = socket.socket.connect, socket.socket.connect_ex
-
-        def fixture_bind(sock, address):
-            result = original_bind(sock, address)
-            if isinstance(address, tuple) and address[0] in ('127.0.0.1', '::1', 'localhost'):
-                listeners[id(sock)] = sock.getsockname()[:2]
-            return result
-
-        def fixture_close(sock):
-            listeners.pop(id(sock), None)
-            return original_close(sock)
-
-        def guarded_connect(sock, address, operation=original_connect):
-            # A test-created HTTP fixture is allowed; an independently running
-            # user Ollama instance (or any other external service) is not.
-            if isinstance(address, tuple) and address[:2] in listeners.values():
-                fixture_connections.append(str(address))
-                return operation(sock, address)
-            attempts.append(str(address))
-            raise OSError('Ordinary tests cannot connect to external services; use an explicit integration check.')
-
         with ExitStack() as stack:
             stack.enter_context(patch.object(photo_search, 'MODELS', state / 'photo-search-models'))
             stack.enter_context(patch.object(photo_search, 'STATE', state / 'photo-search-state'))
             stack.enter_context(patch.object(evidence_pipeline, 'CACHE', state / 'embedding-models'))
-            stack.enter_context(patch.object(socket.socket, 'bind', fixture_bind))
-            stack.enter_context(patch.object(socket.socket, 'close', fixture_close))
-            stack.enter_context(patch.object(socket.socket, 'connect', guarded_connect))
-            stack.enter_context(patch.object(socket.socket, 'connect_ex', lambda sock, address: guarded_connect(sock, address, original_connect_ex)))
             try:
                 execute_from_command_line(['manage.py', 'test', *test_arguments, '--noinput'])
             except SystemExit as error:

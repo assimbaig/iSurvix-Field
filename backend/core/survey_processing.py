@@ -21,6 +21,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from .access import role_for, can_access_project
 from .models import Checklist, Profile
+from .measurement_units import NUMERIC_EVIDENCE_UNITS, numeric_evidence_unit
 from .survey_processing_models import (SurveyDocument, SurveyUploadSession, SurveyProcessingRevision,
     SurveyProcessingJob, SurveySourceAnalysis, SurveyProcessingResult, SurveyProcessingEvent, SurveyDrawingSet)
 
@@ -236,12 +237,14 @@ def tokens(value):
 def numeric_evidence_value(field, finding):
     """Convert an explicitly recorded unit, never silently reinterpret a number.
 
-    Only a small dimensionally compatible conversion table is supported. Unknown
-    or incompatible units remain visible findings requiring a human correction.
+    Only the shared case-sensitive vocabulary and its explicit aliases are
+    supported. Unknown or incompatible units remain visible findings requiring
+    a human correction, even when source and checklist use the same unknown
+    unit. A unitless field accepts bare numbers or explicitly supported units.
     """
     value = finding.get('value')
-    expected = str(field.get('unit', '')).strip().casefold()
-    observed = str(finding.get('unit', '')).strip().casefold()
+    expected = numeric_evidence_unit(field.get('unit', ''))
+    observed = numeric_evidence_unit(finding.get('unit', ''))
     try:
         number = Decimal(str(value))
         if not number.is_finite():
@@ -267,17 +270,7 @@ def numeric_evidence_value(field, finding):
         raise ValidationError('The recorded value is missing its measurement unit.')
     if expected == observed:
         return formatted(number), expected
-    conversions = {
-        'mm': ('length', Decimal('.001')), 'cm': ('length', Decimal('.01')),
-        'm': ('length', Decimal(1)), 'km': ('length', Decimal(1000)),
-        'mv': ('voltage', Decimal('.001')), 'v': ('voltage', Decimal(1)), 'kv': ('voltage', Decimal(1000)),
-        'ma': ('current', Decimal('.001')), 'a': ('current', Decimal(1)),
-        'w': ('power', Decimal(1)), 'kw': ('power', Decimal(1000)),
-        'hz': ('frequency', Decimal(1)), 'khz': ('frequency', Decimal(1000)),
-        'mhz': ('frequency', Decimal(1000000)), 'ghz': ('frequency', Decimal(1000000000)),
-        'deg': ('angle', Decimal(1)), 'degrees': ('angle', Decimal(1)), '°': ('angle', Decimal(1)),
-    }
-    source, target = conversions.get(observed), conversions.get(expected)
+    source, target = NUMERIC_EVIDENCE_UNITS[observed], NUMERIC_EVIDENCE_UNITS[expected]
     if not source or not target or source[0] != target[0]:
         raise ValidationError('The recorded unit does not match the checklist unit; confirm the intended value and unit.')
     try:
@@ -356,6 +349,10 @@ def prepare_checklist(snapshot, reconciliation):
         conflict = len(answers) > 1 or reported_value not in (None, '', [], {}) and any(not same_reported(x) for x in supported)
         if conflict:
             status = 'Needs review'
+            if field['type'] == 'number' and reported_value in (None, '', [], {}):
+                # Identical raw numbers with different scientific units must
+                # not leave an arbitrarily selected first observation proposed.
+                value = None
             conflicts.append({'field_id': field['id'], 'message': 'Submitted data or evidence contains conflicting values. An Engineer must resolve this item.'})
         sources = []
         for match in matches:

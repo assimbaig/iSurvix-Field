@@ -20,9 +20,12 @@ The Super Admin Clients tab is read-only. Only Project Admin creates Client orga
 | Quality Engineer | Read explicitly assigned work and evidence; request internal AI critique; approve Quality Control or reject with a reason. Cannot edit Engineer answers, upload evidence, share with Client or perform Team Lead approval. |
 | Team Lead | Assign project work and explicit Quality Engineer; review only after Quality Control; approve internally or return work; decide whether to share AI critique with Client. |
 | Client | Review authorized internally approved deliverables and current explicitly shared AI critique; approve or reject where Client review is required. |
-| Project Admin | Manage invitations, eligible roles and project grants, tasks, checklist versions and scoped audit within the Super Admin assigned industry and company. Cannot substitute an Engineer, Quality Engineer, Team Lead or Client signature. |
+| Admin / Project Manager | One canonical Admin role. Manage invitations, eligible roles and project grants, tasks, checklist versions and scoped audit within the Super Admin assigned industry and company. Cannot substitute an Engineer, Quality Engineer, Team Lead or Client signature. |
 | Super Admin | Global administration only, including industry-specific Admin creation and binding. |
-| Historical Project Manager | Retains recorded historical independent workflow assignments and signatures; may record technical template qualifications. New approval policies use Quality Engineer and Team Lead. |
+
+These are six current selectable roles. Migration0051 consolidates eligible legacy `project_manager` accounts into `ADMIN` using revocable, expiry-aware transition memberships, without transferring an existing project owner or changing global privilege flags. Frozen v1 snapshots/signatures keep their original role labels and named reviewers. Only the named, appropriately scoped migrated Admin can finish that historical v1 step; v2 remains Engineer → Quality Engineer → Team Lead → optional Client. New technical template qualification belongs to Team Lead; Admin does not inherit a technical signature by consolidation.
+
+Profiles with pending/conflicting industry bindings remain `REQUIRE_ADMIN_SETUP` in bounded legacy compatibility until an authorized operator resolves the binding. This is not a seventh selectable role or a new dashboard. Pending legacy PM invitations are retired with audit records for authorized canonical reissue. Use the read-only `audit_project_manager_migration` command and follow [the migration instructions](audits/2026-10-23-post-sync-audit.md#migration-and-release-instructions). Historical deliberate/uncertain locks are preserved; new password failures use a configurable temporary throttle, default five failures for15 minutes.
 
 ## Current workflow for all new submissions
 

@@ -1,6 +1,8 @@
 """Proven legacy Client records are preserved without reclassifying tenant data."""
 import importlib
+from types import SimpleNamespace
 from django.apps import apps
+from django.db import connection
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .models import Company,IndustryCatalog,Profile,Project,GovernanceAudit,ClientOrganization
@@ -26,7 +28,7 @@ class LegacyClientMigrationTests(TestCase):
         employer=self.old_client('Synthetic employer with project')
         Project.objects.create(name='Synthetic existing employer project',company=employer)
         before=list(Company.objects.order_by('pk').values())
-        self.migration.preserve_legacy_clients(apps,None)
+        self.migration.preserve_legacy_clients(apps,SimpleNamespace(connection=connection))
         self.assertEqual(list(Company.objects.order_by('pk').values()),before)
         client=ClientOrganization.objects.get(legacy_company=old)
         self.assertEqual(client.company_id,self.tenant.pk)
@@ -35,7 +37,7 @@ class LegacyClientMigrationTests(TestCase):
         self.assertEqual(client.description,old.description)
         self.assertEqual(client.created_at,old.created_at)
         self.assertFalse(ClientOrganization.objects.filter(legacy_company__in=[unrelated,employer]).exists())
-        self.migration.preserve_legacy_clients(apps,None)
+        self.migration.preserve_legacy_clients(apps,SimpleNamespace(connection=connection))
         self.assertEqual(ClientOrganization.objects.count(),1)
     def test_ambiguous_admin_tenants_do_not_guess_customer_owner(self):
         old=self.old_client('Synthetic ambiguous Client')
@@ -44,6 +46,6 @@ class LegacyClientMigrationTests(TestCase):
         another.profile.company=Company.objects.create(name='Synthetic other employer')
         another.profile.admin_industry=self.industry
         another.profile.save()
-        self.migration.preserve_legacy_clients(apps,None)
+        self.migration.preserve_legacy_clients(apps,SimpleNamespace(connection=connection))
         self.assertFalse(ClientOrganization.objects.exists())
         self.assertTrue(Company.objects.filter(pk=old.pk).exists())

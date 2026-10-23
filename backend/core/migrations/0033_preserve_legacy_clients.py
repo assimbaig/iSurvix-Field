@@ -9,24 +9,25 @@ def preserve_legacy_clients(apps,schema_editor):
     Profile=apps.get_model('core','Profile')
     Audit=apps.get_model('core','GovernanceAudit')
     Client=apps.get_model('core','ClientOrganization')
-    candidates=set(Profile.objects.filter(role='ADMIN',user__is_superuser=False,company__isnull=False,admin_industry__isnull=False,admin_industry_pending=False).values_list('company_id','admin_industry_id'))
+    alias=schema_editor.connection.alias
+    candidates=set(Profile.objects.using(alias).filter(role='ADMIN',user__is_superuser=False,company__isnull=False,admin_industry__isnull=False,admin_industry_pending=False).values_list('company_id','admin_industry_id'))
     if len(candidates)!=1:
         return  # Never infer a tenant or industry from names or an arbitrary first user.
     tenant_id,industry_id=next(iter(candidates))
-    for organization in Company.objects.all().order_by('pk'):
-        if organization.pk==tenant_id or organization.projects.exists() or Profile.objects.filter(company_id=organization.pk).exists() or Client.objects.filter(legacy_company_id=organization.pk).exists():
+    for organization in Company.objects.using(alias).all().order_by('pk'):
+        if organization.pk==tenant_id or organization.projects.using(alias).exists() or Profile.objects.using(alias).filter(company_id=organization.pk).exists() or Client.objects.using(alias).filter(legacy_company_id=organization.pk).exists():
             continue
         event=None
-        for record in Audit.objects.filter(action='company_created',actor__isnull=False).order_by('created_at','pk'):
+        for record in Audit.objects.using(alias).filter(action='company_created',actor__isnull=False).order_by('created_at','pk'):
             if str((record.details or {}).get('company_id',''))==str(organization.pk):
                 event=record
                 break
         if not event:
             continue
-        if Client.objects.filter(company_id=tenant_id,industry_id=industry_id,name__iexact=organization.name).exists():
+        if Client.objects.using(alias).filter(company_id=tenant_id,industry_id=industry_id,name__iexact=organization.name).exists():
             continue  # Keep both originals visible rather than silently merge customer identities.
-        client=Client.objects.create(name=organization.name,description=organization.description,company_id=tenant_id,industry_id=industry_id,created_by_id=event.actor_id,legacy_company_id=organization.pk)
-        Client.objects.filter(pk=client.pk).update(created_at=organization.created_at)
+        client=Client.objects.using(alias).create(name=organization.name,description=organization.description,company_id=tenant_id,industry_id=industry_id,created_by_id=event.actor_id,legacy_company_id=organization.pk)
+        Client.objects.using(alias).filter(pk=client.pk).update(created_at=organization.created_at)
 
 
 class Migration(migrations.Migration):

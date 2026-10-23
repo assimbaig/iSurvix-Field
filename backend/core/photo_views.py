@@ -85,6 +85,49 @@ def url(checklist, photo, variant):
     return reverse('photo_evidence', args=[checklist.pk,photo.pk,variant])
 
 
+def client_photo_state(checklist):
+    """Project-authorized sources and human links, without internal AI history.
+
+    Read-only is a mutation permission, not permission to see pending inference
+    proposals, cached model observations, provider details or previous answers.
+    This projection is shared by the Client JSON views; internal roles keep the
+    existing complete review data and source download authorization is unchanged.
+    """
+    from .field_photo_service import coverage, field_catalog, mapping_state, schema_digest
+    photos = list(checklist.photo_evidence.select_related('uploaded_by').order_by('pk'))
+    shared_photos = []
+    for photo in photos:
+        metadata = {key: photo.metadata[key] for key in
+                    ('format', 'width', 'height', 'captured_at', 'modified_at') if key in photo.metadata}
+        gps = photo.metadata.get('gps')
+        if isinstance(gps, dict):
+            metadata['gps'] = {key: gps[key] for key in ('latitude', 'longitude') if key in gps}
+        shared_photos.append({'id': photo.pk, 'filename': photo.filename, 'group': photo.group,
+            'uploaded_by': photo.uploaded_by.get_username() if photo.uploaded_by_id else None,
+            'uploaded_at': photo.created_at.isoformat(), 'metadata': metadata,
+            'metadata_ready': None, 'visual_metadata': None, 'advisories': [],
+            'preview_url': url(checklist, photo, 'preview'), 'original_url': url(checklist, photo, 'original')})
+    mappings = [{key: entry[key] for key in
+                 ('id', 'photo_id', 'field_id', 'section_id', 'label', 'status', 'group')}
+                for entry in mapping_state(checklist) if entry['status'] in {'confirmed', 'manual'}]
+    shared_coverage = coverage(checklist)
+    for slot in shared_coverage['required']:
+        # Proposal identities and their presence are internal until a human
+        # confirms a source link. Explicit saved requirements remain visible.
+        if slot['status'] == 'uncertain' and not slot['photo_ids'] and not slot['evidence_requirements']:
+            slot['status'] = 'missing'
+        slot['proposed_photo_ids'] = []
+    slots = shared_coverage['required']
+    shared_coverage.update({
+        'required_missing_count': sum(slot['required'] and slot['status'] != 'covered' for slot in slots),
+        'recommended_missing_count': sum(not slot['required'] and slot['status'] in {'missing', 'uncertain'} for slot in slots),
+        **{status + '_count': sum(slot['status'] == status for slot in slots)
+           for status in ('missing', 'uncertain', 'covered', 'not_applicable')}})
+    return {'evidence_analysis': None, 'analysis': None, 'max_photos': photo_limit(),
+        'field_catalog': field_catalog(checklist), 'mappings': mappings, 'coverage': shared_coverage,
+        'schema_digest': schema_digest(checklist), 'photos': shared_photos, 'jobs': [], 'drafts': []}
+
+
 @require_GET
 @api_errors
 def fast_state(request,checklist_id):
@@ -107,13 +150,19 @@ def workspace(request, checklist_id):
     from .access import role_for
     from .survey_processing import enabled
     internal=role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER','TEAM_LEAD'}
-    return render(request,'dashboards/photo_workspace.html',{'checklist_processing_enabled':enabled(checklist),'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':settings.OLLAMA_MODEL})
+    client=role_for(request.user)=='CLIENT'
+    return render(request,'dashboards/photo_workspace.html',{'client_evidence_view':client,'checklist_processing_enabled':enabled(checklist),'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.none() if client else checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.none() if client else PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':'' if client else settings.OLLAMA_MODEL})
 
 @require_GET
 @api_errors
 def state(request, checklist_id):
     access=survey_access(request,checklist_id)
     c=access['checklist']
+    from .access import role_for
+    if role_for(request.user)=='CLIENT':
+        response=JsonResponse(client_photo_state(c))
+        response['Cache-Control']='private, no-store'
+        return response
     from .field_photo_service import field_catalog,mapping_state,coverage,schema_digest,analysis_state,metadata_workflow
     from .photo_metadata import metadata_is_current
     photos=list(c.photo_evidence.select_related('uploaded_by').order_by('pk'))
@@ -292,6 +341,24 @@ def accept(request,checklist_id,draft_id):
 @api_errors
 def report(request,checklist_id):
     c=survey_access(request,checklist_id)['checklist']
+    from .access import role_for
+    if role_for(request.user)=='CLIENT':
+        shared=client_photo_state(c)
+        source_rows={photo.pk:photo for photo in c.photo_evidence.all()}
+        response=JsonResponse({'evidence_analysis':None,'placements':shared['mappings'],
+            'coverage':shared['coverage'],'notice':'Shared source evidence and human-confirmed links. Checklist decisions are recorded separately.',
+            'site_id':c.site_id,'checklist_id':c.pk,
+            'template_revision':{'id':c.checklist_template_id,'version':c.checklist_template.version if c.checklist_template_id else None,
+                                 'family_id':str(c.checklist_template.family_id) if c.checklist_template_id else None},
+            'jobs':[],'drafts':[],'audit':[],
+            'evidence':[{'id':photo['id'],'filename':photo['filename'],'sha256':source_rows[photo['id']].sha256,
+                         'group':photo['group'],'metadata':photo['metadata'],
+                         'uploaded_by_id':source_rows[photo['id']].uploaded_by_id,
+                         'created_at':photo['uploaded_at'],'source':photo['original_url']} for photo in shared['photos']]},
+            json_dumps_params={'indent':2})
+        response['Content-Disposition']='attachment; filename="photo-evidence-report.json"'
+        response['Cache-Control']='private, no-store'
+        return response
     from .field_photo_service import mapping_state,coverage
     response=JsonResponse({'evidence_analysis':__import__('core.evidence_pipeline',fromlist=['saved_state']).saved_state(c),'placements':mapping_state(c),'coverage':coverage(c),'notice':'Draft evidence only. No engineering certification. Absence of detections is not a pass.','site_id':c.site_id,'checklist_id':c.pk,'template_revision':{'id':c.checklist_template_id,'version':c.checklist_template.version if c.checklist_template_id else None,'family_id':str(c.checklist_template.family_id) if c.checklist_template_id else None},'jobs':list(c.photo_jobs.values('id','model','status','requested_by_id','created_at','updated_at','attempts','completed','total','schema')),'drafts':list(PhotoDraft.objects.filter(job__checklist=c).values('id','job_id','photo_id','field_id','label','value','reason','uncertainty','missing_information','anomalies','status','accepted_by_id','accepted_at','baseline','baseline_present')),'evidence':[{'id':p.pk,'filename':p.filename,'sha256':p.sha256,'group':p.group,'metadata':p.metadata,'uploaded_by_id':p.uploaded_by_id,'created_at':p.created_at,'source':url(c,p,'original')} for p in c.photo_evidence.all()],'audit':c.review_history},json_dumps_params={'indent':2})
     response['Content-Disposition']='attachment; filename="photo-evidence-report.json"'

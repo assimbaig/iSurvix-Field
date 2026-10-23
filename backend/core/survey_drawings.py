@@ -15,15 +15,18 @@ import math
 import re
 import shutil
 import textwrap
+import unicodedata
 import uuid
 import zipfile
 from datetime import date
+from functools import lru_cache
+from html import escape
 from pathlib import Path
 
 from PIL import Image
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
-VERSION = 'survey-drawings-1'
+VERSION = 'survey-drawings-2'
 PAGE = (420.0, 297.0)
 MAX_SHEETS = 32
 MAX_RECORDS = 1000
@@ -56,8 +59,28 @@ def _digest(value):
 
 def _text(value, limit=500):
     if isinstance(value, (dict, list)):
-        value = json.dumps(value, ensure_ascii=True, sort_keys=True)
-    return re.sub(r'\s+', ' ', str('' if value is None else value).encode('ascii', 'replace').decode()).strip()[:limit]
+        value = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    text = unicodedata.normalize('NFC', str('' if value is None else value))
+    text = re.sub(r'\s+', ' ', text)
+    # Keep real scripts (including Arabic joining characters), but not hidden
+    # direction overrides, NULs or invalid surrogate code points in CAD/PDF text.
+    text = ''.join(char for char in text if unicodedata.category(char)[0] != 'C'
+                   or char in ('\u200c', '\u200d'))
+    return text.strip()[:limit]
+
+
+@lru_cache(maxsize=1)
+def _unicode_metrics_font():
+    import pymupdf
+    return pymupdf.Font('helv')
+
+
+def _text_width(text, height):
+    if text.isascii():
+        return stringWidth(text, 'Helvetica', height)
+    # PyMuPDF's Unicode fallback metrics cover the scripts that Helvetica lacks.
+    # The PDF renderer below also uses its bundled fonts, without OS font paths.
+    return _unicode_metrics_font().text_length(text, fontsize=height)
 
 
 def _num(value):
@@ -125,9 +148,10 @@ def _line(x1, y1, x2, y2, layer='BORDER', sources=None):
 def _label(text, x, y, height=2.5, layer='TEXT', sources=None, max_width=390):
     # Physical text size never falls below 2.1 mm; long text wraps rather than shrinks.
     text = _text(text)
-    while text and stringWidth(text, 'Helvetica', height) > max_width:
+    while text and _text_width(text, height) > max_width:
         text = text[:-4].rstrip() + '...'
-    return {'kind': 'text', 'text': text, 'x': round(x, 4), 'y': round(y, 4), 'height': height, 'layer': layer, 'sources': sources or []}
+    return {'kind': 'text', 'text': text, 'x': round(x, 4), 'y': round(y, 4),
+            'height': height, 'max_width': max_width, 'layer': layer, 'sources': sources or []}
 
 
 def _box(x, y, width, height, layer='BORDER', sources=None):
@@ -386,7 +410,7 @@ def validate_geometry(geometry):
                 if kind=='text':
                     height=_num(entity['height'])
                     if height<2.1:raise ValueError('Unreadably small text.')
-                    points=[[x,y],[x+stringWidth(entity['text'],'Helvetica',height),y+height]]
+                    points=[[x,y],[x+_text_width(entity['text'],height),y+height]]
                 else:
                     points=[[x,y],[x+entity['width'],y+entity['height']]]
                     if entity['width']<=0 or entity['height']<=0:raise ValueError('Invalid measured envelope.')
@@ -466,8 +490,9 @@ def _pdf(geometry, target, folder):
             if layer=='WARNINGS':document.setFillColorRGB(.55,.12,.08)
             kind=entity['kind']
             if kind=='text':
-                document.setFont('Helvetica',entity['height']*mm)
-                document.drawString(entity['x']*mm,entity['y']*mm,entity['text'])
+                if entity['text'].isascii():
+                    document.setFont('Helvetica',entity['height']*mm)
+                    document.drawString(entity['x']*mm,entity['y']*mm,entity['text'])
             elif kind in ('line','polyline'):
                 path=document.beginPath();points=entity['points'];path.moveTo(points[0][0]*mm,points[0][1]*mm)
                 for x,y in points[1:]:path.lineTo(x*mm,y*mm)
@@ -491,6 +516,58 @@ def _pdf(geometry, target, folder):
                         document.drawPath(path)
         document.showPage()
     document.save()
+    _pdf_unicode_labels(geometry, target)
+
+
+def _pdf_unicode_labels(geometry, target):
+    """Shape Unicode with bundled fonts and retain source text in ActualText.
+
+    ReportLab's base Helvetica cannot render Arabic. PyMuPDF Story uses HarfBuzz
+    and its bundled Noto/Droid fallbacks for glyphs, shaping and bidi ordering.
+    ActualText keeps the original logical Unicode even when glyph ligatures have
+    several code points or the font's ToUnicode map uses presentation forms.
+    Readers may still insert bidi-run breaks or reorder adjacent table labels
+    during extraction; the shared geometry and DXF retain the logical labels.
+    """
+    if not any(entity['kind'] == 'text' and not entity['text'].isascii()
+               for sheet in geometry['sheets'] for entity in sheet['entities']):
+        return
+    import pymupdf
+    from reportlab.lib.units import mm
+
+    with pymupdf.open(target) as document:
+        for page, sheet in zip(document, geometry['sheets']):
+            for entity in sheet['entities']:
+                if entity['kind'] != 'text' or entity['text'].isascii():
+                    continue
+                size = entity['height'] * mm
+                x = entity['x'] * mm
+                # Story places its first baseline about one font size below the
+                # box top. Keep it on the same paper baseline as the CAD entity.
+                top = (PAGE[1] - entity['y']) * mm - size
+                width = min(entity.get('max_width', 412 - entity['x']), 412 - entity['x']) * mm
+                rect = pymupdf.Rect(x, top, x + width, top + size * 1.8)
+                color = '#8c1f14' if entity['layer'] == 'WARNINGS' else '#1f1f1f'
+                css = ('* { margin: 0; padding: 0; } '
+                       f'body {{ font-family: sans-serif; font-size: {size:.8f}pt; '
+                       f'line-height: 1; color: {color}; }}')
+                spare, scale = page.insert_htmlbox(
+                    rect, '<span>' + escape(entity['text']) + '</span>', css=css, scale_low=1,
+                )
+                if spare < 0 or scale < 1:
+                    raise ValueError('Unicode drawing label does not fit its readable text bounds.')
+                # insert_htmlbox appends one page-content stream invoking its
+                # shaped form. Mark only that stream, leaving neighbouring text
+                # and CAD linework outside the replacement-text scope.
+                xref = page.get_contents()[-1]
+                actual = ('FEFF' + entity['text'].encode('utf-16-be').hex()).encode('ascii')
+                marked = b'/Span << /ActualText <' + actual + b'> >> BDC\n'
+                document.update_stream(xref, marked + document.xref_stream(xref) + b'\nEMC\n')
+        # One font can be reused by many labels. Subset and deduplicate the
+        # embedded resources before publishing the still-private revision.
+        document.subset_fonts()
+        data = document.tobytes(garbage=4, deflate=True, no_new_id=True)
+    Path(target).write_bytes(data)
 
 
 def _dxf(geometry, sheet, target):

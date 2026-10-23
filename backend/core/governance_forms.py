@@ -79,7 +79,7 @@ class InvitationForm(forms.Form):
     project=forms.ModelChoiceField(queryset=Project.objects.none(),required=False,label='Existing project (optional for a new Admin)')
     def __init__(self,*args,actor,**kwargs):
         super().__init__(*args,**kwargs)
-        self.fields['role'].choices=([(Profile.Roles.ADMIN,'Project Admin')] if is_super_admin(actor) else []) + [(Profile.Roles.ENGINEER,'Engineer'),(Profile.Roles.TEAM_LEAD,'Team Lead'),(Profile.Roles.CLIENT,'Client'),(Profile.Roles.PROJECT_MANAGER,'Project Manager'),(Profile.Roles.QUALITY_ENGINEER,'Quality Engineer')]
+        self.fields['role'].choices=([(Profile.Roles.ADMIN,Profile.Roles.ADMIN.label)] if is_super_admin(actor) else []) + [(Profile.Roles.ENGINEER,'Engineer'),(Profile.Roles.TEAM_LEAD,'Team Lead'),(Profile.Roles.CLIENT,'Client'),(Profile.Roles.QUALITY_ENGINEER,'Quality Engineer')]
         if is_super_admin(actor):self.fields['role'].choices=[choice for choice in self.fields['role'].choices if choice[0]!=Profile.Roles.CLIENT]
         self.fields['project'].queryset=accessible_projects(actor)
         if not is_super_admin(actor):
