@@ -42,4 +42,3 @@ PHOTO_OLLAMA_BASE_URL = os.environ.get('ISURVIX_PHOTO_OLLAMA_URL', OLLAMA_BASE_U
 OLLAMA_MODEL = os.environ.get('ISURVIX_AI_MODEL', 'qwen3.5:4b')
 OLLAMA_TIMEOUT = 180
 MIDDLEWARE.insert(0, 'core.local_ai.LoopbackOnlyMiddleware')
-TEMPLATES[0]['OPTIONS']['context_processors'].append('core.local_ai.local_context')
