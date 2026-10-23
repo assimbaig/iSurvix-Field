@@ -6,7 +6,7 @@ append-only overlay, and late inference cannot replace a completed QA package.
 from copy import deepcopy, copy
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import transaction
+from django.db import DatabaseError,transaction
 from django.db.models import Max
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -154,21 +154,48 @@ def move_or_remove(request, checklist_id, data, remove=False):
     Checklist.objects.select_for_update().get(pk=checklist_id)
     c, flags = access(request, checklist_id, edit=True)
     _same_source(c, data.get('expected_digest'))
-    photo = get_object_or_404(c.photo_evidence, pk=data.get('photo_id'))
+    from .governance_views import audit
     if remove:
+        photo = get_object_or_404(c.photo_evidence, pk=data.get('photo_id'))
         # Retain the source row and original bytes for every historical revision.
         excluded = list((c.intake_metadata or {}).get('category_intake_excluded', []))
         if photo.pk not in excluded: excluded.append(photo.pk)
         c.intake_metadata = {**(c.intake_metadata or {}), 'category_intake_excluded': excluded}
         c.save(update_fields=['intake_metadata', 'updated_at'])
-    else:
-        group = '' if data.get('group') == 'General Info' else data.get('group')
-        if group not in {category['value'] for category in CATEGORIES}:
-            raise ValidationError('Choose General Info, Civil, Electrical or Tower.')
-        photo.group = group; photo.save(update_fields=['group'])
-    from .governance_views import audit
-    audit(request.user, 'capture_photo_removed' if remove else 'capture_photo_category', c.project, checklist_id=c.pk, photo_id=photo.pk)
-    return state(request, checklist_id)
+        audit(request.user,'capture_photo_removed',c.project,checklist_id=c.pk,photo_id=photo.pk)
+        return state(request,checklist_id)
+    if 'photo_ids' in data:
+        if 'photo_id' in data:raise ValidationError('Choose photo_ids or photo_id, not both.')
+        requested=data['photo_ids']
+    else:requested=[data.get('photo_id')]
+    if not isinstance(requested,list) or not 1<=len(requested)<=1000:
+        raise ValidationError('Select between 1 and 1000 saved photos for a category change.')
+    if any(type(ident) is not int or ident<=0 for ident in requested):
+        raise ValidationError('Select saved photos using positive integer photo IDs.')
+    ids=list(dict.fromkeys(requested))
+    group = '' if data.get('group') == 'General Info' else data.get('group')
+    if not isinstance(group,str) or group not in {category['value'] for category in CATEGORIES}:
+        raise ValidationError('Choose General Info, Civil, Electrical or Tower.')
+    selected={photo.pk:photo for photo in c.photo_evidence.select_for_update().filter(pk__in=ids)}
+    if len(selected)!=len(ids):raise Http404()
+    excluded=set((c.intake_metadata or {}).get('category_intake_excluded',[]))
+    if excluded.intersection(ids):raise ValidationError('Removed photos are outside the current capture. Refresh the saved photo selection.')
+    changes=[{'photo_id':ident,'from_group':selected[ident].group,'to_group':group}
+        for ident in ids if selected[ident].group!=group]
+    if changes:
+        changed_ids=[change['photo_id'] for change in changes]
+        try:
+            PhotoEvidence.objects.filter(checklist=c,pk__in=changed_ids).update(group=group)
+            details={'checklist_id':c.pk,'photo_ids':changed_ids,'selected_photo_ids':ids,'changes':changes}
+            if len(ids)==1:details['photo_id']=ids[0]
+            audit(request.user,'capture_photo_category',c.project,**details)
+        except DatabaseError as exc:
+            raise ValidationError('Photo category changes could not be saved. Refresh the saved photos and retry.') from exc
+    result=state(request,checklist_id)
+    result['category_update']={'photo_ids':ids,'requested_count':len(requested),'selected_count':len(ids),
+        'changed_count':len(changes),'unchanged_count':len(ids)-len(changes),
+        'duplicate_count':len(requested)-len(ids),'group':group,'no_op':not changes}
+    return result
 
 
 def validate_handoff(c):

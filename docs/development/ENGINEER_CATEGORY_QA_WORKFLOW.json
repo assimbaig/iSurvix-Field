@@ -202,7 +202,7 @@
       "status": "Verified",
       "implementation": "scripts/run_backend_tests.py; backend/manage.py; retained frontend check-*.cjs",
       "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
-      "actual_result": "Final stable isolated full backend suite: 894 passed in 283.484s, native exit0; Django/migrations/pip/four retained frontend scripts/33 JS checks passed."
+      "actual_result": "Final stable isolated backend suite:903 passed in313.992s, native exit0; Django/migrations/pip/four retained frontend scripts/changed JS syntax passed. Bulk follow-up has120 independent desktop/mobile/lazy assertions."
     }
   ],
   "ownership": {
@@ -421,8 +421,8 @@
     }
   ],
   "evidence_so_far": {
-    "final_full_tests": 894,
-    "final_full_seconds": 283.484,
+    "final_full_tests": 903,
+    "final_full_seconds": 313.992,
     "native_exit_code": 0,
     "source_stable": true,
     "independent_acceptance_tests": 47,
@@ -433,8 +433,13 @@
     "final_native_two_image_receipt": ".local/category-native-final-20261023/verified-native-proposals.json",
     "overlapping_counts": "Focused runs overlap full suite; do not add counts.",
     "requirements_receipt": ".local/engineer-category-qa-20261023/independent-qa-acceptance.json",
-    "source_fingerprint": "78a38a1ee08c1d9c303205a3cf02c9f8b2e8e35f675eb7a1ee11add490531d19",
-    "final_readonly_browser_checks": 44
+    "source_fingerprint": "279c27ca72c891f2d7b9f67ce10e61bda32f42d3af10391b47a899a16f3d4d0c",
+    "final_readonly_browser_checks": 44,
+    "bulk_followup": {
+      "guide": "docs/development/ENGINEER_BULK_CATEGORY_MOVE.md",
+      "new_http_regressions": 9,
+      "independent_bulk_browser_checks": 120
+    }
   },
   "verified_total": 42,
   "layout_references": "F:/iSurvix/references/Notes for Layout.txt and12 screenshots; layout-only, no customer data/assets copied"

@@ -8,10 +8,35 @@
   const label = value => categories.find(c => c.value === value)?.label || 'General Info';
   let saved = null, stale = true, category = '', pending = [], serial = 0;
   let uploadBusy = false, mutationBusy = false, submitBusy = false, uploadToken = null, heartbeat = null;
-  let viewerItems = [], viewerIndex = 0, focusedBeforeViewer = null;
+  let viewerItems = [], viewerIndex = 0, viewerKind = 'saved', focusedBeforeViewer = null, bulkTarget = '__choose__';
+  const selectionKey = `capture-selected-photos:${location.pathname}`;
+  let selection = new Set();
+  try {const stored=JSON.parse(sessionStorage.getItem(selectionKey)||'[]');if(Array.isArray(stored)&&stored.length<=1000)selection=new Set(stored.map(String));}catch{}
   const limits = new Map(), openGroups = new Set(['']);
   const node = (tag, text, className) => {const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
-  const message = (text, error=false) => {el('capture-message').textContent=text;el('capture-message').classList.toggle('capture-error',error);};
+  const message = (text, error=false) => {el('capture-message').textContent=text;el('capture-message').classList.toggle('capture-error',error);const viewerMessage=el('capture-preview-message');if(viewerMessage&&el('capture-preview').open){viewerMessage.textContent=text;viewerMessage.classList.toggle('capture-error',error);}};
+  function rememberSelection(){try{sessionStorage.setItem(selectionKey,JSON.stringify(Array.from(selection)));}catch{}}
+  function reconcileSelection(){const present=new Set((saved?.photos||[]).map(p=>String(p.id)));selection=saved?.can_edit?new Set(Array.from(selection).filter(id=>present.has(id))):new Set();rememberSelection();}
+  function selectPhoto(id,checked){if(!saved?.can_edit||stale||uploadBusy||mutationBusy||submitBusy)return;const key=String(id);if(!saved.photos.some(p=>String(p.id)===key))return;if(checked)selection.add(key);else selection.delete(key);rememberSelection();selectionControls();}
+  function selectionControls(){
+    const editable=!!saved?.can_edit,blocked=stale||uploadBusy||mutationBusy||submitBusy;
+    el('capture-selection-toolbar').hidden=!editable;
+    el('capture-selected-count').textContent=`${selection.size} selected of ${saved?.photos.length||0} saved photos`;
+    el('capture-select-all').textContent=`Select all saved photos (${saved?.photos.length||0})`;
+    el('capture-select-all').title='Select every saved photo across all categories, including collapsed groups and photos not yet shown.';
+    el('capture-select-all').disabled=!editable||blocked||!saved?.photos.length;
+    el('capture-clear-selection').disabled=!editable||blocked||!selection.size;
+    const targetValid=categories.some(c=>c.value===bulkTarget);
+    ['capture-bulk-category','capture-preview-bulk-category'].forEach(id=>{el(id).value=bulkTarget;el(id).disabled=!editable||blocked||!selection.size;});
+    ['capture-move-selected','capture-preview-move-selected'].forEach(id=>{el(id).disabled=!editable||blocked||!selection.size||!targetValid;el(id).textContent=mutationBusy?'Please wait...':'Move selected';});
+    const current=viewerItems[viewerIndex],savedViewer=viewerKind==='saved'&&!!current;
+    el('capture-preview-select-label').hidden=el('capture-preview-selected-count').hidden=el('capture-preview-bulk-controls').hidden=!editable||!savedViewer;
+    el('capture-preview-refresh').hidden=!editable||!savedViewer||!stale;el('capture-preview-refresh').disabled=uploadBusy||mutationBusy||submitBusy;el('capture-preview-select').disabled=!editable||blocked||!savedViewer;
+    el('capture-preview-select').checked=savedViewer&&selection.has(String(current.id));
+    el('capture-preview-selected-count').textContent=`${selection.size} selected`;
+    el('capture-preview-select').setAttribute('aria-label',current?`Select ${current.name}`:'Select current saved photo');
+    root.querySelectorAll('[data-select-saved-photo]').forEach(input=>{input.checked=selection.has(input.dataset.selectSavedPhoto);input.disabled=!editable||blocked;input.closest('.capture-photo-card')?.classList.toggle('is-selected',input.checked);});
+  }
   function safeURL(value) {try {const u=new URL(value,location.href);return u.origin===location.origin?u.href:'';}catch{return '';}}
   async function request(url, data) {
     const options={credentials:'same-origin',headers:{'Accept':'application/json'}};
@@ -45,6 +70,7 @@
     else if(saved?.config_error)guidance=saved.config_error;
     else if(saved&&!saved.can_submit&&!saved.submitted)guidance='Submission is unavailable for the current task stage or your assignment.';
     el('capture-submit-guidance').textContent=guidance;
+    selectionControls();
   }
   function categorySelect(value,onChange,attribute){
     const select=node('select');select.setAttribute('aria-label','Photo category');select.setAttribute(attribute,'');
@@ -80,7 +106,7 @@
         const card=node('article',undefined,'capture-photo-card');card.dataset.photoId=photo.id;
         card.append(thumbnail(safeURL(photo.preview_url)||safeURL(photo.original_url),photo.filename,()=>previewSaved(photo.id),'data-preview-photo'));
         const body=node('div',undefined,'capture-photo-copy');body.append(node('strong',photo.filename,'capture-photo-name'));
-        if(saved.can_edit){body.append(categorySelect(photo.group,value=>movePhoto(photo,value),'data-move-photo'));
+        if(saved.can_edit){const choose=node('label',undefined,'capture-photo-select'),checkbox=node('input');checkbox.type='checkbox';checkbox.dataset.selectSavedPhoto=String(photo.id);checkbox.checked=selection.has(String(photo.id));checkbox.setAttribute('aria-label',`Select ${photo.filename}`);checkbox.addEventListener('change',()=>selectPhoto(photo.id,checkbox.checked));choose.append(checkbox,node('span','Select photo'));body.append(choose);card.classList.toggle('is-selected',checkbox.checked);body.append(categorySelect(photo.group,value=>movePhoto(photo,value),'data-move-photo'));
           const actions=node('div',undefined,'capture-photo-actions'),remove=node('button','Remove');remove.type='button';remove.dataset.removePhoto=photo.id;remove.addEventListener('click',()=>removePhoto(photo));actions.append(remove);body.append(actions);
         }else body.append(node('small',c.label));card.append(body);list.append(card);
       });group.append(list);
@@ -110,8 +136,9 @@
       box.append(row);
     });
   }
+  function acceptState(value){if(!Array.isArray(value.photos)||typeof value.digest!=='string')throw new Error('The saved site response is incomplete. Please refresh.');const current=viewerKind==='saved'?viewerItems[viewerIndex]?.id:null;saved=value;stale=false;reconcileSelection();renderSite();renderPhotos();renderRecovery();if(viewerKind==='saved'&&viewerItems.length){viewerItems=saved.photos.map(viewerPhoto);const index=viewerItems.findIndex(photo=>photo.id===current);viewerIndex=index>=0?index:Math.min(viewerIndex,viewerItems.length-1);if(el('capture-preview').open){if(viewerIndex>=0)renderPreview();else el('capture-preview').close();}}controls();return value;}
   async function load(){
-    try{const value=await request(root.dataset.stateUrl);if(!Array.isArray(value.photos)||typeof value.digest!=='string')throw new Error('The saved site response is incomplete. Please refresh.');saved=value;stale=false;renderSite();renderPhotos();renderRecovery();controls();return value;}
+    try{return acceptState(await request(root.dataset.stateUrl));}
     catch(error){stale=true;controls();throw error;}
   }
   function addFiles(files){
@@ -167,15 +194,29 @@
     finally{mutationBusy=false;controls();}
   }
   async function movePhoto(photo,value){if(value===(photo.group||''))return;await mutate(root.dataset.categoryUrl,{photo_id:photo.id,group:value},`Photo moved to ${label(value)}.`);openGroups.add(value);renderPhotos();controls();}
+  async function moveSelected(){
+    if(!saved?.can_edit||stale||uploadBusy||mutationBusy||submitBusy||!selection.size||!categories.some(c=>c.value===bulkTarget))return;
+    const ids=Array.from(selection).map(Number),target=bulkTarget;mutationBusy=true;el('capture-uploads-finished').checked=false;controls();
+    try{const result=await request(root.dataset.categoryUrl,{photo_ids:ids,group:target,expected_digest:saved.digest});if(!Array.isArray(result.photos)||typeof result.digest!=='string'||ids.some(id=>!result.photos.some(photo=>photo.id===id&&(photo.group||'')===target)))throw new Error('The server did not confirm every selected photo category.');openGroups.add(target);acceptState(result);message(`${ids.length} selected photo${ids.length===1?' is':'s are'} now in ${label(target)}. Selection kept.`);}
+    catch(error){stale=true;message(`Move could not be confirmed. Your selection is kept. ${error.message} Refresh saved photos before retrying.`,true);}
+    finally{mutationBusy=false;controls();}
+  }
   async function removePhoto(photo){if(!confirm(`Remove “${photo.filename}” from this submission? Saved source evidence is retained according to the application retention rules.`))return;await mutate(root.dataset.removeUrl,{photo_id:photo.id},'Photo removed from this submission.');}
-  function previewSaved(id){viewerItems=(saved?.photos||[]).map(p=>({id:p.id,name:p.filename,src:safeURL(p.preview_url)||safeURL(p.original_url),original:safeURL(p.original_url)}));viewerIndex=viewerItems.findIndex(p=>p.id===id);openPreview();}
-  function previewPending(key){viewerItems=pending.filter(p=>p.status!=='uploaded').map(p=>({id:p.key,name:p.file.name,src:p.url,original:''}));viewerIndex=viewerItems.findIndex(p=>p.id===key);openPreview();}
-  function openPreview(){if(viewerIndex<0)return;focusedBeforeViewer=document.activeElement;renderPreview();el('capture-preview').showModal();el('capture-preview-close').focus();}
-  function renderPreview(){const photo=viewerItems[viewerIndex];el('capture-preview-title').textContent=photo.name;el('capture-preview-image').hidden=false;el('capture-preview-error').hidden=true;el('capture-preview-image').src=photo.src;el('capture-preview-image').alt=photo.name;el('capture-preview-position').textContent=`${viewerIndex+1} / ${viewerItems.length}`;el('capture-preview-previous').disabled=viewerIndex===0;el('capture-preview-next').disabled=viewerIndex===viewerItems.length-1;el('capture-preview-original').hidden=!photo.original;if(photo.original)el('capture-preview-original').href=photo.original;}
+  function viewerPhoto(photo){return{id:photo.id,name:photo.filename,src:safeURL(photo.preview_url)||safeURL(photo.original_url),original:safeURL(photo.original_url)};}
+  function previewSaved(id){viewerKind='saved';viewerItems=(saved?.photos||[]).map(viewerPhoto);viewerIndex=viewerItems.findIndex(p=>p.id===id);openPreview();}
+  function previewPending(key){viewerKind='pending';viewerItems=pending.filter(p=>p.status!=='uploaded').map(p=>({id:p.key,name:p.file.name,src:p.url,original:''}));viewerIndex=viewerItems.findIndex(p=>p.id===key);openPreview();}
+  function openPreview(){if(viewerIndex<0)return;focusedBeforeViewer=document.activeElement;el('capture-preview-message').textContent='';renderPreview();el('capture-preview').showModal();el('capture-preview-close').focus();}
+  function renderPreview(){const photo=viewerItems[viewerIndex];el('capture-preview-title').textContent=photo.name;el('capture-preview-image').hidden=false;el('capture-preview-error').hidden=true;if(el('capture-preview-image').src!==photo.src)el('capture-preview-image').src=photo.src;el('capture-preview-image').alt=photo.name;el('capture-preview-position').textContent=`${viewerIndex+1} / ${viewerItems.length}`;el('capture-preview-previous').disabled=viewerIndex===0;el('capture-preview-next').disabled=viewerIndex===viewerItems.length-1;el('capture-preview-original').hidden=!photo.original;if(photo.original)el('capture-preview-original').href=photo.original;selectionControls();}
   el('capture-preview-image').addEventListener('error',()=>{el('capture-preview-image').hidden=true;el('capture-preview-error').hidden=false;});
   el('capture-preview-close').addEventListener('click',()=>el('capture-preview').close());el('capture-preview').addEventListener('close',()=>focusedBeforeViewer?.focus());
   el('capture-preview-previous').addEventListener('click',()=>{if(viewerIndex>0){viewerIndex--;renderPreview();}});el('capture-preview-next').addEventListener('click',()=>{if(viewerIndex<viewerItems.length-1){viewerIndex++;renderPreview();}});
-  el('capture-preview').addEventListener('keydown',event=>{if(event.key==='ArrowLeft'&&viewerIndex>0){viewerIndex--;renderPreview();}if(event.key==='ArrowRight'&&viewerIndex<viewerItems.length-1){viewerIndex++;renderPreview();}});
+  el('capture-preview').addEventListener('keydown',event=>{if(event.target.matches('input,select,textarea'))return;if(event.key==='ArrowLeft'&&viewerIndex>0){viewerIndex--;renderPreview();}if(event.key==='ArrowRight'&&viewerIndex<viewerItems.length-1){viewerIndex++;renderPreview();}});
+  el('capture-select-all').addEventListener('click',()=>{if(!saved?.can_edit||stale||uploadBusy||mutationBusy||submitBusy)return;selection=new Set(saved.photos.map(p=>String(p.id)));rememberSelection();selectionControls();});
+  el('capture-clear-selection').addEventListener('click',()=>{if(uploadBusy||mutationBusy||submitBusy)return;selection.clear();rememberSelection();selectionControls();});
+  el('capture-preview-select').addEventListener('change',event=>{if(viewerKind==='saved')selectPhoto(viewerItems[viewerIndex]?.id,event.target.checked);});
+  ['capture-bulk-category','capture-preview-bulk-category'].forEach(id=>el(id).addEventListener('change',event=>{bulkTarget=event.target.value;selectionControls();}));
+  ['capture-move-selected','capture-preview-move-selected'].forEach(id=>el(id).addEventListener('click',moveSelected));
+  el('capture-preview-refresh').addEventListener('click',async()=>{if(uploadBusy||mutationBusy||submitBusy)return;mutationBusy=true;controls();try{await load();message('Saved photos refreshed.');}catch(error){message(error.message,true);}finally{mutationBusy=false;controls();}});
   root.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{category=button.dataset.category;openGroups.add(category);renderPhotos();controls();}));
   ['capture-files','capture-camera'].forEach(id=>el(id).addEventListener('change',event=>{addFiles(event.target.files);event.target.value='';}));
   const drop=el('capture-drop-zone');['dragenter','dragover'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.add('is-dragging');}));['dragleave','drop'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.remove('is-dragging');if(type==='drop')addFiles(event.dataTransfer.files);}));

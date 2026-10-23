@@ -77,10 +77,14 @@ The independent AppSec reviewer reproduced and verified repairs for six defects:
 
 ## Executed checks
 
-Final full run: **894 tests passed in283.484 seconds**, zero failures, errors or
+Initial Engineer/QA audit run: **894 tests passed in283.484 seconds**, zero failures, errors or
 skips; native process exit0. The application/test source SHA256 fingerprint was
 identical before and after the entire run:
 `78a38a1ee08c1d9c303205a3cf02c9f8b2e8e35f675eb7a1ee11add490531d19`.
+
+The subsequent Engineer bulk-selection follow-up passed **903 tests** and120
+desktop/mobile/lazy-thumbnail browser assertions. Its final source fingerprint,
+commands and evidence are in `ENGINEER_BULK_CATEGORY_MOVE.md`.
 
 The machine-readable42-requirement ledger and final full-suite result are in
 `ENGINEER_CATEGORY_QA_WORKFLOW.json`. Private raw receipts are under

@@ -2,6 +2,14 @@
 
 ## Current: Engineer category upload and QA matching - 23 October 2026
 
+Engineer bulk-selection follow-up: saved-photo checkboxes and shared category
+move controls now appear in the gallery and beside the viewer's `1 / n` counter.
+Selection survives navigation/refresh, and failed moves have in-viewer refresh
+recovery. The existing category endpoint accepts one atomic `photo_ids` batch;
+originals, submitted locks and single-photo operations remain protected. Recovery
+checkpoint `.local/backups/project-checkpoint-20261023-212618` starts at `dac8d6c`.
+Current verification and usage: `docs/development/ENGINEER_BULK_CATEGORY_MOVE.md`.
+
 This section supersedes older Engineer checklist/AI acceptance instructions below.
 Work is on `fix/engineer-category-qa-intake-20261023`, based on merged PR14
 `6b6ce6ee3d7b808f8fef80a4c58826158863ecb4`. Local Engineer checkpoint is
