@@ -1,0 +1,129 @@
+{
+  "date": "2026-10-23",
+  "operation": "Consolidate existing GitHub application fix and audit/manual into a review branch",
+  "branch": "chore/project-sync-20261023",
+  "starting_commit": "b907601b8cac59cc111cb02f37489cc25073c866",
+  "included_sources": [
+    {
+      "commit": "6cf575d5a34f9ccbe4a14f8bfaff59c371a02866",
+      "change": "Hosted role navigation and photo access when local AI is disabled"
+    },
+    {
+      "commit": "c4f77e2",
+      "retained_as": "8e84b8d",
+      "change": "22 October audit, evidence ledger and manual v1.7"
+    }
+  ],
+  "checkpoint": ".local/backups/project-checkpoint-20261023-164814",
+  "environment": {
+    "python": "3.12.10",
+    "django": "6.1.2",
+    "os": "Windows"
+  },
+  "checks": [
+    {
+      "name": "django",
+      "command": ".local\\venv\\Scripts\\python.exe backend\\manage.py check --settings=checklist.settings_local",
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "result": "System check identified no issues (0 silenced)."
+    },
+    {
+      "name": "migration-drift",
+      "command": ".local\\venv\\Scripts\\python.exe backend\\manage.py makemigrations --check --dry-run --settings=checklist.settings_local",
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "result": "No changes detected"
+    },
+    {
+      "name": "dependencies",
+      "command": ".local\\venv\\Scripts\\python.exe -m pip check",
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "result": "No broken requirements found."
+    },
+    {
+      "name": "frontend-preview",
+      "command": "node check-preview.cjs",
+      "working_directory": "F:\\iSurvix\\iSurvix-Field\\frontend",
+      "exit_code": 0,
+      "result": "{\n  \"rendered_screens\": 61,\n  \"checks\": [\n    \"all roles and views render\",\n    \"all checklist sections render\",\n    \"rapid field changes both persist\",\n    \"equipment removal persists\",\n    \"approved answers stay locked\",\n    \"required submission transitions\",\n    \"review comment and approval transition\",\n    \"asset presence\",\n    \"mobile and print stylesheet rules\",\n    \"full 172-row FDED copy\",\n    \"add and remove fields and sections\",\n    \"custom dropdown and required field\",\n    \"editable client branding\",\n    \"publish and assign revision\",\n    \"existing survey schema and logos frozen\",\n    \"future survey uses new revision\",\n    \"admin-only template changes\"\n  ],\n  \"browser_layout_QA\": false\n}"
+    },
+    {
+      "name": "frontend-workspace",
+      "command": "node check-workspace.cjs",
+      "working_directory": "F:\\iSurvix\\iSurvix-Field\\frontend",
+      "exit_code": 0,
+      "result": "{\n  \"screens\": 39,\n  \"checks\": [\n    \"three review types\",\n    \"multi-section approval\",\n    \"duplicate approval prevented\",\n    \"approved field and shared field locks\",\n    \"unapproved fields editable\",\n    \"engineer cannot approve\",\n    \"rejection reason required\",\n    \"full rejection unlocks and logs history\",\n    \"full approval locks all sections\",\n    \"template required-field validation\",\n    \"template fields locked\",\n    \"persisted audit history\"\n  ],\n  \"browser_layout_QA\": false\n}"
+    },
+    {
+      "name": "frontend-engineer",
+      "command": "node check-engineer.cjs",
+      "working_directory": "F:\\iSurvix\\iSurvix-Field\\frontend",
+      "exit_code": 0,
+      "result": "{\n  \"screens\": 13,\n  \"checks\": [\n    \"latest logo on all role shells\",\n    \"assigned-site filtering\",\n    \"pending and complete lists\",\n    \"no engineer review or management navigation\",\n    \"unassigned site navigation and writes blocked\",\n    \"submitted records read-only\",\n    \"returned work editable\",\n    \"custom checklist retained\",\n    \"reviewer controls retained\"\n  ],\n  \"browser_layout_QA\": false\n}"
+    },
+    {
+      "name": "frontend-site-routing",
+      "command": "node check-site-routing.cjs",
+      "working_directory": "F:\\iSurvix\\iSurvix-Field\\frontend",
+      "exit_code": 0,
+      "result": "{\n  \"screens\": 12,\n  \"checks\": [\n    \"Sites defaults to summary and list\",\n    \"one Site ID link per row\",\n    \"Sites wizard read-only even for Under Review records\",\n    \"view-only mutation and decision guards\",\n    \"Review lists only Under Review\",\n    \"review wizard rejects other statuses\",\n    \"partial decisions leave review queue\",\n    \"Under Review label supported\",\n    \"wizard resumes per Site ID and mode\",\n    \"URL restores correct site and section\",\n    \"engineer workflow retained\"\n  ],\n  \"browser_layout_QA\": false\n}"
+    },
+    {
+      "name": "survey-js",
+      "command": "node --check backend/static/core/js/survey_processing.js",
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "result": ""
+    },
+    {
+      "name": "photo-js",
+      "command": "node --check backend/static/core/js/photo_field_workflow.js",
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "result": ""
+    },
+    {
+      "name": "diff",
+      "command": "git diff --check",
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "result": ""
+    }
+  ],
+  "data_preservation": {
+    "business_tables_unchanged": 53,
+    "media_files_unchanged": 806,
+    "private_configuration_files_unchanged": 12,
+    "sqlite_integrity": "ok",
+    "operational_migrations_applied": false
+  },
+  "boundaries": {
+    "production_deployed": false,
+    "main_changed": false,
+    "native_inference_benchmark_run": false,
+    "new_browser_layout_acceptance_claimed": false,
+    "prior_audit_findings_resolved": false
+  },
+  "remaining_work": [
+    "Audit F03: SI unit case/conversion defect",
+    "Audit F06: non-ASCII drawing text",
+    "Review the canonical release branch before any main integration",
+    "Operational database upgrade and staging/HTTPS/outbound worker acceptance",
+    "Approved drawing references and full-site extraction/throughput validation"
+  ],
+  "backend": {
+    "command": ".local\\venv\\Scripts\\python.exe scripts\\run_backend_tests.py --verbosity 1",
+    "tests": 735,
+    "passed": 735,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 271.195,
+    "exit_code": 0,
+    "external_network_attempts": 0,
+    "in_process_fixture_connections": 32,
+    "isolation": "Temporary database, media and model caches"
+  }
+}
