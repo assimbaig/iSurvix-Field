@@ -248,12 +248,24 @@ def survey_access(request, checklist_id, edit=False):
     profile = getattr(request.user, 'profile', None)
     if profile and profile.is_locked:
         raise Http404()
+    # Category intake freezes Engineer sources for every governance mode. QA
+    # edits its version-bound overlay; reviewer/admin legacy aliases must not
+    # reopen raw answers or point evidence on a submitted category record.
+    from .category_intake import enabled as category_enabled,access as capture_access
+    category_editable=None
+    if category_enabled(checklist):
+        if profile and profile.role==Profile.Roles.CLIENT:
+            category_editable=False
+            if edit:raise PermissionDenied('Submitted category evidence is read-only.')
+        else:
+            checklist,capture_flags=capture_access(request,checklist_id,edit=edit)
+            category_editable=capture_flags['can_edit']
     from .independent_workflow import is_independent,assigned_site_access,is_frozen
     if is_independent(checklist):
         from .access import role_for
         if not assigned_site_access(request.user,checklist):
             raise Http404()
-        can_edit=role_for(request.user)==Profile.Roles.ENGINEER and checklist.user_id==request.user.pk and checklist.status in {Checklist.Status.DRAFT,Checklist.Status.REJECTED} and not is_frozen(checklist)
+        can_edit=category_editable if category_editable is not None else role_for(request.user)==Profile.Roles.ENGINEER and checklist.user_id==request.user.pk and checklist.status in {Checklist.Status.DRAFT,Checklist.Status.REJECTED} and not is_frozen(checklist)
         if edit and not can_edit:
             raise PermissionDenied('This governed revision is frozen or outside your assigned capture stage.')
         return {'checklist':checklist,'can_edit':can_edit,'role':role_for(request.user),'redirect':None}
@@ -269,6 +281,7 @@ def survey_access(request, checklist_id, edit=False):
     can_edit = not (client or quality) and checklist.status != Checklist.Status.FINAL
     if profile and profile.role == Profile.Roles.ENGINEER and not is_super_admin(request.user):
         can_edit = can_edit and checklist.status in [Checklist.Status.DRAFT, Checklist.Status.REJECTED, Checklist.Status.PARTIAL]
+    if category_editable is not None:can_edit=category_editable
     if edit and not can_edit:
         raise ValidationError('This approved checklist is locked.')
     return {'checklist': checklist, 'can_edit': can_edit, 'role': 'ADMIN' if admin else profile.role, 'redirect': None}
@@ -353,6 +366,8 @@ def custom_review(request, checklist_id):
 
 
 def survey_context(checklist, request):
+    from .category_intake import projected_checklist
+    checklist=projected_checklist(checklist)
     from django.urls import reverse
     from collections import defaultdict
     from .field_photo_service import placements
@@ -398,6 +413,11 @@ def survey_context(checklist, request):
 
 @require_http_methods(['GET'])
 def custom_survey(request, checklist_id):
+    from .access import role_for
+    if role_for(request.user)==Profile.Roles.ENGINEER:
+        from .category_intake import access as capture_access
+        capture_access(request,checklist_id)
+        return redirect('photo_workspace',checklist_id=checklist_id)
     access = survey_access(request, checklist_id)
     checklist = access['checklist']
     from .access import role_for
@@ -451,6 +471,8 @@ def custom_save(request, checklist_id):
 
 @require_http_methods(['POST'])
 def custom_upload(request, checklist_id, field_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     try:
         access = survey_access(request, checklist_id, edit=True)
         if field_id not in field_map(access['checklist']):
@@ -484,6 +506,8 @@ def custom_upload(request, checklist_id, field_id):
 @require_http_methods(['GET'])
 def custom_photo(request, checklist_id, field_id, index):
     checklist = survey_access(request, checklist_id)['checklist']
+    from .category_intake import projected_checklist
+    checklist=projected_checklist(checklist)
     paths = (checklist.image_data or {}).get(field_id, [])
     if index >= len(paths) or not default_storage.exists(paths[index]):
         raise Http404()
@@ -494,6 +518,8 @@ def custom_photo(request, checklist_id, field_id, index):
 
 @require_http_methods(['POST'])
 def custom_photo_delete(request, checklist_id, field_id, index):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     try:
         survey_access(request, checklist_id, edit=True)
         with transaction.atomic():
@@ -577,6 +603,8 @@ def custom_submit(request, checklist_id):
 @require_http_methods(['GET'])
 def custom_download(request, checklist_id):
     checklist = survey_access(request, checklist_id)['checklist']
+    from .category_intake import projected_checklist
+    checklist=projected_checklist(checklist)
     content = export_custom_excel(checklist)
     response = HttpResponse(content, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     from django.utils.text import slugify

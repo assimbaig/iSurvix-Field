@@ -207,6 +207,19 @@ class SurveyInferenceTests(SimpleTestCase):
 
     @patch('core.survey_evidence.local_ai.ollama')
     @patch('core.photo_service.verify_vision')
+    def test_native_decoder_preserves_observed_subject_and_catalog_boundaries(self, vision, native):
+        native.return_value = response([])
+        evidence.analyse_source(self.source(), 'synthetic-local-model')
+        specification = native.call_args.args[1]['format']['$defs']['Observation']
+        self.assertIn('component', specification['required'])
+        self.assertIn('evidence_quote', specification['required'])
+        self.assertIn('field_hint', specification['required'])
+        self.assertEqual(set(specification['properties']['field_hint']['enum']), {'', 'tower_height'})
+        # Unknown subjects remain expressible; the decoder must not force a match.
+        self.assertIn('', specification['properties']['field_hint']['enum'])
+
+    @patch('core.survey_evidence.local_ai.ollama')
+    @patch('core.photo_service.verify_vision')
     def test_actual_image_bytes_delivered_in_native_request(self, vision, native):
         native.return_value = response()
         source = self.source()

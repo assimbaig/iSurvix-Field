@@ -154,6 +154,8 @@ def serialize(review,current):
     return {'id':review.pk,'status':review.status,'findings':review.findings,'error':review.error,'created_at':review.created_at.isoformat(),'shared':review.shared and current,'share_enabled':review.shared,'current':current,'model':review.model,'snapshot_digest':review.snapshot_digest,'provenance':provenance}
 
 def visible_context(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     from .field_photo_service import analysis_state
     c,role=access(request,checklist_id)
     current=digest_snapshot(snapshot(c))
@@ -163,11 +165,17 @@ def visible_context(request,checklist_id):
         qs=qs.filter(shared=True,status='completed',snapshot_digest=current)
     reviews=[serialize(r,r.snapshot_digest==current) for r in qs]
     source_urls={str(p.pk):reverse('photo_evidence',args=[c.pk,p.pk,'preview']) for p in c.photo_evidence.all()}
-    return {'checklist':c,'is_client':client,'review_readiness':analysis_state(c),'can_request':role in {Profile.Roles.TEAM_LEAD,Profile.Roles.QUALITY_ENGINEER} or role==Profile.Roles.ENGINEER and c.user_id==request.user.pk,'can_share':role==Profile.Roles.TEAM_LEAD,'reviews':reviews,'source_urls':source_urls}
+    return {'checklist':c,'is_client':client,'review_readiness':analysis_state(c),'can_request':role in {Profile.Roles.TEAM_LEAD,Profile.Roles.QUALITY_ENGINEER},'can_share':role==Profile.Roles.TEAM_LEAD,'reviews':reviews,'source_urls':source_urls}
 
 @require_GET
 @never_cache
 def workspace(request,checklist_id):
+    from .access import role_for
+    if role_for(request.user)==Profile.Roles.ENGINEER:
+        from .category_intake import access as capture_access
+        from django.shortcuts import redirect
+        capture_access(request,checklist_id)
+        return redirect('photo_workspace',checklist_id=checklist_id)
     try:
         return render(request,'dashboards/checklist_ai_review.html',visible_context(request,checklist_id))
     except ValidationError:
@@ -185,6 +193,8 @@ def state(request,checklist_id):
 
 @require_POST
 def request_review(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c,role=access(request,checklist_id,mutate=True)
     # Retained photo caches are not evidence that the current opted-in survey
     # was submitted. Additional critique must not start a separate inference

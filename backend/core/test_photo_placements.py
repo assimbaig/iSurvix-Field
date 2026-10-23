@@ -32,6 +32,10 @@ class PhotoPlacementTests(TestCase):
         self.user.profile.project=self.project
         self.user.profile.role=Profile.Roles.ENGINEER
         self.user.profile.save()
+        self.lead=User.objects.create_user('placement_lead')
+        self.lead.profile.project=self.project
+        self.lead.profile.role=Profile.Roles.TEAM_LEAD
+        self.lead.profile.save()
         self.c=Checklist.objects.create(project=self.project,user=self.user,site_id='SYNTHETIC')
         self.client.force_login(self.user)
         self.base=f'/local/photos/{self.c.pk}/'
@@ -50,7 +54,12 @@ class PhotoPlacementTests(TestCase):
         record_proposals(job,photo,[{'field_id':fid,'reason':'The visible concrete base corresponds to the requested foundation evidence.','visual_evidence':'A rectangular concrete foundation is visible beneath the upright structure.','evidence_match':'visible','uncertainty':'medium'}])
         return PhotoPlacement.objects.get(photo=photo,field_id=fid)
     def mapping(self,decisions,**kwargs):
-        return self.client.post(self.base+'mapping/',json.dumps({'decisions':decisions,'expected_schema_digest':schema_digest(self.c),**kwargs}),content_type='application/json')
+        # Existing reviewer HTTP remains supported; Engineer matching is retired.
+        switch=self.client.session.get('_auth_user_id')==str(self.user.pk)
+        if switch:self.client.force_login(self.lead)
+        try:return self.client.post(self.base+'mapping/',json.dumps({'decisions':decisions,'expected_schema_digest':schema_digest(self.c),**kwargs}),content_type='application/json')
+        finally:
+            if switch:self.client.force_login(self.user)
     def decision(self,p,action='confirm'):
         return {'photo_id':p.photo_id,'field_id':p.field_id,'mapping_id':p.pk,'action':action}
     def test_group_upload_deduplicates_preserves_original_and_hint(self):
@@ -197,6 +206,7 @@ class PhotoPlacementTests(TestCase):
     @patch('core.evidence_pipeline.tool_fingerprint',return_value='b'*64)
     def test_opt_in_group_queue_survives_running_job_without_parallel_inference(self,tools,model,vision):
         first=self.upload()
+        self.client.force_login(self.lead)
         job=PhotoJob.objects.create(checklist=self.c,requested_by=self.user,model='fixture',schema=deepcopy(self.schema),status='running',total=1)
         job.photos.add(first)
         second=PhotoEvidence.objects.create(checklist=self.c,uploaded_by=self.user,filename='electrical.png',sha256='different-photo',group='Electrical')

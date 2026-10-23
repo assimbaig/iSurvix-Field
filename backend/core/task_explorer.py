@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q,F,Value,CharField,OuterRef,Subquery
+from django.db.models import Q,F,Value,CharField
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -138,29 +138,11 @@ def explorer(request):
     page=Paginator(rows,25).get_page(request.GET.get('page'))
     ids=[row['task_pk'] for row in page if row['task_kind']=='checklist']
     checklist_page=checklists.filter(pk__in=ids)
-    if engineer:
-        from .survey_processing_models import SurveyProcessingJob
-        from .models import PhotoJob
-        latest_job=SurveyProcessingJob.objects.filter(revision__checklist_id=OuterRef('pk')).order_by('-revision__number')
-        legacy_job=PhotoJob.objects.filter(checklist_id=OuterRef('pk')).order_by('-pk')
-        checklist_page=checklist_page.annotate(latest_ai_status=Subquery(latest_job.values('status')[:1]),latest_photo_status=Subquery(legacy_job.values('status')[:1]))
     objects={c.pk:c for c in checklist_page.select_related('project','review_policy__current_revision','review_route_record','work_assignment')}
     back=reverse('task_explorer')+('?' + request.GET.urlencode() if request.GET else '')
     for row in page:
         c=objects.get(row['task_pk']) if row['task_kind']=='checklist' else None
         if c:
-            if engineer:
-                row['ai_status_label']={
-                    'queued':'AI Analysis queued',
-                    'analysing_evidence':'AI Analysis in progress',
-                    'preparing_checklist':'Preparing checklist proposals',
-                    'preparing_drawings':'Preparing draft drawings',
-                    'ready_for_review':'AI results ready - Engineer review next',
-                    'failed':'AI Analysis needs attention',
-                }.get(getattr(c,'latest_ai_status',None),'')
-                if not row['ai_status_label']:
-                    row['ai_status_label']={'queued':'Photo AI Analysis queued','running':'Photo AI Analysis in progress',
-                        'completed':'Saved photo AI results - review links','failed':'Photo AI Analysis needs attention'}.get(getattr(c,'latest_photo_status',None),'')
             row['stage']=c.workflow_label
             from .task_presentation import workflow_steps
             row['workflow_steps']=workflow_steps(c)

@@ -10,6 +10,7 @@ from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -29,6 +30,7 @@ class IndependentIntegratedQATests(TestCase):
     setUp = fixtures.SurveyProcessingTests.setUp
     person = fixtures.SurveyProcessingTests.person
     add_photo = fixtures.SurveyProcessingTests.add_photo
+    request = fixtures.SurveyProcessingTests.request
 
     def endpoint(self, name='survey_processing_action'):
         return reverse(name, args=[self.checklist.pk])
@@ -48,9 +50,9 @@ class IndependentIntegratedQATests(TestCase):
                 {'name': 'Synthetic right client', 'logo': self.photo.original.name}]}
             self.checklist.save(update_fields=['branding_snapshot'])
         self.client.force_login(self.engineer)
-        response = self.client.post(self.endpoint(), {'action': 'submit', 'uploads_finished': 'true'})
-        self.assertEqual(response.status_code, 201, response.content)
-        revision = self.checklist.processing_revisions.get(pk=response.json()['revision_id'])
+        # Build retained pre-category history through its original service.
+        revision,created=pipeline.submit(self.request(),self.checklist.pk,True)
+        self.assertTrue(created)
         finding = {'finding_key': 'independent-synthetic-record-1', 'field_hint': 'tower_height',
             'category': 'measurement', 'component': 'tower', 'value': '30', 'unit': 'm',
             'basis': 'recorded', 'evidence_quote': 'Synthetic fixture measured record: 30 m',
@@ -69,12 +71,12 @@ class IndependentIntegratedQATests(TestCase):
     def test_invalid_numeric_record_correction_cannot_poison_saved_package(self):
         revision = self.saved_result()
         before_events = revision.processing_events.count()
-        response = self.client.post(self.endpoint(), {'action': 'review', 'revision_id': revision.pk,
-            'decision': 'record', 'finding_ids': json.dumps(['independent-synthetic-record-1']),
-            'corrections': json.dumps({'independent-synthetic-record-1': {'value': '30', 'unit': 'V'}}),
-            'reason': 'An incompatible unit must be rejected before append-only persistence.'})
-        self.assertEqual(response.status_code, 409, response.content)
+        with self.assertRaises(ValidationError):
+            pipeline.review(self.request(),self.checklist.pk,revision.pk,'record',
+                ids=['independent-synthetic-record-1'],corrections={'independent-synthetic-record-1':{'value':'30','unit':'V'}},
+                reason='An incompatible unit must be rejected before append-only persistence.')
         self.assertEqual(revision.processing_events.count(), before_events)
+        self.client.force_login(self.quality)
         state = self.client.get(self.endpoint('survey_processing_state'))
         self.assertEqual(state.status_code, 200, state.content)
         self.assertEqual(next(x for x in state.json()['active']['checklist_items'] if x['id'] == 'tower_height')['value'], '30')
@@ -127,7 +129,7 @@ class IndependentIntegratedQATests(TestCase):
         self.assertEqual(self.checklist.answer_data, before)
         self.assertEqual(SurveyProcessingEvent.objects.count(), event_count)
 
-    def test_section_lock_blocks_real_http_accept_and_result_correction(self):
+    def test_section_lock_blocks_retained_service_accept_and_result_correction(self):
         revision = self.saved_result()
         self.checklist.section_approvals = {'measurements': {'name': 'Synthetic approved section'}}
         self.checklist.save(update_fields=['section_approvals'])
@@ -138,20 +140,22 @@ class IndependentIntegratedQATests(TestCase):
                 response = self.client.post(self.endpoint(), {'action': 'review', 'decision': decision,
                     'revision_id': revision.pk, 'finding_ids': json.dumps(ids), 'corrections': json.dumps(changes),
                     'reason': 'Attempt to bypass an existing human-approved section lock.'})
-                self.assertEqual(response.status_code, 409, response.content)
+                self.assertEqual(response.status_code, 403, response.content)
+                with self.assertRaises(ValidationError):
+                    pipeline.review(self.request(),self.checklist.pk,revision.pk,decision,ids=ids,
+                        corrections=changes,reason='Attempt to bypass an existing human-approved section lock.')
         self.assertEqual(revision.processing_events.count(), 1)  # original submission only
 
     def test_review_acceptance_does_not_silently_apply_answers(self):
         revision = self.saved_result()
         original = deepcopy(self.checklist.answer_data)
         for _ in range(2):
-            response = self.client.post(self.endpoint(), {'action': 'review', 'revision_id': revision.pk,
-                'decision': 'accept', 'finding_ids': '["tower_height"]'})
-            self.assertEqual(response.status_code, 200, response.content)
+            pipeline.review(self.request(),self.checklist.pk,revision.pk,'accept',ids=['tower_height'])
         self.checklist.refresh_from_db()
         self.assertEqual(self.checklist.answer_data, original)
         self.assertEqual(revision.processing_events.filter(action='accept').count(), 1)
         self.assertEqual(self.checklist.photo_evidence.filter(placements__status='confirmed').count(), 0)
+        self.client.force_login(self.quality)
         self.assertTrue(next(x for x in self.client.get(self.endpoint('survey_processing_state')).json()['active']['checklist_items'] if x['id'] == 'tower_height')['accepted'])
 
     def test_right_only_snapshot_logo_reaches_correct_actual_pdf_and_dxf_slot(self):

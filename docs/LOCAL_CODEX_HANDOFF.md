@@ -1,5 +1,64 @@
 # iSurvix Field: local Codex development brief
 
+## Current: Engineer category upload and QA matching - 23 October 2026
+
+Engineer bulk-selection follow-up: saved-photo checkboxes and shared category
+move controls now appear in the gallery and beside the viewer's `1 / n` counter.
+Selection survives navigation/refresh, and failed moves have in-viewer refresh
+recovery. The existing category endpoint accepts one atomic `photo_ids` batch;
+originals, submitted locks and single-photo operations remain protected. Recovery
+checkpoint `.local/backups/project-checkpoint-20261023-212618` starts at `dac8d6c`.
+Current verification and usage: `docs/development/ENGINEER_BULK_CATEGORY_MOVE.md`.
+
+This section supersedes older Engineer checklist/AI acceptance instructions below.
+Work is on `fix/engineer-category-qa-intake-20261023`, based on merged PR14
+`6b6ce6ee3d7b808f8fef80a4c58826158863ecb4`. Local Engineer checkpoint is
+`913f71d`; the pre-edit source/database archive is
+`.local/backups/project-checkpoint-20261023-194306`. Keep all project data under
+this F: project. Do not reset or overwrite operational records.
+
+Engineer now uploads by General Info/Civil/Electrical/Tower, previews/moves/removes
+before submission and selects Submit to QA. No matching, checklist completion,
+AI confidence/verification or AI-result acceptance belongs to Engineer. The
+server denies their historical AI aliases as well as hiding controls. Source
+photos/categories freeze in the existing immutable processing revision; the task
+is available to QA immediately while a durable independent AI job runs.
+
+QA uses compact category/checkpoint/photo panes, uncropped previews/AI details,
+last Not Assigned group, saved drag/drop and click/touch assignment, explicit link
+confirmation, and personal display ordering. Assignment and engineering acceptance
+are distinct. QA events derive reviewed answers/links without changing frozen
+Engineer inputs. Completion freezes that review package before the existing QA
+approval action. Team Lead uses the same evidence workspace read-only and the
+existing approval/one-step return controls. Client projection excludes unaccepted
+AI data, diagnostics and stale/unlinked legacy field images. Current authorized
+returns reopen only current locks; historical signatures remain.
+
+No models, migrations, dependencies, template content or product modules added.
+Existing legacy unmarked records retain original editing behavior; marked category
+submissions cannot be edited through old Admin/Team Lead raw-source aliases.
+Checklist-required drawing scope and existing inspection workflows remain intact.
+
+Actual installed Agency role definitions were used with separate backend/UI/QA
+ownership and independent AppSec review. The owner's twelve layout references at
+`F:/iSurvix/references` were used for layout only, including Team Lead review.
+All six concrete AppSec findings were reproduced, fixed and independently retested.
+The final42-item requirement ledger is
+`docs/development/ENGINEER_CATEGORY_QA_WORKFLOW.json`; exact checks, limitations,
+startup and preservation evidence are in `ENGINEER_CATEGORY_QA_AUDIT.md` alongside
+it. The current six-role manual is `docs/manual/USER_PERMISSIONS_AND_ISSUES.md`.
+
+Real native qwen3.5:4b image jobs passed on the existing signed project runtime
+on loopback11435. Default11434 fails because its runner is missing. Use
+`Start-iSurvix.cmd`, or set
+`ISURVIX_PHOTO_OLLAMA_URL=http://127.0.0.1:11435` for the app and each worker.
+Keep `photo_worker`, `photo_search_worker` and `survey_processing_worker` separate.
+Do not download a model, expose Ollama, repin older failed jobs or start duplicate
+workers. The live loopback app was refreshed for testing; no production deployment
+or merge was performed. Real-site accuracy, sustained throughput, physical devices,
+manufacturer references, hosting acceptance and historical native crash A12 remain
+explicit limitations rather than implied successes.
+
 ## Engineer workspace simplification - 23 October 2026
 
 Current work is on `fix/engineer-field-workspace-20261023`, from local checkpoint

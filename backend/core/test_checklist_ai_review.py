@@ -47,12 +47,10 @@ class ChecklistAIReviewTests(TestCase):
         batches=list(review_batches(data))
         self.assertGreater(len(batches),1)
         self.assertEqual(sum(len(b) for b in batches),40)
-    def test_engineer_own_review_visible_but_client_sharing_team_lead_only(self):
+    def test_engineer_cannot_read_ai_details_or_share_retained_review(self):
         self.client.force_login(self.engineer)
         response=self.client.get(self.url('checklist_ai_state'))
-        self.assertEqual(response.status_code,200)
-        self.assertTrue(response.json()['can_request'])
-        self.assertFalse(response.json()['can_share'])
+        self.assertEqual(response.status_code,403)
         review=self.review()
         self.assertEqual(self.client.post(self.url('checklist_ai_share',review.pk),{'shared':'true','expected_digest':review.snapshot_digest}).status_code,403)
     def test_client_final_only_and_shared_current_only(self):
@@ -191,11 +189,13 @@ class ChecklistAIReviewTests(TestCase):
     @patch('core.checklist_ai_review.inference_lease',lease)
     @patch('core.checklist_ai_review.installed_models',return_value=['fixture:local'])
     @patch('core.checklist_ai_review.ollama')
-    def test_assigned_engineer_can_request_final_checklist_review_but_cannot_share(self,call,models):
+    def test_assigned_qa_can_request_final_checklist_review_but_cannot_share(self,call,models):
+        quality=self.person('assigned-quality',Profile.Roles.QUALITY_ENGINEER)
+        self.c.quality_reviewer=quality
         self.c.status=Checklist.Status.FINAL
         self.c.save()
         call.side_effect=[{'capabilities':['completion']},{'message':{'content':json.dumps({'findings':[self.finding]})}}]
-        self.client.force_login(self.engineer)
+        self.client.force_login(quality)
         response=self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json')
         self.assertEqual(response.status_code,201,response.content)
         review=self.c.ai_reviews.get()
@@ -218,9 +218,11 @@ class ChecklistAIReviewTests(TestCase):
         self.assertEqual(len(self.client.get(self.url('checklist_ai_state')).json()['reviews']),1)
         PhotoPlacement.objects.create(photo=photo,field_id='condition',section_id='general',status='manual',schema_digest='fixture')
         self.assertEqual(self.client.get(self.url('checklist_ai_state')).json()['reviews'],[])
-    def test_engineer_reads_same_internal_site_review_requested_by_team_lead(self):
+    def test_assigned_qa_reads_same_internal_site_review_requested_by_team_lead(self):
         self.review()
-        self.client.force_login(self.engineer)
+        quality=self.person('private-review-quality',Profile.Roles.QUALITY_ENGINEER)
+        self.c.quality_reviewer=quality;self.c.save(update_fields=['quality_reviewer'])
+        self.client.force_login(quality)
         reviews=self.client.get(self.url('checklist_ai_state')).json()['reviews']
         self.assertEqual(len(reviews),1)
         self.assertEqual(reviews[0]['findings'],[self.finding])
@@ -231,7 +233,10 @@ class ChecklistAIReviewTests(TestCase):
     def test_unchanged_site_reuses_canonical_findings_across_requesting_actors(self,call,models):
         call.side_effect=[{'capabilities':['completion']},{'message':{'content':json.dumps({'findings':[self.finding]})}},
                           {'capabilities':['completion']}]
-        self.client.force_login(self.engineer)
+        quality=self.person('canonical-quality',Profile.Roles.QUALITY_ENGINEER)
+        self.c.quality_reviewer=quality
+        self.c.save(update_fields=['quality_reviewer'])
+        self.client.force_login(quality)
         first=self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json')
         self.assertEqual(first.status_code,201,first.content)
         self.client.force_login(self.lead)
@@ -315,7 +320,7 @@ class ChecklistAIReviewTests(TestCase):
         record,_=get_or_create_analysis(self.c,photo,{'assessments':[]},versions)
         with connection.cursor() as cursor:
             cursor.execute('UPDATE core_evidenceanalysisrecord SET payload=%s WHERE id=%s',[json.dumps({'assessments':['corrupt']}),record.pk])
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         self.assertEqual(self.client.get(self.url('checklist_ai_state')).status_code,503)
         self.assertEqual(self.client.get(self.url('checklist_ai_review')).status_code,503)
         self.assertEqual(self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json').status_code,503)
@@ -324,7 +329,7 @@ class ChecklistAIReviewTests(TestCase):
     def test_unprocessed_photo_blocks_final_review_before_any_native_call(self,call):
         from .models import PhotoEvidence
         PhotoEvidence.objects.create(checklist=self.c,filename='synthetic.png',sha256='synthetic')
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         result=self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json')
         self.assertEqual(result.status_code,409)
         self.assertEqual(len(result.json()['analysis']['unprocessed_photo_ids']),1)
@@ -343,7 +348,7 @@ class ChecklistAIReviewTests(TestCase):
         job=PhotoJob.objects.create(checklist=self.c,requested_by=self.engineer,model='fixture:local',status='completed',schema=self.c.schema_snapshot,processed_photo_ids=[photo.pk])
         job.photos.add(photo)
         call.side_effect=[{'capabilities':['completion']},{'message':{'content':json.dumps({'findings':[self.finding]})}}]
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         result=self.client.post(self.url('checklist_ai_request'),data='{}',content_type='application/json')
         self.assertEqual(result.status_code,201,result.content)
         payload=call.call_args_list[-1].args[1]

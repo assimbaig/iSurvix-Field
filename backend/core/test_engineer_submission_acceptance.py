@@ -1,8 +1,10 @@
-"""Independent saved-record acceptance for the existing Engineer/reviewer journey.
+"""Retained pre-category records, source integrity and reviewer-route acceptance.
 
-Only native inference/rendering is controlled. HTTP authorization, uploads,
-persistent jobs, explicit decisions, revision snapshots and review routing use
-the real application. These tests do not establish real-site AI accuracy.
+Historical reviewed states are constructed with the retained internal services;
+retired Engineer HTTP AI mutations remain forbidden. Uploads, negative HTTP
+authorization and reviewer routing still exercise real application endpoints.
+Current category submission is covered in test_engineer_category_submission_acceptance.
+Only native inference/rendering is controlled; this is not a native accuracy test.
 """
 import hashlib
 import json
@@ -11,6 +13,7 @@ from io import BytesIO
 from pathlib import Path
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -85,10 +88,10 @@ class EngineerSubmissionAcceptanceTests(TestCase):
         return response, raw
 
     def process_and_review(self):
+        """Prepare an explicit historical review state, never impersonate HTTP success."""
         signed_count = self.checklist.submission_revisions.count()
-        response = self.action(self.engineer, action='submit', uploads_finished='true')
-        self.assertIn(response.status_code, (200, 201), response.content)
-        revision = self.checklist.processing_revisions.get(pk=response.json()['revision_id'])
+        revision, created = pipeline.submit(self.request(), self.checklist.pk, True)
+        self.assertTrue(created)
         self.processing()
         self.assertTrue(pipeline.process_next())
         revision.processing_job.refresh_from_db()
@@ -98,17 +101,11 @@ class EngineerSubmissionAcceptanceTests(TestCase):
         self.assertEqual(self.checklist.review_route_record.stage, 'engineer')
         self.assertEqual(self.checklist.submission_revisions.count(), signed_count)
         for ident in ['site_id', 'contact', 'manufacturer', 'tower_height']:
-            decision = self.action(self.engineer, action='review', revision_id=revision.pk,
-                                   decision='accept', finding_ids=json.dumps([ident]))
-            self.assertEqual(decision.status_code, 200, decision.content)
-        rejected = self.action(self.engineer, action='review', revision_id=revision.pk,
-                               decision='reject', finding_ids=json.dumps(['cabinet_condition']),
-                               reason='No supported condition evidence; recorded as missing.')
-        self.assertEqual(rejected.status_code, 200, rejected.content)
-        complete = self.action(self.engineer, action='review', revision_id=revision.pk,
-                               decision='engineer_complete',
-                               reason='Reviewed all source evidence and retained unsupported fields.')
-        self.assertEqual(complete.status_code, 200, complete.content)
+            pipeline.review(self.request(), self.checklist.pk, revision.pk, 'accept', ids=[ident])
+        pipeline.review(self.request(), self.checklist.pk, revision.pk, 'reject',
+                        ids=['cabinet_condition'], reason='No supported condition evidence; recorded as missing.')
+        pipeline.review(self.request(), self.checklist.pk, revision.pk, 'engineer_complete',
+                        reason='Reviewed all source evidence and retained unsupported fields.')
         self.checklist.refresh_from_db()
         self.assertEqual(self.checklist.answer_data['custom']['manufacturer'], 'SyntheticCo')
         self.client.force_login(self.engineer)
@@ -129,8 +126,10 @@ class EngineerSubmissionAcceptanceTests(TestCase):
 
     def test_real_upload_preserves_bytes_deduplicates_and_waits_for_completed_submission(self):
         self.configure()
-        started = self.action(self.engineer, action='start_upload')
-        self.assertEqual(started.status_code, 201, started.content)
+        self.client.force_login(self.engineer)
+        started = self.client.post(reverse('photo_processing_upload_session', args=[self.checklist.pk]),
+                                   json.dumps({'action': 'start'}), content_type='application/json')
+        self.assertEqual(started.status_code, 200, started.content)
         token = started.json()['token']
         uploaded, original = self.upload(token=token)
         self.assertEqual(uploaded.status_code, 201, uploaded.content)
@@ -143,14 +142,21 @@ class EngineerSubmissionAcceptanceTests(TestCase):
         self.assertTrue(duplicate.json()['photos'][0]['duplicate'])
         self.assertEqual(self.checklist.photo_evidence.count(), 3)
         self.assertFalse(SurveyProcessingJob.objects.exists())
+        # The historical service still protects incomplete originals; its old
+        # Engineer HTTP entry point is now deliberately forbidden globally.
+        with self.assertRaises(ValidationError):
+            pipeline.submit(self.request(), self.checklist.pk, True)
         premature = self.action(self.engineer, action='submit', uploads_finished='true')
-        self.assertEqual(premature.status_code, 409, premature.content)
+        self.assertEqual(premature.status_code, 403, premature.content)
         self.assertFalse(SurveyProcessingJob.objects.exists())
-        finished = self.action(self.engineer, action='finish_upload', token=token)
+        finished = self.client.post(reverse('photo_processing_upload_session', args=[self.checklist.pk]),
+            json.dumps({'action': 'finish', 'token': token}), content_type='application/json')
         self.assertEqual(finished.status_code, 200, finished.content)
-        for _ in range(2):
-            queued = self.action(self.engineer, action='submit', uploads_finished='true')
-            self.assertIn(queued.status_code, (200, 201), queued.content)
+        revision, created = pipeline.submit(self.request(), self.checklist.pk, True)
+        self.assertTrue(created)
+        duplicate_revision, duplicate_created = pipeline.submit(self.request(), self.checklist.pk, True)
+        self.assertFalse(duplicate_created)
+        self.assertEqual(duplicate_revision.pk, revision.pk)
         self.assertEqual(SurveyProcessingJob.objects.count(), 1)
         self.checklist.refresh_from_db()
         self.assertEqual(self.checklist.review_route_record.stage, 'engineer')

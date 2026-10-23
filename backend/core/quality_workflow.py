@@ -42,6 +42,8 @@ def review_quality(actor,checklist,decision,reason='',expected_updated_at=''):
     if decision not in {'approve','reject'} or not isinstance(reason,str) or len(reason)>4000 or decision=='reject' and not reason.strip():
         raise ValidationError('Choose approve or reject; rejection requires a reason of at most 4000 characters.')
     if decision=='approve':
+        from .category_intake import enabled as intake_enabled, record_qa_approval
+        if intake_enabled(checklist):record_qa_approval(checklist,actor)
         # Team Lead partial approval validates only its selected sections.
         # Quality Control reviews the available submission; unfinished jobs
         # must not alter its signed evidence after this decision.

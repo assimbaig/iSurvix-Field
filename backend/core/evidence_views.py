@@ -40,6 +40,12 @@ def mutation_response(request, checklist_id, operation):
 @login_required
 @require_GET
 def learning(request, checklist_id):
+    from .access import role_for
+    from .models import Profile
+    if role_for(request.user)==Profile.Roles.ENGINEER:
+        from .category_intake import access as capture_access
+        capture_access(request,checklist_id)
+        return redirect('photo_workspace',checklist_id=checklist_id)
     checklist = service.learning_access(request.user, checklist_id)
     return render(request, 'dashboards/evidence_learning.html', {'checklist': checklist, 'state': service.learning_state(request.user, checklist_id)})
 
@@ -47,12 +53,16 @@ def learning(request, checklist_id):
 @login_required
 @require_GET
 def state(request, checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     return JsonResponse(service.learning_state(request.user, checklist_id))
 
 
 @login_required
 @require_POST
 def decide(request, checklist_id, case_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     def operation():
         data = payload(request)
         service.decide_correction(request.user, checklist_id, case_id, data.get('decision'), data.get('reason', ''))
@@ -62,6 +72,8 @@ def decide(request, checklist_id, case_id):
 @login_required
 @require_POST
 def publish(request, checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     def operation():
         data = payload(request)
         ids = data.getlist('case_ids') if hasattr(data, 'getlist') else data.get('case_ids', [])

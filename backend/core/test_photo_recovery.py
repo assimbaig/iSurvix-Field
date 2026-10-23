@@ -137,7 +137,7 @@ class StoredPhotoRecoverySafetyTests(TestCase):
         for fid,value in [('height','42'),('condition',{'result':'Checked','remarks':'Injected approval'})]:
             draft=PhotoDraft.objects.create(job=job,photo=photo,field_id=fid,label=fid,value=value,reason='Injected test record',uncertainty='high')
             response=self.client.post(reverse('photo_accept',args=[checklist.pk,draft.pk]))
-            self.assertIn(response.status_code,(400,409))
+            self.assertEqual(response.status_code,403)
             draft.refresh_from_db()
             self.assertEqual(draft.status,'pending')
         checklist.refresh_from_db()
@@ -171,7 +171,11 @@ class StoredPhotoRecoverySafetyTests(TestCase):
         self.assertEqual(job.drafts.count(),1)
         self.assertEqual(PhotoPlacement.objects.filter(photo=first,status='proposed').count(),1)
         self.assertFalse(PhotoPlacement.objects.filter(photo=second).exists())
-        self.client.force_login(user)
+        reviewer=User.objects.create_user('photo_checkpoint_lead')
+        reviewer.profile.role=Profile.Roles.TEAM_LEAD
+        reviewer.profile.project=project
+        reviewer.profile.save()
+        self.client.force_login(reviewer)
         self.assertEqual(self.client.post(reverse('photo_retry',args=[checklist.pk,job.pk])).status_code,200)
         analyze.reset_mock()
         analyze.side_effect=None

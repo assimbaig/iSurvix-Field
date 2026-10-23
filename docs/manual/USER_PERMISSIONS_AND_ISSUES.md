@@ -2,7 +2,7 @@
 
 Review date: 23 October 2026. Scope: the existing Django survey and inspection application. This guide describes six current roles and the existing review workflow; it is not a plan for additional modules or a production-readiness certificate.
 
-The permission, routing and Engineer workspace checks below were executed against isolated Django records. Desktop and mobile browser checks used synthetic survey evidence; they do not establish field-device acceptance, native AI accuracy or production readiness.
+The permission, routing and workspace checks use isolated Django records and synthetic evidence. The category-upload workflow supersedes the earlier Engineer checklist/AI review steps. Actual local vision was also exercised with synthetic images; this establishes integration, not real-site accuracy, physical-device acceptance or production readiness. Current verification evidence is recorded in docs/development/ENGINEER_CATEGORY_QA_WORKFLOW.json.
 
 ## How access is decided
 
@@ -17,9 +17,10 @@ Being able to see a project does not permit every operation on its tasks. Engine
 | Create Client organizations or invite Clients | No | Managed company projects | No | No | No | No |
 | Create single/bulk site tasks | No | Managed projects | No | No | Assigned projects | No |
 | Develop and publish checklist templates | No | Managed template scope | No | No | Technical qualification only | No |
-| Edit survey answers and upload evidence | No | No Engineer signature | Assigned editable task | No | No | No |
-| Submit opted-in survey for AI Analysis | No | No | Assigned editable task, completed intake | No | No | No |
-| Accept or correct generated Engineer proposals | No | No | Assigned editable task | No | No | No |
+| Upload and organize original evidence | No | No Engineer signature | Own task before submission or after authorized return | No | No | No |
+| Submit category photos to QA | No | No | Own task, completed uploads | No | No | No |
+| Match photos and review AI suggestions | No | No | No | Named QA at current editable stage | Read completed QA package | No |
+| Record derived checklist answers | No | No | No matching or AI acceptance | Named QA; original Engineer source stays frozen | Review only | Shared approved results only |
 | Sign QA review | No | No | No | Named QA at current stage | No | No |
 | Sign Team Lead review | No | No | No | No | Named Team Lead at current stage | No |
 | Sign Client approval | No | No | No | No | No | Named Client after sharing |
@@ -29,7 +30,7 @@ Being able to see a project does not permit every operation on its tasks. Engine
 
 The matrix summarizes the current governed workflow. Retained historical workflows have their original named reviewers and signatures; they are not silently converted into a new route.
 
-Older records explicitly using legacy governance retain their original editing rules: a scoped Admin or Team Lead can edit an unfinished legacy checklist, while final records and approved sections remain locked. This exception was checked through isolated HTTP saves; it does not grant an Engineer signature in the current governed workflow. A template with Checklist required switched off is not necessarily a legacy-governance record: the AI setting and approval policy are separate.
+Older, unmarked records explicitly using legacy governance retain their original editing rules: a scoped Admin or Team Lead can edit an unfinished legacy checklist, while final records and approved sections remain locked. Once a task uses category submission, its frozen Engineer sources cannot be edited through those older endpoints. A template with Checklist required switched off is not necessarily a legacy-governance record: the AI setting and approval policy are separate.
 
 Historical version-one independent workflows can retain their original named Team Lead validation and Project Manager approval. New governed routes use Engineer, QA Engineer, Team Lead and the optional Client. Never infer a current operational permission from an old stored role label or rewrite a historical signer to fit the new route.
 
@@ -38,52 +39,61 @@ Historical version-one independent workflows can retain their original named Tea
 ### Purpose and permitted work
 
 - Find assigned tasks and distinguish pending preparation, submitted/review work, returned or rejected corrections, and completed work. The workflow stage and AI processing status are separate.
-- Open an assigned task's published checklist snapshot. Use Group, Section and Checkpoint navigation without changing the controlling template.
-- Complete permitted site answers, upload camera/gallery photos in bounded batches, inspect originals and previews, and confirm or correct evidence links when the task is editable.
-- Leave the old Civil/Electrical/Tower upload label empty. Those optional storage labels are not the checklist hierarchy or a technical decision about the photograph.
-- Engineer uploads are upload-only in the simplified interface. Use the third-step submission action after the current browser's uploads and saves finish; uploading files alone does not approve a task or start analysis.
-- For a survey whose published template enables Checklist required, this action enters the durable integrated survey pipeline. Other existing surveys use their existing photo-job API through a separate explicit AI submission action rather than being silently converted into the drawing pipeline.
-- Review proposed answers, their sources and uncertainty. Correct or reject unsupported values and explicitly complete the Engineer review before the technical QA hand-off.
+- Open the assigned site's compact photo-capture workspace and inspect existing task information.
+- Select General Info, Civil, Electrical or Tower and upload multiple camera/gallery photos in bounded batches. Preview full images and review saved thumbnails grouped by category.
+- Before submission, move photos between categories or remove an incorrect photo from the active intake. Removal retains original bytes and historical source records.
+- Retry failed uploads; successful uploads are deduplicated. An unfinished upload envelope must finish or be safely recovered before submission.
+- Select Submit to QA after uploads finish. Missing checklist answers do not block this photo hand-off. Necessary task identity, reviewer, access and upload-completion checks remain.
+- QA receives the frozen submission immediately. A persistent AI job runs separately; uploading alone does not start it. The Engineer receives a simple confirmation rather than matching or AI verification work.
+- The applicable approved checklist controls QA proposals. A missing template is shown to QA as a configuration issue; it does not cause invented checklist requirements or lose the photo submission. Drawing generation retains its existing Checklist required scope.
 - Correct a returned task and submit a new retained revision. Prior inputs, evidence, review events and signed revisions remain available.
 - Maintain their own professional profile and experience. Published experience is self-reported, not application-certified competence.
 
 ### Not permitted
 
-The Engineer cannot create projects, administer Clients or staff, publish templates, edit another Engineer's task, sign QA/Team Lead/Client decisions, release drawings, or change frozen/approved evidence through upload or answer endpoints. AI suggestions are not Engineer approvals. A required unsupported answer remains an unresolved submission requirement rather than an invented pass or dimension.
+The Engineer cannot match photos to checklist points, confirm/reject AI links, accept AI answers or manually launch/retry the old AI review interfaces. These HTTP restrictions also apply to older records; historical data/signatures remain intact. The Engineer cannot create projects, administer Clients/staff, publish templates, edit another Engineer's task, sign QA/Team Lead/Client decisions, release drawings or change submitted evidence without an authorized return. Matching and missing-checklist resolution belong to QA, while engineering approval remains a separate human decision.
 
 ### Current issues and follow-up
 
 | Type | Status | Existing-feature follow-up |
 | --- | --- | --- |
-| Crowded upload/checklist/submission screens | Fixed for the checked journeys; desktop and mobile verification passed | Three clear steps separate tasks, checklist/photos and submission. Checks cover uploads without automatic AI, tree selection, failed saves and upload navigation guards. After accepted results are applied, the old intake panel is hidden and the existing Send to QA action is focused and shown immediately above the review area. |
-| Mobile checklist drawer could not be opened in the first browser capture | Fixed; fresh independent browser verification passed | The first capture used a cached template. After a fresh server render, the 390px drawer opens with search focus and correct expanded state, Group/Section controls work, and checkpoint selection opens the correct answer pane and closes the drawer. No outer horizontal overflow was found. |
+| Crowded upload/checklist/submission screens | Replaced by category capture | The Engineer sees task information, category uploads, source previews and Submit to QA. Checklist matching, confidence and AI acceptance controls are absent. Current desktop/mobile checks are recorded in the workflow ledger. |
+| Checklist/AI work incorrectly assigned to Engineer | Role responsibility corrected | QA owns matching and derived checklist review. The Engineer task list no longer says Engineer review is next after AI completion; historical internal services remain only for retained data/testing compatibility. |
 | Disabled submission buttons had faint/unreadable labels | Fixed; independent browser and visual verification passed | Disabled legacy submission uses dark text (#43556d) on a light background (#e4eaf2), with full opacity. Keep unavailable actions clearly labelled. |
-| AI starts through a historical retry/critique path before canonical submission | Reproduced and repaired in this change; focused regressions passed | Keep the server guard for opted-in surveys and preserve historical records. |
+| Old AI endpoints accessible to Engineer | Global HTTP restriction verified | Old analysis enqueue/retry/mapping/acceptance and AI processing mutation routes deny Engineer use, including records without the new intake marker. Existing authenticated document/upload completion operations remain available where authorized. |
 | Native processing crash, audit A12 | Open integration issue | An earlier native exit139 has no established root cause. Passing Windows tests do not close the issue; obtain a supported reproduction/backtrace and compatible native dependency evidence. |
 | Complete real-site AI accuracy and speed | Not yet accepted | Measure full authorized site batches, incorrect/missed matches, correction effort, retry/restart behavior and actual elapsed processing time. Small synthetic uploads do not prove AI throughput. |
 | Phone/network usability | External validation remains | Exercise real Android/iPhone capture, intermittent signal, interrupted batches, offline messages and retry recovery. |
-| Concurrent legacy/excluded uploads in another tab or browser | Existing hardening gap | The simplified legacy interface checks its own upload/save activity and asks for completion confirmation. Durable cross-browser upload-session tracking currently belongs to the opted-in pipeline; do not claim equivalent protection for legacy or inspection uploads. |
+| Concurrent and interrupted uploads | New Engineer capture uses durable upload envelopes | Category capture uses the existing lease/heartbeat/recovery mechanism even when drawings are not required. A live transfer cannot be silently closed; recovery preserves completed originals. Physical phone/network acceptance still remains. |
 
 ## QA Engineer
 
 ### Purpose and permitted work
 
 - Open tasks where they are the named QA reviewer and still have effective project access.
-- Inspect submitted answers, source photographs, checklist dispositions and retained revision history.
+- Open the category submission immediately, including while AI is pending, processing or failed. Inspect original source photographs, approved checklist requirements and revision history.
+- Review General Info, Civil, Electrical and Tower in a compact category/checklist/photo workspace. Required points remain visible without evidence. Not Assigned means no checklist links, not merely no link to the selected point.
+- Add, confirm, remove or explicitly reassign individual photo links. Drag-and-drop and click/touch actions use the same revision-bound permission checks. Other valid links remain intact.
+- Inspect source photos and QA-visible AI observations/explanations in the viewer. Unsupported suggestions remain unassigned. Preserve original Engineer categories as provenance, even for a valid cross-category link.
+- Enter source-backed derived checklist answers and complete the required QA evidence review. These append-only decisions do not rewrite the Engineer's original answers or photo snapshot.
+- Change personal checkpoint display order within the existing category only. Display order does not edit the template, source links or engineering decisions.
 - Approve the current technical review or return it one step to the Engineer with a reason. A stale token or a change to frozen source inputs blocks a decision.
-- In an opted-in AI/drawing package, independently approve or reject the exact Engineer-reviewed technical package. This is distinct from a checklist result or overall task status.
+- In an opted-in AI/drawing package, independently review the exact QA-completed technical package. Drawing release remains separate and still requires the existing workflow gates.
 - Inspect approved sections and retained evidence without modifying the Engineer's submission.
 - Maintain their own professional profile, qualifications and experience and choose whether to publish it to eligible shared-project colleagues.
 
 ### Not permitted
 
-QA cannot create projects or tasks, invite staff/Clients, upload or replace an Engineer's evidence through their account, accept the Engineer's AI proposals, sign the Team Lead/Client decision, or release drawing outputs. QA and Engineer must be distinct actors.
+QA cannot create projects or tasks, invite staff/Clients, upload or replace the Engineer's originals, edit approved requirements, use display ordering as template editing, sign Team Lead/Client decisions or release drawing outputs. Assignment, confirmation of a link, reviewed answers and engineering approval are distinct. A photo link does not prove compliance. Approved evidence requires the existing authorized reopening process. QA and Engineer remain distinct actors.
 
 ### Current issues and follow-up
 
 | Type | Status | Existing-feature follow-up |
 | --- | --- | --- |
 | Current-stage and named-reviewer protection | Verified in isolated workflow checks | Keep denials for wrong reviewer, revoked access, stale decisions and changed inputs. |
+| QA matching workspace | Current change; see final workflow evidence | Category navigation, scoped per-photo links, Not Assigned, display ordering and responsive saved-data browser checks are tracked against the owner's original acceptance list. |
+| Clarification offered before reopened QA review was complete | Reproduced and repaired | After a Team Lead return, the workflow shows Review and complete QA evidence and withholds premature Approve/Clarify. Recomplete the reviewed package before clarifying or approving. Return/reject controls remain available. |
+| Raw image context omitted by native model | Structured decoding improved; native retest passed | Native output now includes observed subject and source quotation with a closed set of approved field hints. Unknown remains allowed; this is not a guarantee of whole-site matching accuracy. |
 | Technical accuracy of AI findings | Field validation remains | Independently compare real findings and missing/conflicting information with checked site evidence and acceptance criteria. |
 | Historical scientific values | Impact review remains | PR13 fixes conversion and reconciliation going forward. Previously stored or signed results were not rewritten; review any suspected historical impact against originals. |
 | Native processing stability | Open shared issue, A12 | QA should not treat a successful retry as resolution of an unexplained native crash. |
@@ -95,9 +105,9 @@ QA cannot create projects or tasks, invite staff/Clients, upload or replace an E
 - Create and assign single or bulk site tasks within effective project access. The task inherits the project's published checklist and three- or four-layer policy.
 - Select the Engineer and required named reviewers from permitted project members during the authorized initial task setup. Existing frozen reviewer routes cannot be silently changed.
 - Record technical qualification of the applicable checklist/template against the relevant specification and method when required by the workflow.
-- Review work after QA approval. Approve it to the next stage or reject one step to QA with a reason.
+- Review the completed QA package in the compact category/checkpoint/photo workspace. Its matching controls are read-only for Team Leads. Approve work to the next stage or reject one step to QA with a reason.
 - Receive a Client rejection as a Team Lead clarification. Clarify and resubmit to the Client if source inputs remain unchanged, or return one step to QA when further correction is needed.
-- Release the exact drawing package only after explicit Engineer completion, an independent assigned QA package decision, closed task routing and required Client approval.
+- Release the exact drawing package only after completed QA evidence review, the assigned QA technical decision, closed task routing and required Client approval. Retained older packages keep their original Engineer-completion prerequisite.
 - Choose whether to share the separate checklist critique with the Client through the existing explicit sharing control. Internal photo-model diagnostics remain private.
 
 ### Not permitted
@@ -133,7 +143,7 @@ Clients cannot upload or edit Engineer evidence, accept AI proposals, sign QA/Te
 | Type | Status | Existing-feature follow-up |
 | --- | --- | --- |
 | Internal photo/AI information exposure | PR13 repair verified by Client-privacy regressions | Continue denying pending/rejected proposal details, internal reasoning, provider metadata and job diagnostics. |
-| Matching/confirmation wording on a read-only Client page, A13 | Fixed for the reported matching panel; independent regression and browser checks passed | The page identifies Submitted evidence and hides the editable matching queue for Clients. Submitted source photographs and their authorized original downloads remain available. Engineer and Team Lead matching surfaces are preserved. |
+| Internal matching information, A13 | Current privacy regressions and browser checks passed | Clients see permitted confirmed evidence and accepted answers, excluding optional unaccepted AI findings. Engineer matching controls are removed; Team Lead matching is read-only. |
 | Client sharing and approval usability | Stage-specific checks passed; physical-device acceptance remains | Test the actual customer device and clarify which revision, evidence and outputs are being approved. |
 
 ## Admin / Project Manager
@@ -159,7 +169,7 @@ An Admin cannot change their own industry, create Super Admin/Admin invitations,
 
 | Type | Status | Existing-feature follow-up |
 | --- | --- | --- |
-| Broad checklist terminology and Engineer overload | Existing-editor refinement verified by focused regressions | The draft editor can move a checkpoint to another section/activity while preserving its stable ID and evidence/input settings; published or used templates remain locked. Group/Section/Checkpoint navigation is verified in the Engineer workspace. Existing real checklist content was preserved. |
+| Broad checklist terminology and Engineer overload | Category upload and QA review verified | The Engineer uploads by category. QA sees approved checkpoint requirements in a separate review workspace. The existing draft editor retains stable IDs and published/used-template locks; no historical checklist content was removed. |
 | Legacy Project Manager transition | PR13 implementation; actual-target review required if legacy accounts exist | New roles use Admin / Project Manager. Ambiguous industry/company bindings remain deferred; never guess scope or rewrite signed historical reviewers. |
 | Older intentional/failed-login locks | Operator review if present | Temporary throttling does not prove why an older real account was locked. Do not bulk-unlock historical accounts. |
 | Backup/recovery and hosted operation | Operational acceptance remains | Rehearse a consistent restore of database, originals, outputs and job state; verify scoped HTTPS/PC-worker operation and retention procedures. |
@@ -191,34 +201,35 @@ Super Admin does not create company projects, create/invite Clients, use the ope
 
 ## Submission and rejection workflow
 
-For Checklist required surveys:
+For the current category-based Engineer submission:
 
-1. The Engineer completes permitted site inputs and uploads originals. Upload progress and completion are visible; an unfinished upload session blocks AI submission.
-2. The Engineer explicitly submits the completed intake for AI Analysis. A durable saved revision/job is created. Repeating the same submission reuses that job/revision.
-3. AI proposes checklist answers/evidence against stable fields from the published revision. Missing, uncertain and conflicting information stays visible; AI cannot approve itself.
-4. The Engineer checks and explicitly accepts/corrects the result, then completes the hand-off to QA. AI processing status and technical workflow status remain distinct.
-5. A three-layer task follows Engineer -> QA -> Team Lead -> Closed. A four-layer task follows Engineer -> QA -> Team Lead -> Client -> Closed.
-6. A rejection moves one step back. Team Lead rejection goes to QA; QA can return to Engineer. Client rejection goes to Team Lead for clarification or another one-step return.
-7. Changed Engineer inputs require a new retained AI/review revision and a new technical submission. Previous source snapshots and signed decisions remain intact.
-8. Generated outputs remain draft until the exact package meets the technical review and release gates. An authorized Team Lead performs release; the Client receives only permitted released outputs.
+1. Open the assigned task, check its site identity, select General Info/Civil/Electrical/Tower and upload originals. Preview, move or remove incorrect photos before submission. Failed transfers remain visible for retry.
+2. Submit to QA after uploads finish. The server validates access, task/reviewer identity and durable upload completion, then freezes the photos/categories and immediately creates the QA hand-off. Checklist completion and Engineer AI acceptance are not prerequisites. Repeated requests reuse that submission/job.
+3. The independent worker analyzes actual source images/documents and proposes links to valid IDs from the applicable approved template. Missing, unsupported and conflicting evidence stays visible; there is no invented checklist or automatic engineering acceptance.
+4. QA can work before AI completes or after a failure. Select a category and point, inspect sources, use Not Assigned for genuinely zero-link photos, and explicitly assign/confirm/correct links by dragging or click/touch. Original categories and unrelated valid links are preserved.
+5. QA records source-backed answers and resolves required review gaps. Completing evidence review freezes the derived QA package; engineering approval/rejection remains a separate existing workflow action. A Team Lead return reopens QA review before clarification.
+6. A three-layer task follows Engineer -> QA -> Team Lead -> Closed. A four-layer task follows Engineer -> QA -> Team Lead -> Client -> Closed. Each rejection moves one step back. QA can return to Engineer; a Client rejection goes to Team Lead for clarification or another authorized return.
+7. Changed Engineer evidence requires a new retained submission revision. QA-only matching corrections are appended to the reviewed package without rewriting the original Engineer snapshot. Personal point ordering changes display only.
+8. Existing drawing generation remains limited to published telecom-survey templates with Checklist required enabled. Other category submissions do not enable drawings merely by reaching QA. Drawings remain draft until the exact package meets technical review and release gates. Authorized Team Lead release and Client output restrictions remain.
 
-Existing excluded surveys and inspection workflows retain their backend photo-job rules, but the simplified Engineer interface uploads first and requests AI explicitly from its submission step. It waits for the current browser's uploads/saves and asks for confirmation; it does not yet establish that another browser's legacy upload is complete. The integrated Checklist & Drawings gate and durable upload sessions apply only to published telecom-survey templates with Checklist required enabled; do not silently extend that pipeline to unrelated modules.
+Older submission, review and source records are retained. Current Engineer interfaces and HTTP AI restrictions apply without requiring destructive conversion of historical records. Required checklist items can block QA completion/engineering approval even though they no longer block the Engineer's photo hand-off. A missing approved template is a QA configuration problem; the submission and originals remain available.
+
+## Try the current workflow
+
+1. Engineer: open an assigned task, upload photos under the four categories, preview them and use Submit to QA after transfers finish. No checklist matching is required.
+2. QA: open that task immediately, even while AI is pending. Choose a category, then a checkpoint or the last Not Assigned entry. Inspect the photo and supplied AI observation.
+3. QA: drag a photo onto a checkpoint or use Assign to checklist point. Confirm/correct links separately from reviewing answers and accepting work. Refresh to check persistence. Complete QA evidence review before using the existing approval action.
+4. Team Lead: inspect the completed package in the read-only three-pane workspace. Approve or return one step with a reason. Four-layer tasks continue to the named Client; three-layer tasks close after the required reviews.
 
 ## Verification evidence and limits
 
-Current independent checks executed during this change:
+- Final isolated backend run: **894 tests passed in 283.484 seconds**, native process exit0, no failures/errors/skips; application/test source fingerprint was unchanged throughout the run.
+- Django checks, migration-drift and pending-migration checks, dependency check, all four retained frontend scripts and 33 JavaScript syntax checks passed. The retained frontend scripts are not browser-layout tests.
+- Independent saved-data QA: 47 focused tests and 74 real Edge assertions at 1440px/390px; all 17 original QA acceptance criteria verified. These counts overlap the full suite and are not added together.
+- Actual browser scenarios covered category uploads, failed-transfer retry, immediate QA availability, drag/drop and click/touch matching, refresh/order persistence, failed-save rollback, QA completion, Team Lead rejection, Engineer revision and Client return/clarification/closure. No unhandled JavaScript exceptions were recorded.
+- An independent AppSec reviewer reproduced and retested six defects: old Engineer AI reads, optional unaccepted Client findings, alternate capture diagnostics, authorized QA reopening locks, stale legacy field-photo projection, and legacy endpoint mutation of frozen category submissions. Its final 59-test security run passed.
+- Real local qwen3.5:4b processed 11 synthetic images in isolated jobs, including a final fresh two-image submission against its approved two-point template. Correct advisory links were saved; confirming one did not accept engineering work. Browser-only controlled AI fixtures are identified separately from these real native checks.
+- The default installed Ollama service on 11434 currently fails image requests because its native runner is missing. The existing project-dedicated runtime on loopback 11435 successfully processed the real test images. Use the project's startup launcher; no new model was downloaded and no cloud fallback was added. Previously pinned failed jobs are retained rather than silently reset.
+- Source snapshots, original image bytes and prior signatures were checked during the isolated journeys. Operational evidence and credentials were compared with the pre-edit recovery checkpoint. No operational survey was approved or reset by these tests.
 
-- `core.test_engineer_submission_acceptance`, task creation, enterprise task acceptance and review workflow: 39 tests passed in 11.971 seconds.
-- Company access, Client access/photo privacy, work profiles, Admin industry, Client Admin forms and audit integrity: 51 tests passed in 8.704 seconds.
-- New independent acceptance plus submission-only boundary regression tests: 13 tests passed in 2.288 seconds after the backend guard change.
-- Current task-bucket/editor/boundary/independent acceptance checks: 31 tests passed in 4.329 seconds. A subsequent six-test independent run passed in 1.810 seconds, including the same-record return path and rejection of an external return destination.
-- The implementation lead's final complete backend run passed 828 tests in 276.207 seconds, with zero failures, errors or skips and native process exit 0. Django, migration-drift, dependency and all four retained frontend checks passed. Final command receipts are recorded in the release evidence.
-- The implementation lead's real-browser artifacts record 14 upload checks, eight review/correction checks, seven closure checks and 11 mobile/role checks. Two deliberate save-failure responses returned HTTP 503 during the negative test; the failed answer remained visible and blocked submission. No unhandled JavaScript exceptions were recorded.
-- The independent reviewer additionally ran 23 fresh read-only Edge checks at 390px and 1440px: mobile drawer visibility/focus/expanded state, Group and Section collapse/expand, correct checkpoint selection, no outer overflow, readable disabled submission, hidden alternate Engineer AI-launch controls, Client matching-card hiding with both submitted photos/original downloads retained, and no unhandled JavaScript exceptions. The corresponding screenshots were visually inspected.
-- Browser review exercised the actual saved four-layer task: upload, explicit AI submission, Engineer correction/acceptance, QA approval, Team Lead rejection to QA, QA return to Engineer, a second retained revision, QA/Team Lead approval, Client rejection to Team Lead, clarification and Client approval. A separate three-layer task completed Engineer acceptance and hand-off, QA approval and Team Lead approval to closure. Six additional stage-ready browser checks verified the earlier QA hand-off action and hidden obsolete intake panel. Excluded-survey upload-only behavior has independent API coverage; its explicit AI submission was also exercised in the browser.
-- The final combined independent journey, Client-privacy and submission-boundary run passed 24 tests in 2.722 seconds, with zero external connections. A separate isolated legacy-permission probe verified scoped Admin/Team Lead editing before Final and denial after Final, alongside the seven existing Client-privacy cases (eight tests passed in 0.552 seconds).
-- The runs overlap; their counts are not added into a unique total. Browser artifacts and test counts identify their own scope and are not a universal defect-free claim.
-
-These checks use temporary Django databases/media/model caches, actual application HTTP/service operations and controlled inference. The browser fixture used the real persisted job and drawing renderers to generate PDF/DXF outputs; native vision findings were controlled test data. They verify record persistence, permission failures, upload hashes/deduplication, queue idempotency, explicit Engineer acceptance, one-step rejection, revision preservation and closure policy. They do not establish real native-model accuracy, 500-photo sustained throughput, production hosting, physical-device accessibility or engineering compliance.
-
-No operational survey approvals, user passwords, original evidence or historical released values were changed by these independent checks.
+These results verify the focused saved-data Engineer-to-QA behavior. They do not establish whole-site accuracy, sustained 200/500-photo throughput, engineering compliance, manufacturer geometry, hosted production readiness or physical-device acceptance. Historical native crash A12 remains an investigation item despite the successful local image runs. Full technical receipts, limitations and exact startup commands are recorded in docs/development/ENGINEER_CATEGORY_QA_AUDIT.md.

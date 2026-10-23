@@ -35,7 +35,7 @@ class EngineerMultipartUploadTests(TestCase):
         self.survey=Checklist.objects.create(project=self.project,user=self.engineer,site_id='SYNTHETIC-UPLOAD',status=Checklist.Status.REJECTED)
         self.client=Client(enforce_csrf_checks=True)
         self.client.force_login(self.engineer)
-        self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
+        self.client.get(reverse('custom_checklist',args=[self.survey.pk]),follow=True)
         self.csrf=self.client.cookies['csrftoken'].value
 
     def image(self):
@@ -43,16 +43,16 @@ class EngineerMultipartUploadTests(TestCase):
         Image.new('RGB',(96,64),'green').save(image,format='PNG')
         return SimpleUploadedFile('synthetic-evidence.png',image.getvalue(),content_type='image/png')
 
-    def test_rejected_owner_uploads_images_to_inspection_and_photo_fields(self):
+    def test_rejected_owner_cannot_bypass_category_capture_with_point_uploads(self):
         for fid in ('inspection','photo'):
             response=self.client.post(reverse('custom_checklist_upload',args=[self.survey.pk,fid]),{'images':[self.image()],'csrfmiddlewaretoken':self.csrf})
-            self.assertEqual(response.status_code,200,response.content)
+            self.assertEqual(response.status_code,403,response.content)
         self.survey.refresh_from_db()
         self.assertEqual(self.survey.status,Checklist.Status.REJECTED)
         self.assertEqual(self.survey.section_approvals,{})
         self.assertEqual(self.survey.answer_data,{})
-        self.assertEqual(len(self.survey.image_data['inspection']),1)
-        self.assertEqual(len(self.survey.image_data['photo']),1)
+        self.assertEqual(self.survey.image_data,{})
+        self.assertEqual(PhotoEvidence.objects.count(),0)
 
     def test_rejected_owner_uploads_original_to_photo_workspace(self):
         image=self.image()
@@ -73,30 +73,35 @@ class EngineerMultipartUploadTests(TestCase):
         bulk=reverse('photo_upload',args=[self.survey.pk])
         for url,key in ((custom,'images'),(bulk,'files')):
             self.assertEqual(self.client.post(url,{key:[self.image()]}).status_code,403)
-            self.assertEqual(self.client.post(url,{'csrfmiddlewaretoken':self.csrf}).status_code,400)
+            self.assertEqual(self.client.post(url,{'csrfmiddlewaretoken':self.csrf}).status_code,403 if url==custom else 400)
 
     def test_submitted_or_approved_section_blocks_upload_without_changing_records(self):
         custom=reverse('custom_checklist_upload',args=[self.survey.pk,'inspection'])
         bulk=reverse('photo_upload',args=[self.survey.pk])
         self.survey.status=Checklist.Status.SUBMITTED
         self.survey.save()
-        self.assertEqual(self.client.post(custom,{'images':[self.image()],'csrfmiddlewaretoken':self.csrf}).status_code,400)
-        self.assertEqual(self.client.post(bulk,{'files':[self.image()],'csrfmiddlewaretoken':self.csrf}).status_code,409)
+        self.assertEqual(self.client.post(custom,{'images':[self.image()],'csrfmiddlewaretoken':self.csrf}).status_code,403)
+        self.assertEqual(self.client.post(bulk,{'files':[self.image()],'csrfmiddlewaretoken':self.csrf}).status_code,403)
         self.survey.status=Checklist.Status.PARTIAL
         self.survey.section_approvals={'evidence':{'by':'synthetic reviewer'}}
         self.survey.save()
-        self.assertEqual(self.client.post(custom,{'images':[self.image()],'csrfmiddlewaretoken':self.csrf}).status_code,400)
+        self.assertEqual(self.client.post(custom,{'images':[self.image()],'csrfmiddlewaretoken':self.csrf}).status_code,403)
         self.survey.refresh_from_db()
         self.assertEqual(self.survey.image_data,{})
         self.assertEqual(PhotoEvidence.objects.count(),0)
 
-    def test_submission_interleaving_blocks_late_upload_save_and_delete(self):
+    def test_save_interleaving_and_retired_point_mutations_preserve_originals(self):
         from copy import deepcopy
         from unittest.mock import patch
         from .template_views import survey_access as real_access
         import json
-        response=self.client.post(reverse('custom_checklist_upload',args=[self.survey.pk,'photo']),{'images':[self.image()],'csrfmiddlewaretoken':self.csrf})
-        self.assertEqual(response.status_code,200)
+        response=self.client.post(reverse('photo_upload',args=[self.survey.pk]),{'files':[self.image()],'csrfmiddlewaretoken':self.csrf})
+        self.assertEqual(response.status_code,201)
+        photo=PhotoEvidence.objects.get(pk=response.json()['photos'][0]['id'])
+        original_bytes=Path(photo.original.path).read_bytes()
+        # Existing historical point attachment in this isolated fixture only.
+        self.survey.image_data={'photo':[photo.original.name]}
+        self.survey.save(update_fields=['image_data'])
         self.survey.refresh_from_db();original=deepcopy(self.survey.image_data)
         for operation in ['upload','save','delete']:
             with self.subTest(operation=operation):
@@ -115,8 +120,9 @@ class EngineerMultipartUploadTests(TestCase):
                         result=self.client.post(reverse('custom_checklist_save',args=[self.survey.pk]),json.dumps({'answers':{'inspection':{'result':'Checked','remarks':'Late write'}}}),content_type='application/json',HTTP_X_CSRFTOKEN=self.csrf)
                     else:
                         result=self.client.post(reverse('custom_checklist_photo_delete',args=[self.survey.pk,'photo',0]),{'csrfmiddlewaretoken':self.csrf})
-                self.assertEqual(result.status_code,400)
+                self.assertEqual(result.status_code,400 if operation=='save' else 403)
                 self.survey.refresh_from_db()
                 self.assertEqual(self.survey.image_data,original)
                 self.assertEqual(self.survey.answer_data,{})
-                self.assertEqual(self.survey.status,Checklist.Status.SUBMITTED)
+                self.assertEqual(self.survey.status,Checklist.Status.SUBMITTED if operation=='save' else Checklist.Status.REJECTED)
+                self.assertEqual(Path(photo.original.path).read_bytes(),original_bytes)

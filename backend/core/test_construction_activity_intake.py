@@ -43,6 +43,7 @@ class ConstructionActivityIntakeTests(TestCase):
         values={'field_density_test_test_register':fdt,'foundation_concrete_test_register':concrete}
         self.assertEqual(self.save(survey,values).status_code,200)
         survey.refresh_from_db();self.assertEqual(survey.answer_data['custom'],values)
+        self.client.force_login(self.lead)
         response=self.client.get(reverse('custom_checklist',args=[survey.pk]));self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['checklist'].answer_data['custom'],values)
         self.assertNotIn('batch',survey.answer_data['custom']['field_density_test_test_register'][0])

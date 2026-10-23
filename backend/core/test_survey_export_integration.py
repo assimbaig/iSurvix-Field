@@ -86,10 +86,10 @@ class SurveyExportIntegrationTests(TestCase):
         original=self.pristine()
         originals={p.pk:Path(p.original.path).read_bytes() for p in (self.photo,self.photo2)}
         self.client.force_login(self.engineer)
-        response=self.client.post(reverse('survey_processing_action',args=[self.checklist.pk]),
-            {'action':'submit','uploads_finished':'true'})
-        self.assertEqual(response.status_code,201,response.content)
-        revision=self.checklist.processing_revisions.get(pk=response.json()['revision_id'])
+        # Historical pre-category records still exercise the retained internal
+        # revision/export service; Engineer HTTP mutation is now forbidden.
+        revision,created=pipeline.submit(self.request(),self.checklist.pk,True)
+        self.assertTrue(created)
         with patch('core.local_ai.ollama',side_effect=self.fake_native_transport), \
              patch('core.photo_service.assistant_ollama',side_effect=self.fake_native_transport):
             self.assertTrue(pipeline.process_next())
@@ -104,6 +104,10 @@ class SurveyExportIntegrationTests(TestCase):
 
     def post_review(self, actor, revision, decision, **data):
         self.client.force_login(actor)
+        if actor==self.engineer:
+            return pipeline.review(self.request(actor),self.checklist.pk,revision.pk,decision,
+                ids=data.get('finding_ids'),corrections=data.get('corrections'),
+                reason=data.get('reason',''),drawing_records=data.get('drawing_records'))
         values={'action':'review','revision_id':revision.pk,'decision':decision}
         for key,value in data.items():
             values[key]=json.dumps(value) if key in {'finding_ids','corrections','drawing_records'} else value
@@ -197,13 +201,14 @@ class SurveyExportIntegrationTests(TestCase):
         self.assertEqual(self.checklist.answer_data['legacy_notes'],original_answers['legacy_notes'])
         self.assertTrue(pipeline.current(revision))
         self.assertTrue(revision.processing_events.filter(action='applied',payload__source_digest=pipeline.digest(pipeline.freeze_data(self.checklist))).exists())
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.quality)
         saved_page=self.client.get(reverse('custom_checklist',args=[self.checklist.pk]))
         self.assertEqual(saved_page.status_code,200)
         fields={field['id']:field for section in saved_page.context['sections'] for field in section['fields']}
         self.assertEqual(fields['manufacturer']['value'],'Synthetic reviewed manufacturer')
         self.assertEqual(fields['tower_height']['value'],'32')
         self.assertTrue(fields['manufacturer']['linked_photos'])
+        self.client.force_login(self.engineer)
         submitted=self.client.post(submit_url)
         self.assertEqual(submitted.status_code,302)
         self.checklist.refresh_from_db();self.assertEqual(self.checklist.status,Checklist.Status.SUBMITTED)
@@ -233,7 +238,7 @@ class SurveyExportIntegrationTests(TestCase):
         self.assertTrue(pipeline.current(revision))
         self.assertEqual(self.checklist.section_approvals,{})
         state_url=reverse('survey_processing_state',args=[self.checklist.pk])
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.quality)
         state=self.client.get(state_url)
         self.assertEqual(state.status_code,200,state.content)
         self.assertTrue(state.json()['active']['engineer_complete'])

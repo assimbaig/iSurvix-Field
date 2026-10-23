@@ -56,6 +56,11 @@ class Photo500LimitTests(TestCase):
     @patch('core.evidence_pipeline.processing_context',return_value={'rules_version':'synthetic-rules','model_version':'synthetic-local','tool_version':'synthetic-tools','prompt_version':'synthetic-prompt'})
     @patch('core.photo_views.verify_vision')
     def test_enqueue_500_distinct_photos_and_reject_501_without_an_extra_job(self,vision,processing):
+        reviewer=User.objects.create_user('metadata_lead')
+        reviewer.profile.role=Profile.Roles.TEAM_LEAD
+        reviewer.profile.project=self.project
+        reviewer.profile.save()
+        self.client.force_login(reviewer)
         self.seed(self.survey,501,'queue')
         ids=list(self.survey.photo_evidence.order_by('pk').values_list('pk',flat=True))
         url=reverse('photo_enqueue',args=[self.survey.pk])

@@ -23,7 +23,7 @@ class MetadataConfirmationAcceptanceTests(TestCase):
         return deepcopy((self.c.answer_data,self.c.section_approvals,self.c.client_approval,self.c.review_history))
     @patch('core.photo_service.verify_vision')
     @patch('core.photo_service.ollama')
-    def test_actual_metadata_worker_proposes_only_until_engineer_confirms(self,native,vision):
+    def test_actual_metadata_worker_proposes_only_until_authorized_reviewer_confirms(self,native,vision):
         # Mock native model/tool boundaries, retaining the real versioned worker,
         # deterministic evidence evaluator, durable records and human confirmation.
         for target,value in [('core.evidence_pipeline.model_fingerprint','a'*64),
@@ -34,6 +34,7 @@ class MetadataConfirmationAcceptanceTests(TestCase):
             self.enterContext(patch(target,return_value=value))
         native.return_value={'message':{'content':json.dumps({'caption':'A square concrete foundation is clearly visible below an upright antenna.','objects':['concrete foundation','antenna'],'visible_text':[],'issues':[],'uncertainties':['Measurements are not visible.']})}}
         photo=self.upload();before=self.pristine()
+        self.client.force_login(self.lead)
         with patch('core.photo_views.verify_vision') as enqueue_gate:
             queued=self.client.post(self.base+'enqueue/',json.dumps({'photo_ids':[photo.pk],'model':'synthetic-vision-model'}),content_type='application/json')
             self.assertEqual(queued.status_code,201,queued.content)

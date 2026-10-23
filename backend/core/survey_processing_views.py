@@ -96,6 +96,8 @@ def _detail_token(c, latest):
 
 
 def serialize(request, checklist_id, compact=False):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c, flags = pipeline.access(request, checklist_id)
     current_digest = pipeline.digest(pipeline.freeze_data(c))
     revisions, pagination = [], {}
@@ -132,10 +134,12 @@ def serialize(request, checklist_id, compact=False):
             'created_at': revision.created_at.isoformat(), 'findings': [], 'checklist_items': [],
             'missing': [], 'conflicts': [], 'drawings': [], 'events': [], 'sources': [], 'drawing_records': [],
             'can_release': False, 'release_blocker': 'Processing must finish first.', 'detailed': True}
-        if hasattr(revision, 'processing_result'):
+        from .category_intake import revision_enabled
+        has_result=hasattr(revision,'processing_result')
+        if has_result or revision_enabled(revision):
             payload = pipeline.reviewed_payload(revision)
             data.update(deepcopy(payload))
-            originals = {f.get('finding_key'): f for f in revision.processing_result.payload.get('findings', [])}
+            originals = {f.get('finding_key'): f for f in revision.processing_result.payload.get('findings', [])} if has_result else {}
             for item in data['checklist_items']:
                 from .template_views import field_is_locked
                 item['locked'] = field_is_locked(c, item['id'])
@@ -204,6 +208,8 @@ def serialize(request, checklist_id, compact=False):
 @require_GET
 @guarded
 def progress(request, checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c, flags = pipeline.access(request, checklist_id)
     # Clients use the authorised released-output view. Processing drafts stay private.
     rows = [] if flags['is_client'] else [_summary(row) for row in _summaries(c)[:25]]
@@ -230,6 +236,12 @@ def progress(request, checklist_id):
 @require_GET
 @guarded
 def workspace(request, checklist_id):
+    from .category_intake import access as capture_access
+    from .access import role_for
+    from django.shortcuts import redirect
+    if role_for(request.user)=='ENGINEER':
+        capture_access(request,checklist_id)
+        return redirect('photo_workspace',checklist_id=checklist_id)
     c, flags = pipeline.access(request, checklist_id)
     data = serialize(request, checklist_id, compact=True)
     return render(request, 'dashboards/survey_processing.html', {'checklist': c, 'access': flags,
@@ -247,10 +259,13 @@ def state(request, checklist_id):
 @require_POST
 @guarded
 def action(request, checklist_id):
+    name = request.POST.get('action', '')
+    if name in {'submit','retry','review','release','geometry'}:
+        from .category_intake import deny_engineer_ai
+        deny_engineer_ai(request,checklist_id)
     c, flags = pipeline.access(request, checklist_id)
     if sum(len(k) + len(v) for k, values in request.POST.lists() for v in values) > 256000:
         raise ValidationError('The review form is too large. Save smaller groups of records.')
-    name = request.POST.get('action', '')
     if name == 'start_upload':
         session = pipeline.upload_session(request, checklist_id)
         return JsonResponse({'token': str(session.token)}, status=201)
