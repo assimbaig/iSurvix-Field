@@ -43,6 +43,9 @@ Actual installed Agency profiles under
 Architect/Frontend Developer, Backend Architect, and independent Reality
 Checker/API Tester. UI, backend and QA agents had distinct file ownership.
 The runtime agents do not imply automation of the separate Agency desktop app.
+Owner instruction for future development and planning: use the installed Agency
+profiles, assign clear ownership, and retain independent QA. Improve existing
+features rather than adding product modules without a new owner request.
 
 Verification: the final 828 isolated backend tests passed in 276.207 seconds,
 native process exit 0; the receipt, focused results, actual Edge
@@ -68,6 +71,9 @@ The single owner-requested guide is
 watermark and six roles' allowed/denied actions plus issues under each role.
 Editable source: `docs/manual/USER_PERMISSIONS_AND_ISSUES.md`.
 Requirements/evidence: `docs/development/ENGINEER_WORKSPACE_SIMPLIFICATION.json`.
+Implementation commit: `2ed1ef9`; draft review PR:
+`https://github.com/assimbaig/iSurvix-Field/pull/14` against the PR13 review branch.
+The PR is not merged or deployed.
 A13's reported Client panel is repaired; A12 native crash diagnosis remains
 open. Real-site accuracy/throughput, verified CAD/manufacturer references,
 physical-device/intermittent-network, staging HTTPS/worker and restore/privacy

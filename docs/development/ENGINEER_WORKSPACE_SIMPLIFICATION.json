@@ -234,5 +234,13 @@
     "verified": 15,
     "total": 15,
     "scope": "This focused simplification only; listed legacy/native/field/production limitations remain open."
+  },
+  "implementation_commit": "2ed1ef95ba96ae78a0b7b68b8caeec81ab616164",
+  "review_pull_request": {
+    "url": "https://github.com/assimbaig/iSurvix-Field/pull/14",
+    "draft": true,
+    "base": "feat/secure-outbound-survey-workers",
+    "merged": false,
+    "deployed": false
   }
 }
