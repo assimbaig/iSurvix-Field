@@ -1,5 +1,6 @@
 (()=>{
 const button=document.getElementById('task-export-selected');
+const tools=document.getElementById('engineer-task-tools');if(tools)tools.addEventListener('toggle',()=>document.querySelector('.engineer-task-list')?.classList.toggle('engineer-show-tools',tools.open));
 const boxes=[...document.querySelectorAll('.task-select')];
 const update=()=>{button.disabled=!boxes.some(box=>box.checked);};
 boxes.forEach(box=>box.addEventListener('change',update));

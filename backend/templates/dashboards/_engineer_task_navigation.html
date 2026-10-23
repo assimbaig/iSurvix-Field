@@ -1,0 +1,9 @@
+<nav class="engineer-task-navigation" aria-label="Engineer task steps">
+  <a href="{% url 'task_explorer' %}" data-task-return>1. My tasks</a>
+  <a href="{% url 'photo_workspace' checklist.pk %}" {% if engineer_step == 'photos' and request.GET.step != 'submission' %}aria-current="page"{% endif %}>2. Checklist &amp; photos</a>
+  {% if checklist.workflow_type == 'telecom_survey' and checklist.checklist_template.published and checklist.checklist_template.checklist_required %}
+  <a href="{% url 'survey_processing_workspace' checklist.pk %}" data-engineer-submit-link {% if engineer_step == 'submission' %}aria-current="page"{% endif %}>3. Submit &amp; AI Analysis</a>
+  {% else %}
+  <a href="{% url 'photo_workspace' checklist.pk %}?step=submission#engineer-submit-photos" data-engineer-submit-link {% if request.GET.step == 'submission' %}aria-current="page"{% endif %}>3. Submit &amp; AI Analysis</a>
+  {% endif %}
+</nav>

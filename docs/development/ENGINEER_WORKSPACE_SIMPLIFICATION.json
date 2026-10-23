@@ -1,0 +1,238 @@
+{
+  "date": "2026-10-23",
+  "branch": "fix/engineer-field-workspace-20261023",
+  "baseline": "e17a6a3",
+  "checkpoint": ".local/backups/project-checkpoint-20261023-182116",
+  "requirements": [
+    {
+      "id": "tasks",
+      "expected_behavior": "Engineers can find pending, submitted, returned and completed assigned tasks without exposing other projects or users.",
+      "implementation": "backend/core/task_explorer.py",
+      "verification_method": "Server-filter/export tests and actual browser list/context checks",
+      "actual_result": "Server-scoped bucket/count/CSV/AI-state regressions pass. Actual browser task list displays all five filters and keeps return context.",
+      "status": "Verified"
+    },
+    {
+      "id": "workbench",
+      "expected_behavior": "A working task opens a compact checklist-and-photo workspace with one clear upload action.",
+      "implementation": "backend/templates/dashboards/photo_workspace.html",
+      "verification_method": "Desktop/mobile browser capture and real saved answer/upload requests",
+      "actual_result": "Actual multipart uploads and saved answers use Django records. Desktop1440px and mobile390px screenshots show compact upload controls and optional site/matching details.",
+      "status": "Verified"
+    },
+    {
+      "id": "tree",
+      "expected_behavior": "Left pane exposes expandable Group / Section / Checkpoint hierarchy and preserves selection.",
+      "implementation": "backend/static/core/js/inspection_workspace.js",
+      "verification_method": "Actual expansion/selection/refresh browser checks",
+      "actual_result": "Actual Group/Section expand/collapse, checkpoint selection, saved selection after refresh and mobile drawer keyboard focus passed in browser.",
+      "status": "Verified"
+    },
+    {
+      "id": "uploads",
+      "expected_behavior": "Bulk/camera/gallery upload accepts uncategorized originals and batches safely, with progress/dedup/errors.",
+      "implementation": "backend/core/photo_views.py",
+      "verification_method": "Real multipart upload, byte hashes, dedup and corrupt/error cases",
+      "actual_result": "Two real synthetic originals uploaded to isolated media without a category; byte/hash/dedup and interrupted-upload checks passed. Batches remain at most20 files. Upload alone queued no analysis.",
+      "status": "Verified"
+    },
+    {
+      "id": "analysis",
+      "expected_behavior": "Checklist-required survey AI starts only after explicit complete submission; upload alone does not enqueue.",
+      "implementation": "backend/core/survey_processing.py",
+      "verification_method": "Incomplete-upload, duplicate submission and legacy bypass regressions",
+      "actual_result": "Explicit canonical submission creates one immutable revision/job after intake completion. Legacy retry and additional-critique bypasses blocked. Excluded/inspection Engineer uploads remain upload-only and require explicit existing photo-job submission; other-browser legacy completion remains a documented limit.",
+      "status": "Verified"
+    },
+    {
+      "id": "handoff",
+      "expected_behavior": "Engineer explicitly reviews/applies proposals before a visible Send to QA review action.",
+      "implementation": "backend/templates/dashboards/survey_processing.html",
+      "verification_method": "Browser and API submission/acceptance/review tests",
+      "actual_result": "Browser accepted/corrected proposals, applied reviewed results, received focus on the visible Send to QA action, and posted the real workflow handoff. AI processing and operational submission remain distinct.",
+      "status": "Verified"
+    },
+    {
+      "id": "builder",
+      "expected_behavior": "Draft developers can refine broad disciplines into small activity sections, retaining field IDs/rules/history.",
+      "implementation": "backend/static/core/js/checklist_editor_state.js",
+      "verification_method": "Real Node state operation -> Django save/refresh and frozen-history checks",
+      "actual_result": "Draft checkpoint movement exercised by actual Node state and Django save/refresh. Stable IDs, required/evidence rules and frozen existing survey answers were preserved; used/published edit guards remain.",
+      "status": "Verified"
+    },
+    {
+      "id": "projects",
+      "expected_behavior": "Project and role scopes, company ownership and team membership remain enforced.",
+      "implementation": "backend/core/access.py",
+      "verification_method": "Project/task creation and cross-project/role regression tests",
+      "actual_result": "Current full and focused regression suites cover project/company membership, owner isolation, task creation and wrong-role/foreign-project denial. No operational project assignments changed.",
+      "status": "Verified"
+    },
+    {
+      "id": "review",
+      "expected_behavior": "Engineer -> QA -> Team Lead -> optional Client and one-step clarification/rejection remain correct.",
+      "implementation": "backend/core/review_route_service.py",
+      "verification_method": "Full synthetic three/four-layer submit/reject/correct/resubmit/close test",
+      "actual_result": "Actual browser completed both3-layer and4-layer routes, TL rejection back to QA, QA return to Engineer, corrected revision2, Client rejection back to TL, clarification and final Client approval. Independent database audit found no duplicate results and retained revisions.",
+      "status": "Verified"
+    },
+    {
+      "id": "client",
+      "expected_behavior": "Client screens show only permitted read-only source evidence and released information.",
+      "implementation": "backend/core/photo_views.py",
+      "verification_method": "Client privacy tests plus actual browser read-only controls",
+      "actual_result": "Seven privacy tests and fresh independent browser checks preserve both authorized source originals while hiding internal AI matching controls; original byte checks pass.",
+      "status": "Verified"
+    },
+    {
+      "id": "permissions",
+      "expected_behavior": "One organized document covers all six roles with actual allowed/denied actions and role-specific known issues.",
+      "implementation": "docs/manual/USER_PERMISSIONS_AND_ISSUES.md",
+      "verification_method": "Independent source/permission tests, PDF visual verification",
+      "actual_result": "Independent reviewer inspected current server permission gates and legacy exceptions. One12-page PDF covers all6roles, allowed/denied actions and per-role issues, with iSurvix watermark and every page rendered.",
+      "status": "Verified"
+    },
+    {
+      "id": "scope",
+      "expected_behavior": "Improve existing modules only; do not add product modules, migrate operational approvals or rewrite originals.",
+      "implementation": "docs/LOCAL_CODEX_HANDOFF.md",
+      "verification_method": "Diff review and before/after business data/file comparison",
+      "actual_result": "No schema/model/dependency changes or new product modules. All59core tables,806media originals and12private/config files match the recovery checkpoint; SQLite integrityOK.",
+      "status": "Verified"
+    },
+    {
+      "id": "agency",
+      "expected_behavior": "Use the actual installed Agency profiles for implementation and independent QA.",
+      "implementation": "C:/Users/Muhammad Assim Baig/.agency-agents",
+      "verification_method": "Three specialist sessions plus root Orchestrator; disjoint file ownership",
+      "actual_result": "Used actual installed Orchestrator, UX Architect/Frontend Developer, Backend Architect, Reality Checker/API Tester profiles through3specialist sessions with distinct ownership and independent review.",
+      "status": "Verified"
+    },
+    {
+      "id": "accessibility",
+      "expected_behavior": "Desktop/mobile layouts have no outer overflow, keyboard focus and actionable loading/error states.",
+      "implementation": "backend/static/core/css",
+      "verification_method": "Browser screenshots/keyboard, save/upload failure exercises",
+      "actual_result": "Actual mobile/desktop browser checks passed; no outer overflow or unhandled JavaScript errors. Failed-save values survive changing checkpoints; unsaved/active uploads block navigation. Disabled controls legible and three mobile steps visible.",
+      "status": "Verified"
+    },
+    {
+      "id": "checks",
+      "expected_behavior": "Run focused regressions, final full backend suite, Django/migration/dependency/frontend checks.",
+      "implementation": "scripts/run_backend_tests.py",
+      "verification_method": "Recorded current command results",
+      "actual_result": "Final full run828tests passed in276.207seconds; native exit0, zero failures/errors/skips and guarded Python external attempts. Django/migration/dependency, four frontend scripts and31JavaScript syntax checks passed.",
+      "status": "Verified"
+    }
+  ],
+  "verification_scope": {
+    "application": "real Django records/APIs with isolated database and media",
+    "ai": "controlled inference in browser and ordinary tests; no new native AI accuracy/throughput claim",
+    "operational_approvals_changed": false,
+    "layout_widths": [
+      1440,
+      390
+    ]
+  },
+  "known_limitations": [
+    "Historical native exit139 A12 root cause remains unresolved.",
+    "Legacy/excluded cross-browser upload completion lacks canonical pipeline durable sessions.",
+    "Authorized full-site AI accuracy/throughput and manufacturer/CAD acceptance remain unverified.",
+    "Physical-device/intermittent-network, production hosting and restored-backup acceptance remain outstanding."
+  ],
+  "evidence_directory": ".local/engineer-workspace-20261023 (private; never commit credentials or cookies)",
+  "startup": {
+    "gui": "Double-click Start-iSurvix.cmd; existing port8000 must be free.",
+    "app": ".local\\venv\\Scripts\\python.exe backend\\manage.py runserver 127.0.0.1:8000 --noreload --settings=checklist.settings_local",
+    "survey_worker": ".local\\venv\\Scripts\\python.exe backend\\manage.py survey_processing_worker --settings=checklist.settings_local",
+    "photo_worker": ".local\\venv\\Scripts\\python.exe backend\\manage.py photo_worker --settings=checklist.settings_local",
+    "photo_search_worker": ".local\\venv\\Scripts\\python.exe backend\\manage.py photo_search_worker --settings=checklist.settings_local"
+  },
+  "browser_results": {
+    "upload": {
+      "checks": 14,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    },
+    "review": {
+      "checks": 8,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    },
+    "close": {
+      "checks": 7,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    },
+    "mobile": {
+      "checks": 11,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    },
+    "stage-upload": {
+      "checks": 2,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    },
+    "stage-ready": {
+      "checks": 6,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    },
+    "layout-final": {
+      "checks": 6,
+      "unhandled_javascript_errors": 0,
+      "synthetic": true,
+      "controlled_inference": true
+    }
+  },
+  "independent_browser_checks": 23,
+  "preservation": {
+    "checkpoint": "F:\\iSurvix\\iSurvix-Field\\.local\\backups\\project-checkpoint-20261023-182116",
+    "core_tables_compared": 59,
+    "changed_core_tables": [],
+    "media_files_hashed": 806,
+    "private_config_files_hashed": 12,
+    "changed_files": [],
+    "sqlite_integrity": "ok"
+  },
+  "pdf": {
+    "path": "output/pdf/iSurvix_User_Permissions_and_Known_Issues.pdf",
+    "pages": 12,
+    "watermark": "iSurvix on every page",
+    "all_pages_rendered": true,
+    "visual_review": "All rendered pages reviewed in contact sheets; matrix and verification page inspected at full size.",
+    "sha256": "0967ac4cca7b147cb3ee7e1ac2af22ec70af9328dfd0334391cf17851441b587"
+  },
+  "latest_approved_remote": "origin/feat/secure-outbound-survey-workers @ b0455521eed8d61d56595f26f894fc5d664d1e9d",
+  "live_local_check": {
+    "login_url": "http://127.0.0.1:8000/login/",
+    "login_http_status": 200,
+    "engineer_styles_http_status": 200,
+    "loopback_only": true,
+    "existing_workers_preserved": true
+  },
+  "final_backend": {
+    "command": ".local\\venv\\Scripts\\python.exe scripts\\run_backend_tests.py",
+    "tests": 828,
+    "passed": 828,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "native_exit_code": 0,
+    "django_test_seconds": 276.207,
+    "python_external_network_attempts": 0,
+    "in_process_fixture_connections": 33
+  },
+  "coverage": {
+    "verified": 15,
+    "total": 15,
+    "scope": "This focused simplification only; listed legacy/native/field/production limitations remain open."
+  }
+}

@@ -182,7 +182,7 @@ def upload(request, checklist_id):
     from .field_photo_service import GROUPS
     group=request.POST.get('group','')
     if group not in GROUPS:
-        raise ValidationError('Choose Civil, Electrical or Tower for the upload group.')
+        raise ValidationError('Leave the upload group empty, or choose Civil, Electrical or Tower.')
     files=request.FILES.getlist('files')
     if not 1<=len(files)<=20:
         return error(ValueError('Submit between 1 and 20 photos per batch.'))
@@ -284,7 +284,10 @@ def enqueue(request,checklist_id):
 @require_POST
 @api_errors
 def retry(request,checklist_id,job_id):
-    survey_access(request,checklist_id,edit=True)
+    access=survey_access(request,checklist_id,edit=True)
+    from .survey_processing import enabled
+    if enabled(access['checklist']):
+        raise ValidationError('Submit this survey in AI Checklist & Drawings to start analysis. Retry its saved survey revision there; uploaded originals are preserved.')
     with transaction.atomic():
         c=Checklist.objects.select_for_update().get(pk=checklist_id)
         Checklist.objects.filter(pk=c.pk).update(updated_at=c.updated_at)

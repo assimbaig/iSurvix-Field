@@ -1,5 +1,89 @@
 # iSurvix Field: local Codex development brief
 
+## Engineer workspace simplification - 23 October 2026
+
+Current work is on `fix/engineer-field-workspace-20261023`, from local checkpoint
+`e17a6a3`. Recovery snapshot `.local/backups/project-checkpoint-20261023-182116`
+was verified before editing. Git fetch now succeeds: PR13's approved merge is
+`origin/feat/secure-outbound-survey-workers` at `b0455521`. No production branch,
+operational approval or existing template has been overwritten.
+
+The Engineer interface now has My tasks, Checklist & photos, and Submit & AI
+Analysis. Pending, submitted, returned and completed filters use scoped Django
+records. The left pane is an expandable Group / Section / Checkpoint tree with
+retained selection and a mobile drawer. Optional Civil/Electrical/Tower labels
+are tucked away; they are not the checklist's controlling hierarchy. Advanced
+matching, site/team details and analysis history remain accessible in compact
+expanders. Failed answers survive switching checkpoints and block submission
+until saved; unfinished uploads also block submission.
+
+Engineer uploads are upload-only. Checklist-required surveys use the existing
+immutable submission/job pipeline; historical retry and critique paths cannot
+bypass its submission boundary. The three current operational surveys are not
+opted in and retain their existing photo pipeline, now with explicit Engineer
+AI submission in the interface. Do not enable Checklist required on historical
+published templates to force them into a different workflow. Legacy completion
+checks are local to the current browser; durable cross-browser sessions remain
+an explicitly documented hardening gap for legacy/excluded workflows.
+
+Accepted AI proposals still require Apply reviewed results and the separate
+Send to QA review action, which receives focus immediately after successful
+Engineer completion. QA, Team Lead and Client retain their stage/signature,
+reason, one-step return, frozen revision and release guards. Client evidence
+pages identify submitted evidence and hide the private editable matching panel;
+authorized source photographs and original downloads remain available.
+
+Draft checklist developers can move a checkpoint between activity sections
+without replacing its stable ID or evidence rules. Existing published/used
+structures and survey snapshots remain protected. No models, migrations,
+dependencies or product modules were added.
+
+Actual installed Agency profiles under
+`C:/Users/Muhammad Assim Baig/.agency-agents` were used: root Orchestrator, UX
+Architect/Frontend Developer, Backend Architect, and independent Reality
+Checker/API Tester. UI, backend and QA agents had distinct file ownership.
+The runtime agents do not imply automation of the separate Agency desktop app.
+
+Verification: the final 828 isolated backend tests passed in 276.207 seconds,
+native process exit 0; the receipt, focused results, actual Edge
+journeys and screenshots are under `.local/engineer-workspace-20261023`.
+Desktop 1440px/mobile 390px journeys exercised upload without automatic AI,
+failed-save retention, explicit submission, acceptance/correction, QA approval,
+Team Lead rejection back to QA, Engineer revision/resubmission, Client
+rejection/clarification, and closure of both three/four-layer tasks. Independent QA ran
+23 fresh read-only browser checks and inspected persistence. Browser inference
+was controlled; real persistent jobs and PDF/DXF renderers ran on synthetic
+records/media. This is not a new native model/whole-site throughput benchmark.
+Django, migration-drift, pip, four retained frontend scripts and 31 JS syntax
+checks passed. Recheck the final receipt rather than adding overlapping runs.
+
+Data-preservation verification compares 59 core tables, 806 media files and 12
+private/config files against the recovery checkpoint: no changes; SQLite
+integrity OK. Only the application web process was refreshed on loopback port 8000;
+existing workers/jobs were preserved. Current local login is
+`http://127.0.0.1:8000/login/`.
+
+The single owner-requested guide is
+`output/pdf/iSurvix_User_Permissions_and_Known_Issues.pdf`, with an iSurvix
+watermark and six roles' allowed/denied actions plus issues under each role.
+Editable source: `docs/manual/USER_PERMISSIONS_AND_ISSUES.md`.
+Requirements/evidence: `docs/development/ENGINEER_WORKSPACE_SIMPLIFICATION.json`.
+A13's reported Client panel is repaired; A12 native crash diagnosis remains
+open. Real-site accuracy/throughput, verified CAD/manufacturer references,
+physical-device/intermittent-network, staging HTTPS/worker and restore/privacy
+operation acceptance remain open. Do not describe these as production accepted.
+
+Windows: use the existing Start-iSurvix.cmd when port8000 is free. Individual
+commands, from the project root (do not start duplicate workers):
+
+```text
+.local\venv\Scripts\python.exe backend\manage.py runserver 127.0.0.1:8000 --noreload --settings=checklist.settings_local
+.local\venv\Scripts\python.exe backend\manage.py survey_processing_worker --settings=checklist.settings_local
+.local\venv\Scripts\python.exe backend\manage.py photo_worker --settings=checklist.settings_local
+.local\venv\Scripts\python.exe backend\manage.py photo_search_worker --settings=checklist.settings_local
+.local\venv\Scripts\python.exe scripts\run_backend_tests.py
+```
+
 ## PR13 local update and scope - 23 October 2026
 
 Owner direction: improve and stabilize the existing survey/inspection, checklist,

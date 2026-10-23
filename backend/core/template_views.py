@@ -529,6 +529,10 @@ def custom_client_logo(request, checklist_id, slot):
 
 @require_http_methods(['POST'])
 def custom_submit(request, checklist_id):
+    from django.urls import reverse
+    # Keep the field workspace after a successful submission, but accept only
+    # this record's server-generated relative path rather than an arbitrary URL.
+    submitted_return = 'photo_workspace' if request.POST.get('return_to') == reverse('photo_workspace', args=[checklist_id]) else 'custom_checklist'
     try:
         access = survey_access(request, checklist_id)
         from .access import role_for
@@ -538,7 +542,7 @@ def custom_submit(request, checklist_id):
         if is_independent(access['checklist']):
             submit_revision(request.user,access['checklist'])
             messages.success(request,'Frozen revision submitted for independent validation.')
-            return redirect('custom_checklist',checklist_id=checklist_id)
+            return redirect(submitted_return,checklist_id=checklist_id)
         survey_access(request,checklist_id,edit=True)
         with transaction.atomic():
             from .governance_views import lock_governance
@@ -564,6 +568,7 @@ def custom_submit(request, checklist_id):
             from .governance_views import audit
             audit(request.user, 'survey_submitted', checklist.project, checklist_id=checklist.pk)
         messages.success(request, 'Checklist submitted for review.')
+        return redirect(submitted_return, checklist_id=checklist_id)
     except ValidationError as error:
         messages.error(request, '; '.join(error.messages))
     return redirect('custom_checklist', checklist_id=checklist_id)

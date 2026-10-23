@@ -110,17 +110,20 @@ class SurveyIntegrationRegressionTests(TestCase):
         for photo in [self.photo, self.photo2]:
             self.assertEqual(Path(photo.original.path).read_bytes(), before[photo.pk])
 
-    def test_excluded_survey_keeps_existing_upload_and_analyse_copy(self):
+    def test_excluded_engineer_survey_has_upload_only_then_explicit_photo_submission(self):
         from .models import ChecklistTemplate
         excluded = ChecklistTemplate.objects.create(name='Synthetic excluded photo workflow', definition=self.schema,
             published=True, checklist_required=False)
         self.checklist.checklist_template = excluded
         self.checklist.save(update_fields=['checklist_template'])
-        response, button, _ = self.photo_page()
+        response, button, content = self.photo_page()
         self.assertFalse(response.context['checklist_processing_enabled'])
-        self.assertEqual(button, 'Upload & analyze this group')
+        self.assertEqual(button, 'Upload photos')
+        self.assertIn('id="engineer-legacy-analysis-form"',content)
+        self.assertIn('id="engineer-uploads-complete"',content)
+        self.assertIn('Submit photos for AI Analysis',content)
 
-    def test_both_inspection_modules_keep_existing_photo_workflow_copy(self):
+    def test_engineer_inspection_upload_is_explicit_without_enabling_survey_pipeline(self):
         from .models import Project, Profile
         for workflow in [Checklist.WorkflowType.TELECOM_INSPECTION, Checklist.WorkflowType.CONSTRUCTION_INSPECTION]:
             with self.subTest(workflow=workflow):
@@ -133,9 +136,11 @@ class SurveyIntegrationRegressionTests(TestCase):
                 else:
                     self.checklist.workflow_type = workflow
                     self.checklist.save(update_fields=['workflow_type'])
-                response, button, _ = self.photo_page()
+                response, button, content = self.photo_page()
                 self.assertFalse(response.context['checklist_processing_enabled'])
-                self.assertEqual(button, 'Upload & analyze this group')
+                self.assertEqual(button, 'Upload photos')
+                self.assertIn('id="engineer-legacy-analysis-form"',content)
+                self.assertIn('Submit photos for AI Analysis',content)
 
     def test_right_only_branding_stays_in_right_output_slot(self):
         self.checklist.branding_snapshot = {'clients': [

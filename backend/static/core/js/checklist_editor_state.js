@@ -68,6 +68,14 @@
       if (section.fields.length >= 300) throw Error('A section supports at most 300 fields.');
       const field = {id:uid('field'), label:'New field', type:'text', required:false}; section.fields.push(field); return field;
     }
+    moveField(id, sectionId) {
+      this.editable(); const found = this.field(id), target = this.section(sectionId);
+      if (found.section === target) return;
+      if (found.section.fields.length <= 1) throw Error('Keep one checkpoint in the original section. Rename that section, or add its replacement checkpoint before moving this one.');
+      if (target.fields.length >= 300) throw Error('The target section already contains 300 fields.');
+      found.section.fields = found.section.fields.filter(field => field.id !== id);
+      target.fields.push(found.field);
+    }
     remove(kind, id) {
       this.editable();
       if (kind === 'section') {
