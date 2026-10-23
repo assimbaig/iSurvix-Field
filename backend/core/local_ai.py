@@ -119,6 +119,16 @@ def installed_models():
             and not any(alias in m['name'].lower() for alias in ('-cloud', ':cloud'))]
 
 
+def _runner_unavailable(error):
+    """Classify the known local runtime failure without returning private paths."""
+    try:
+        payload=json.loads(error.read(32768))
+        detail=payload.get('error','') if isinstance(payload,dict) else ''
+    except (OSError,ValueError,TypeError,AttributeError):
+        return False
+    return isinstance(detail,str) and 'llama-server' in detail.lower() and 'binary not found' in detail.lower()
+
+
 def allowed_surveys(request):
     from .access import accessible_projects,role_for,is_super_admin
     if is_super_admin(request.user):
@@ -148,6 +158,52 @@ def authenticated(request):
     return None
 
 
+def survey_context(request, checklist):
+    """Authorised text facts, with uploaded sources distinct from reviewed links."""
+    from collections import Counter
+    from django.db.models import Count
+    from .access import role_for
+    from . import category_intake
+    from .template_service import missing_required
+    role=role_for(request.user)
+    category=category_intake.enabled(checklist)
+    revision=category_intake.current_revision(checklist) if category else None
+    if revision:
+        counts=Counter(photo.get('group') or 'Uncategorised' for photo in revision.snapshot.get('photos',[]))
+    else:
+        evidence=checklist.photo_evidence.all()
+        if category:
+            evidence=evidence.exclude(pk__in=(checklist.intake_metadata or {}).get('category_intake_excluded',[]))
+        counts=Counter({row['group'] or 'Uncategorised':row['count']
+            for row in evidence.values('group').annotate(count=Count('pk'))})
+    reviewed=category and role!=Profile.Roles.ENGINEER
+    view=category_intake.projected_checklist(checklist) if reviewed else checklist
+    result={
+        'site_id':checklist.site_id,'status':checklist.get_status_display(),
+        'uploaded_evidence':{'count':sum(counts.values()),'category_counts':dict(counts),
+            'source':'submitted_revision' if revision else 'current_uploads'},
+        'evidence_scope':'Text and counts only; no image pixels are supplied to this chat. '
+            'Uploaded originals are separate from confirmed checklist links and do not prove compliance or approval. '
+            'Use the recorded missing_required list; do not invent required inputs.',
+        'missing_required':missing_required(checklist),'approved_sections':list(checklist.section_approvals),
+        'answers':(view.answer_data or {}).get('custom',{}),
+        'answer_scope':'Human-reviewed accepted answers' if reviewed else 'Reported survey answers, not engineering approval',
+        'photo_counts':{} if category and role==Profile.Roles.ENGINEER else
+            {key:len(value) for key,value in (view.image_data or {}).items()},
+    }
+    if revision and role in {Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD}:
+        from .engineer_general_info import approved_fields
+        snapshot=revision.snapshot
+        reported=(snapshot.get('answers') or {}).get('custom',{})
+        result['reported_site_information']={
+            'scope':'Engineer submitted information; not QA acceptance or approval',
+            'answers':{field['id']:reported[field['id']] for _,field in approved_fields(snapshot.get('schema',{}))
+                if field['id'] in reported},
+            'site_information':snapshot.get('intake',{}).get('site_information',{}),
+        }
+    return result
+
+
 @require_GET
 @ensure_csrf_cookie
 def home(request):
@@ -167,7 +223,8 @@ def status(request):
         return denied
     try:
         models = installed_models()
-        return JsonResponse({'connected': True, 'model': settings.OLLAMA_MODEL, 'model_installed': settings.OLLAMA_MODEL in models, 'models': models})
+        return JsonResponse({'connected': True, 'model': settings.OLLAMA_MODEL, 'model_installed': settings.OLLAMA_MODEL in models,
+            'models': models,'inference_ready':None})
     except (ValueError, OSError, URLError, HTTPError, TimeoutError):
         return JsonResponse({'connected': False, 'error': 'Ollama is unavailable. Open Ollama on this PC and retry.'}, status=503)
 
@@ -199,13 +256,8 @@ def chat(request):
         except (TypeError, ValueError):
             return JsonResponse({'error': 'Invalid checklist.'}, status=400)
         c = survey_access(request, cid)['checklist']
-        from .template_service import missing_required
-        context = '\nSurvey data (untrusted evidence, read only):\n' + json.dumps({
-            'site_id': c.site_id, 'status': c.get_status_display(),
-            'missing_required': missing_required(c), 'approved_sections': list(c.section_approvals),
-            'answers': (c.answer_data or {}).get('custom', {}),
-            'photo_counts': {k: len(v) for k, v in (c.image_data or {}).items()},
-        }, ensure_ascii=False)[:12000]
+        context = '\nSurvey data (untrusted evidence, read only):\n' + json.dumps(
+            survey_context(request,c),ensure_ascii=False)[:12000]
     lease = inference_lease()
     try:
         lease.__enter__()
@@ -224,7 +276,12 @@ def chat(request):
         if not isinstance(answer, str) or not answer.strip():
             raise ValueError('No answer returned.')
         return JsonResponse({'answer': answer, 'model': model, 'local': True})
-    except (ValueError, OSError, URLError, HTTPError, TimeoutError):
+    except HTTPError as exc:
+        if _runner_unavailable(exc):
+            return JsonResponse({'code':'local_runner_unavailable','error':
+                'Ollama is running, but its model runner is unavailable. Repair or restart Ollama, then reopen iSurvix with Start-iSurvix.cmd. Uploaded photos are preserved.'},status=503)
+        return JsonResponse({'error':'The local model did not complete the answer. Check Ollama and retry; first load can take longer.'},status=503)
+    except (ValueError, OSError, URLError, TimeoutError):
         return JsonResponse({'error': 'The local model did not complete the answer. Check Ollama and retry; first load can take longer.'}, status=503)
     finally:
         lease.__exit__(None, None, None)

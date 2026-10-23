@@ -1,16 +1,16 @@
 {
   "date": "2026-10-23",
-  "branch": "fix/engineer-category-qa-intake-20261023",
-  "baseline": "6b6ce6ee3d7b808f8fef80a4c58826158863ecb4",
-  "checkpoint": ".local/backups/project-checkpoint-20261023-194306",
+  "branch": "fix/engineer-general-information-20261023",
+  "baseline": "405c5079839ae3ef23d9077c436d9ddab65f117d",
+  "checkpoint": ".local/backups/project-checkpoint-20261023-214945",
   "requirements": [
     {
       "id": "engineer_screen",
-      "expected_behavior": "Existing task/site info, four categories, multi-photo upload, category-grouped thumbnails and a single Submit to QA action.",
+      "expected_behavior": "Existing task/site info; General Info site-data form; Civil/Electrical/Tower photo uploads; thumbnails, retry and one Submit to QA action.",
       "status": "Verified",
       "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
       "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
-      "actual_result": "Saved-data desktop/mobile capture shows task, categories, upload/retry, previews and one Submit to QA action."
+      "actual_result": "Verified independently with saved-data desktop/mobile General Info and return/correction browser journeys; no Engineer matching step."
     },
     {
       "id": "no_engineer_matching",
@@ -22,11 +22,11 @@
     },
     {
       "id": "categories",
-      "expected_behavior": "General Info, Civil, Electrical and Tower persist across upload, refresh and frozen submission.",
+      "expected_behavior": "General Info stores site data; new photos use Civil/Electrical/Tower, with saved categories retained in the immutable submission. Legacy unclassified originals remain available.",
       "status": "Verified",
       "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
       "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
-      "actual_result": "All four categories uploaded and refreshed; frozen photo groups and source hashes retained."
+      "actual_result": "Three valid photo destinations and rejection of blank/General Info Engineer uploads verified; data saves, refresh, category moves and resubmission preserve originals and prior revisions."
     },
     {
       "id": "preview",
@@ -106,7 +106,7 @@
       "status": "Verified",
       "implementation": "scripts/Start-PhotoAI.ps1; backend/core/survey_evidence.py",
       "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
-      "actual_result": "Actual qwen3.5:4b image request succeeded on existing project runtime at loopback11435; default11434 is broken, documented separately."
+      "actual_result": "Owner-repaired local Ollama0.40.10 on11434 successfully handled actual qwen3.5:4b image input; prior11435 native worker evidence remains historical. No model download."
     },
     {
       "id": "native_pipeline",
@@ -421,8 +421,8 @@
     }
   ],
   "evidence_so_far": {
-    "final_full_tests": 903,
-    "final_full_seconds": 313.992,
+    "final_full_tests": 929,
+    "final_full_seconds": 308.208,
     "native_exit_code": 0,
     "source_stable": true,
     "independent_acceptance_tests": 47,
@@ -433,14 +433,273 @@
     "final_native_two_image_receipt": ".local/category-native-final-20261023/verified-native-proposals.json",
     "overlapping_counts": "Focused runs overlap full suite; do not add counts.",
     "requirements_receipt": ".local/engineer-category-qa-20261023/independent-qa-acceptance.json",
-    "source_fingerprint": "279c27ca72c891f2d7b9f67ce10e61bda32f42d3af10391b47a899a16f3d4d0c",
+    "source_fingerprint": "a7f101315ee1b05ed6c39ed6fe60e6909ee9d106dfd4758cf1146fe7341e6ec0",
     "final_readonly_browser_checks": 44,
     "bulk_followup": {
       "guide": "docs/development/ENGINEER_BULK_CATEGORY_MOVE.md",
       "new_http_regressions": 9,
       "independent_bulk_browser_checks": 120
+    },
+    "previous_full_run": {
+      "final_full_tests": 903,
+      "final_full_seconds": 313.992,
+      "source_fingerprint": "279c27ca72c891f2d7b9f67ce10e61bda32f42d3af10391b47a899a16f3d4d0c"
     }
   },
   "verified_total": 42,
-  "layout_references": "F:/iSurvix/references/Notes for Layout.txt and12 screenshots; layout-only, no customer data/assets copied"
+  "layout_references": "F:/iSurvix/references/Notes for Layout.txt and12 screenshots; layout-only, no customer data/assets copied",
+  "previous_release": {
+    "branch": "fix/engineer-category-qa-intake-20261023",
+    "baseline": "6b6ce6ee3d7b808f8fef80a4c58826158863ecb4",
+    "audit": "docs/development/ENGINEER_CATEGORY_QA_AUDIT.md",
+    "scope": "PR15 historical evidence; current follow-up below supersedes General Info photo destinations and the repaired runtime."
+  },
+  "followups": [
+    {
+      "scope": "General Info",
+      "requirements": [
+        {
+          "id": "default_data",
+          "expected": "General Info opens by default as site-data form; no photo upload is offered in that tab.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "identity",
+          "expected": "Assigned site/project/Engineer/company/client and available account email load accurately; canonical identity is readonly.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "read_only_get",
+          "expected": "Repeated authenticated General Info GET changes no existing core records, answers, jobs or source files.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "approved_fields",
+          "expected": "Only scalar fields from explicitly approved General Info sections appear; compliance/photo/repeating fields stay absent.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "missing_and_sources",
+          "expected": "Unknown profile/mobile/date values remain honest missing/manual; actual stored facts and EXIF source hints are labeled.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json",
+            "api-evidence-initial-blank-gap.json (first8 valid source assertions)",
+            "api-evidence-final-regression.json"
+          ]
+        },
+        {
+          "id": "typed_values",
+          "expected": "Save persists text/textarea/number zero/date/configured select and intentional blanks; reload preserves their exact values.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "dirty_draft",
+          "expected": "Unsaved manual fields survive tab switching, own uploads and authoritative Refresh; submission does not lose pending form changes.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "failed_save",
+          "expected": "Controlled HTTP503 leaves saved data unchanged and keeps visible unsaved values for actual retry.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "scalar_validation",
+          "expected": "Invalid date/select/bool/list/object and forged identity/unknown fields fail atomically; numeric0 normalizes to string0.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json"
+          ]
+        },
+        {
+          "id": "scopes",
+          "expected": "Site-basic and approved-general fields with same bareID preserve independent values and correct patch targets.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-scope-result.json"
+          ]
+        },
+        {
+          "id": "photos",
+          "expected": "Civil/Electrical/Tower multi-upload, thumbnail/viewer selection and one-request atomic moves remain usable; no GeneralInfo destination.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json",
+            "api-evidence-final-regression.json"
+          ]
+        },
+        {
+          "id": "legacy",
+          "expected": "Existing blank-group originals remain Uncategorised with original IDs/hashes; no silent deletion or recategorization.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json",
+            "api-evidence-final-regression.json"
+          ]
+        },
+        {
+          "id": "submission",
+          "expected": "Engineer saved GeneralInfo+photos Submit creates persistent queued job before QA opens; immutable snapshot contains values/provenance.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json",
+            "auto-worker-completion.json"
+          ]
+        },
+        {
+          "id": "qa_read",
+          "expected": "Assigned QA actual saved interface shows frozen GeneralInfo answers/context/source labels without autoacceptance.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-qa-result.json",
+            "general-browser-qa-mobile-result.json"
+          ]
+        },
+        {
+          "id": "privacy_and_locks",
+          "expected": "Wrong-role/foreign/stale/locked/postsubmit changes denied; Client cannot use raw GeneralInfo path and Engineer sees no AI details.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json",
+            "core.test_engineer_general_info (10passed; approved-section,CSRF,identity/rename/stale checks)"
+          ]
+        },
+        {
+          "id": "responsive",
+          "expected": "Actual Edge desktop1440/mobile390 form, photo controls and readonly postsubmit state fit without unhandled JS errors.",
+          "status": "Verified",
+          "evidence": [
+            "general-browser-desktop-result.json",
+            "general-browser-mobile-result.json",
+            "general-browser-mobile-actions-final-result.json"
+          ]
+        }
+      ],
+      "receipt": ".local/engineer-general-info-20261023/independent-qa-acceptance.json"
+    },
+    {
+      "scope": "QA return and Engineer correction",
+      "requirements": [
+        {
+          "id": "rejection",
+          "expected": "Actual assigned QA rejection moves one stage to Engineer with the human reason.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "discovery",
+          "expected": "Returned task appears in the real Engineer returned/rejected task filter.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "retained_photos",
+          "expected": "All previous photos and authorised previews/originals remain available.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "shortcut",
+          "expected": "Visible retained count and View uploaded photos shortcut open first nonempty valid category and focus gallery.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "draft_selection",
+          "expected": "Shortcut/tab navigation preserve unsaved site data and selected-photo IDs, including390px touch.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "source_actions",
+          "expected": "Existing/new photos support individual and atomic bulk category correction; removal preserves original rows/files.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "active_upload",
+          "expected": "Active/incomplete durable upload blocks UI and API resubmission without creating a new revision.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "upload_retry",
+          "expected": "Failed transfer retains actual File objects and successful retry adds only the intended new files.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "data_correction",
+          "expected": "Engineer correction remains editable and persists across upload/move/remove and explicit save.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "resubmission",
+          "expected": "Correction submits a new revision and one persistent job, available to QA immediately.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "history",
+          "expected": "First submission/processing snapshots, native findings, drawings and prior file hashes remain unchanged.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        },
+        {
+          "id": "idempotency",
+          "expected": "Repeated same-revision submission creates no duplicate revision/job; no model or approval is invoked by UI correction.",
+          "status": "Verified",
+          "evidence": "qa-engineer-return-browser.json"
+        }
+      ],
+      "receipt": ".local/qa-return-20261023/independent-qa-acceptance.json"
+    }
+  ],
+  "current_native_assistant": {
+    "model": "qwen3.5:4b",
+    "endpoint": "loopback11434",
+    "actual_browser_requests": 2,
+    "browser_checks": 15,
+    "http_statuses": [
+      200,
+      200
+    ],
+    "receipt": ".local/qa-ai-error-20261023/independent-qa-acceptance.json",
+    "limitation": "Text/count assistant, not image inspection. One explanation conflated confirmed links with section approval; server controls remain separate."
+  }
 }

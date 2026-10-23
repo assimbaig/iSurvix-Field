@@ -19,8 +19,8 @@ from .survey_processing_models import (SurveyProcessingRevision, SurveyProcessin
     SurveyProcessingEvent, SurveyProcessingResult)
 
 VERSION = 1
-CATEGORIES = [{'value': '', 'label': 'General Info'}, {'value': 'Civil', 'label': 'Civil'},
-              {'value': 'Electrical', 'label': 'Electrical'}, {'value': 'Tower', 'label': 'Tower'}]
+CATEGORIES = [{'value': 'Civil', 'label': 'Civil'}, {'value': 'Electrical', 'label': 'Electrical'},
+              {'value': 'Tower', 'label': 'Tower'}]
 CONTROL_KEYS = {'category_intake_version', 'category_intake_cycle', 'category_intake_revision', 'category_intake_excluded'}
 
 
@@ -84,6 +84,11 @@ def source_snapshot(c):
     snapshot['photos'] = [{**photo, 'group': groups[photo['id']]}
                           for photo in snapshot['photos'] if photo['id'] not in excluded]
     snapshot['intake'] = {key: value for key, value in snapshot['intake'].items() if key not in CONTROL_KEYS}
+    from .engineer_general_info import CONTEXT_KEY,CONTEXT_VERSION
+    context=snapshot['intake'].get(CONTEXT_KEY,{})
+    if isinstance(context,dict) and context.get('version')==CONTEXT_VERSION:
+        snapshot['project']=context.get('project',snapshot['project'])
+        snapshot['company']=context.get('company',snapshot['company'])
     snapshot['category_intake_version'] = VERSION
     snapshot['category_intake_cycle'] = (c.intake_metadata or {}).get('category_intake_cycle', 0)
     return snapshot
@@ -129,7 +134,9 @@ def state(request, checklist_id):
     if flags['can_edit'] and c.status==Checklist.Status.REJECTED:
         returned=route.events.filter(to_stage='engineer',action__in=['reject','return']).order_by('-sequence').first() if route else None
         correction_reason=returned.reason if returned else c.comment or ''
+    from .engineer_general_info import describe as general_information
     return {'site_id': c.site_id, 'project': c.project.name,
+        'general_information':general_information(c,flags,revision),
         'site_info': {key: info.get(key, '') for key in ('site_name', 'address', 'city', 'region')},
         'photos': photos(snapshot, c), 'categories': CATEGORIES, **flags,
         'submitted': c.status not in {Checklist.Status.DRAFT, Checklist.Status.REJECTED},
@@ -173,9 +180,9 @@ def move_or_remove(request, checklist_id, data, remove=False):
     if any(type(ident) is not int or ident<=0 for ident in requested):
         raise ValidationError('Select saved photos using positive integer photo IDs.')
     ids=list(dict.fromkeys(requested))
-    group = '' if data.get('group') == 'General Info' else data.get('group')
+    group = data.get('group')
     if not isinstance(group,str) or group not in {category['value'] for category in CATEGORIES}:
-        raise ValidationError('Choose General Info, Civil, Electrical or Tower.')
+        raise ValidationError('General Info contains site data. Choose Civil, Electrical or Tower for photos.')
     selected={photo.pk:photo for photo in c.photo_evidence.select_for_update().filter(pk__in=ids)}
     if len(selected)!=len(ids):raise Http404()
     excluded=set((c.intake_metadata or {}).get('category_intake_excluded',[]))
@@ -223,6 +230,8 @@ def submit(request, checklist_id, data):
         raise PermissionDenied('This evidence is already submitted or approved.')
     _same_source(c, data.get('expected_digest'))
     validate_handoff(c)
+    from .engineer_general_info import freeze_for_submission
+    freeze_for_submission(c)
     c.intake_metadata = {**(c.intake_metadata or {}), 'category_intake_version': VERSION,
                          'category_intake_cycle': (c.intake_metadata or {}).get('category_intake_cycle', 0) + 1}
     c.save(update_fields=['intake_metadata', 'updated_at'])
@@ -383,6 +392,19 @@ def review_state(request, checklist_id):
         'photos': photos(revision.snapshot, c), 'items': payload['checklist_items'],
         'can_complete': flags['can_review'] and not completed and not missing_for_review(c),
         'missing': missing_for_review(c)}
+    if role_for(request.user) in {Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD}:
+        from .engineer_general_info import describe as general_information
+        result['general_information']=general_information(c,{'can_edit':False},revision)
+    if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .survey_model_identity import recovery_state
+        result['model_recovery']=recovery_state(c,revision,flags['can_review'] and not completed)
+        from .survey_processing import ACTIVE
+        from django.db.models import Q
+        result['ai']['queue_ahead']=SurveyProcessingJob.objects.filter(
+            Q(status__in=ACTIVE-{'queued'})|Q(status='queued',pk__lt=revision.processing_job.pk)
+            ).exclude(pk=revision.processing_job.pk).count() if revision.processing_job.status=='queued' else 0
+        result['ai']['error_code']='model_identity_changed' if revision.processing_job.error.startswith('[model_identity_changed]') else ''
+        result['ai']['note']='Photo observations are saved as analysis runs. Checklist suggestions appear after all submitted evidence has been analysed.'
     if not client:
         from . import qa_matching
         private=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER
@@ -401,7 +423,7 @@ def review_state(request, checklist_id):
 
 
 @transaction.atomic
-def review_action(request, checklist_id, data):
+def review_action(request, checklist_id, data, *, verified_model_identity=None):
     from . import survey_processing as pipeline
     from .template_service import validate_answer
     Checklist.objects.select_for_update().get(pk=checklist_id)
@@ -410,6 +432,14 @@ def review_action(request, checklist_id, data):
     if not revision or not pipeline.current(revision): raise ValidationError('The submitted source changed. Return it for Engineer correction.')
     from . import qa_matching
     qa_matching.require_revision(revision,data)
+    if data.get('action')=='retry_current_model':
+        if configuration_error(c):raise ValidationError(configuration_error(c))
+        from .survey_model_identity import recover
+        try:
+            with transaction.atomic():recover(request,c,revision,data,verified=verified_model_identity)
+        except DatabaseError as exc:
+            raise ValidationError('Model recovery could not be saved. No processing attempt was changed; refresh and retry.') from exc
+        return review_state(request,checklist_id)
     if data.get('action') == 'retry':
         if configuration_error(c): raise ValidationError(configuration_error(c))
         job = revision.processing_job

@@ -476,10 +476,17 @@ def analyse_source(source, model, base_url=None):
         user['images'] = [image]
     from django.conf import settings
     endpoint = base_url if base_url is not None else getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
-    response = local_ai.ollama('/api/chat', {'model': model, 'stream': False, 'think': False,
-             'format': observation_response_schema(catalog), 'messages': [
-                 {'role': 'system', 'content': SYSTEM_PROMPT}, user],
-             'options': {'temperature': 0, 'num_ctx': 12288, 'num_predict': 2400}}, base_url=endpoint)
+    schema = observation_response_schema(catalog)
+    messages = [{'role': 'system', 'content': SYSTEM_PROMPT}, user]
+    # A dense label/document can exhaust the ordinary completion allowance.
+    # Retry only explicit truncation, once, with identical evidence and schema.
+    # Never parse a partial response or repeatedly run completed source records.
+    for token_bound in (2400, 6144):
+        response = local_ai.ollama('/api/chat', {'model': model, 'stream': False, 'think': False,
+                 'format': schema, 'messages': messages,
+                 'options': {'temperature': 0, 'num_ctx': 12288, 'num_predict': token_bound}}, base_url=endpoint)
+        if response.get('done_reason') != 'length':
+            break
     try:
         if response.get('done_reason') == 'length':
             raise EvidenceError('The local model response was incomplete; retry this source.')

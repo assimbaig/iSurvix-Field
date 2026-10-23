@@ -1,5 +1,142 @@
 # iSurvix Field: local Codex development brief
 
+## Latest QA AI follow-up: visible progress and safe model recovery
+
+23 October 2026, after checkpoint `52a0881`; branch unchanged. The QA bar now sits
+beside its actual saved count on desktop/mobile. Current460-photo work resumed
+from68 retained analyses using exact legacy-model proof; all68 digests survived.
+The untouched400-photo job was explicitly recovered under the owner's retry
+instruction, remains the same revision/job and is queued behind active work.
+No source answer or engineering approval was changed. Historical failure remains
+history rather than the current submission's status.
+
+Ollama remains on repaired loopback11434, qwen3.5:4b. The actual RTX3060Ti/8GB
+samples showed74-75% activity and full model GPU residency; no50% cap, hardware
+tuning or extra model download was applied. A lower cap would not add capacity.
+Model identity now uses the actual photo endpoint's manifest rather than volatile
+installation metadata; old pins require exact compatibility proof. Zero-progress
+recovery has scoped/stale/lock/idempotency guards and an explicit QA reason.
+
+Final full suite: **948 passed in 330.540s**, native exit0, source stable,
+zero failures/errors/skips. Actual QA pages and persisted progress were checked;
+eight isolated UI states/positive native-metadata recovery and negative guards
+passed independent review. Exact evidence, source fingerprint, limitations and
+startup/check commands: `docs/development/QA_AI_RECOVERY_PROGRESS.md`.
+Private operational evidence remains under `.local/qa-ai-live-20261023`; only
+synthetic progress screenshots are committed. Whole-site completion, model
+accuracy, sustained throughput and production acceptance are not claimed.
+
+## Current release candidate: Engineer site data and repaired local AI
+
+23 October 2026. Branch `fix/engineer-general-information-20261023`, based on
+merged PR15 `405c5079839ae3ef23d9077c436d9ddab65f117d`. The local pause checkpoint
+`05effc0` and both recovery archives remain preserved. The owner explicitly
+resumed execution and model requests after repairing Ollama; earlier pause
+instructions below are historical.
+
+General Info is a saved site-data form with authorized system prefills and
+manual on-site entries. New Engineer photos use Civil/Electrical/Tower only.
+Older unclassified originals stay available; submitted evidence and prior
+revision snapshots remain retained. Engineer never matches or approves AI links.
+Returned tasks show their retained-photo count and View uploaded photos shortcut.
+Independent QA verified the actual reject/correct/resubmit journey:39 browser
+checks,12 criteria and three backend lifecycle regressions; older file hashes,
+findings and drawings survived the new submission. No operational record was
+approved, rejected or resubmitted by these tests. Read-only inspection of the
+reported returned operational task found all460photos and permitted correction.
+
+Repaired installed Ollama0.40.10 on loopback11434 supports the existing local
+qwen3.5:4b. Real scoped application/browser chat requests and an actual image
+request succeeded. Both text/photo URLs are explicitly set to11434 in the
+restored app and independent workers. Do not use older statements below that
+11434 is currently broken as a current diagnosis. No new model, paid service or
+public Ollama listener was introduced. The QA text assistant now distinguishes
+submitted original counts from confirmed links and labels reported site data;
+it does not receive image pixels or approve engineering work. One native answer
+conflated links with section approval in its explanation: advice needs QA review.
+
+Final stable isolated backend run: **929 passed in 308.208s**, native exit0,
+no failures/errors/skips. Django, migration drift/pending migrations, dependency,
+four frontend scripts and33JavaScript syntax checks passed. Actual desktop/mobile
+General Info verification:16criteria/183browser assertions/10strict API checks.
+Actual repaired QA assistant:two browser requests/15checks/HTTP200/noJSerrors.
+Focused runs overlap the full suite; do not sum counts. See
+`docs/development/ENGINEER_GENERAL_INFORMATION.md` and the updated requirement
+ledger for current evidence. Historical PR15 audit evidence below is retained,
+with General Info photo destinations and old runtime diagnoses superseded.
+
+Two pre-existing failed operational processing jobs remain failed; existing
+guarded retry/resubmission controls apply where the current workflow permits.
+They were not reset, repinned or approved. Their
+failed truncated source was replayed read-only successfully with a bounded retry,
+not accepted into operational answers. Whole-site model accuracy, sustained
+throughput, manufacturer geometry, physical devices, native crash A12 and hosted
+production acceptance remain outside these successful focused checks.
+
+QA layout choices remain proposals only; none was selected or implemented.
+The current manual/PDF covers existing roles and known issues. Do not add product
+modules or replace the working QA layout without a new owner request. Continue
+using installed Agency profiles with scoped ownership and independent QA.
+
+### Windows startup using the repaired installed service
+
+The local app and three workers have already been restored; avoid duplicates.
+For a later manual start, use each long-running command in its own PowerShell
+window, from `F:\iSurvix\iSurvix-Field`, after setting BOTH variables in that window:
+
+```powershell
+$env:ISURVIX_OLLAMA_URL='http://127.0.0.1:11434'
+$env:ISURVIX_PHOTO_OLLAMA_URL='http://127.0.0.1:11434'
+.local\venv\Scripts\python.exe backend\manage.py runserver 127.0.0.1:8000 --noreload --settings=checklist.settings_local
+```
+
+In the worker windows, use the same two environment variables, then respectively:
+
+```powershell
+.local\venv\Scripts\python.exe backend\manage.py survey_processing_worker --settings=checklist.settings_local
+.local\venv\Scripts\python.exe backend\manage.py photo_worker --settings=checklist.settings_local
+.local\venv\Scripts\python.exe backend\manage.py photo_search_worker --settings=checklist.settings_local
+```
+
+For GUI startup, use the existing `Start-iSurvix.cmd` from Explorer after closing
+the old launcher. Its project-runtime path is still available; successful runtime
+startup aligns text and photo configuration. Do not download another model,
+reset `.local`, or expose Ollama. Keep evidence/configuration on this F: project.
+This release candidate is for review; no production deployment or merge occurred.
+
+## Historical handoffs (superseded where noted above)
+
+## Resumed by owner - 23 October 2026, 22:30 local
+
+The owner confirmed Ollama is responding again and explicitly authorized retrying
+`qwen3.5:4b`, verifying the application connection and continuing the saved tasks.
+This supersedes the model-call prohibition in the historical pause below.
+The repaired installed service on loopback11434 reports Ollama0.40.10 and local
+vision support. Two actual scoped QA application requests now returned complete
+HTTP200 answers there. Active work continues from local checkpoint `05effc0` on
+`fix/engineer-general-information-20261023`: finish actual browser verification,
+the QA-return/Engineer-correction journey, final stable full suite and evidence.
+Use the repaired configured local service; do not download models, reset old jobs
+or approve operational records. Pause history and its test limitations remain
+recorded below; they are not a current release verdict.
+
+## PAUSED by owner - 23 October 2026, 22:23 local
+
+Save checkpoint only. All execution, local web/fixture services and three AI
+worker services are paused. **Do not call Ollama, including health/model-list
+requests, or restart its service/workers until the owner explicitly confirms
+the repair is complete.** Do not automatically run the launcher on resume.
+
+Current branch: `fix/engineer-general-information-20261023`, based on merged PR15
+at `405c507`. General Info is now site data; only Civil/Electrical/Tower are new
+photo destinations, with older unclassified originals retained. General Info and
+automatic native photo submission have functional verification. QA assistant
+runtime repair is coded and native-view tested; browser success is pending
+because the model service was unavailable at the last pre-pause check. The
+QA-rejection/Engineer-return journey remains unverified. No final stable full
+suite or push for this branch has occurred. Exact evidence, remaining tasks and
+resume restrictions: `docs/development/PAUSED_STATUS_20261023.md`.
+
 ## Current: Engineer category upload and QA matching - 23 October 2026
 
 Engineer bulk-selection follow-up: saved-photo checkboxes and shared category

@@ -3,6 +3,7 @@ from . import photo_views as v
 from . import category_intake_views as capture
 urlpatterns=[
  path('<int:checklist_id>/capture/',capture.state,name='photo_capture_state'),
+ path('<int:checklist_id>/capture/general-information/',capture.general_information,name='photo_capture_general_information'),
  path('<int:checklist_id>/capture/submit/',capture.submit,name='photo_capture_submit'),
  path('<int:checklist_id>/capture/category/',capture.category,name='photo_capture_category'),
  path('<int:checklist_id>/capture/remove/',capture.remove,name='photo_capture_remove'),

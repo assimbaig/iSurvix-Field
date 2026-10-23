@@ -9,9 +9,10 @@ from .local_ai import ollama as assistant_ollama
 from .template_service import validate_answer
 
 
-def ollama(path, payload=None):
+def ollama(path, payload=None, *, base_url=None):
     from django.conf import settings
-    return assistant_ollama(path, payload, base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
+    return assistant_ollama(path,payload,base_url=base_url if base_url is not None else
+        getattr(settings,'PHOTO_OLLAMA_BASE_URL',settings.OLLAMA_BASE_URL))
 
 
 def installed_models():
@@ -138,15 +139,25 @@ def prepare_image(upload):
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError, Image.DecompressionBombWarning, SyntaxError, ValueError) as exc:
         raise ValidationError('Invalid or corrupt image.') from exc
 
-def verify_vision(model):
-    if model not in installed_models():
+def verify_vision(model, *, base_url=None):
+    manifest=None
+    if base_url is None:
+        installed=installed_models()
+    else:
+        tags=ollama('/api/tags',base_url=base_url).get('models',[])
+        if not isinstance(tags,list):raise ValueError('The local service returned an invalid installed model list.')
+        local=[record for record in tags if isinstance(record,dict) and not record.get('remote_model') and not record.get('remote_host')
+            and isinstance(record.get('name'),str) and '-cloud' not in record['name'].lower() and ':cloud' not in record['name'].lower()]
+        installed=[record['name'] for record in local]
+        manifest=next((record.get('digest') for record in local if record['name']==model),None)
+    if model not in installed:
         raise ValueError('Selected model is not locally installed; cloud aliases are forbidden.')
-    details = ollama('/api/show', {'model': model})
+    details = ollama('/api/show', {'model': model},base_url=base_url) if base_url is not None else ollama('/api/show', {'model': model})
     if 'vision' not in details.get('capabilities', []):
         raise ValueError('Selected installed model does not report vision capability.')
     if details.get('remote_model') or details.get('remote_host'):
         raise ValueError('Remote models are forbidden.')
-    return details
+    return {**details,'_manifest_digest':manifest} if base_url is not None else details
 
 def field_batches(schema, limit=10000, max_fields=12):
     batch, size = [], 0

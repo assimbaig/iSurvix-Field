@@ -19,6 +19,7 @@ Being able to see a project does not permit every operation on its tasks. Engine
 | Develop and publish checklist templates | No | Managed template scope | No | No | Technical qualification only | No |
 | Upload and organize original evidence | No | No Engineer signature | Own task before submission or after authorized return | No | No | No |
 | Submit category photos to QA | No | No | Own task, completed uploads | No | No | No |
+| Record General Info site data | No | Task setup within scope | Own editable task | Review frozen source and record QA corrections | Review only | Shared accepted information only |
 | Match photos and review AI suggestions | No | No | No | Named QA at current editable stage | Read completed QA package | No |
 | Record derived checklist answers | No | No | No matching or AI acceptance | Named QA; original Engineer source stays frozen | Review only | Shared approved results only |
 | Sign QA review | No | No | No | Named QA at current stage | No | No |
@@ -39,14 +40,15 @@ Historical version-one independent workflows can retain their original named Tea
 ### Purpose and permitted work
 
 - Find assigned tasks and distinguish pending preparation, submitted/review work, returned or rejected corrections, and completed work. The workflow stage and AI processing status are separate.
-- Open the assigned site's compact photo-capture workspace and inspect existing task information.
-- Select General Info, Civil, Electrical or Tower and upload multiple camera/gallery photos in bounded batches. Preview full images and review saved thumbnails grouped by category.
+- Open the assigned site's General Info form. Available task, account, project and company facts prefill without replacing saved values or deliberate blanks. Add the permitted information collected on site.
+- Save site information explicitly, or use Submit to QA to save current valid entries before handoff. Assigned identity remains protected; this form does not approve engineering work or require full checklist matching.
+- Select Civil, Electrical or Tower to upload multiple camera/gallery photos in bounded batches. General Info is data only. Older unclassified originals remain available as Uncategorised and can be moved before submission.
 - Before submission, move photos between categories or remove an incorrect photo from the active intake. Removal retains original bytes and historical source records.
 - Retry failed uploads; successful uploads are deduplicated. An unfinished upload envelope must finish or be safely recovered before submission.
 - Select Submit to QA after uploads finish. Missing checklist answers do not block this photo hand-off. Necessary task identity, reviewer, access and upload-completion checks remain.
 - QA receives the frozen submission immediately. A persistent AI job runs separately; uploading alone does not start it. The Engineer receives a simple confirmation rather than matching or AI verification work.
 - The applicable approved checklist controls QA proposals. A missing template is shown to QA as a configuration issue; it does not cause invented checklist requirements or lose the photo submission. Drawing generation retains its existing Checklist required scope.
-- Correct a returned task and submit a new retained revision. Prior inputs, evidence, review events and signed revisions remain available.
+- Correct a returned task using View uploaded photos in its return notice. Existing photos stay saved; review the reason, update allowed site data, move/remove/add evidence and submit a new retained revision. Prior inputs, originals, review events and signed revisions remain available.
 - Maintain their own professional profile and experience. Published experience is self-reported, not application-certified competence.
 
 ### Not permitted
@@ -75,6 +77,7 @@ The Engineer cannot match photos to checklist points, confirm/reject AI links, a
 - Review General Info, Civil, Electrical and Tower in a compact category/checklist/photo workspace. Required points remain visible without evidence. Not Assigned means no checklist links, not merely no link to the selected point.
 - Add, confirm, remove or explicitly reassign individual photo links. Drag-and-drop and click/touch actions use the same revision-bound permission checks. Other valid links remain intact.
 - Inspect source photos and QA-visible AI observations/explanations in the viewer. Unsupported suggestions remain unassigned. Preserve original Engineer categories as provenance, even for a valid cross-category link.
+- Open Submitted site information to compare the Engineer's frozen General Info values and source notes with the checklist review. This source view is read-only; QA corrections use the existing review controls.
 - Enter source-backed derived checklist answers and complete the required QA evidence review. These append-only decisions do not rewrite the Engineer's original answers or photo snapshot.
 - Change personal checkpoint display order within the existing category only. Display order does not edit the template, source links or engineering decisions.
 - Approve the current technical review or return it one step to the Engineer with a reason. A stale token or a change to frozen source inputs blocks a decision.
@@ -203,7 +206,7 @@ Super Admin does not create company projects, create/invite Clients, use the ope
 
 For the current category-based Engineer submission:
 
-1. Open the assigned task, check its site identity, select General Info/Civil/Electrical/Tower and upload originals. Preview, move or remove incorrect photos before submission. Failed transfers remain visible for retry.
+1. Open the assigned task and check its General Info. Review available prefills and add on-site data. Select Civil, Electrical or Tower to upload originals. Preview, select several photos, move or remove incorrect photos before submission. Failed transfers remain visible for retry.
 2. Submit to QA after uploads finish. The server validates access, task/reviewer identity and durable upload completion, then freezes the photos/categories and immediately creates the QA hand-off. Checklist completion and Engineer AI acceptance are not prerequisites. Repeated requests reuse that submission/job.
 3. The independent worker analyzes actual source images/documents and proposes links to valid IDs from the applicable approved template. Missing, unsupported and conflicting evidence stays visible; there is no invented checklist or automatic engineering acceptance.
 4. QA can work before AI completes or after a failure. Select a category and point, inspect sources, use Not Assigned for genuinely zero-link photos, and explicitly assign/confirm/correct links by dragging or click/touch. Original categories and unrelated valid links are preserved.
@@ -216,20 +219,19 @@ Older submission, review and source records are retained. Current Engineer inter
 
 ## Try the current workflow
 
-1. Engineer: open an assigned task, upload photos under the four categories, preview them and use Submit to QA after transfers finish. No checklist matching is required.
+1. Engineer: open an assigned task, complete allowed General Info, then upload photos under Civil, Electrical or Tower. Use Submit to QA after transfers finish; it saves current valid site entries before handoff. No checklist matching is required.
 2. QA: open that task immediately, even while AI is pending. Choose a category, then a checkpoint or the last Not Assigned entry. Inspect the photo and supplied AI observation.
 3. QA: drag a photo onto a checkpoint or use Assign to checklist point. Confirm/correct links separately from reviewing answers and accepting work. Refresh to check persistence. Complete QA evidence review before using the existing approval action.
 4. Team Lead: inspect the completed package in the read-only three-pane workspace. Approve or return one step with a reason. Four-layer tasks continue to the named Client; three-layer tasks close after the required reviews.
 
 ## Verification evidence and limits
 
-- Final isolated backend run: **894 tests passed in 283.484 seconds**, native process exit0, no failures/errors/skips; application/test source fingerprint was unchanged throughout the run.
-- Django checks, migration-drift and pending-migration checks, dependency check, all four retained frontend scripts and 33 JavaScript syntax checks passed. The retained frontend scripts are not browser-layout tests.
-- Independent saved-data QA: 47 focused tests and 74 real Edge assertions at 1440px/390px; all 17 original QA acceptance criteria verified. These counts overlap the full suite and are not added together.
-- Actual browser scenarios covered category uploads, failed-transfer retry, immediate QA availability, drag/drop and click/touch matching, refresh/order persistence, failed-save rollback, QA completion, Team Lead rejection, Engineer revision and Client return/clarification/closure. No unhandled JavaScript exceptions were recorded.
-- An independent AppSec reviewer reproduced and retested six defects: old Engineer AI reads, optional unaccepted Client findings, alternate capture diagnostics, authorized QA reopening locks, stale legacy field-photo projection, and legacy endpoint mutation of frozen category submissions. Its final 59-test security run passed.
-- Real local qwen3.5:4b processed 11 synthetic images in isolated jobs, including a final fresh two-image submission against its approved two-point template. Correct advisory links were saved; confirming one did not accept engineering work. Browser-only controlled AI fixtures are identified separately from these real native checks.
-- The default installed Ollama service on 11434 currently fails image requests because its native runner is missing. The existing project-dedicated runtime on loopback 11435 successfully processed the real test images. Use the project's startup launcher; no new model was downloaded and no cloud fallback was added. Previously pinned failed jobs are retained rather than silently reset.
-- Source snapshots, original image bytes and prior signatures were checked during the isolated journeys. Operational evidence and credentials were compared with the pre-edit recovery checkpoint. No operational survey was approved or reset by these tests.
+- Final stable isolated backend run: **929 tests passed in 308.208 seconds**, native exit 0; no failures, errors or skips. Source fingerprints matched throughout.
+- Django, migration drift/pending migrations, dependency, all four retained frontend scripts and 33 JavaScript syntax checks passed. Retained frontend VM checks are separate from real browser verification.
+- General Info: all 16 scoped independent criteria passed, supported by 183 desktop/mobile browser assertions and 10 strict API checks. Saved prefills, deliberate blanks, zero, dates/selects, stale/error recovery, source locks and QA's read-only source view were exercised on real isolated records.
+- QA return/correction: all 12 independent criteria, 39 actual browser checks and three independently rerun HTTP lifecycle regressions passed. The Engineer can retain/view photos, edit permitted site data, move/remove/add evidence and resubmit while preserving older source revisions. The returned notice provides View uploaded photos so existing evidence is easy to find.
+- Actual repaired Ollama 0.40.10 with installed qwen3.5:4b returned complete answers through the QA application and two actual browser requests (15 checks, no JavaScript errors). A real image request identified its synthetic red square and blue circle correctly. Upload counts are distinct from confirmed field links; this text assistant does not receive image pixels or grant engineering approval. One answer's explanation conflated missing confirmed links with missing approval sections; QA advice remains advisory and the server keeps those decisions separate.
+- Automatic photo processing was also verified with an independent worker started before Engineer submission: three real synthetic images reached Ready for review before QA opened the task. A separate read-only replay recovered one previously truncated photo response using the bounded retry. These are integration checks, not sustained throughput or site-accuracy benchmarks.
+- Existing original file hashes and historical source/approval boundaries were preserved. Operational photos and approvals were not used for destructive tests. Counts from overlapping focused/browser/full runs are not added into a unique total.
 
-These results verify the focused saved-data Engineer-to-QA behavior. They do not establish whole-site accuracy, sustained 200/500-photo throughput, engineering compliance, manufacturer geometry, hosted production readiness or physical-device acceptance. Historical native crash A12 remains an investigation item despite the successful local image runs. Full technical receipts, limitations and exact startup commands are recorded in docs/development/ENGINEER_CATEGORY_QA_AUDIT.md.
+Physical devices, real-site/model accuracy, sustained large-site throughput, manufacturer geometry and production hosting remain separate acceptance work. Historical native crash A12 is not considered resolved merely because these Windows integration requests succeeded. Exact commands, source evidence and remaining limitations are in docs/development/ENGINEER_GENERAL_INFORMATION.md.

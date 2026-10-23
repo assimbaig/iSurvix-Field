@@ -28,7 +28,7 @@ from . import survey_evidence as evidence, survey_processing as pipeline
 from .access import can_access_project, role_for
 from .models import GovernanceAudit, Profile, Project
 from .remote_worker_models import RemoteWorkerCredential, RemoteWorkerProject, RemoteSurveyLease, RemoteSurveyTask
-from .survey_processing_models import SurveyProcessingJob, SurveyProcessingResult, SurveySourceAnalysis
+from .survey_processing_models import SurveyProcessingJob, SurveyProcessingResult, SurveySourceAnalysis,SurveyProcessingEvent
 
 PROTOCOL = 'isurvix-survey-worker-v1'
 LEASE_SECONDS = 600
@@ -136,6 +136,16 @@ def claim(credential, payload):
     _compatible(payload)
     if payload.get('model') != getattr(settings, 'OLLAMA_MODEL', 'qwen3.5:4b') or not isinstance(payload.get('model_digest'), str) or not re.fullmatch(r'[a-f0-9]{64}', payload['model_digest']):
         raise ValidationError('The installed local vision model does not match the server model requirement.')
+    proof=payload.get('model_identity')
+    if proof is not None:
+        from .survey_model_identity import VERSION
+        if (not isinstance(proof,dict) or proof.get('version')!=VERSION or proof.get('model')!=payload['model']
+            or any(not isinstance(proof.get(key),str) or not re.fullmatch(r'[a-f0-9]{64}',proof[key])
+                for key in ['manifest_digest','fingerprint','legacy_fingerprint'])
+            or proof['fingerprint']!=payload['model_digest']
+            or pipeline.digest({'version':VERSION,'model':payload['model'],'manifest_digest':proof['manifest_digest'],
+                'pipeline':pipeline.PIPELINE_VERSION})!=proof['fingerprint']):
+            raise ValidationError('The worker model identity proof is invalid or incompatible.')
     now = timezone.now()
     with transaction.atomic():
         job = SurveyProcessingJob.objects.select_for_update().select_related('revision__checklist').filter(
@@ -152,7 +162,9 @@ def claim(credential, payload):
             return None
         if job.pipeline_version != pipeline.PIPELINE_VERSION or job.model != payload['model']:
             raise ValidationError('This queued job uses an incompatible pipeline or model.')
-        if job.model_digest and job.model_digest != payload['model_digest']:
+        previous_pin=job.model_digest
+        migrated=bool(previous_pin and previous_pin!=payload['model_digest'])
+        if migrated and (not proof or previous_pin!=proof['legacy_fingerprint']):
             raise ValidationError('The pinned model changed. Restore the original installed model before resuming this revision.')
         lease, _ = RemoteSurveyLease.objects.get_or_create(job=job)
         if lease.versions and lease.versions != versions():
@@ -164,6 +176,14 @@ def claim(credential, payload):
         job.lease_owner, job.lease_until = 'remote:' + lease.token.hex, now + timedelta(seconds=LEASE_SECONDS)
         job.attempts += 1
         job.save()
+        if proof and previous_pin!=payload['model_digest']:
+            SurveyProcessingEvent.objects.create(revision=job.revision,actor=credential.created_by,
+                action='model_identity_migrated' if migrated else 'model_identity',payload={**proof,
+                    'previous_model_digest':previous_pin,'proof':'exact_legacy_metadata_match' if migrated else 'installed_manifest',
+                    'credential_id':str(credential.pk),'origin':'authenticated_local_worker'})
+            _audit(credential,'model_identity_migrated' if migrated else 'model_identity',job.revision.checklist.project,
+                job_id=job.pk,previous_model_digest=previous_pin,manifest_digest=proof['manifest_digest'],
+                fingerprint=proof['fingerprint'],proof='exact_legacy_metadata_match' if migrated else 'installed_manifest')
         _audit(credential, 'claimed', job.revision.checklist.project, job_id=job.pk, revision_id=job.revision_id)
     return {'job_id': job.pk, 'lease': str(lease.token), 'revision_id': job.revision_id,
             'snapshot_digest': job.revision.digest, 'lease_seconds': LEASE_SECONDS, 'model': job.model}

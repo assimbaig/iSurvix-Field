@@ -71,7 +71,7 @@ class CategoryIntakeRegressionTests(TestCase):
         self.assertEqual(self.route(self.lead, 'approve').status_code, 302)
         revision.refresh_from_db(); self.checklist.refresh_from_db()
         self.assertEqual(revision.snapshot, frozen)
-        self.assertEqual(self.checklist.answer_data, {})
+        self.assertEqual(self.checklist.answer_data, frozen['answers'])
         self.assertEqual(revision.processing_events.filter(action='qa_reopen').count(), 1)
 
     def test_returned_engineer_still_cannot_use_legacy_ai_mutations(self):
@@ -179,7 +179,7 @@ class CategoryIntakeRegressionTests(TestCase):
                 {'group':'Civil','files':[SimpleUploadedFile('forbidden-extra.png',self.raw('forbidden-extra'),content_type='image/png')]})
             self.assertEqual(upload.status_code,403,upload.content)
         self.checklist.refresh_from_db();revision.refresh_from_db()
-        self.assertEqual(self.checklist.answer_data,{})
+        self.assertEqual(self.checklist.answer_data,frozen['answers'])
         self.assertEqual(self.checklist.photo_evidence.count(),1)
         self.assertFalse(PhotoPlacement.objects.filter(photo__checklist=self.checklist).exists())
         self.assertEqual(revision.snapshot,frozen)

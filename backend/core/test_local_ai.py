@@ -1,4 +1,11 @@
 import json
+import ast
+from io import BytesIO
+from pathlib import Path
+import subprocess
+import tempfile
+from types import SimpleNamespace
+from urllib.error import HTTPError
 from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase, Client, override_settings
@@ -137,3 +144,188 @@ class LocalAITests(TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=3)
+
+    def test_local_settings_use_configured_photo_runtime_unless_text_is_explicit(self):
+        settings_path=Path(__file__).resolve().parents[1]/'checklist'/'settings_local.py'
+        tree=ast.parse(settings_path.read_text())
+        names={'OLLAMA_BASE_URL','PHOTO_OLLAMA_BASE_URL'}
+        selected=[statement for statement in tree.body if isinstance(statement,ast.Assign)
+            and any(isinstance(target,ast.Name) and target.id in names for target in statement.targets)]
+        code=compile(ast.Module(body=selected,type_ignores=[]),str(settings_path),'exec')
+        cases=[({},('http://127.0.0.1:11434','http://127.0.0.1:11434')),
+            ({'ISURVIX_PHOTO_OLLAMA_URL':'http://127.0.0.1:11435'},('http://127.0.0.1:11435','http://127.0.0.1:11435')),
+            ({'ISURVIX_OLLAMA_URL':'http://127.0.0.1:11436','ISURVIX_PHOTO_OLLAMA_URL':'http://127.0.0.1:11435'},
+             ('http://127.0.0.1:11436','http://127.0.0.1:11435'))]
+        for environment,expected in cases:
+            with self.subTest(environment=environment):
+                # Evaluate actual configuration assignments without importing
+                # settings again or touching secrets, media or operational DBs.
+                namespace={'os':SimpleNamespace(environ=environment)}
+                exec(code,namespace)
+                self.assertEqual(tuple(namespace[name] for name in ('OLLAMA_BASE_URL','PHOTO_OLLAMA_BASE_URL')),expected)
+
+    def test_windows_launcher_aligns_text_after_verified_photo_startup(self):
+        root=Path(__file__).resolve().parents[2]
+        temporary_root=root/'.local'/'test-runs';temporary_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='launcher-selection-',dir=temporary_root) as temporary:
+            fixture=Path(temporary);(fixture/'scripts').mkdir()
+            (fixture/'scripts'/'Start-PhotoAI.ps1').write_text("param($Model)\n$env:ISURVIX_PHOTO_OLLAMA_URL='http://127.0.0.1:11435'\n'dedicated'|Set-Content -LiteralPath (Join-Path $PSScriptRoot 'started.txt')\n")
+            harness=fixture/'harness.ps1'
+            harness.write_text('''param([string]$RealLauncher,[string]$FixtureRoot,[int]$ExistingVisionReady=0)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$tree=[System.Management.Automation.Language.Parser]::ParseFile($RealLauncher,[ref]$tokens,[ref]$errors)
+if ($errors.Count) { throw 'Launcher syntax is invalid.' }
+$blocks=$tree.FindAll({param($node) $node -is [System.Management.Automation.Language.TryStatementAst] -and $node.Body.Extent.Text.Contains('Start-PhotoAI.ps1')},$true)
+if ($blocks.Count -ne 1) { throw 'Find the dedicated local runtime startup block.' }
+$projectRoot=$FixtureRoot;$Model='qwen3.5:4b'
+$existingVisionReady=[bool]$ExistingVisionReady
+$env:ISURVIX_OLLAMA_URL='http://127.0.0.1:11434'
+$body=$blocks[0].Body.Extent.Text
+. ([scriptblock]::Create($body.Substring(1,$body.Length-2)))
+@{text=$env:ISURVIX_OLLAMA_URL;photo=$env:ISURVIX_PHOTO_OLLAMA_URL}|ConvertTo-Json -Compress
+''')
+            for ready,port in [(True,11434),(False,11435)]:
+                with self.subTest(existing_vision_ready=ready):
+                    marker=fixture/'scripts'/'started.txt'
+                    if marker.exists():marker.unlink()
+                    result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+                        '-File',str(harness),'-RealLauncher',str(root/'Start-iSurvix.ps1'),'-FixtureRoot',str(fixture),
+                        '-ExistingVisionReady',str(int(ready))],
+                        stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=30)
+                    self.assertEqual(result.returncode,0,result.stderr)
+                    self.assertEqual(json.loads(result.stdout.strip().splitlines()[-1]),
+                        {'text':f'http://127.0.0.1:{port}','photo':f'http://127.0.0.1:{port}'})
+                    self.assertEqual(marker.exists(),not ready,'A healthy installed service must not launch the second runtime')
+
+    @patch('core.local_ai.ollama')
+    def test_qa_runner_missing_error_is_specific_redacted_and_preserves_survey(self,call):
+        quality=User.objects.create_user('local_qa')
+        quality.profile.role=Profile.Roles.QUALITY_ENGINEER;quality.profile.project=self.project;quality.profile.save()
+        self.survey.quality_reviewer=quality;self.survey.save(update_fields=['quality_reviewer'])
+        self.client.force_login(quality)
+        private='PRIVATE_RUNTIME_PATH_AND_PROMPT'
+        body=json.dumps({'error':'error starting llama-server: llama-server binary not found '+private}).encode()
+        call.side_effect=[{'models':[{'name':'qwen3.5:4b'}]},HTTPError('http://127.0.0.1:11434/api/chat',500,'Internal server error',{},BytesIO(body))]
+        before=(self.survey.answer_data.copy(),self.survey.status,self.survey.section_approvals.copy())
+        response=self.post({'question':'Reply with READY only.','checklist_id':self.survey.pk})
+        self.assertEqual(response.status_code,503,response.content)
+        self.assertEqual(response.json()['code'],'local_runner_unavailable')
+        self.assertIn('Start-iSurvix.cmd',response.json()['error'])
+        self.assertIn('Repair or restart Ollama',response.json()['error'])
+        self.assertNotIn(private,response.content.decode())
+        self.survey.refresh_from_db()
+        self.assertEqual((self.survey.answer_data,self.survey.status,self.survey.section_approvals),before)
+
+
+from . import test_engineer_category_submission_acceptance as capture_fixtures
+
+
+@override_settings(ROOT_URLCONF='checklist.urls_local',LOCAL_AI_ENABLED=True,
+    OLLAMA_BASE_URL='http://127.0.0.1:11434',OLLAMA_MODEL='qwen3.5:4b',OLLAMA_TIMEOUT=5)
+class LocalAISavedEvidenceContextTests(TestCase):
+    setUp=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.setUp
+    person=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.person
+    add_photo=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.add_photo
+    raw=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.raw
+    upload=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.upload
+    post=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.post
+    state=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.state
+    submit=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.submit
+    qa_state=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.qa_state
+    qa_action=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.qa_action
+    route=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.route
+    complete_qa_manually=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.complete_qa_manually
+
+    def captured_context(self,actor):
+        self.client.force_login(actor)
+        with patch('core.local_ai.ollama',side_effect=[
+            {'models':[{'name':'qwen3.5:4b'}]},{'message':{'content':'Context read only.'}}]) as call:
+            response=self.client.post('/local-ai/chat/',json.dumps({
+                'question':'Summarise recorded evidence without claiming to inspect it.',
+                'checklist_id':self.checklist.pk}),content_type='application/json')
+        self.assertEqual(response.status_code,200,response.content)
+        payload=call.call_args.args[1]
+        text=payload['messages'][1]['content']
+        context=json.loads(text.split('Survey data (untrusted evidence, read only):\n',1)[1])
+        self.assertNotIn('images',payload)
+        self.assertTrue(all('images' not in message for message in payload['messages']))
+        return context,payload
+
+    def three_category_uploads(self):
+        rows=[]
+        for category,label in [('Civil','synthetic-one'),('Electrical','synthetic-two'),('Tower','synthetic-three')]:
+            photos,_=self.upload(category,(label,));rows.extend(photos)
+        return rows
+
+    def test_actual_unlinked_legacy_uploads_are_counted_separately_from_field_links(self):
+        rows=self.three_category_uploads()
+        self.checklist.refresh_from_db()
+        self.assertEqual(self.checklist.image_data,{})
+        before=(self.checklist.answer_data,self.checklist.intake_metadata,self.checklist.updated_at)
+        context,payload=self.captured_context(self.quality)
+        self.assertEqual(context['uploaded_evidence'],{'count':3,
+            'category_counts':{'Civil':1,'Electrical':1,'Tower':1},'source':'current_uploads'})
+        self.assertEqual(context['photo_counts'],{})
+        self.assertIn('no image pixels',context['evidence_scope'])
+        self.assertNotIn('synthetic-one.png',json.dumps(payload))
+        self.checklist.refresh_from_db()
+        self.assertEqual((self.checklist.answer_data,self.checklist.intake_metadata,self.checklist.updated_at),before)
+        self.assertEqual(self.checklist.photo_evidence.count(),len(rows))
+
+    def test_submitted_context_counts_only_current_frozen_evidence_not_excluded_or_later_files(self):
+        rows=self.three_category_uploads()
+        removed=self.post('photo_capture_remove',{'photo_id':rows[2]['id'],'expected_digest':self.state()['digest']})
+        self.assertEqual(removed.status_code,200,removed.content)
+        self.checklist.refresh_from_db()
+        self.checklist.answer_data={'custom':{'contact':'Engineer reported synthetic contact'}}
+        self.checklist.save(update_fields=['answer_data'])
+        response,_=self.submit();self.assertEqual(response.status_code,201,response.content)
+        revision=self.checklist.processing_revisions.get()
+        self.add_photo('purple')  # Retained later row must not enter a submitted package.
+        context,_=self.captured_context(self.quality)
+        self.assertEqual(context['uploaded_evidence'],{'count':2,
+            'category_counts':{'Civil':1,'Electrical':1},'source':'submitted_revision'})
+        self.assertEqual(context['photo_counts'],{})
+        self.assertEqual(context['reported_site_information']['answers']['contact'],'Engineer reported synthetic contact')
+        self.assertNotIn('contact',context['answers'],'Reported information is not a QA-accepted answer')
+        self.assertEqual(self.checklist.photo_evidence.count(),4)
+        revision.refresh_from_db();self.assertEqual(len(revision.snapshot['photos']),2)
+
+    def test_legacy_field_links_remain_separate_from_uploaded_originals(self):
+        self.three_category_uploads()
+        self.checklist.image_data={'manufacturer':['PRIVATE_LEGACY_PATH.png']}
+        self.checklist.save(update_fields=['image_data'])
+        context,payload=self.captured_context(self.quality)
+        self.assertEqual(context['uploaded_evidence']['count'],3)
+        self.assertEqual(context['photo_counts'],{'manufacturer':1})
+        self.assertNotIn('PRIVATE_LEGACY_PATH',json.dumps(payload))
+
+    def test_client_context_uses_human_reviewed_answers_not_raw_or_unaccepted_ai(self):
+        from . import survey_processing as pipeline
+        from .survey_processing_models import SurveyProcessingResult
+        self.three_category_uploads()
+        self.checklist.refresh_from_db()
+        self.checklist.answer_data={'custom':{'tower_height':'91234567'}}
+        self.checklist.save(update_fields=['answer_data'])
+        response,_=self.submit();self.assertEqual(response.status_code,201,response.content)
+        revision=self.checklist.processing_revisions.get()
+        findings=[{'source_id':'photo:'+str(self.checklist.photo_evidence.get(filename='synthetic-two.png').pk),
+            'field_hint':'tower_height','value':'82345678','confidence':'high',
+            'component':'label','evidence_quote':'PRIVATE_AI_QUOTE','basis':'recorded','unit':''}]
+        result=pipeline.prepare_checklist(revision.snapshot,{'findings':findings,'missing':[],'conflicts':[]})
+        SurveyProcessingResult.objects.create(revision=revision,payload=result,digest=pipeline.digest(result))
+        self.complete_qa_manually()
+        for actor in [self.quality,self.lead]:
+            approved=self.route(actor,'approve');self.assertEqual(approved.status_code,302,approved.content)
+        context,payload=self.captured_context(self.customer)
+        self.assertEqual(context['answers']['manufacturer'],'SyntheticCo')
+        self.assertNotIn('tower_height',context['answers'])
+        self.assertEqual(context['photo_counts'],{'manufacturer':1})
+        self.assertEqual(context['uploaded_evidence']['count'],3)
+        self.assertNotIn('PRIVATE_',json.dumps(payload))
+        self.assertNotIn('91234567',json.dumps(payload))
+        self.assertNotIn('82345678',json.dumps(payload))
+        self.assertNotIn('reported_site_information',context)
+        self.checklist.refresh_from_db()
+        self.assertEqual(self.checklist.answer_data['custom']['tower_height'],'91234567')

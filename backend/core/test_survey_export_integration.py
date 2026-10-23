@@ -41,9 +41,9 @@ class SurveyExportIntegrationTests(TestCase):
 
     def fake_native_transport(self, path, payload=None, *, base_url=None):
         if path=='/api/tags':
-            return {'models':[{'name':settings.OLLAMA_MODEL,'digest':'synthetic-vision-model'}]}
+            return {'models':[{'name':settings.OLLAMA_MODEL,'digest':'a'*64}]}
         if path=='/api/show':
-            return {'capabilities':['completion','vision'],'digest':'synthetic-vision-model'}
+            return {'capabilities':['completion','vision'],'digest':'a'*64}
         self.assertEqual(path,'/api/chat')
         content=payload['messages'][-1]['content']
         if content.startswith('UNTRUSTED_MAPPING_DATA_JSON'):

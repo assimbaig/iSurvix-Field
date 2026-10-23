@@ -28,6 +28,7 @@ $env:TMP = $runtimeTemp
 $env:ISURVIX_AI_MODEL = $Model
 $env:ISURVIX_OLLAMA_URL = 'http://127.0.0.1:11434'
 $aiReady = $false
+$existingVisionReady = $false
 try { $null = Invoke-RestMethod -Uri 'http://127.0.0.1:11434/api/tags' -TimeoutSec 3; $aiReady = $true } catch { }
 if (-not $aiReady) {
     $ollamaCommand = Get-Command ollama -ErrorAction SilentlyContinue
@@ -52,13 +53,22 @@ if ($aiReady) {
         try {
             $details = Invoke-RestMethod -Uri 'http://127.0.0.1:11434/api/show' -Method Post -ContentType 'application/json' -Body (@{ model = $Model } | ConvertTo-Json) -TimeoutSec 10
             if (@($details.capabilities) -contains 'vision' -and -not $details.remote_host -and -not $details.remote_model) {
+                $existingVisionReady = $true
                 Write-Host 'The installed model reports local vision capability. The worker rechecks before analyzing images.'
             } else { Write-Host 'This model does not report local vision support. Photo analysis will remain blocked.' }
         } catch { Write-Host 'Vision capability could not be verified. The photo worker will require verification before analysis.' }
     }
 } else { Write-Host 'Ollama is not responding. Start Ollama and use Check connection in the app.' }
 try {
-    & (Join-Path $projectRoot 'scripts\Start-PhotoAI.ps1') -Model $Model
+    if ($existingVisionReady) {
+        # Reuse the installed service instead of switching model stores on each
+        # GUI launch. Saved inference identities remain subject to worker checks.
+        $env:ISURVIX_PHOTO_OLLAMA_URL = $env:ISURVIX_OLLAMA_URL
+        Write-Host "Text and photo AI use the existing local service at $env:ISURVIX_OLLAMA_URL."
+    } else {
+        & (Join-Path $projectRoot 'scripts\Start-PhotoAI.ps1') -Model $Model
+        $env:ISURVIX_OLLAMA_URL = $env:ISURVIX_PHOTO_OLLAMA_URL
+    }
 } catch {
     $env:ISURVIX_PHOTO_OLLAMA_URL = $env:ISURVIX_OLLAMA_URL
     Write-Host "Dedicated photo AI unavailable: $($_.Exception.Message) Using the existing local AI queue."

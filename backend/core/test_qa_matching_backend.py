@@ -81,7 +81,7 @@ class QAMatchingBackendTests(TestCase):
         self.assertTrue(state['matching_history'])
         self.revision.refresh_from_db();self.checklist.refresh_from_db()
         self.assertEqual(self.revision.snapshot,source_snapshot)
-        self.assertEqual(self.checklist.answer_data,{})
+        self.assertEqual(self.checklist.answer_data,source_snapshot['answers'])
 
     def test_legacy_map_and_new_confirmation_never_accept_photo_item(self):
         result=self.mutate('map',field_id='civil_photo',photo_ids=[self.ids[0]])

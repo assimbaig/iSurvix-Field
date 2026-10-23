@@ -148,12 +148,12 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
 
     def test_multiple_category_uploads_preserve_originals_and_only_submit_starts_async_ai(self):
         expected = {}
-        for category in ('Civil', 'Electrical', 'Tower', 'General Info'):
+        for category in ('Civil', 'Electrical', 'Tower'):
             labels = (category + '-one', category + '-two')
             rows, _ = self.upload(category, labels)
             for row, label in zip(rows, labels):
-                expected[row['id']] = ('' if category == 'General Info' else category, self.raw(label))
-        self.assertEqual(self.checklist.photo_evidence.count(), 8)
+                expected[row['id']] = (category, self.raw(label))
+        self.assertEqual(self.checklist.photo_evidence.count(), 6)
         self.assertFalse(self.checklist.processing_revisions.exists())
         self.assertFalse(PhotoJob.objects.filter(checklist=self.checklist).exists())
         for photo in self.checklist.photo_evidence.all():
@@ -171,7 +171,7 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
                          {pk: value[0] for pk, value in expected.items()})
         self.assertEqual(self.checklist.submission_revisions.count(), 1)
         self.assertFalse(PhotoPlacement.objects.filter(photo__checklist=self.checklist).exists())
-        self.assertEqual(self.checklist.answer_data, {})
+        self.assertEqual(self.checklist.answer_data, {'custom': {'site_id': self.checklist.site_id}})
 
     def test_duplicate_upload_and_repeated_submit_keep_one_job_and_frozen_revision(self):
         first, _ = self.upload('Civil')
@@ -361,7 +361,7 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
         revision.refresh_from_db(); technical.refresh_from_db(); self.checklist.refresh_from_db()
         self.assertEqual(revision.snapshot, source_snapshot)
         self.assertEqual(technical.snapshot, engineer_snapshot)
-        self.assertEqual(self.checklist.answer_data, {})
+        self.assertEqual(self.checklist.answer_data, source_snapshot['answers'])
         self.assertEqual(revision.processing_events.filter(action='qa_answer', actor=self.quality).count(), 3)
         self.assertFalse(revision.processing_events.filter(action='engineer_complete').exists())
         approved = self.route(self.quality, 'approve')
@@ -483,7 +483,7 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
         self.assertTrue(sheet._images, 'The QA-selected source photo should remain in the existing report')
         workbook.close()
         self.checklist.refresh_from_db(); revision.refresh_from_db()
-        self.assertEqual(self.checklist.answer_data, {})
+        self.assertEqual(self.checklist.answer_data, immutable_snapshot['answers'])
         self.assertEqual(revision.snapshot, immutable_snapshot)
 
     def test_excluded_template_can_submit_category_evidence_without_enabling_drawings(self):

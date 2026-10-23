@@ -58,7 +58,7 @@ class EngineerMultipartUploadTests(TestCase):
         image=self.image()
         original=image.read()
         image.seek(0)
-        response=self.client.post(reverse('photo_upload',args=[self.survey.pk]),{'files':[image],'csrfmiddlewaretoken':self.csrf})
+        response=self.client.post(reverse('photo_upload',args=[self.survey.pk]),{'group':'Civil','files':[image],'csrfmiddlewaretoken':self.csrf})
         self.assertEqual(response.status_code,201,response.content)
         photo=PhotoEvidence.objects.get(checklist=self.survey)
         with photo.original.open('rb') as saved:
@@ -73,7 +73,7 @@ class EngineerMultipartUploadTests(TestCase):
         bulk=reverse('photo_upload',args=[self.survey.pk])
         for url,key in ((custom,'images'),(bulk,'files')):
             self.assertEqual(self.client.post(url,{key:[self.image()]}).status_code,403)
-            self.assertEqual(self.client.post(url,{'csrfmiddlewaretoken':self.csrf}).status_code,403 if url==custom else 400)
+            self.assertEqual(self.client.post(url,{'group':'Civil','csrfmiddlewaretoken':self.csrf}).status_code,403 if url==custom else 400)
 
     def test_submitted_or_approved_section_blocks_upload_without_changing_records(self):
         custom=reverse('custom_checklist_upload',args=[self.survey.pk,'inspection'])
@@ -95,7 +95,7 @@ class EngineerMultipartUploadTests(TestCase):
         from unittest.mock import patch
         from .template_views import survey_access as real_access
         import json
-        response=self.client.post(reverse('photo_upload',args=[self.survey.pk]),{'files':[self.image()],'csrfmiddlewaretoken':self.csrf})
+        response=self.client.post(reverse('photo_upload',args=[self.survey.pk]),{'group':'Civil','files':[self.image()],'csrfmiddlewaretoken':self.csrf})
         self.assertEqual(response.status_code,201)
         photo=PhotoEvidence.objects.get(pk=response.json()['photos'][0]['id'])
         original_bytes=Path(photo.original.path).read_bytes()
