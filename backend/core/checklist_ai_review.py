@@ -186,6 +186,15 @@ def state(request,checklist_id):
 @require_POST
 def request_review(request,checklist_id):
     c,role=access(request,checklist_id,mutate=True)
+    # Retained photo caches are not evidence that the current opted-in survey
+    # was submitted. Additional critique must not start a separate inference
+    # path before its canonical survey analysis has finished.
+    from . import survey_processing as pipeline
+    if pipeline.enabled(c):
+        signature=pipeline.digest(pipeline.freeze_data(c))
+        candidates=c.processing_revisions.filter(processing_job__status='ready_for_review').only('pk','digest').order_by('-number')
+        if not any(pipeline.matches_revision(revision,signature) for revision in candidates):
+            return JsonResponse({'error':'Submit this survey for AI Analysis and wait for its current analysis to finish before requesting an additional review.'},status=409)
     try:
         data=snapshot(c)
     except ValidationError:

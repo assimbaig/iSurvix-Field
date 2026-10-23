@@ -1,0 +1,11 @@
+<section class="engineer-checkpoint-card engineer-legacy-submit" id="engineer-submit-photos" hidden>
+  <h2>Submit photos for AI Analysis</h2>
+  <p id="engineer-legacy-summary">Finish your checklist answers and uploads before submitting the photos for analysis.</p>
+  <form id="engineer-legacy-analysis-form">
+    <label class="engineer-completion-check"><input type="checkbox" id="engineer-uploads-complete" required> I checked that all intended photos are uploaded and my answers are saved.</label>
+    <button type="submit" id="engineer-start-analysis" class="photo-primary-link">Submit photos for AI Analysis</button>
+  </form>
+  <p id="engineer-legacy-status" role="status" aria-live="polite"></p>
+  <div id="engineer-analysis-summary"></div>
+  <form id="engineer-send-for-review" method="post" action="{% url 'custom_checklist_submit' checklist.pk %}">{% csrf_token %}<input type="hidden" name="return_to" value="{% url 'photo_workspace' checklist.pk %}"><p>Review the AI proposals and evidence links. When your checklist is complete, send it to the assigned QA Engineer.</p><button type="submit" id="engineer-send-qa" class="photo-primary-link">Send to QA review</button></form>
+</section>

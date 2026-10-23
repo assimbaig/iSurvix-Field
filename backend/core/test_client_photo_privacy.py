@@ -2,6 +2,7 @@
 import hashlib
 import json
 import tempfile
+from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
@@ -139,6 +140,46 @@ class ClientPhotoPrivacyTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(b''.join(response.streaming_content), self.original)
         response.close()
+
+    def test_client_matching_panel_is_hidden_but_original_evidence_remains_accessible(self):
+        """A read-only recipient inspects sources without a misleading mapping task."""
+        class ElementsById(HTMLParser):
+            def __init__(self, text):
+                super().__init__()
+                self.elements = {}
+                self.feed(text)
+
+            def handle_starttag(self, tag, attrs):
+                attributes = dict(attrs)
+                if attributes.get('id'):
+                    self.elements[attributes['id']] = attributes
+
+        response = self.client.get(reverse('photo_workspace', args=[self.checklist.pk]))
+        self.assertEqual(response.status_code, 200)
+        elements = ElementsById(response.content.decode()).elements
+        panel = elements['photo-batch-matches']
+        self.assertIn('hidden', panel)
+        self.assertIn('display:none!important', panel.get('style', '').replace(' ', ''))
+        # Retain the actual source-photo surface rather than hiding all evidence.
+        self.assertNotIn('hidden', elements['photo-evidence-details'])
+        self.assertIn('photo-thumbs', elements)
+        self.assertIn('photo-original', elements)
+        state = self.client.get(reverse('photo_state', args=[self.checklist.pk]))
+        self.assertEqual(state.status_code, 200)
+        self.assert_private_markers_absent(state.json())
+        self.assertEqual([photo['id'] for photo in state.json()['photos']], [self.photo.pk])
+        original = self.client.get(state.json()['photos'][0]['original_url'])
+        self.assertEqual(original.status_code, 200)
+        self.assertEqual(b''.join(original.streaming_content), self.original)
+        original.close()
+        for actor in (self.engineer, self.lead):
+            with self.subTest(role=actor.profile.role):
+                self.client.force_login(actor)
+                staff = self.client.get(reverse('photo_workspace', args=[self.checklist.pk]))
+                self.assertEqual(staff.status_code, 200)
+                staff_panel = ElementsById(staff.content.decode()).elements['photo-batch-matches']
+                self.assertNotIn('hidden', staff_panel)
+                self.assertNotIn('display:none', staff_panel.get('style', ''))
 
     def test_engineer_and_team_lead_keep_internal_review_data(self):
         for actor in (self.engineer, self.lead):

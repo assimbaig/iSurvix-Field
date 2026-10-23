@@ -2,7 +2,7 @@
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-import json,tempfile
+import json,tempfile,subprocess
 from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -159,3 +159,32 @@ class ChecklistEditorTests(TestCase):
         self.save(definition,template=self.default)
         self.default.refresh_from_db();self.assertEqual(self.default.definition,original)
         self.assertContains(self.page(self.default),'data-locked="true"')
+
+    def test_refine_draft_activity_sections_preserves_field_rules_and_history(self):
+        definition=deepcopy(self.definition)
+        definition['sections'][0]['fields'].append({'id':'retained_civil','label':'Retained original checkpoint','type':'text'})
+        script="""
+const assert=require('node:assert/strict');
+const State=require('./backend/static/core/js/checklist_editor_state.js');
+const original=JSON.parse(process.argv[1]); const model=new State(original);
+const before=JSON.stringify(model.field('unique_civil').field);
+model.moveField('unique_civil','power');
+assert.equal(model.field('unique_civil').section.id,'power');
+assert.equal(JSON.stringify(model.field('unique_civil').field),before);
+assert.throws(()=>model.moveField('unique_other','power'),/Keep one checkpoint/);
+assert.throws(()=>model.moveField('unique_civil','not_a_section'),/existing section/);
+assert.throws(()=>new State(original,true).moveField('unique_civil','power'),/protected/);
+process.stdout.write(JSON.stringify(model.schema));
+"""
+        root=Path(__file__).resolve().parents[2]
+        result=subprocess.run(['node','-e',script,json.dumps(definition)],cwd=root,capture_output=True,text=True,check=True)
+        moved=json.loads(result.stdout);validate_definition(moved)
+        previous_schema=deepcopy(self.survey.schema_snapshot);previous_answers=deepcopy(self.survey.answer_data)
+        self.assertEqual(self.save(moved).status_code,302)
+        self.selected.refresh_from_db();self.survey.refresh_from_db()
+        location=next(s for s in self.selected.definition['sections'] if any(f['id']=='unique_civil' for f in s['fields']))
+        self.assertEqual(location['id'],'power')
+        field=next(f for f in location['fields'] if f['id']=='unique_civil')
+        self.assertEqual(field,self.definition['sections'][0]['fields'][0])
+        self.assertEqual(self.survey.schema_snapshot,previous_schema)
+        self.assertEqual(self.survey.answer_data,previous_answers)

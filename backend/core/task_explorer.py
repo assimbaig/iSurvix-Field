@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q,F,Value,CharField
+from django.db.models import Q,F,Value,CharField,OuterRef,Subquery
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -18,6 +18,14 @@ from .access import accessible_projects,role_for,is_super_admin
 
 FIELDS=['task_pk','task_site','task_project_id','task_project','task_user_id','task_user','task_status','task_module','task_created','task_updated','task_description','task_kind']
 SORTS={'updated':('-task_updated','task_kind','task_pk'),'oldest':('task_created','task_kind','task_pk'),'site':('task_site','task_kind','task_pk'),'project':('task_project','task_site','task_kind','task_pk'),'status':('task_status','task_site','task_kind','task_pk'),'site_desc':('-task_site','task_kind','task_pk'),'project_desc':('-task_project','task_site','task_pk'),'status_desc':('-task_status','task_site','task_pk'),'module':('task_module','task_site','task_pk'),'module_desc':('-task_module','task_site','task_pk')}
+
+ENGINEER_WORK_BUCKETS={
+    'pending':('Pending',('DRAFT','PENDING','IN_PROGRESS')),
+    'submitted':('Submitted',('SUBMITTED','REVIEW','PARTIAL','CLIENT_REVIEW')),
+    'returned':('Returned / rejected',('REJECTED',)),
+    'completed':('Completed',('FINAL','COMPLETED')),
+}
+
 
 def scopes(user):
     role=role_for(user)
@@ -39,6 +47,7 @@ def scopes(user):
     return projects,checklists,assignments
 
 class TaskFilters(forms.Form):
+    work=forms.ChoiceField(required=False,choices=[('','All tasks'),*[(key,value[0]) for key,value in ENGINEER_WORK_BUCKETS.items()]],widget=forms.HiddenInput)
     q=forms.CharField(required=False,max_length=200,label='Search',widget=forms.TextInput(attrs={'placeholder':'Site, project or description'}))
     industry=forms.ChoiceField(required=False)
     project=forms.ModelChoiceField(queryset=Checklist.objects.none(),required=False)
@@ -48,8 +57,9 @@ class TaskFilters(forms.Form):
     date_to=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}),label='Created through')
     module=forms.ChoiceField(required=False,choices=[('','All modules'),*Checklist.WorkflowType.choices,('unclassified','Unclassified assignment')])
     sort=forms.ChoiceField(required=False,choices=[('updated','Recently updated'),('oldest','Oldest first'),('site','Site ID'),('project','Project'),('status','Stored status'),('site_desc','Site ID descending'),('project_desc','Project descending'),('status_desc','Status descending'),('module','Module'),('module_desc','Module descending')])
-    def __init__(self,*args,projects,checklists,assignments,client=False,**kwargs):
+    def __init__(self,*args,projects,checklists,assignments,client=False,engineer=False,**kwargs):
         super().__init__(*args,**kwargs)
+        if not engineer:self.fields.pop('work')
         self.fields['project'].queryset=projects.order_by('name')
         self.fields['industry'].choices=[('','All assigned industries'),*IndustryCatalog.objects.filter(code__in=projects.values_list('industry',flat=True)).values_list('code','name')]
         statuses=dict([*Checklist.Status.choices,*WorkAssignment.Status.choices])
@@ -69,6 +79,8 @@ def filtered_rows(checklists,assignments,data,client=False):
     checklists=checklists.order_by().annotate(task_pk=F('pk'),task_site=F('site_id'),task_project_id=F('project_id'),task_project=F('project__name'),task_user_id=F('user_id'),task_user=F('user__username'),task_status=F('status'),task_module=F('workflow_type'),task_created=F('created_at'),task_updated=F('updated_at'),task_description=Value('',output_field=CharField()) if client else Coalesce('work_assignment__description',Value(''),output_field=CharField()),task_kind=Value('checklist',output_field=CharField()))
     assignments=assignments.order_by().annotate(task_pk=F('pk'),task_site=F('site_id'),task_project_id=F('project_id'),task_project=F('project__name'),task_user_id=F('assigned_to_id'),task_user=F('assigned_to__username'),task_status=F('status'),task_module=Value('',output_field=CharField()),task_created=F('created_at'),task_updated=F('created_at'),task_description=F('description'),task_kind=Value('assignment',output_field=CharField()))
     def apply(query):
+        if data.get('work') in ENGINEER_WORK_BUCKETS:
+            query=query.filter(task_status__in=ENGINEER_WORK_BUCKETS[data['work']][1])
         if data.get('industry'):query=query.filter(project__industry=data['industry'])
         if data.get('q'):
             term=data['q'].strip()
@@ -101,10 +113,11 @@ def csv_cell(value):
 def explorer(request):
     projects,checklists,assignments=scopes(request.user)
     client=role_for(request.user)==Profile.Roles.CLIENT
+    engineer=role_for(request.user)==Profile.Roles.ENGINEER
     if client and request.GET.get('assignee'):raise PermissionDenied('Client task views do not expose personnel filters.')
     form_data=request.GET.copy()
     if form_data.get('project')=='all':form_data['project']=''
-    form=TaskFilters(form_data,projects=projects,checklists=checklists,assignments=assignments,client=client)
+    form=TaskFilters(form_data,projects=projects,checklists=checklists,assignments=assignments,client=client,engineer=engineer)
     valid=form.is_valid()
     data=dict(form.cleaned_data) if valid else {}
     if request.GET.get('selected'):
@@ -124,11 +137,30 @@ def explorer(request):
         return response
     page=Paginator(rows,25).get_page(request.GET.get('page'))
     ids=[row['task_pk'] for row in page if row['task_kind']=='checklist']
-    objects={c.pk:c for c in checklists.filter(pk__in=ids).select_related('project','review_policy__current_revision','review_route_record','work_assignment')}
+    checklist_page=checklists.filter(pk__in=ids)
+    if engineer:
+        from .survey_processing_models import SurveyProcessingJob
+        from .models import PhotoJob
+        latest_job=SurveyProcessingJob.objects.filter(revision__checklist_id=OuterRef('pk')).order_by('-revision__number')
+        legacy_job=PhotoJob.objects.filter(checklist_id=OuterRef('pk')).order_by('-pk')
+        checklist_page=checklist_page.annotate(latest_ai_status=Subquery(latest_job.values('status')[:1]),latest_photo_status=Subquery(legacy_job.values('status')[:1]))
+    objects={c.pk:c for c in checklist_page.select_related('project','review_policy__current_revision','review_route_record','work_assignment')}
     back=reverse('task_explorer')+('?' + request.GET.urlencode() if request.GET else '')
     for row in page:
         c=objects.get(row['task_pk']) if row['task_kind']=='checklist' else None
         if c:
+            if engineer:
+                row['ai_status_label']={
+                    'queued':'AI Analysis queued',
+                    'analysing_evidence':'AI Analysis in progress',
+                    'preparing_checklist':'Preparing checklist proposals',
+                    'preparing_drawings':'Preparing draft drawings',
+                    'ready_for_review':'AI results ready - Engineer review next',
+                    'failed':'AI Analysis needs attention',
+                }.get(getattr(c,'latest_ai_status',None),'')
+                if not row['ai_status_label']:
+                    row['ai_status_label']={'queued':'Photo AI Analysis queued','running':'Photo AI Analysis in progress',
+                        'completed':'Saved photo AI results - review links','failed':'Photo AI Analysis needs attention'}.get(getattr(c,'latest_photo_status',None),'')
             row['stage']=c.workflow_label
             from .task_presentation import workflow_steps
             row['workflow_steps']=workflow_steps(c)
@@ -152,7 +184,13 @@ def explorer(request):
         return '?'+parameters.urlencode()
     status_counts=[]
     module_tabs=[]
+    engineer_task_buckets=[]
     if valid:
+        if engineer:
+            bucket_base={**data,'status':'','work':''}
+            engineer_task_buckets=[{'label':'All tasks','count':filtered_rows(checklists,assignments,bucket_base,client).count(),'url':filter_link(work='',status=''),'active':not data.get('work')}]
+            for key,(label,statuses) in ENGINEER_WORK_BUCKETS.items():
+                engineer_task_buckets.append({'label':label,'count':filtered_rows(checklists,assignments,{**bucket_base,'work':key},client).count(),'url':filter_link(work=key,status=''),'active':data.get('work')==key})
         all_status={**data,'status':''}
         status_counts=[{'label':'All statuses','count':filtered_rows(checklists,assignments,all_status,client).count(),'url':filter_link(status=''),'active':not data.get('status')}]
         for value,label in form.fields['status'].choices[1:]:
@@ -172,6 +210,7 @@ def explorer(request):
     create_query={'return_to':back}
     if data.get('project'):create_query['project']=data['project'].pk
     response=render(request,'dashboards/task_explorer.html',{'sort_aria':sort_aria,'active_view':'tasks','selected_project_id':str(data['project'].pk) if data.get('project') else '', 'selected_industry':data.get('industry',''),'status_counts':status_counts,'module_tabs':module_tabs,'sort_links':sort_links,'form':form,'page_obj':page,'filter_query':query.urlencode(),'export_query':export_query.urlencode(),'is_client':client,'total':page.paginator.count,
+        'is_engineer':engineer,'engineer_task_buckets':engineer_task_buckets,
         'can_create_tasks':role_for(request.user) in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD},'create_task_url':reverse('task_create')+'?'+urlencode(create_query)})
     response['Cache-Control']='private, no-store'
     return response

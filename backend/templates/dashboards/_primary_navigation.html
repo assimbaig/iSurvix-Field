@@ -6,6 +6,8 @@
 <a href="{% url 'governance_home' %}?view=clients" {% if active_view == 'clients' %}aria-current="page"{% endif %}>Clients</a>
 <a href="{% url 'governance_home' %}?view=projects&amp;industry={{ industry|urlencode }}" {% if active_view == 'projects' %}aria-current="page"{% endif %}>Projects</a>
 <a href="{% url 'governance_home' %}?view=sites&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope }}" {% if active_view == 'sites' %}aria-current="page"{% endif %}>Sites</a>
+{% elif role_design.role == 'ENGINEER' %}
+<a href="{% url 'task_explorer' %}?project={{ project_scope|default:'all' }}" {% if active_view == 'tasks' or active_view == 'my_work' %}aria-current="page"{% endif %}>My tasks</a>
 {% else %}
 <a href="{% url 'task_explorer' %}?project={{ project_scope|default:'all' }}" {% if active_view == 'tasks' or checklist or role_design.role == 'ENGINEER' and active_view == 'my_work' %}aria-current="page"{% endif %}>{% if role_design.role == 'ENGINEER' %}My tasks{% else %}Tasks{% endif %}</a>
 {% if role_design.role != 'ENGINEER' %}<a href="{% url 'governance_home' %}?view=my_work&amp;industry={{ industry|urlencode }}&amp;project={{ project_scope|default:'all' }}" {% if active_view == 'my_work' or not active_view and not checklist %}aria-current="page"{% endif %}>Overview</a>{% endif %}

@@ -407,6 +407,28 @@
       ['sp-release', root.dataset.canRelease === 'true' && isReady && !array(revision?.drawings).some(drawing => drawing.released && drawing.current !== false) && (revision?.can_release === true || state.can_release === true || permissions.can_release === true)]
     ]) if (byId(id)) byId(id).disabled = busy || stateStale || !allowed;
     const active = activeStatuses.has(statusKey(state.active?.status));
+    const forward = byId('sp-forward-form');
+    if (forward) {
+      if (root.dataset.isEngineer === 'true' && forward.previousElementSibling !== root.querySelector('.sp-process')) {
+        root.querySelector('.sp-process')?.after(forward);
+        forward.classList.add('engineer-primary-next');
+      }
+      forward.hidden = !(revision?.engineer_complete && revision?.current !== false && root.dataset.canSubmit === 'true');
+      const button = byId('sp-forward-qa'); if (button) button.disabled = busy || stateStale || !revision?.engineer_complete;
+    }
+    if (root.dataset.isEngineer === 'true') {
+      const intake = root.querySelector('.engineer-submission-primary'), current = Boolean(revision && revision.current !== false);
+      if (intake) intake.hidden = current && (isReady || active);
+      let next = byId('sp-engineer-next');
+      if (!next) { next = node('p', '', 'sp-engineer-next'); next.id = 'sp-engineer-next'; next.setAttribute('role', 'status'); root.querySelector('.sp-process')?.append(next); }
+      next.textContent = stateStale ? 'Saved state is unavailable. Refresh before continuing.'
+        : current && revision?.engineer_complete ? 'Reviewed results are saved. Send the completed survey to QA using the action below.'
+        : current && isReady ? 'AI results are ready. Review the checklist proposals, then apply your reviewed results.'
+        : current && active ? 'Submitted for AI Analysis. Wait for the results, then complete your Engineer review.'
+        : current && statusKey(revision?.status) === 'failed' ? 'AI Analysis failed. Use Retry failed processing above; submit a new revision only if the site inputs changed.'
+        : revision && !current ? 'The selected revision does not match the current site inputs. Submit the saved changes as a new revision.'
+        : 'Finish the checklist and uploads, then submit once to start AI Analysis.';
+    }
     const submit = byId('sp-submit-form')?.querySelector('button'); if (submit) submit.disabled = busy || stateStale || active || Boolean(state.upload_state?.inflight);
     const upload = byId('sp-document-form')?.querySelector('button'); if (upload) upload.disabled = busy || stateStale;
     root.querySelectorAll('#sp-upload-sessions button').forEach(button => { button.disabled = busy || stateStale || button.dataset.allowed !== 'true'; });
@@ -714,7 +736,7 @@
   byId('sp-submit-form')?.addEventListener('submit', async event => {
     event.preventDefault();
     if (!event.target.reportValidity()) return;
-    const result = await action('submit', {uploads_finished: '1'}, 'Survey snapshot saved and AI processing queued.');
+    const result = await action('submit', {uploads_finished: '1'}, 'Submitted for AI Analysis. Engineer review is next; your work has not yet been sent to QA.');
     if (result) { selectedRevisionId = String(result.revision_id || result.revision?.id || state.active?.id || ''); geometryDirty = false; render(true); }
   });
   byId('sp-decision-form')?.addEventListener('submit', async event => {
@@ -723,7 +745,16 @@
     const reason = byId('sp-decision-reason').value.trim();
     if (decision === 'technical_reject' && !reason) { byId('sp-decision-reason').setCustomValidity('Explain the correction required before returning this revision.'); byId('sp-decision-reason').reportValidity(); return; }
     byId('sp-decision-reason').setCustomValidity('');
-    await action(decision === 'release' ? 'release' : 'review', {revision_id: selectedRevisionId, decision, reason}, decision === 'release' ? 'Approved outputs released.' : 'Review decision recorded.');
+    const result = await action(decision === 'release' ? 'release' : 'review', {revision_id: selectedRevisionId, decision, reason}, decision === 'release' ? 'Approved outputs released.' : 'Review decision recorded.');
+    if (result && !stateStale && decision === 'engineer_complete' && root.dataset.isEngineer === 'true') {
+      requestAnimationFrame(() => {
+        const next = byId('sp-forward-qa'), form = byId('sp-forward-form');
+        if (!stateStale && next && !next.disabled && form && !form.hidden) {
+          form.scrollIntoView({block: 'center', behavior: 'smooth'});
+          next.focus({preventScroll: true});
+        }
+      });
+    }
   });
   byId('sp-decision-reason')?.addEventListener('input', event => event.target.setCustomValidity(''));
   function uploadRequest(form, onProgress) {
