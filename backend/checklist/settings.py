@@ -76,6 +76,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Role navigation is shared by hosted and local workspaces.
+                # The context preserves LOCAL_AI_ENABLED without enabling inference.
+                'core.local_ai.local_context',
             ],
         },
     },
