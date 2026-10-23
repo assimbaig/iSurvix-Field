@@ -40,6 +40,8 @@ def digest(data):
 
 
 def enabled(checklist):
+    from .category_intake import enabled as intake_enabled
+    if intake_enabled(checklist): return True
     template = checklist.checklist_template
     return bool(checklist.workflow_type == Checklist.WorkflowType.TELECOM_SURVEY and template and template.published and template.checklist_required)
 
@@ -58,13 +60,21 @@ def access(request, checklist_id):
     technical = role == Profile.Roles.QUALITY_ENGINEER and c.quality_reviewer_id == actor.pk
     if c.governance_mode == 'independent' and hasattr(c, 'review_policy'):
         technical = role == Profile.Roles.QUALITY_ENGINEER and c.review_policy.l2_reviewer_id == actor.pk
+    from .category_intake import enabled as intake_enabled
+    if intake_enabled(c):
+        from .category_intake import access as intake_access
+        intake_access(request,checklist_id)
+        return c,{'can_submit':False,'can_review':False,'can_complete':False,
+            'can_technical_review':bool(technical),'can_release':role==Profile.Roles.TEAM_LEAD,'is_client':role==Profile.Roles.CLIENT}
     return c, {'can_submit': editable, 'can_review': editable, 'can_complete': editable,
         'can_technical_review': bool(technical), 'can_release': role == Profile.Roles.TEAM_LEAD,
         'is_client': role == Profile.Roles.CLIENT}
 
 
-def freeze_data(c):
+def freeze_data(c, category=True):
     """Only controlling data; workflow approval changes do not invalidate inputs."""
+    from .category_intake import enabled as intake_enabled, source_snapshot
+    if category and intake_enabled(c): return source_snapshot(c)
     return {
         'pipeline_version': PIPELINE_VERSION, 'id': c.pk, 'site_id': c.site_id,
         'assigned_engineer_id': c.user_id,
@@ -89,7 +99,8 @@ def matches_revision(revision, signature):
 
 def require_engineer_review(c):
     """Opt-in surveys cannot bypass the integrated review via an older submit URL."""
-    if not enabled(c):
+    from .category_intake import enabled as intake_enabled
+    if intake_enabled(c) or not enabled(c):
         return
     signature = digest(freeze_data(c))
     for revision in c.processing_revisions.filter(processing_job__status='ready_for_review'):
@@ -147,6 +158,8 @@ def submit(request, checklist_id, uploads_finished):
     with transaction.atomic():
         Checklist.objects.select_for_update().get(pk=checklist_id)
         c, flags = access(request, checklist_id)
+        from .category_intake import enabled as intake_enabled
+        if intake_enabled(c): raise PermissionDenied('Submit evidence through the category capture workspace; checklist and AI decisions belong to QA.')
         if not flags['can_submit']:
             raise PermissionDenied('Only the assigned Engineer may submit an editable survey.')
         validate_submission(c, uploads_finished)
@@ -193,6 +206,10 @@ def worker_guard(revision):
         raise ValidationError('The submitter no longer has the required project assignment.')
     if digest(revision.snapshot) != revision.digest:
         raise ValidationError('Submission integrity verification failed.')
+    from .category_intake import revision_enabled, configuration_error
+    if revision_enabled(revision):
+        if not current(revision): raise ValidationError('Submitted category evidence changed; return it for a new Engineer revision.')
+        if configuration_error(c): raise ValidationError(configuration_error(c))
 
 
 def claim():
@@ -373,6 +390,8 @@ def prepare_checklist(snapshot, reconciliation):
 
 
 def reviewed_payload(revision):
+    from .category_intake import revision_enabled, reviewed_payload as intake_payload
+    if revision_enabled(revision): return intake_payload(revision)
     result = revision.processing_result
     if digest(result.payload) != result.digest:
         raise ValidationError('Saved processing output failed integrity verification.')
@@ -581,7 +600,10 @@ def process_next():
             progress(job)
             if digest(result.payload) != result.digest:
                 raise ValidationError('Saved processing output failed integrity verification.')
-            render_drawing_set(job.revision, result.payload)
+            from .category_intake import revision_enabled
+            c=job.revision.checklist
+            drawing_scope=c.workflow_type==Checklist.WorkflowType.TELECOM_SURVEY and c.checklist_template_id and c.checklist_template.published and c.checklist_template.checklist_required
+            if not revision_enabled(job.revision) or drawing_scope:render_drawing_set(job.revision, result.payload)
         progress(job, 'ready_for_review', error='', lease_owner='', lease_until=None)
     except InferenceBusy:
         SurveyProcessingJob.objects.filter(pk=job.pk, lease_owner=job.lease_owner).update(status='queued', lease_owner='', lease_until=None)
@@ -609,9 +631,16 @@ def release_gate(revision, payload):
     signature = review_digest(payload)
     endorsed = revision.processing_events.filter(action='engineer_complete', payload__review_digest=signature).last()
     checked = revision.processing_events.filter(action='technical_approve', payload__review_digest=signature).last()
+    from .category_intake import revision_enabled,completion_event
+    capture=revision_enabled(revision)
+    if capture:
+        c=revision.checklist
+        if not (c.workflow_type==Checklist.WorkflowType.TELECOM_SURVEY and c.checklist_template_id and c.checklist_template.published and c.checklist_template.checklist_required):
+            return 'Drawing outputs are not enabled for this checklist type.'
+        endorsed=completion_event(revision)
     if not endorsed:
-        return 'The Engineer must complete review of this exact package.'
-    if not checked or checked.actor_id == endorsed.actor_id:
+        return 'The assigned QA Engineer must complete this exact package.' if capture else 'The Engineer must complete review of this exact package.'
+    if not checked or (not capture and checked.actor_id == endorsed.actor_id) or (capture and checked.actor_id!=endorsed.actor_id):
         return 'An independent assigned QA Engineer must approve this exact package.'
     c = Checklist.objects.get(pk=revision.checklist_id)
     checker = get_user_model().objects.select_related('profile').get(pk=checked.actor_id)
@@ -637,7 +666,11 @@ def review(request, checklist_id, revision_id, decision, ids=None, corrections=N
         Checklist.objects.select_for_update().get(pk=checklist_id)
         c, flags = access(request, checklist_id)
         revision = get_object_or_404(SurveyProcessingRevision.objects.select_for_update(), pk=revision_id, checklist=c)
-        if revision.processing_job.status != 'ready_for_review' or not current(revision):
+        from .category_intake import revision_enabled, require_qa_complete
+        if revision_enabled(revision):
+            if decision!='release':raise PermissionDenied('Checklist and AI decisions belong to the assigned QA evidence review workspace.')
+            require_qa_complete(c)
+        if (not revision_enabled(revision) and revision.processing_job.status != 'ready_for_review') or not current(revision):
             raise ValidationError('Review requires a completed current revision. Submit changed survey inputs again.')
         payload = reviewed_payload(revision)
         signature = review_digest(payload)

@@ -353,6 +353,8 @@ def custom_review(request, checklist_id):
 
 
 def survey_context(checklist, request):
+    from .category_intake import projected_checklist
+    checklist=projected_checklist(checklist)
     from django.urls import reverse
     from collections import defaultdict
     from .field_photo_service import placements
@@ -484,6 +486,8 @@ def custom_upload(request, checklist_id, field_id):
 @require_http_methods(['GET'])
 def custom_photo(request, checklist_id, field_id, index):
     checklist = survey_access(request, checklist_id)['checklist']
+    from .category_intake import projected_checklist
+    checklist=projected_checklist(checklist)
     paths = (checklist.image_data or {}).get(field_id, [])
     if index >= len(paths) or not default_storage.exists(paths[index]):
         raise Http404()
@@ -577,6 +581,8 @@ def custom_submit(request, checklist_id):
 @require_http_methods(['GET'])
 def custom_download(request, checklist_id):
     checklist = survey_access(request, checklist_id)['checklist']
+    from .category_intake import projected_checklist
+    checklist=projected_checklist(checklist)
     content = export_custom_excel(checklist)
     response = HttpResponse(content, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     from django.utils.text import slugify

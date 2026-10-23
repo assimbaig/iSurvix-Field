@@ -33,7 +33,16 @@ def route_context(actor,checklist):
     can_review=active and route.stage!='engineer'
     previous=STAGES[index-1] if index>0 else None
     following=STAGES[index+1] if 0<=index<route.layer_count-1 else None
-    return {'layers':route.layer_count,'stage':route.stage,'label':LABELS[route.stage],'mode':route.mode,'token':token_for(route,checklist),'can_act':can_review,'can_approve':can_review and route.mode=='review','can_reject':can_review and route.mode=='review','can_clarify':can_review and route.mode=='clarification' and following is not None,'can_return':can_review and route.mode=='clarification' and previous is not None,'previous_label':LABELS.get(previous,''),'next_label':LABELS.get(following,''),'events':route.events.select_related('actor').order_by('sequence')}
+    qa_review_required=False
+    qa_review_message=''
+    if can_review and route.stage=='quality_engineer':
+        from .category_intake import enabled as intake_enabled,require_qa_complete
+        if intake_enabled(checklist):
+            try:require_qa_complete(checklist)
+            except ValidationError:
+                qa_review_required=True
+                qa_review_message='Review and complete the current QA evidence package before approving or responding to this clarification.'
+    return {'layers':route.layer_count,'stage':route.stage,'label':LABELS[route.stage],'mode':route.mode,'token':token_for(route,checklist),'can_act':can_review,'can_approve':can_review and route.mode=='review' and not qa_review_required,'can_reject':can_review and route.mode=='review','can_clarify':can_review and route.mode=='clarification' and following is not None and not qa_review_required,'can_return':can_review and route.mode=='clarification' and previous is not None,'qa_review_required':qa_review_required,'qa_review_message':qa_review_message,'previous_label':LABELS.get(previous,''),'next_label':LABELS.get(following,''),'events':route.events.select_related('actor').order_by('sequence')}
 
 def _event(actor,checklist,route,from_stage,action,reason=''):
     route.generation+=1
@@ -82,8 +91,12 @@ def submit_route(actor,checklist):
     route=ReviewRoute.objects.select_for_update().get(checklist=checklist)
     if route.stage!='engineer' or not _actor_allowed(actor,checklist,route):raise PermissionDenied('Only the current assigned Engineer may submit this correction.')
     if checklist.status not in {Checklist.Status.DRAFT,Checklist.Status.REJECTED}:raise ValidationError('This task is not in Engineer preparation.')
-    _valid_reviewers(checklist,route);require_qualified_template(checklist)
-    missing=missing_required(checklist)
+    _valid_reviewers(checklist,route)
+    from .category_intake import enabled as intake_enabled, validate_handoff
+    if intake_enabled(checklist):
+        validate_handoff(checklist);missing=[]
+    else:
+        require_qualified_template(checklist);missing=missing_required(checklist)
     if missing:raise ValidationError('Complete required fields: '+', '.join(missing))
     policy=policy_for(checklist)
     if not policy or policy.current_revision_id!=route.revision_id:raise ValidationError('The frozen review policy changed.')
@@ -115,8 +128,14 @@ def act_on_route(actor,checklist,action,reason='',expected_token=None):
     if route.mode=='review' and action not in {'approve','reject'} or route.mode=='clarification' and action not in {'clarify','return'}:raise ValidationError('Use the action available at the current review or clarification stage.')
     if action in {'approve','clarify'}:
         _check_digest(checklist,route);require_no_blocking_findings(checklist)
+        from .category_intake import enabled as intake_enabled, record_qa_approval
+        if intake_enabled(checklist) and before=='quality_engineer':record_qa_approval(checklist,actor)
     if action in {'reject','return'}:
         route.stage=STAGES[index-1];route.mode='clarification'
+        from .category_intake import enabled as intake_enabled,current_revision
+        if intake_enabled(checklist) and route.stage=='quality_engineer':
+            from .survey_processing_models import SurveyProcessingEvent
+            SurveyProcessingEvent.objects.create(revision=current_revision(checklist),actor=actor,action='qa_reopen',reason=reason.strip())
     else:
         route.stage=STAGES[index+1] if index<route.layer_count-1 else 'closed';route.mode='review'
     if action=='approve':

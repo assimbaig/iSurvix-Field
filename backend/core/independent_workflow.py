@@ -61,6 +61,11 @@ def content_snapshot(checklist):
     # Model-managed originals are never overwritten; retain authenticated source paths
     # and their exact upload hashes, plus frozen confirmed many-to-many item links.
     photos=list(checklist.photo_evidence.order_by('pk').values('id','filename','sha256','original','metadata','uploaded_by_id','created_at'))
+    from .category_intake import enabled as intake_enabled,current_revision
+    intake_revision=current_revision(checklist) if intake_enabled(checklist) else None
+    if intake_revision:
+        captured={p['id']:p for p in intake_revision.snapshot['photos']}
+        photos=[{**photo,'group':captured[photo['id']].get('group','')} for photo in photos if photo['id'] in captured]
     placements=[]
     for photo in checklist.photo_evidence.order_by('pk'):
         placements.extend(photo.placements.filter(status__in=['manual','confirmed']).order_by('pk').values('photo_id','field_id','section_id','status','reviewed_by_id','reviewed_at'))
@@ -109,7 +114,7 @@ def content_snapshot(checklist):
     # Add provenance only for activities processed by the versioned pipeline;
     # legacy immutable snapshots retain their original representation.
     evidence=list(checklist.evidence_analyses.filter(photo__isnull=False).order_by('pk').values('id','photo_id','photo_sha256','schema_digest','rules_version','model_version','tool_version','prompt_version','payload_digest'))
-    if evidence:
+    if evidence and not intake_enabled(checklist):
         data['evidence_analysis']=evidence
     return json.loads(json.dumps(data,cls=DjangoJSONEncoder,sort_keys=True))
 
@@ -203,8 +208,11 @@ def submit_revision(actor,checklist):
     if policy.current_revision_id and revision_state(policy.current_revision) not in {'returned','customer_rejected'}:
         raise ValidationError('The current frozen revision has not been returned.')
     _roles_valid(checklist,_fresh_actor(policy.l2_reviewer),_fresh_actor(policy.l3_approver))
-    require_qualified_template(checklist)
-    missing=missing_required(checklist)
+    from .category_intake import enabled as intake_enabled, validate_handoff
+    if intake_enabled(checklist):
+        validate_handoff(checklist);missing=[]
+    else:
+        require_qualified_template(checklist);missing=missing_required(checklist)
     if missing:
         raise ValidationError('Complete required fields: '+', '.join(missing))
     snapshot=content_snapshot(checklist)
@@ -259,6 +267,9 @@ def review_revision(actor,checklist,revision_id,action,reason=''):
         if snapshot_digest(content_snapshot(checklist))!=revision.digest:
             raise ValidationError('Submitted inputs changed. Return this revision and submit a linked correction.')
         require_no_blocking_findings(checklist)
+    if action=='validate':
+        from .category_intake import record_qa_approval
+        record_qa_approval(checklist,actor)
     decision=RevisionDecision.objects.create(revision=revision,action=action,level='L2' if l2 else 'L3',actor=actor,reason=reason.strip())
     if action=='return':
         checklist.status=Checklist.Status.REJECTED

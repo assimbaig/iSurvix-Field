@@ -161,6 +161,8 @@ def declared_evidence_missing(checklist,field,links,record_cache):
     return result
 
 def missing_required(checklist, evidence_checklist=None):
+    from .category_intake import enabled as intake_enabled, missing_for_review
+    if intake_enabled(checklist):return missing_for_review(checklist)
     from .field_photo_service import confirmed_placements
     from .models import PhotoJob
     source=evidence_checklist or checklist

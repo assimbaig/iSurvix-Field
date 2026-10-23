@@ -23,7 +23,8 @@ from .survey_processing_models import SurveyUploadSession, SurveyUploadSessionEv
 def _access(request, checklist_id):
     from .survey_processing import access
     Checklist.objects.select_for_update().get(pk=checklist_id)
-    return access(request, checklist_id)
+    from .category_intake import access as capture_access
+    return capture_access(request, checklist_id)
 
 
 def _session(c, token):

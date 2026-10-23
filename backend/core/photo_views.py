@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.http import JsonResponse, FileResponse, HttpResponse
+from django.http import JsonResponse, FileResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -44,8 +44,11 @@ def track_survey_upload(view):
     def tracked(request, checklist_id):
         from .survey_processing import enabled
         from .survey_upload_sessions import upload_batch
-        c = survey_access(request, checklist_id, edit=True)['checklist']
-        if enabled(c):
+        from .access import role_for
+        from .category_intake import access as capture_access
+        capture=role_for(request.user)=='ENGINEER'
+        c = capture_access(request,checklist_id,edit=True)[0] if capture else survey_access(request, checklist_id, edit=True)['checklist']
+        if capture or enabled(c):
             with upload_batch(request, checklist_id, request.POST.get('processing_upload_token')) as session:
                 request._survey_upload_token = session.token
                 return view(request, checklist_id)
@@ -57,8 +60,10 @@ def track_survey_upload(view):
 @api_errors
 def processing_upload_session(request, checklist_id):
     from .survey_processing import enabled, upload_session
-    c = survey_access(request, checklist_id, edit=True)['checklist']
-    if not enabled(c):
+    from .category_intake import access as capture_access
+    from .access import role_for
+    c,flags=capture_access(request,checklist_id)
+    if not enabled(c) and role_for(request.user)!='ENGINEER' and not c.survey_upload_sessions.exists():
         return JsonResponse({'enabled': False})
     data = body(request)
     from . import survey_upload_sessions
@@ -69,6 +74,8 @@ def processing_upload_session(request, checklist_id):
         session = survey_upload_sessions.interrupt(request, checklist_id, data.get('token'))
     elif operation in {'start', 'finish'}:
         session = upload_session(request, checklist_id, data.get('token'))
+    elif operation == 'recover':
+        session=survey_upload_sessions.recover(request,checklist_id,data.get('token'),data.get('reason',''))
     else:
         raise ValidationError('Unknown upload session action.')
     return JsonResponse({'enabled': True, 'token': str(session.token)})
@@ -94,7 +101,12 @@ def client_photo_state(checklist):
     existing complete review data and source download authorization is unchanged.
     """
     from .field_photo_service import coverage, field_catalog, mapping_state, schema_digest
-    photos = list(checklist.photo_evidence.select_related('uploaded_by').order_by('pk'))
+    photo_query=checklist.photo_evidence.select_related('uploaded_by').order_by('pk')
+    from .category_intake import enabled as capture_enabled,current_revision
+    if capture_enabled(checklist):
+        revision=current_revision(checklist)
+        photo_query=photo_query.filter(pk__in=[p['id'] for p in revision.snapshot['photos']] if revision else [])
+    photos = list(photo_query)
     shared_photos = []
     for photo in photos:
         metadata = {key: photo.metadata[key] for key in
@@ -110,7 +122,28 @@ def client_photo_state(checklist):
     mappings = [{key: entry[key] for key in
                  ('id', 'photo_id', 'field_id', 'section_id', 'label', 'status', 'group')}
                 for entry in mapping_state(checklist) if entry['status'] in {'confirmed', 'manual'}]
+    allowed_photo_ids={photo.pk for photo in photos}
+    mappings=[mapping for mapping in mappings if mapping['photo_id'] in allowed_photo_ids]
     shared_coverage = coverage(checklist)
+    if capture_enabled(checklist) and revision:
+        from .category_intake import reviewed_payload
+        field_details={field['id']:(section['id'],field['label']) for section in revision.snapshot['schema'].get('sections',[]) for field in section['fields']}
+        confirmed={}
+        for item in reviewed_payload(revision)['checklist_items']:
+            if not item.get('accepted'):continue
+            ids=[]
+            for source in item.get('sources',[]):
+                ident=str(source.get('source_id',''))
+                if ident.startswith('photo:') and ident.split(':')[1].isdigit() and int(ident.split(':')[1]) in allowed_photo_ids:ids.append(int(ident.split(':')[1]))
+            confirmed[item['id']]=ids
+            for ident in ids:
+                section,label=field_details[item['id']]
+                mappings.append({'id':'qa:'+str(revision.pk)+':'+item['id']+':'+str(ident),'photo_id':ident,'field_id':item['id'],
+                    'section_id':section,'label':label,'status':'confirmed','group':next(photo.group for photo in photos if photo.pk==ident)})
+        for slot in shared_coverage['required']:
+            slot['photo_ids']=confirmed.get(slot['field_id'],[])
+            slot['status']='covered' if slot['photo_ids'] else 'missing'
+            if slot['photo_ids']:slot['evidence_requirements']=[]
     for slot in shared_coverage['required']:
         # Proposal identities and their presence are internal until a human
         # confirms a source link. Explicit saved requirements remain visible.
@@ -144,8 +177,22 @@ def fast_state(request,checklist_id):
 
 @require_GET
 def workspace(request, checklist_id):
+    from .access import role_for
+    from . import category_intake as capture
+    if role_for(request.user)=='ENGINEER':
+        c,flags=capture.access(request,checklist_id)
+        return render(request,'dashboards/engineer_capture.html',{'checklist':c,'can_edit':flags['can_edit'],
+            'capture_state_url':reverse('photo_capture_state',args=[c.pk]),'capture_submit_url':reverse('photo_capture_submit',args=[c.pk]),
+            'capture_category_url':reverse('photo_capture_category',args=[c.pk]),'capture_remove_url':reverse('photo_capture_remove',args=[c.pk]),
+            'upload_url':reverse('photo_upload',args=[c.pk]),'upload_session_url':reverse('photo_processing_upload_session',args=[c.pk])})
     access=survey_access(request,checklist_id)
     checklist=access['checklist']
+    if capture.enabled(checklist) and role_for(request.user)=='QUALITY_ENGINEER':
+        capture.access(request,checklist_id)
+        return render(request,'dashboards/qa_evidence_review.html',{'checklist':checklist,
+            'review_state_url':reverse('photo_capture_review_state',args=[checklist.pk]),
+            'review_action_url':reverse('photo_capture_review_action',args=[checklist.pk]),
+            'qa_approval_url':reverse('custom_checklist',args=[checklist.pk])})
     from .field_intake_service import site_information_fields
     from .access import role_for
     from .survey_processing import enabled
@@ -159,6 +206,8 @@ def state(request, checklist_id):
     access=survey_access(request,checklist_id)
     c=access['checklist']
     from .access import role_for
+    from .category_intake import state as capture_state
+    if role_for(request.user)=='ENGINEER':return JsonResponse(capture_state(request,checklist_id))
     if role_for(request.user)=='CLIENT':
         response=JsonResponse(client_photo_state(c))
         response['Cache-Control']='private, no-store'
@@ -178,9 +227,14 @@ def state(request, checklist_id):
 @api_errors
 @track_survey_upload
 def upload(request, checklist_id):
-    survey_access(request,checklist_id,edit=True)
+    from .access import role_for
+    from .category_intake import access as capture_access
+    def authorize():
+        return capture_access(request,checklist_id,edit=True)[0] if role_for(request.user)=='ENGINEER' else survey_access(request,checklist_id,edit=True)['checklist']
+    authorize()
     from .field_photo_service import GROUPS
     group=request.POST.get('group','')
+    if group=='General Info':group=''
     if group not in GROUPS:
         raise ValidationError('Leave the upload group empty, or choose Civil, Electrical or Tower.')
     files=request.FILES.getlist('files')
@@ -191,7 +245,7 @@ def upload(request, checklist_id):
         prepared=[(f,prepare_image(f)) for f in files]
         with transaction.atomic():
             c=Checklist.objects.select_for_update().get(pk=checklist_id)
-            survey_access(request,checklist_id,edit=True)
+            authorize()
             if getattr(request, '_survey_upload_token', None):
                 from .survey_upload_sessions import require_batch_open
                 require_batch_open(c, request._survey_upload_token)
@@ -206,6 +260,10 @@ def upload(request, checklist_id):
             for f,(raw,preview,digest,metadata,advisories) in prepared:
                 existing=c.photo_evidence.filter(sha256=digest).first()
                 if existing:
+                    excluded=list((c.intake_metadata or {}).get('category_intake_excluded',[]))
+                    if existing.pk in excluded:
+                        c.intake_metadata={**c.intake_metadata,'category_intake_excluded':[i for i in excluded if i!=existing.pk]}
+                        c.save(update_fields=['intake_metadata','updated_at'])
                     ids.append({'id':existing.pk,'duplicate':True})
                     continue
                 p=PhotoEvidence(checklist=c,uploaded_by=request.user,filename=f.name[:255],group=group,sha256=digest,metadata=metadata,advisories=advisories)
@@ -225,8 +283,15 @@ def upload(request, checklist_id):
 
 @require_GET
 def evidence(request,checklist_id,photo_id,variant):
-    c=survey_access(request,checklist_id)['checklist']
+    from .category_intake import access as capture_access
+    from .access import role_for
+    c=capture_access(request,checklist_id)[0] if role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER'} else survey_access(request,checklist_id)['checklist']
     p=get_object_or_404(PhotoEvidence,pk=photo_id,checklist=c)
+    from .category_intake import enabled as capture_enabled,current_revision
+    from .access import role_for
+    if capture_enabled(c) and role_for(request.user)=='CLIENT':
+        revision=current_revision(c)
+        if not revision or p.pk not in {photo['id'] for photo in revision.snapshot['photos']}:raise Http404()
     if variant not in {'original','preview'}:
         return HttpResponse(status=404)
     file=p.original if variant=='original' else p.preview
@@ -238,6 +303,8 @@ def evidence(request,checklist_id,photo_id,variant):
 @require_POST
 @api_errors
 def enqueue(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c=survey_access(request,checklist_id,edit=True)['checklist']
     from .survey_processing import enabled
     if enabled(c):
@@ -284,6 +351,8 @@ def enqueue(request,checklist_id):
 @require_POST
 @api_errors
 def retry(request,checklist_id,job_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     access=survey_access(request,checklist_id,edit=True)
     from .survey_processing import enabled
     if enabled(access['checklist']):
@@ -306,6 +375,8 @@ def retry(request,checklist_id,job_id):
 @require_POST
 @api_errors
 def accept(request,checklist_id,draft_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     survey_access(request,checklist_id,edit=True)
     try:
         with transaction.atomic():
@@ -371,6 +442,8 @@ def report(request,checklist_id):
 @require_POST
 @api_errors
 def mapping(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     survey_access(request,checklist_id,edit=True)
     from .field_photo_service import review_mappings,coverage
     data=body(request)
