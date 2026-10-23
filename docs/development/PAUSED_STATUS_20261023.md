@@ -1,5 +1,12 @@
 # Paused checkpoint - 23 October 2026, 22:23 local
 
+**Historical pause record.** The owner explicitly resumed at22:30 and authorized
+Ollama calls with repaired `qwen3.5:4b`. The application now has successful actual
+QA requests and a vision check against the repaired local service. Current final
+verification/delivery is recorded in `ENGINEER_GENERAL_INFORMATION.md` and the
+latest section of `docs/LOCAL_CODEX_HANDOFF.md`; the statuses below describe the
+saved pause checkpoint only.
+
 Owner instruction: **Save all current changes, pause execution, and report task
 status. Do not call Ollama until the owner confirms the repair is complete.**
 

@@ -26,18 +26,18 @@ The integration lead owns checkpoint, integration checks and release evidence.
 
 | Expected behavior | Method | Status |
 | --- | --- | --- |
-| General Info opens a data form without photo upload/gallery controls | Actual desktop/mobile browser | In progress |
-| Assigned identity/project/company/Engineer information comes from authorized system records | Django and browser prefill checks | In progress |
-| Available site data and approved general scalar fields prefill; absent/conflicting information remains honest | Real records and available photo capture details | In progress |
-| On-site entries, zero and deliberate blanks save and reload without being overwritten | Actual HTTP/database/browser checks | In progress |
-| GET does not write; only explicit Save/Submit persists values | Database/audit comparison | In progress |
-| Dirty entries survive navigation/upload refresh; failed saves retain inputs and block submission | Browser positive/negative scenarios | In progress |
-| Submission saves visible data and freezes the correct revision for QA | Engineer-to-QA saved-data scenario | In progress |
-| System identity, cross-project access, stale saves and submitted/approved locks remain enforced | Server negative regressions and HTTP checks | In progress |
-| Photo uploads/moves use Civil/Electrical/Tower; older blank-group files remain Uncategorised and intact | Actual upload/move and source hashes | In progress |
-| Existing multi-select/retry/viewer actions still work | Browser and existing regressions | In progress |
-| Saved General Info reaches the existing checklist/review/output path without inventing requirement IDs | Snapshot, QA payload and actual export | In progress |
-| Desktop/mobile controls remain readable, keyboard-accessible and free of clipping | Screenshots, DOM/console checks | In progress |
+| General Info opens a data form without photo upload/gallery controls | Actual desktop/mobile browser | Verified |
+| Assigned identity/project/company/Engineer information comes from authorized system records | Django and browser prefill checks | Verified |
+| Available site data and approved general scalar fields prefill; absent/conflicting information remains honest | Real records and available photo capture details | Verified |
+| On-site entries, zero and deliberate blanks save and reload without being overwritten | Actual HTTP/database/browser checks | Verified |
+| GET does not write; only explicit Save/Submit persists values | Database/audit comparison | Verified |
+| Dirty entries survive navigation/upload refresh; failed saves retain entries, and QA handoff waits for a confirmed Save or submit auto-save | Browser positive/negative scenarios | Verified |
+| Submission saves visible data and freezes the correct revision for QA | Engineer-to-QA saved-data scenario | Verified |
+| System identity, cross-project access, stale saves and submitted/approved locks remain enforced | Server negative regressions and HTTP checks | Verified |
+| Photo uploads/moves use Civil/Electrical/Tower; older blank-group files remain Uncategorised and intact | Actual upload/move and source hashes | Verified |
+| Existing multi-select/retry/viewer actions still work | Browser and existing regressions | Verified |
+| Saved General Info reaches the frozen QA source view; only QA-accepted answers reach the reviewed worksheet, without invented requirement IDs | Snapshot, QA payload and actual accepted-answer Excel export | Verified |
+| Desktop/mobile controls remain readable, keyboard-accessible and free of clipping | Screenshots, DOM/console checks | Verified |
 
 This change does not infer engineering values or approve work. Unknown measurements
 remain unknown, approved templates and historical submissions remain retained,
@@ -75,4 +75,46 @@ immutable submission were unchanged; no result was applied to the operational
 job or answers. This verifies that failure case, not an entire460-photo benchmark.
 
 An isolated worker-before-submission test is recorded in the final evidence;
-previously failed operational jobs retain their existing authorized retry action.
+previously failed operational jobs retain existing guarded retry/resubmission
+controls where their current workflow permits.
+
+## Independent final review
+
+The final upload-test failures were obsolete Engineer fixtures omitting a photo
+category. Three valid requests now explicitly use Civil; their original
+permission, duplicate, corrupt-batch, worker, stale-answer and lock assertions
+remain. A regression proves omitted Engineer categories are rejected and legacy
+non-Engineer inspection uploads retain their original blank-category behavior
+and bytes. The independent reviewer approved this policy-preserving test change;
+27 focused tests passed, with no product-policy relaxation.
+
+An additional isolated database/media export check performed General Info save,
+submission, explicit QA item acceptance and the actual Excel download. Opening
+the workbook verified all18 approved field labels, zero, deliberate blank,
+date/select, corrected contact/notes and canonical site ID. Engineer answers and
+the immutable submission stayed unchanged; no technical approval or model call
+was performed. Unaccepted reported fields correctly remained absent from the
+reviewed worksheet and available in the frozen QA source viewer. Receipt:
+`.local/engineer-general-info-20261023/general-info-export-result.json`.
+
+The returned-site browser journey passed39 checks with zero JavaScript errors;
+the first revision, source analyses, drawings and29 prior media hashes stayed
+unchanged after correction and a second submission. The QA assistant passed two
+actual browser calls/15 checks against repaired11434. Its counts were correct;
+one explanation conflated missing links with section approval, so the answer
+remains advisory. Server matching, confirmation and engineering acceptance are
+separate operations.
+
+## Final resumed verification
+
+Final full run: **929 tests passed in 308.208 seconds**, native exit0, zero failures/errors/skips, identical source fingerprints.
+
+Source SHA256: `a7f101315ee1b05ed6c39ed6fe60e6909ee9d106dfd4758cf1146fe7341e6ec0`.
+
+The owner explicitly resumed on23October after repairing Ollama. Repaired loopback11434 reports0.40.10 with local qwen3.5:4b vision. Actual scoped QA application requests and a browser Ask action returned complete200 answers; actual synthetic image input succeeded. No new model was downloaded. Text and photo URLs are explicitly configured to that repaired runtime for this run; the launcher retains its existing project-runtime option.
+
+The assistant now reports uploaded originals/current submission counts separately from confirmed field links. Internal QA can see Engineer-submitted General Info labelled Reported; Client context omits raw/unaccepted/private values. The assistant receives text/counts, not image pixels, and cannot approve work.
+
+Three HTTP return lifecycles cover current routed, legacy quality and pre-GeneralInfo snapshots. A read-only inspection of the reported operational task returned all460 original photos, editable/submittable Engineer flags and the correct Engineer return stage; no records were modified by that inspection. The existing return notice now links directly to retained photos, without hiding General Info drafts or changing evidence selection.
+
+Private receipts remain in `.local/engineer-general-info-20261023`, `.local/qa-ai-error-20261023` and `.local/qa-return-20261023`. They contain private test/session details and must not be uploaded wholesale. Final browser return and uploaded-count evidence is recorded alongside the final audit summary. Physical-device and whole-site accuracy/throughput acceptance is still outstanding.

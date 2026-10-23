@@ -114,7 +114,7 @@ class PhotoWorkflowTests(PhotoValidationTests):
         finally:self.client.force_login(self.user)
 
     def upload(self):
-        response = self.client.post(self.base+'upload/',{'files':[self.image()]})
+        response = self.client.post(self.base+'upload/',{'group':'Civil','files':[self.image()]})
         self.assertEqual(response.status_code,201,response.content)
         from .models import PhotoEvidence
         return PhotoEvidence.objects.get(pk=response.json()['photos'][0]['id'])
@@ -145,15 +145,36 @@ class PhotoWorkflowTests(PhotoValidationTests):
 
     def test_duplicate_atomic_invalid_batch_and_original_download(self):
         photo = self.upload()
-        response = self.client.post(self.base+'upload/',{'files':[self.image()]})
+        response = self.client.post(self.base+'upload/',{'group':'Civil','files':[self.image()]})
+        self.assertEqual(response.status_code,201,response.content)
         self.assertTrue(response.json()['photos'][0]['duplicate'])
         self.assertEqual(self.survey.photo_evidence.count(),1)
-        response = self.client.post(self.base+'upload/',{'files':[self.image(),SimpleUploadedFile('bad.png',b'bad')]})
+        response = self.client.post(self.base+'upload/',{'group':'Civil','files':[self.image(),SimpleUploadedFile('bad.png',b'bad')]})
         self.assertEqual(response.status_code,400)
         self.assertEqual(self.survey.photo_evidence.count(),1)
         response = self.client.get(self.base+f'evidence/{photo.pk}/original/')
         self.assertEqual(b''.join(response.streaming_content),self.image().read())
         self.assertEqual(response['Cache-Control'],'private, no-store')
+
+    def test_engineer_requires_photo_category_but_legacy_inspection_reviewer_upload_stays_compatible(self):
+        response=self.client.post(self.base+'upload/',{'files':[self.image()]})
+        self.assertEqual(response.status_code,409,response.content)
+        self.assertIn('site data',response.json()['error'])
+        self.assertFalse(self.survey.photo_evidence.exists())
+        photo=self.upload()
+        self.assertEqual(photo.group,'Civil')
+        # The role-specific capture policy does not reclassify or remove the
+        # retained blank-category upload contract for legacy review workflows.
+        inspection=Checklist.objects.create(project=self.project,user=self.user,
+            site_id='SYNTHETIC-INSPECTION',workflow_type=Checklist.WorkflowType.TELECOM_INSPECTION)
+        self.client.force_login(self.reviewer)
+        response=self.client.post(f'/local/photos/{inspection.pk}/upload/',{'files':[self.image()]})
+        self.assertEqual(response.status_code,201,response.content)
+        legacy=inspection.photo_evidence.get()
+        self.assertEqual(legacy.group,'')
+        with legacy.original.open('rb') as original:
+            self.assertEqual(original.read(),self.image().read())
+        self.assertFalse(inspection.photo_jobs.exists())
 
     def test_accept_explicit_once_keeps_approval_and_audit(self):
         job,draft = self.draft()

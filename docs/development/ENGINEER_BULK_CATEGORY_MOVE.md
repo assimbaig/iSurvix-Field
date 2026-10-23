@@ -1,3 +1,5 @@
+> Historical PR15 evidence. The General Info site-data correction and repaired Ollama11434 verification in `ENGINEER_GENERAL_INFORMATION.md` supersede the older photo destinations and runtime diagnosis below. Historical test counts are not current totals.
+
 # Engineer photo selection and bulk category move
 
 23 October 2026. Follow-up to PR15 on

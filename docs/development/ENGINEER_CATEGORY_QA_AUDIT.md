@@ -1,3 +1,5 @@
+> Historical PR15 evidence. The General Info site-data correction and repaired Ollama11434 verification in `ENGINEER_GENERAL_INFORMATION.md` supersede the older photo destinations and runtime diagnosis below. Historical test counts are not current totals.
+
 # Engineer category submission and QA matching: delivery audit
 
 23 October 2026. This is the focused Engineer/QA task, not a production security

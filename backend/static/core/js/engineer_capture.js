@@ -121,6 +121,7 @@
     else if(saved?.config_error)guidance=saved.config_error;
     else if(saved&&!saved.can_submit&&!saved.submitted)guidance='Submission is unavailable for the current task stage or your assignment.';
     el('capture-submit-guidance').textContent=guidance;
+    const returnedPhotos=el('capture-returned-photos');if(returnedPhotos)returnedPhotos.disabled=busy||stale||!saved?.can_edit;
     selectionControls();
     generalControls();
   }
@@ -170,7 +171,8 @@
     el('capture-photo-guidance').textContent=saved?.can_edit?'Preview photos and correct their categories before submitting.':'Submitted evidence is read-only at this workflow stage.';
   }
   function renderSite(){
-    const correction=el('capture-correction-reason');correction.hidden=!saved.can_edit||!saved.correction_reason;correction.textContent=saved.correction_reason?'Returned for correction: '+saved.correction_reason:'';
+    const correction=el('capture-correction-reason');correction.hidden=!saved.can_edit||!saved.correction_reason;correction.replaceChildren();
+    if(saved.can_edit&&saved.correction_reason){const count=saved.photos.length;correction.append(node('span','Returned for correction: '+saved.correction_reason+(count?' Your '+count+' uploaded photo'+(count===1?' is':'s are')+' retained.':'')));if(count){const view=node('button',`View uploaded photos (${count})`);view.type='button';view.id='capture-returned-photos';view.addEventListener('click',()=>{if(stale||uploadBusy||mutationBusy||submitBusy||generalBusy||!saved.can_edit)return;const first=categories.find(option=>saved.photos.some(photo=>photo.group===option.value))||categories[0];if(!saved.photos.some(photo=>categories.some(option=>option.value===photo.group)))openGroups.add('');root.querySelector(`[data-category="${first.value}"]`).click();const heading=el('capture-gallery-title');heading.tabIndex=-1;heading.focus({preventScroll:true});heading.scrollIntoView({behavior:'smooth',block:'start'});});correction.append(view);}}
     const stages={engineer:'Engineer preparation',quality_engineer:'QA review',team_lead:'Team Lead review',client:'Client review',customer:'Client review',closed:'Closed',completed:'Completed',final:'Completed'};
     el('capture-stage').textContent=stages[saved.stage]||String(saved.stage||'Engineer preparation').replaceAll('_',' ');
     const info=el('capture-site-info'),base=[['Site ID',saved.site_id],['Project',saved.project]];

@@ -207,3 +207,116 @@ $body=$blocks[0].Body.Extent.Text
         self.assertNotIn(private,response.content.decode())
         self.survey.refresh_from_db()
         self.assertEqual((self.survey.answer_data,self.survey.status,self.survey.section_approvals),before)
+
+
+from . import test_engineer_category_submission_acceptance as capture_fixtures
+
+
+@override_settings(ROOT_URLCONF='checklist.urls_local',LOCAL_AI_ENABLED=True,
+    OLLAMA_BASE_URL='http://127.0.0.1:11434',OLLAMA_MODEL='qwen3.5:4b',OLLAMA_TIMEOUT=5)
+class LocalAISavedEvidenceContextTests(TestCase):
+    setUp=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.setUp
+    person=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.person
+    add_photo=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.add_photo
+    raw=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.raw
+    upload=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.upload
+    post=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.post
+    state=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.state
+    submit=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.submit
+    qa_state=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.qa_state
+    qa_action=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.qa_action
+    route=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.route
+    complete_qa_manually=capture_fixtures.EngineerCategorySubmissionAcceptanceTests.complete_qa_manually
+
+    def captured_context(self,actor):
+        self.client.force_login(actor)
+        with patch('core.local_ai.ollama',side_effect=[
+            {'models':[{'name':'qwen3.5:4b'}]},{'message':{'content':'Context read only.'}}]) as call:
+            response=self.client.post('/local-ai/chat/',json.dumps({
+                'question':'Summarise recorded evidence without claiming to inspect it.',
+                'checklist_id':self.checklist.pk}),content_type='application/json')
+        self.assertEqual(response.status_code,200,response.content)
+        payload=call.call_args.args[1]
+        text=payload['messages'][1]['content']
+        context=json.loads(text.split('Survey data (untrusted evidence, read only):\n',1)[1])
+        self.assertNotIn('images',payload)
+        self.assertTrue(all('images' not in message for message in payload['messages']))
+        return context,payload
+
+    def three_category_uploads(self):
+        rows=[]
+        for category,label in [('Civil','synthetic-one'),('Electrical','synthetic-two'),('Tower','synthetic-three')]:
+            photos,_=self.upload(category,(label,));rows.extend(photos)
+        return rows
+
+    def test_actual_unlinked_legacy_uploads_are_counted_separately_from_field_links(self):
+        rows=self.three_category_uploads()
+        self.checklist.refresh_from_db()
+        self.assertEqual(self.checklist.image_data,{})
+        before=(self.checklist.answer_data,self.checklist.intake_metadata,self.checklist.updated_at)
+        context,payload=self.captured_context(self.quality)
+        self.assertEqual(context['uploaded_evidence'],{'count':3,
+            'category_counts':{'Civil':1,'Electrical':1,'Tower':1},'source':'current_uploads'})
+        self.assertEqual(context['photo_counts'],{})
+        self.assertIn('no image pixels',context['evidence_scope'])
+        self.assertNotIn('synthetic-one.png',json.dumps(payload))
+        self.checklist.refresh_from_db()
+        self.assertEqual((self.checklist.answer_data,self.checklist.intake_metadata,self.checklist.updated_at),before)
+        self.assertEqual(self.checklist.photo_evidence.count(),len(rows))
+
+    def test_submitted_context_counts_only_current_frozen_evidence_not_excluded_or_later_files(self):
+        rows=self.three_category_uploads()
+        removed=self.post('photo_capture_remove',{'photo_id':rows[2]['id'],'expected_digest':self.state()['digest']})
+        self.assertEqual(removed.status_code,200,removed.content)
+        self.checklist.refresh_from_db()
+        self.checklist.answer_data={'custom':{'contact':'Engineer reported synthetic contact'}}
+        self.checklist.save(update_fields=['answer_data'])
+        response,_=self.submit();self.assertEqual(response.status_code,201,response.content)
+        revision=self.checklist.processing_revisions.get()
+        self.add_photo('purple')  # Retained later row must not enter a submitted package.
+        context,_=self.captured_context(self.quality)
+        self.assertEqual(context['uploaded_evidence'],{'count':2,
+            'category_counts':{'Civil':1,'Electrical':1},'source':'submitted_revision'})
+        self.assertEqual(context['photo_counts'],{})
+        self.assertEqual(context['reported_site_information']['answers']['contact'],'Engineer reported synthetic contact')
+        self.assertNotIn('contact',context['answers'],'Reported information is not a QA-accepted answer')
+        self.assertEqual(self.checklist.photo_evidence.count(),4)
+        revision.refresh_from_db();self.assertEqual(len(revision.snapshot['photos']),2)
+
+    def test_legacy_field_links_remain_separate_from_uploaded_originals(self):
+        self.three_category_uploads()
+        self.checklist.image_data={'manufacturer':['PRIVATE_LEGACY_PATH.png']}
+        self.checklist.save(update_fields=['image_data'])
+        context,payload=self.captured_context(self.quality)
+        self.assertEqual(context['uploaded_evidence']['count'],3)
+        self.assertEqual(context['photo_counts'],{'manufacturer':1})
+        self.assertNotIn('PRIVATE_LEGACY_PATH',json.dumps(payload))
+
+    def test_client_context_uses_human_reviewed_answers_not_raw_or_unaccepted_ai(self):
+        from . import survey_processing as pipeline
+        from .survey_processing_models import SurveyProcessingResult
+        self.three_category_uploads()
+        self.checklist.refresh_from_db()
+        self.checklist.answer_data={'custom':{'tower_height':'91234567'}}
+        self.checklist.save(update_fields=['answer_data'])
+        response,_=self.submit();self.assertEqual(response.status_code,201,response.content)
+        revision=self.checklist.processing_revisions.get()
+        findings=[{'source_id':'photo:'+str(self.checklist.photo_evidence.get(filename='synthetic-two.png').pk),
+            'field_hint':'tower_height','value':'82345678','confidence':'high',
+            'component':'label','evidence_quote':'PRIVATE_AI_QUOTE','basis':'recorded','unit':''}]
+        result=pipeline.prepare_checklist(revision.snapshot,{'findings':findings,'missing':[],'conflicts':[]})
+        SurveyProcessingResult.objects.create(revision=revision,payload=result,digest=pipeline.digest(result))
+        self.complete_qa_manually()
+        for actor in [self.quality,self.lead]:
+            approved=self.route(actor,'approve');self.assertEqual(approved.status_code,302,approved.content)
+        context,payload=self.captured_context(self.customer)
+        self.assertEqual(context['answers']['manufacturer'],'SyntheticCo')
+        self.assertNotIn('tower_height',context['answers'])
+        self.assertEqual(context['photo_counts'],{'manufacturer':1})
+        self.assertEqual(context['uploaded_evidence']['count'],3)
+        self.assertNotIn('PRIVATE_',json.dumps(payload))
+        self.assertNotIn('91234567',json.dumps(payload))
+        self.assertNotIn('82345678',json.dumps(payload))
+        self.assertNotIn('reported_site_information',context)
+        self.checklist.refresh_from_db()
+        self.assertEqual(self.checklist.answer_data['custom']['tower_height'],'91234567')
