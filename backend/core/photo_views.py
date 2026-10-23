@@ -164,6 +164,8 @@ def client_photo_state(checklist):
 @require_GET
 @api_errors
 def fast_state(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c=survey_access(request,checklist_id)['checklist']
     from .access import role_for
     if role_for(request.user)=='CLIENT':return JsonResponse({'enabled':False})
@@ -185,14 +187,24 @@ def workspace(request, checklist_id):
             'capture_state_url':reverse('photo_capture_state',args=[c.pk]),'capture_submit_url':reverse('photo_capture_submit',args=[c.pk]),
             'capture_category_url':reverse('photo_capture_category',args=[c.pk]),'capture_remove_url':reverse('photo_capture_remove',args=[c.pk]),
             'upload_url':reverse('photo_upload',args=[c.pk]),'upload_session_url':reverse('photo_processing_upload_session',args=[c.pk])})
-    access=survey_access(request,checklist_id)
-    checklist=access['checklist']
-    if capture.enabled(checklist) and role_for(request.user)=='QUALITY_ENGINEER':
+    access=None
+    if role_for(request.user) in {'QUALITY_ENGINEER','TEAM_LEAD'}:
+        checklist,_=capture.access(request,checklist_id)
+    else:
+        access=survey_access(request,checklist_id)
+        checklist=access['checklist']
+    if capture.enabled(checklist) and role_for(request.user) in {'QUALITY_ENGINEER','TEAM_LEAD'}:
         capture.access(request,checklist_id)
         return render(request,'dashboards/qa_evidence_review.html',{'checklist':checklist,
             'review_state_url':reverse('photo_capture_review_state',args=[checklist.pk]),
             'review_action_url':reverse('photo_capture_review_action',args=[checklist.pk]),
-            'qa_approval_url':reverse('custom_checklist',args=[checklist.pk])})
+            'qa_approval_url':reverse('custom_checklist',args=[checklist.pk]),
+            'evidence_role_title':'Team Lead evidence review' if role_for(request.user)=='TEAM_LEAD' else 'QA evidence review',
+            'evidence_review_role':role_for(request.user),
+            'decision_label':'Team Lead decision & workflow' if role_for(request.user)=='TEAM_LEAD' else 'QA decision & workflow'})
+    if access is None:
+        access=survey_access(request,checklist_id)
+        checklist=access['checklist']
     from .field_intake_service import site_information_fields
     from .access import role_for
     from .survey_processing import enabled
@@ -285,7 +297,7 @@ def upload(request, checklist_id):
 def evidence(request,checklist_id,photo_id,variant):
     from .category_intake import access as capture_access
     from .access import role_for
-    c=capture_access(request,checklist_id)[0] if role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER'} else survey_access(request,checklist_id)['checklist']
+    c=capture_access(request,checklist_id)[0] if role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER','TEAM_LEAD'} else survey_access(request,checklist_id)['checklist']
     p=get_object_or_404(PhotoEvidence,pk=photo_id,checklist=c)
     from .category_intake import enabled as capture_enabled,current_revision
     from .access import role_for
@@ -295,7 +307,9 @@ def evidence(request,checklist_id,photo_id,variant):
     if variant not in {'original','preview'}:
         return HttpResponse(status=404)
     file=p.original if variant=='original' else p.preview
-    response=FileResponse(file.open('rb'),content_type='image/jpeg' if variant=='preview' else {'JPEG':'image/jpeg','PNG':'image/png','WEBP':'image/webp'}[p.metadata['format']],as_attachment=variant=='original',filename=p.filename if variant=='original' else 'preview.jpg')
+    if not file:raise Http404()
+    content_type='image/jpeg' if variant=='preview' else {'JPEG':'image/jpeg','PNG':'image/png','WEBP':'image/webp'}.get((p.metadata or {}).get('format'),'application/octet-stream')
+    response=FileResponse(file.open('rb'),content_type=content_type,as_attachment=variant=='original',filename=p.filename if variant=='original' else 'preview.jpg')
     response['Cache-Control']='private, no-store'
     response['X-Content-Type-Options']='nosniff'
     return response
@@ -414,6 +428,8 @@ def accept(request,checklist_id,draft_id):
 @require_GET
 @api_errors
 def report(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c=survey_access(request,checklist_id)['checklist']
     from .access import role_for
     if role_for(request.user)=='CLIENT':

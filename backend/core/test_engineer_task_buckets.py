@@ -43,26 +43,31 @@ class EngineerTaskBucketTests(TestCase):
         self.assertEqual(invalid.context['total'],0)
         self.assertIn('work',invalid.context['form'].errors)
 
-    def test_ai_intake_is_visible_without_manufacturing_qa_submission(self):
+    def test_ai_intake_does_not_assign_engineer_review_work(self):
         from .survey_processing_models import SurveyProcessingRevision,SurveyProcessingJob
         checklist=Checklist.objects.get(site_id='BUCKET-DRAFT')
         revision=SurveyProcessingRevision.objects.create(checklist=checklist,number=1,digest='a'*64,snapshot={},submitted_by=self.engineer)
         job=SurveyProcessingJob.objects.create(revision=revision,model='synthetic',status='queued')
         response=self.client.get(reverse('task_explorer'),{'work':'pending'})
         row=next(row for row in response.context['page_obj'] if row['task_site']=='BUCKET-DRAFT')
-        self.assertEqual(row['ai_status_label'],'AI Analysis queued')
+        self.assertNotIn('ai_status_label',row)
+        self.assertNotContains(response,'AI Analysis queued')
         self.assertEqual(row['task_status'],Checklist.Status.DRAFT)
         job.status='ready_for_review';job.save(update_fields=['status'])
         response=self.client.get(reverse('task_explorer'),{'work':'pending'})
         row=next(row for row in response.context['page_obj'] if row['task_site']=='BUCKET-DRAFT')
-        self.assertIn('Engineer review next',row['ai_status_label'])
+        self.assertNotIn('ai_status_label',row)
+        self.assertNotContains(response,'Engineer review next')
+        self.assertEqual(SurveyProcessingJob.objects.filter(revision=revision).count(),1)
         checklist.refresh_from_db();self.assertEqual(checklist.status,Checklist.Status.DRAFT)
 
-    def test_legacy_photo_submission_is_visible_without_changing_route(self):
+    def test_legacy_photo_job_does_not_change_engineer_tasks_or_route(self):
         from .models import PhotoJob
         checklist=Checklist.objects.get(site_id='BUCKET-DRAFT')
         PhotoJob.objects.create(checklist=checklist,requested_by=self.engineer,model='synthetic',schema={},status='queued')
         response=self.client.get(reverse('task_explorer'),{'work':'pending'})
         row=next(row for row in response.context['page_obj'] if row['task_site']=='BUCKET-DRAFT')
-        self.assertEqual(row['ai_status_label'],'Photo AI Analysis queued')
+        self.assertNotIn('ai_status_label',row)
+        self.assertNotContains(response,'Photo AI Analysis queued')
+        self.assertEqual(PhotoJob.objects.filter(checklist=checklist).count(),1)
         self.assertEqual(row['task_status'],Checklist.Status.DRAFT)

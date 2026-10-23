@@ -96,6 +96,8 @@ def _detail_token(c, latest):
 
 
 def serialize(request, checklist_id, compact=False):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c, flags = pipeline.access(request, checklist_id)
     current_digest = pipeline.digest(pipeline.freeze_data(c))
     revisions, pagination = [], {}
@@ -206,6 +208,8 @@ def serialize(request, checklist_id, compact=False):
 @require_GET
 @guarded
 def progress(request, checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     c, flags = pipeline.access(request, checklist_id)
     # Clients use the authorised released-output view. Processing drafts stay private.
     rows = [] if flags['is_client'] else [_summary(row) for row in _summaries(c)[:25]]

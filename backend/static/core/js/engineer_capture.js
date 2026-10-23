@@ -91,6 +91,7 @@
     el('capture-photo-guidance').textContent=saved?.can_edit?'Preview photos and correct their categories before submitting.':'Submitted evidence is read-only at this workflow stage.';
   }
   function renderSite(){
+    const correction=el('capture-correction-reason');correction.hidden=!saved.can_edit||!saved.correction_reason;correction.textContent=saved.correction_reason?'Returned for correction: '+saved.correction_reason:'';
     const stages={engineer:'Engineer preparation',quality_engineer:'QA review',team_lead:'Team Lead review',client:'Client review',customer:'Client review',closed:'Closed',completed:'Completed',final:'Completed'};
     el('capture-stage').textContent=stages[saved.stage]||String(saved.stage||'Engineer preparation').replaceAll('_',' ');
     const info=el('capture-site-info'),base=[['Site ID',saved.site_id],['Project',saved.project]];

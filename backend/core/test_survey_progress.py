@@ -45,7 +45,7 @@ class SurveyProgressTests(TestCase):
                 SurveyDrawingSet.objects.create(revision=revision, edition=edition, review_digest=pipeline.review_digest(payload),
                     geometry={'synthetic_only': True}, manifest={'sheets': [{'title': 'Synthetic sheet', 'number': 'SYN-01'}]})
             revisions.append(revision)
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.quality)
         return revisions
 
     def endpoint(self, name='state'):

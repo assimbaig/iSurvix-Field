@@ -61,28 +61,28 @@ class EngineerSubmissionSimplificationTests(TestCase):
         self.assertEqual(SurveyProcessingJob.objects.count(), 0)
         vision.assert_not_called()
         pipeline.upload_session(self.request(), self.checklist.pk, session.token)
-        response = self.client.post(reverse('survey_processing_action', args=[self.checklist.pk]),
-            {'action': 'submit', 'uploads_finished': 'true'})
+        digest=self.client.get(reverse('photo_capture_state',args=[self.checklist.pk])).json()['digest']
+        response = self.client.post(reverse('photo_capture_submit', args=[self.checklist.pk]),
+            json.dumps({'uploads_finished': True,'expected_digest':digest}),content_type='application/json')
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(self.checklist.processing_revisions.get().processing_job.status, 'queued')
         self.checklist.refresh_from_db()
-        self.assertEqual(self.checklist.status, Checklist.Status.DRAFT)
+        self.assertEqual(self.checklist.status, Checklist.Status.SUBMITTED)
 
     def test_opted_in_legacy_retry_cannot_start_ai_before_submission(self):
         retained = self.legacy_job()
         self.client.force_login(self.engineer)
         response = self.client.post(reverse('photo_retry', args=[self.checklist.pk, retained.pk]))
-        self.assertEqual(response.status_code, 409, response.content)
-        self.assertIn('Submit this survey', response.json()['error'])
+        self.assertEqual(response.status_code, 403, response.content)
         retained.refresh_from_db()
         self.assertEqual(retained.status, 'failed')
         self.assertEqual(retained.error, 'Retained failure')
         self.assertEqual(self.checklist.processing_revisions.count(), 0)
 
-    def test_excluded_survey_keeps_its_existing_retry_contract(self):
+    def test_excluded_survey_keeps_authorized_reviewer_retry_contract(self):
         self.exclude_processing()
         retained = self.legacy_job()
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         response = self.client.post(reverse('photo_retry', args=[self.checklist.pk, retained.pk]))
         self.assertEqual(response.status_code, 200, response.content)
         retained.refresh_from_db()
@@ -95,10 +95,8 @@ class EngineerSubmissionSimplificationTests(TestCase):
         job.status = 'failed'
         job.error = 'Synthetic stopped worker'
         job.save(update_fields=['status', 'error'])
-        self.client.force_login(self.engineer)
-        response = self.client.post(reverse('survey_processing_action', args=[self.checklist.pk]),
-            {'action': 'retry', 'revision_id': revision.pk})
-        self.assertEqual(response.status_code, 200, response.content)
+        # Retained service-level retry semantics survive the new HTTP policy.
+        pipeline.retry(self.request(),self.checklist.pk,revision.pk)
         job.refresh_from_db()
         self.assertEqual(job.status, 'queued')
         self.assertEqual(self.checklist.processing_revisions.count(), 1)
@@ -106,7 +104,7 @@ class EngineerSubmissionSimplificationTests(TestCase):
 
     def test_historical_photo_cache_does_not_enable_pre_submit_critical_ai(self):
         self.legacy_job('completed')
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         with patch('core.checklist_ai_review.inference_lease') as lease:
             response = self.client.post(reverse('checklist_ai_request', args=[self.checklist.pk]),
                 '{}', content_type='application/json')
@@ -118,7 +116,7 @@ class EngineerSubmissionSimplificationTests(TestCase):
     def test_queued_canonical_submission_cannot_be_bypassed_by_a_historical_cache(self):
         self.legacy_job('completed')
         pipeline.submit(self.request(), self.checklist.pk, True)
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         with patch('core.checklist_ai_review.inference_lease') as lease:
             response = self.client.post(reverse('checklist_ai_request', args=[self.checklist.pk]),
                 '{}', content_type='application/json')
@@ -127,7 +125,7 @@ class EngineerSubmissionSimplificationTests(TestCase):
 
     def test_additional_ai_review_can_start_after_current_canonical_analysis(self):
         self.ready()
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         from .local_ai import InferenceBusy
         with patch('core.checklist_ai_review.inference_lease', side_effect=InferenceBusy('Synthetic occupied lease')) as lease:
             response = self.client.post(reverse('checklist_ai_request', args=[self.checklist.pk]),
@@ -142,7 +140,7 @@ class EngineerSubmissionSimplificationTests(TestCase):
         self.checklist.refresh_from_db()
         self.checklist.answer_data['custom']['contact'] = 'A changed field input'
         self.checklist.save(update_fields=['answer_data'])
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         with patch('core.checklist_ai_review.inference_lease') as lease:
             response = self.client.post(reverse('checklist_ai_request', args=[self.checklist.pk]),
                 '{}', content_type='application/json')

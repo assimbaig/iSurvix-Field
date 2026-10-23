@@ -1,0 +1,441 @@
+{
+  "date": "2026-10-23",
+  "branch": "fix/engineer-category-qa-intake-20261023",
+  "baseline": "6b6ce6ee3d7b808f8fef80a4c58826158863ecb4",
+  "checkpoint": ".local/backups/project-checkpoint-20261023-194306",
+  "requirements": [
+    {
+      "id": "engineer_screen",
+      "expected_behavior": "Existing task/site info, four categories, multi-photo upload, category-grouped thumbnails and a single Submit to QA action.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Saved-data desktop/mobile capture shows task, categories, upload/retry, previews and one Submit to QA action."
+    },
+    {
+      "id": "no_engineer_matching",
+      "expected_behavior": "Engineer UI and new-intake mutation APIs exclude checklist matching, confidence, unmatched queues and AI acceptance.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Browser has no matching/AI controls; six historical AI read routes and all old Engineer AI mutation aliases are denied."
+    },
+    {
+      "id": "categories",
+      "expected_behavior": "General Info, Civil, Electrical and Tower persist across upload, refresh and frozen submission.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "All four categories uploaded and refreshed; frozen photo groups and source hashes retained."
+    },
+    {
+      "id": "preview",
+      "expected_behavior": "Engineer can preview actual uploaded photos.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Original source viewer and private thumbnail handlers inspected; technical images contained without distortion."
+    },
+    {
+      "id": "move",
+      "expected_behavior": "Assigned Engineer can move saved photos between categories before submission only.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Pre-submit category move persisted; submitted/source-change and foreign-task moves denied."
+    },
+    {
+      "id": "remove",
+      "expected_behavior": "Incorrect photos can be removed from active intake before submission while original bytes/history are preserved.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Active-intake exclusion persisted; historical photo rows and original bytes retained; explicit restore deduplicates."
+    },
+    {
+      "id": "upload_retry",
+      "expected_behavior": "Progress and failed-upload identity are visible; retry does not duplicate successful files.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Actual browser HTTP503 upload retained failed filename and retried without duplicating successful files."
+    },
+    {
+      "id": "upload_gate",
+      "expected_behavior": "Active/incomplete upload sessions block submission without deleting evidence.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Durable open/incomplete envelopes block submission; authorized recovery retains completed files."
+    },
+    {
+      "id": "qa_immediate",
+      "expected_behavior": "Explicit successful submission is visible to the assigned QA immediately while AI is queued/running.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Actual saved Engineer submission appears to named QA with queued job before worker starts."
+    },
+    {
+      "id": "no_checklist_gate",
+      "expected_behavior": "Missing checklist answers do not block Engineer photo submission; necessary task and reviewer checks remain.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Required unanswered checklist points did not block Engineer handoff; reviewer/input/session checks remain."
+    },
+    {
+      "id": "immutable_submission",
+      "expected_behavior": "Photo/category snapshot, source hashes and prior revisions cannot be silently overwritten after submission.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Source/category snapshot and prior signatures unchanged after QA edits, retries and resubmission."
+    },
+    {
+      "id": "idempotency",
+      "expected_behavior": "Repeated Submit and retry reuse one submission/checklist/job for that revision.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Repeated same-revision submit/retry reuses revision/job; QA confirmation does not duplicate links."
+    },
+    {
+      "id": "vision",
+      "expected_behavior": "Installed local model capabilities and actual image response verified; no model download or cloud fallback.",
+      "status": "Verified",
+      "implementation": "scripts/Start-PhotoAI.ps1; backend/core/survey_evidence.py",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Actual qwen3.5:4b image request succeeded on existing project runtime at loopback11435; default11434 is broken, documented separately."
+    },
+    {
+      "id": "native_pipeline",
+      "expected_behavior": "A real configured local worker processes actual image content against the submitted approved template.",
+      "status": "Verified",
+      "implementation": "backend/core/survey_processing.py; survey_evidence.py; existing survey_processing_worker",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "11 synthetic images processed by actual installed native worker across isolated jobs; final fresh two-image run emitted correct approved IDs."
+    },
+    {
+      "id": "valid_mapping",
+      "expected_behavior": "AI photo suggestions use valid snapshot field IDs, preserve unmatched requirements and leave unsupported matches unassigned.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake.py; survey_evidence.py",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Only exact approved field/source high-confidence supported candidates link; null/conflict/uncertain remain unassigned; required zero-photo points remain visible."
+    },
+    {
+      "id": "qa_manual",
+      "expected_behavior": "QA can manually assign photos and recorded answers independently of AI state with audited derived records.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "QA real browser assignment, correction, answers and completion persisted independently of queued/failed AI."
+    },
+    {
+      "id": "missing_template",
+      "expected_behavior": "No applicable approved template leaves submission in QA with a clear configuration error; no invented checklist.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Regression with missing published template/schema retains QA submission and photos and returns explicit configuration error."
+    },
+    {
+      "id": "ai_failure",
+      "expected_behavior": "Real/model-failure and retry preserve QA availability, photos and original revision.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Actual offline/HTTP500 processing retained photos and QA; same-job retry completed after configured runtime recovery."
+    },
+    {
+      "id": "late_ai",
+      "expected_behavior": "AI cannot overwrite a QA decision or silently advance engineering approval.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Real seven-image late job did not alter completed QA package; regression verifies correction/unlink survives retries."
+    },
+    {
+      "id": "access",
+      "expected_behavior": "Wrong-role, foreign-project, revoked access and post-submission editing remain denied.",
+      "status": "Verified",
+      "implementation": "backend/core/template_views.py; photo_views.py; survey_processing_views.py; evidence_views.py; checklist_ai_review.py",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Independent59-case AppSec run plus real private-file/role probes deny foreign/wrong-role/stale/locked mutation and Client AI leakage."
+    },
+    {
+      "id": "history",
+      "expected_behavior": "Engineer correction/resubmission retains signed old revisions and original evidence.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Actual Engineer correction/resubmission and Client-to-TL-to-QA return retained historical source revisions and signatures."
+    },
+    {
+      "id": "layout",
+      "expected_behavior": "Real desktop/mobile browser journey and screenshots show usable upload/submission without Engineer AI controls.",
+      "status": "Verified",
+      "implementation": "backend/core/category_intake.py; category_intake_views.py; existing photo/session/workflow services; engineer_capture.html/css/js",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Actual Edge1440px/390px Engineer journey and final reference-based captures checked, no outer overflow or unhandled JS errors."
+    },
+    {
+      "id": "scope",
+      "expected_behavior": "Existing application/modules, published templates and operational data retained.",
+      "status": "Verified",
+      "implementation": "No model/schema change; checkpoint and preservation comparison",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "No models/migrations/dependencies or product modules added; original templates/inventories and operational evidence retained."
+    },
+    {
+      "id": "agency",
+      "expected_behavior": "Actual installed Agency Orchestrator, frontend/backend and independent QA roles used with clear ownership.",
+      "status": "Verified",
+      "implementation": "Installed definitions C:/Users/Muhammad Assim Baig/.agency-agents; ownership below",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Installed Agency Orchestrator, UX Architect, Frontend Developer, Backend Architect, Reality Checker/API Tester and AppSec definitions used by scoped agents."
+    },
+    {
+      "id": "checks",
+      "expected_behavior": "Focused regressions, final full backend suite, Django/migration/dependency/frontend checks and affected browser paths run.",
+      "status": "Verified",
+      "implementation": "scripts/run_backend_tests.py; backend/manage.py; retained frontend check-*.cjs",
+      "verification_method": "Independent regression/API checks and persisted browser scenario; native worker where explicitly stated",
+      "actual_result": "Final stable isolated full backend suite: 894 passed in 283.484s, native exit0; Django/migrations/pip/four retained frontend scripts/33 JS checks passed."
+    }
+  ],
+  "ownership": {
+    "root": "Architecture, integration, native local-model verification, requirements, documentation and preservation",
+    "submission_backend": "Category intake services/views, scoped workflow/processing/permission bridges and backend regressions",
+    "engineer_ux": "Existing Engineer route templates/static and scoped QA review interface",
+    "workflow_qa": "Independent acceptance regressions, isolated browser fixture and screenshots",
+    "category_matching_security_audit": "Independent AppSec review and direct negative HTTP/security regression verification; no product-source ownership"
+  },
+  "evidence_directory": ".local/engineer-category-qa-20261023",
+  "limitations": [
+    "Native field accuracy and 200/500-photo sustained throughput not benchmarked.",
+    "Default Ollama11434 missing llama-server.exe; existing dedicated project runtime11435 passed real images.",
+    "Previously pinned failed jobs are retained and not silently repinned/reprocessed.",
+    "Physical phones/tablets, production hosting and manufacturer/CAD acceptance are outside this focused saved-data verification.",
+    "Historical native crash A12 remains unexplained."
+  ],
+  "phases": [
+    {
+      "id": "engineer_intake",
+      "state": "Verified in isolated saved-data workflow",
+      "requirements": 25
+    },
+    {
+      "id": "qa_matching_workspace",
+      "state": "Verified against original17 acceptances",
+      "requirements": 17
+    }
+  ],
+  "qa_workspace_requirements": [
+    {
+      "id": "engineer_to_qa",
+      "expected_behavior": "Saved category photos reach QA before AI finishes.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Engineer uploads photos by category without selecting checklist points. Engineer submits; the task appears for QA before AI completes. Verified by browser-capture-matching-result.json, browser-submit-matching-result.json, qa-browser-layout-result.json",
+      "original_acceptance_ids": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "actual_ai_matches",
+      "expected_behavior": "Actual local image analysis produces advisory links against approved template IDs.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "AI matches actual photos against the correct approved template. Verified by native-late-ai-result.json, qa-browser-native-readonly-result.json",
+      "original_acceptance_ids": [
+        3
+      ]
+    },
+    {
+      "id": "category_navigation",
+      "expected_behavior": "General Info/Civil/Electrical/Tower category rail filters points/photos and shows distinct counts.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "QA sees General Info / Civil / Electrical / Tower on the left. Verified by qa-browser-layout-result.json",
+      "original_acceptance_ids": [
+        4
+      ]
+    },
+    {
+      "id": "expand_collapse",
+      "expected_behavior": "Category groups expand/collapse without changing category/template content.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Category groups expand and collapse. Verified by qa-browser-layout-result.json",
+      "original_acceptance_ids": [
+        5
+      ]
+    },
+    {
+      "id": "point_selection",
+      "expected_behavior": "Selecting a point shows its linked photos and approved requirements.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Selecting a checklist point shows its linked photos. Verified by qa-browser-matching-result.json",
+      "original_acceptance_ids": [
+        6
+      ]
+    },
+    {
+      "id": "not_assigned",
+      "expected_behavior": "Not Assigned remains last including zero and contains only globally zero-link photos.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Not Assigned appears last and shows genuinely unassigned photos. Verified by qa-browser-mobile-result.json, core.test_qa_matching_workspace",
+      "original_acceptance_ids": [
+        7
+      ]
+    },
+    {
+      "id": "ai_details",
+      "expected_behavior": "QA can inspect source image, observation, suggestions/reasons and saved assignments.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "QA can inspect AI analysis for each photo. Verified by qa-browser-native-readonly-result.json",
+      "original_acceptance_ids": [
+        8
+      ]
+    },
+    {
+      "id": "photo_drag_drop",
+      "expected_behavior": "Dragging photos assigns/reassigns only the explicit source link and persists with safe failure handling.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Dragging a photo onto a checklist point saves the correct link. Verified by qa-browser-matching-result.json",
+      "original_acceptance_ids": [
+        9
+      ]
+    },
+    {
+      "id": "touch_assignment",
+      "expected_behavior": "Click/touch alternatives perform the same saved operations as dragging.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "The click/touch assignment alternative performs the same action. Verified by qa-browser-matching-result.json, qa-browser-mobile-result.json",
+      "original_acceptance_ids": [
+        10
+      ]
+    },
+    {
+      "id": "display_order",
+      "expected_behavior": "Same-category checkpoint reorder persists as display order without changing requirements, links or decisions.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Checklist reordering changes display order only. Verified by qa-browser-matching-result.json, core.test_qa_matching_workspace",
+      "original_acceptance_ids": [
+        11
+      ]
+    },
+    {
+      "id": "refresh_counts",
+      "expected_behavior": "Assignments, category counts, display order and selection survive refresh.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Counts and assignments remain correct after refresh. Verified by qa-browser-matching-result.json",
+      "original_acceptance_ids": [
+        12
+      ]
+    },
+    {
+      "id": "failed_save",
+      "expected_behavior": "Failed saves preserve prior state and show an error rather than false success.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Failed saves do not display false success. Verified by qa-browser-matching-result.json, core.test_qa_matching_workspace",
+      "original_acceptance_ids": [
+        13
+      ]
+    },
+    {
+      "id": "late_ai",
+      "expected_behavior": "Late/retried AI results do not overwrite QA corrections/confirmation or duplicate links.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Late AI results do not overwrite QA corrections. Verified by native-late-ai-result.json, core.test_qa_matching_workspace",
+      "original_acceptance_ids": [
+        14
+      ]
+    },
+    {
+      "id": "ai_failure_manual",
+      "expected_behavior": "Pending/failed AI does not block authorized manual matching.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "AI failure still allows manual QA matching. Verified by qa-browser-failed-state-result.json, task4-after-manual-verification.json",
+      "original_acceptance_ids": [
+        15
+      ]
+    },
+    {
+      "id": "separate_decisions",
+      "expected_behavior": "Assignment, assignment confirmation and engineering acceptance remain separate.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Matching never automatically accepts engineering work. Verified by qa-browser-matching-result.json, qa-browser-approve-client-return-result.json",
+      "original_acceptance_ids": [
+        16
+      ]
+    },
+    {
+      "id": "authorization_locks",
+      "expected_behavior": "Project/task/revision/photo/field scope, QA role and approved-record/reopening locks are enforced.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Existing permissions and approved-record locks still apply. Verified by qa-browser-approve-client-return-result.json, core.test_qa_matching_workspace, core.test_engineer_category_submission_acceptance",
+      "original_acceptance_ids": [
+        17
+      ]
+    },
+    {
+      "id": "responsive_layout",
+      "expected_behavior": "Compact desktop three-area workspace and mobile drawer/selection/viewer are verified in browser.",
+      "status": "Verified",
+      "implementation": "backend/core/qa_matching.py; category_intake_views.py; qa_evidence_review.html/css/js; existing review route",
+      "verification_method": "Independent API, native worker and actual desktop/mobile browser",
+      "actual_result": "Reference-based three-pane desktop and mobile drawer/point-photo navigation verified at1440px/390px by qa-browser-layout-result.json, qa-browser-mobile-result.json and44 final read-only checks in qa-browser-final-readonly-result.json.",
+      "original_acceptance_ids": []
+    }
+  ],
+  "evidence_so_far": {
+    "final_full_tests": 894,
+    "final_full_seconds": 283.484,
+    "native_exit_code": 0,
+    "source_stable": true,
+    "independent_acceptance_tests": 47,
+    "independent_security_tests": 59,
+    "browser_assertions": 74,
+    "browser_js_exceptions": 0,
+    "native_completed_synthetic_images": 11,
+    "final_native_two_image_receipt": ".local/category-native-final-20261023/verified-native-proposals.json",
+    "overlapping_counts": "Focused runs overlap full suite; do not add counts.",
+    "requirements_receipt": ".local/engineer-category-qa-20261023/independent-qa-acceptance.json",
+    "source_fingerprint": "78a38a1ee08c1d9c303205a3cf02c9f8b2e8e35f675eb7a1ee11add490531d19",
+    "final_readonly_browser_checks": 44
+  },
+  "verified_total": 42,
+  "layout_references": "F:/iSurvix/references/Notes for Layout.txt and12 screenshots; layout-only, no customer data/assets copied"
+}

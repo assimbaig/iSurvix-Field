@@ -104,19 +104,22 @@ class EvidencePipelineTests(TestCase):
         record,_=get_or_create_analysis(self.checklist,self.photo,{'drafts':[], 'assessments':[
             {'field_id':'base','outcome':'insufficient','reasons':['Missing overview']} ]},self.context)
         results=[]
-        for actor in [self.engineer,self.quality,self.lead]:
+        for actor in [self.quality,self.lead]:
             self.client.force_login(actor)
             response=self.client.get(reverse('photo_state',args=[self.checklist.pk]))
             self.assertEqual(response.status_code,200)
             results.append(response.json()['evidence_analysis']['records'])
         self.assertEqual(results[0],results[1])
-        self.assertEqual(results[1],results[2])
         self.assertEqual(results[0][0]['id'],record.pk)
+        self.client.force_login(self.engineer)
+        capture=self.client.get(reverse('photo_state',args=[self.checklist.pk])).json()
+        self.assertNotIn('evidence_analysis',capture)
+        self.assertIn('photos',capture)
 
     def test_enqueue_adopts_published_release_only_after_explicit_apply(self):
         previous=self.pin();previous.status='completed';previous.save(update_fields=['status'])
         release=EvidenceRuleRelease.objects.create(project=self.project,version=1,references=[],digest=digest([]),published_by=self.lead,reason='Explicit synthetic release')
-        self.client.force_login(self.engineer)
+        self.client.force_login(self.lead)
         with patch('core.photo_views.verify_vision'),patch.object(pipeline,'model_fingerprint',return_value='a'*64),patch.object(pipeline,'tool_fingerprint',return_value='b'*64):
             normal=self.client.post(reverse('photo_enqueue',args=[self.checklist.pk]),json.dumps({'photo_ids':[self.photo.pk],'model':'synthetic-model'}),content_type='application/json')
             self.assertEqual(normal.status_code,201,normal.content)

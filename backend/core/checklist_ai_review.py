@@ -154,6 +154,8 @@ def serialize(review,current):
     return {'id':review.pk,'status':review.status,'findings':review.findings,'error':review.error,'created_at':review.created_at.isoformat(),'shared':review.shared and current,'share_enabled':review.shared,'current':current,'model':review.model,'snapshot_digest':review.snapshot_digest,'provenance':provenance}
 
 def visible_context(request,checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     from .field_photo_service import analysis_state
     c,role=access(request,checklist_id)
     current=digest_snapshot(snapshot(c))

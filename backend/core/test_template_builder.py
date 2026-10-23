@@ -155,7 +155,9 @@ class ChecklistBuilderTests(TestCase):
         for p in (Path(settings.BASE_DIR) / 'templates').rglob('*.html'):
             get_template(str(p.relative_to(Path(settings.BASE_DIR) / 'templates')))
         c = self.publish_and_create()
-        self.assertContains(self.e.get(reverse('checklist_detail', args=[c.id])), 'Fixture custom checklist')
+        self.assertRedirects(self.e.get(reverse('checklist_detail',args=[c.id])),
+            reverse('photo_workspace',args=[c.id]),fetch_redirect_response=False)
+        self.assertContains(self.l.get(reverse('checklist_detail',args=[c.id])),'Fixture custom checklist')
         self.assertContains(self.a.get(reverse('checklist_template_edit', args=[self.template.id])), 'Client logos')
 
     def test_custom_apis_require_auth_and_project_access(self):
@@ -238,7 +240,8 @@ class ChecklistBuilderTests(TestCase):
         self.assertEqual(self.e.get(reverse('custom_client_logo', args=[c.id, 0])).status_code, 200)
         self.assertEqual(Client().get(reverse('custom_client_logo', args=[c.id, 0])).status_code, 404)
         upload_url = reverse('custom_checklist_upload', args=[c.id, 'photo'])
-        self.assertEqual(self.e.post(upload_url, {'images': self.logo('evidence.png')}).status_code, 200)
+        self.assertEqual(self.e.post(upload_url, {'images': self.logo('evidence.png')}).status_code,403)
+        self.assertEqual(self.l.post(upload_url, {'images': self.logo('evidence.png')}).status_code,200)
         c.refresh_from_db()
         self.assertEqual(len(c.image_data['photo']), 1)
         photo_url = reverse('custom_checklist_photo', args=[c.id, 'photo', 0])
@@ -246,8 +249,10 @@ class ChecklistBuilderTests(TestCase):
         self.assertEqual(self.e.get(photo_url).status_code, 200)
         c.status = Checklist.Status.FINAL
         c.save()
-        self.assertEqual(self.e.post(upload_url, {'images': self.logo('later.png')}).status_code, 400)
-        self.assertEqual(self.e.post(reverse('custom_checklist_photo_delete', args=[c.id, 'photo', 0])).status_code, 400)
+        self.assertEqual(self.e.post(upload_url, {'images': self.logo('later.png')}).status_code,403)
+        self.assertEqual(self.e.post(reverse('custom_checklist_photo_delete',args=[c.id,'photo',0])).status_code,403)
+        self.assertEqual(self.l.post(upload_url, {'images': self.logo('later.png')}).status_code,400)
+        self.assertEqual(self.l.post(reverse('custom_checklist_photo_delete',args=[c.id,'photo',0])).status_code,400)
 
     def test_new_assignment_automatically_gets_project_template(self):
         self.publish_and_create()
@@ -304,9 +309,11 @@ class ChecklistBuilderTests(TestCase):
         self.assertEqual(list(c.section_approvals), ['general'])
         self.assertEqual(self.post_answers(c, {'height': '55'}).status_code, 400)
         self.assertEqual(self.post_answers(c, {'volts': '49'}).status_code, 200)
-        self.assertEqual(self.e.post(reverse('custom_checklist_upload', args=[c.pk, 'photo']), {'images': self.logo()}).status_code, 400)
-        self.assertEqual(self.e.post(reverse('custom_checklist_photo_delete', args=[c.pk, 'photo', 0])).status_code, 400)
-        page = self.e.get(reverse('custom_checklist', args=[c.pk]))
+        self.assertEqual(self.e.post(reverse('custom_checklist_upload',args=[c.pk,'photo']),{'images':self.logo()}).status_code,403)
+        self.assertEqual(self.l.post(reverse('custom_checklist_upload',args=[c.pk,'photo']),{'images':self.logo()}).status_code,400)
+        self.assertEqual(self.e.post(reverse('custom_checklist_photo_delete',args=[c.pk,'photo',0])).status_code,403)
+        self.assertEqual(self.l.post(reverse('custom_checklist_photo_delete',args=[c.pk,'photo',0])).status_code,400)
+        page = self.l.get(reverse('custom_checklist', args=[c.pk]))
         self.assertContains(page, 'Section evidence')
         self.assertContains(page, 'data-locked="true"')
         self.assertEqual(c.review_history[1]['sections'], ['general'])

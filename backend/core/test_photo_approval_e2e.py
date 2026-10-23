@@ -2,6 +2,7 @@
 import hashlib,json,tempfile
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase,Client,override_settings
@@ -60,11 +61,16 @@ class PhotoApprovalEndToEndTests(TestCase):
         self.photo_id,self.original=self.upload()
         self.post('custom_checklist_submit',[self.c.pk],{})
         self.c.refresh_from_db();self.assertEqual(self.c.status,Checklist.Status.DRAFT)
-        mapped=self.post('photo_mapping',[self.c.pk],{'decisions':[{'photo_id':self.photo_id,'field_id':'overview','action':'manual'}],'expected_schema_digest':schema_digest(self.c)},True)
-        self.assertEqual(mapped.status_code,200,mapped.content)
+        # Preserve this pre-category historical fixture through its real
+        # mapping service. Current Engineer HTTP matching is deliberately denied.
+        from .field_photo_service import review_mappings
+        denied=self.post('photo_mapping',[self.c.pk],{'decisions':[{'photo_id':self.photo_id,'field_id':'overview','action':'manual'}],'expected_schema_digest':schema_digest(self.c)},True)
+        self.assertEqual(denied.status_code,403,denied.content)
+        review_mappings(SimpleNamespace(user=self.engineer),self.c.pk,
+            [{'photo_id':self.photo_id,'field_id':'overview','action':'manual'}],schema_digest(self.c))
         self.assertEqual(self.post('custom_checklist_submit',[self.c.pk],{}).status_code,302)
         self.c.refresh_from_db();self.assertEqual(self.c.status,Checklist.Status.SUBMITTED)
-        self.assertEqual(self.post('photo_upload',[self.c.pk],{'group':'Civil','files':[SimpleUploadedFile('blocked.png',self.original,content_type='image/png')]}).status_code,403 if self.independent else 409)
+        self.assertEqual(self.post('photo_upload',[self.c.pk],{'group':'Civil','files':[SimpleUploadedFile('blocked.png',self.original,content_type='image/png')]}).status_code,403)
     def qc(self,decision='approve'):
         self.c.refresh_from_db();self.actor(self.quality)
         if self.independent:

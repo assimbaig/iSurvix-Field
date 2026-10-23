@@ -115,7 +115,8 @@ class RemoteSurveyWorkerTests(Fixtures, TestCase):
         self.assertEqual(self.revision.processing_job.attempts, 0)
         client = Client()
         client.force_login(self.engineer)
-        self.assertEqual(client.get(reverse('survey_processing_workspace', args=[self.checklist.pk])).status_code, 200)
+        self.assertRedirects(client.get(reverse('survey_processing_workspace', args=[self.checklist.pk])),
+            reverse('photo_workspace',args=[self.checklist.pk]),fetch_redirect_response=False)
 
     def test_stale_versions_and_wrong_model_do_not_claim_job(self):
         for values in [{**self.identity, 'versions': {'protocol': 'old'}}, {**self.identity, 'model': 'not-installed'}]:

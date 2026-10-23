@@ -54,16 +54,18 @@ class RoleDesignTests(TestCase):
         for role in [Profile.Roles.ENGINEER,Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD]:
             self.client.force_login(self.users[role])
             for route in ['custom_checklist','photo_workspace','roadmap_activity']:
-                response=self.client.get(reverse(route,args=[self.survey.pk]))
+                response=self.client.get(reverse(route,args=[self.survey.pk]),follow=True)
                 self.assertEqual(response.status_code,200)
                 self.assertContains(response,'data-role="'+role+'"')
             response=self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
-            self.assertEqual(bool(response.context['can_submit']),role==Profile.Roles.ENGINEER)
+            if role==Profile.Roles.ENGINEER:
+                self.assertRedirects(response,reverse('photo_workspace',args=[self.survey.pk]),fetch_redirect_response=False)
+            else:self.assertFalse(response.context['can_submit'])
             if role==Profile.Roles.QUALITY_ENGINEER:
                 self.assertFalse(response.context['can_edit']);self.assertFalse(response.context['can_review'])
         self.survey.status=Checklist.Status.FINAL;self.survey.save()
         self.client.force_login(self.users[Profile.Roles.CLIENT])
-        response=self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
+        response=self.client.get(reverse('custom_checklist',args=[self.survey.pk]),follow=True)
         self.assertEqual(response.status_code,200);self.assertContains(response,'data-role="CLIENT"')
         self.assertFalse(response.context['can_edit']);self.assertFalse(response.context['can_submit']);self.assertFalse(response.context['can_review'])
 
@@ -83,7 +85,7 @@ class RoleDesignTests(TestCase):
 
     def test_operational_shell_exposes_working_explorer_and_project_controls(self):
         self.client.force_login(self.users[Profile.Roles.ENGINEER])
-        response=self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
+        response=self.client.get(reverse('custom_checklist',args=[self.survey.pk]),follow=True)
         self.assertContains(response,reverse('task_explorer'))
         self.assertContains(response,'id="enterprise-project"')
         self.assertContains(response,'class="platform-nav workspace-nav-tiles"')

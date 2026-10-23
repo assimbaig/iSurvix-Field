@@ -172,7 +172,7 @@ class ClientPhotoPrivacyTests(TestCase):
         self.assertEqual(original.status_code, 200)
         self.assertEqual(b''.join(original.streaming_content), self.original)
         original.close()
-        for actor in (self.engineer, self.lead):
+        for actor in (self.lead,):
             with self.subTest(role=actor.profile.role):
                 self.client.force_login(actor)
                 staff = self.client.get(reverse('photo_workspace', args=[self.checklist.pk]))
@@ -180,9 +180,13 @@ class ClientPhotoPrivacyTests(TestCase):
                 staff_panel = ElementsById(staff.content.decode()).elements['photo-batch-matches']
                 self.assertNotIn('hidden', staff_panel)
                 self.assertNotIn('display:none', staff_panel.get('style', ''))
+        self.client.force_login(self.engineer)
+        capture=self.client.get(reverse('photo_workspace',args=[self.checklist.pk]))
+        self.assertContains(capture,'id="engineer-capture"')
+        self.assertNotContains(capture,'id="photo-batch-matches"')
 
-    def test_engineer_and_team_lead_keep_internal_review_data(self):
-        for actor in (self.engineer, self.lead):
+    def test_team_lead_keeps_legacy_internal_review_data_engineer_has_capture_only(self):
+        for actor in (self.lead,):
             with self.subTest(role=actor.profile.role):
                 self.client.force_login(actor)
                 with patch('core.photo_metadata.metadata_is_current', return_value=True), \
@@ -196,6 +200,12 @@ class ClientPhotoPrivacyTests(TestCase):
                 self.assertIn('PRIVATE_PENDING_VALUE', json.dumps(state.json()['drafts']))
                 self.assertIn('PRIVATE_BASELINE', json.dumps(report.json()['drafts']))
                 self.assertEqual(len(state.json()['mappings']), 3)
+        self.client.force_login(self.engineer)
+        state=self.client.get(reverse('photo_state',args=[self.checklist.pk]))
+        self.assertEqual(state.status_code,200)
+        self.assertNotIn('drafts',state.json())
+        self.assertNotIn('jobs',state.json())
+        self.assertEqual(state.json()['photos'][0]['id'],self.photo.pk)
 
     def test_client_cannot_use_final_evidence_projection_for_draft_or_foreign_project(self):
         self.checklist.status = Checklist.Status.DRAFT

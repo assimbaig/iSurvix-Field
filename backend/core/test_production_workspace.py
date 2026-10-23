@@ -71,9 +71,10 @@ class ProductionWorkspaceTests(TestCase):
         self.client.force_login(self.engineer)
         response = self.page(reverse('custom_checklist', args=[self.survey.pk]))
         photo_url = reverse('photo_workspace', args=[self.survey.pk])
-        self.assertContains(response, f'href="{photo_url}"')
-        self.assertContains(response, 'id="upload-site-photos"')
-        self.assertEqual(self.page(photo_url).status_code, 200)
+        self.assertRedirects(response,photo_url,fetch_redirect_response=False)
+        page=self.page(photo_url)
+        self.assertEqual(page.status_code,200)
+        self.assertContains(page,'id="capture-upload-form"')
 
     def test_readonly_review_keeps_photo_view_but_hides_upload_control(self):
         self.survey.status = Checklist.Status.FINAL

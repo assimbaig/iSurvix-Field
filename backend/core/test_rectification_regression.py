@@ -1,5 +1,6 @@
 """Reproduce a pre-QC returned checklist and exercise explicit reviewer correction."""
 from django.contrib.auth.models import User
+from django.contrib.messages import get_messages
 from django.test import TestCase,override_settings
 from django.urls import reverse
 from .models import Checklist,ChecklistTemplate,Project,Profile,WorkAssignment
@@ -21,8 +22,10 @@ class RectificationRegressionTests(TestCase):
         return user
     def test_missing_named_qe_is_reported_without_bypass_then_correction_can_finish(self):
         self.client.force_login(self.engineer)
-        response=self.client.post(reverse('custom_checklist_submit',args=[self.survey.pk]),follow=True)
-        self.assertContains(response,'Assign an active project Quality Engineer before submission.')
+        response=self.client.post(reverse('custom_checklist_submit',args=[self.survey.pk]))
+        self.assertEqual(response.status_code,302)
+        self.assertTrue(any('Assign an active project Quality Engineer before submission.' in str(message)
+            for message in get_messages(response.wsgi_request)))
         self.survey.refresh_from_db();self.assertEqual(self.survey.status,Checklist.Status.REJECTED)
         self.assertIsNone(self.survey.quality_reviewer_id)
         self.client.force_login(self.admin)
@@ -41,8 +44,10 @@ class RectificationRegressionTests(TestCase):
         self.assertEqual(self.survey.comment_by_id,self.quality.pk)
         self.client.force_login(self.engineer)
         response=self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
-        self.assertContains(response,reason)
-        self.assertTrue(response.context['can_edit'])
+        self.assertRedirects(response,reverse('photo_workspace',args=[self.survey.pk]),fetch_redirect_response=False)
+        state=self.client.get(reverse('photo_capture_state',args=[self.survey.pk])).json()
+        self.assertEqual(state['correction_reason'],reason)
+        self.assertTrue(state['can_edit'])
         self.assertEqual(self.client.post(reverse('custom_checklist_save',args=[self.survey.pk]),{'answers':{'point_two':'Corrected checkpoint two observation'}},content_type='application/json').status_code,200)
         self.assertEqual(self.client.post(reverse('custom_checklist_submit',args=[self.survey.pk])).status_code,302)
         self.survey.refresh_from_db();self.assertEqual(self.survey.quality_approval,{})

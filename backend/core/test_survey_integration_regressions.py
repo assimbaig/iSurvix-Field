@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
+from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -47,29 +48,26 @@ class SurveyIntegrationRegressionTests(TestCase):
                 workflow_type=self.checklist.workflow_type, definition_digest=definition_digest(self.schema),
                 criteria_reference='Explicit synthetic qualification criteria', inspection_method='Synthetic label review',
                 reviewed_by=self.lead, reason='Isolated qualification gate fixture')
-        self.client.force_login(self.engineer)
-        return self.client.post(reverse('survey_processing_action', args=[self.checklist.pk]),
-            {'action': 'submit', 'uploads_finished': 'true'})
+        # Retained pre-category revisions remain valid through their internal
+        # service; the active Engineer HTTP entry is now category capture.
+        return service.submit(self.request(), self.checklist.pk, True)
 
     def test_ai_submit_reuses_existing_exact_template_qualification_gate_before_queue(self):
-        response = self.independent_submission(coordinates={'source': 'Synthetic measured record', 'crs': 'EPSG:4326'})
-        self.assertEqual(response.status_code, 409, response.content)
-        self.assertIn('technical applicability', response.json()['error'])
+        with self.assertRaisesMessage(ValidationError,'technical applicability'):
+            self.independent_submission(coordinates={'source': 'Synthetic measured record', 'crs': 'EPSG:4326'})
         self.assertEqual(self.checklist.processing_revisions.count(), 0)
         self.assertEqual(SurveyProcessingJob.objects.count(), 0)
 
     def test_ai_submit_reuses_existing_recorded_coordinate_gate_before_queue(self):
-        response = self.independent_submission(qualified=True)
-        self.assertEqual(response.status_code, 409, response.content)
-        self.assertIn('coordinate source and datum/CRS', response.json()['error'])
+        with self.assertRaisesMessage(ValidationError,'coordinate source and datum/CRS'):
+            self.independent_submission(qualified=True)
         self.assertEqual(self.checklist.processing_revisions.count(), 0)
         self.assertEqual(SurveyProcessingJob.objects.count(), 0)
 
     def test_ai_submit_queues_when_existing_governed_input_gates_are_satisfied(self):
-        response = self.independent_submission(qualified=True,
+        revision,created = self.independent_submission(qualified=True,
             coordinates={'source': 'Explicit synthetic recorded coordinates', 'crs': 'EPSG:4326'})
-        self.assertEqual(response.status_code, 201, response.content)
-        revision = self.checklist.processing_revisions.get()
+        self.assertTrue(created)
         self.assertEqual(revision.processing_job.status, 'queued')
         self.assertEqual(revision.snapshot['coordinates'], self.checklist.coordinate_reference)
         self.assertEqual(self.checklist.photo_evidence.count(), 2)
@@ -79,17 +77,19 @@ class SurveyIntegrationRegressionTests(TestCase):
         response = self.client.get(reverse('photo_workspace', args=[self.checklist.pk]))
         self.assertEqual(response.status_code, 200, response.content)
         content = html.unescape(response.content.decode())
-        button = re.search(r'<button[^>]*id="upload-button"[^>]*>(.*?)</button>', content, re.S)
+        button = re.search(r'<button[^>]*id="capture-upload"[^>]*>(.*?)</button>', content, re.S)
         self.assertIsNotNone(button)
         return response, re.sub(r'<[^>]+>', '', button.group(1)).strip(), content
 
-    def test_opted_in_photo_upload_copy_requires_explicit_ai_submission(self):
+    def test_opted_in_engineer_capture_requires_explicit_qa_submission(self):
         response, button, content = self.photo_page()
-        self.assertTrue(response.context['checklist_processing_enabled'])
-        self.assertEqual(button, 'Upload photos')
-        self.assertIn('AI Checklist & Drawings', content)
-        self.assertIn('Analysis starts after you submit this survey', content)
-        self.assertNotIn('Upload & analyze this group', button)
+        self.assertTrue(self.checklist.checklist_template.checklist_required)
+        self.assertEqual(button, 'Upload selected photos')
+        self.assertIn('id="capture-submit-qa"', content)
+        self.assertIn('Submit to QA', content)
+        self.assertNotIn('AI Checklist & Drawings', content)
+        self.assertNotIn('Accept selected', content)
+        self.assertEqual(SurveyProcessingJob.objects.count(), 0)
 
     def test_opted_in_survey_cannot_create_a_disconnected_legacy_photo_job(self):
         from .models import PhotoJob
@@ -100,8 +100,7 @@ class SurveyIntegrationRegressionTests(TestCase):
         before = {photo.pk: Path(photo.original.path).read_bytes() for photo in [self.photo, self.photo2]}
         response = self.client.post(reverse('photo_enqueue', args=[self.checklist.pk]),
             json.dumps({'photo_ids': [self.photo.pk, self.photo2.pk]}), content_type='application/json')
-        self.assertEqual(response.status_code, 409, response.content)
-        self.assertIn('AI Checklist & Drawings', response.json()['error'])
+        self.assertEqual(response.status_code, 403, response.content)
         self.assertEqual(self.checklist.photo_jobs.count(), 1)
         retained.refresh_from_db()
         self.assertEqual(retained.status, 'queued')
@@ -117,11 +116,12 @@ class SurveyIntegrationRegressionTests(TestCase):
         self.checklist.checklist_template = excluded
         self.checklist.save(update_fields=['checklist_template'])
         response, button, content = self.photo_page()
-        self.assertFalse(response.context['checklist_processing_enabled'])
-        self.assertEqual(button, 'Upload photos')
-        self.assertIn('id="engineer-legacy-analysis-form"',content)
-        self.assertIn('id="engineer-uploads-complete"',content)
-        self.assertIn('Submit photos for AI Analysis',content)
+        self.assertFalse(service.enabled(self.checklist))
+        self.assertEqual(button, 'Upload selected photos')
+        self.assertIn('id="capture-submit-form"',content)
+        self.assertIn('id="capture-uploads-finished"',content)
+        self.assertIn('Submit to QA',content)
+        self.assertEqual(SurveyProcessingJob.objects.count(), 0)
 
     def test_engineer_inspection_upload_is_explicit_without_enabling_survey_pipeline(self):
         from .models import Project, Profile
@@ -137,10 +137,13 @@ class SurveyIntegrationRegressionTests(TestCase):
                     self.checklist.workflow_type = workflow
                     self.checklist.save(update_fields=['workflow_type'])
                 response, button, content = self.photo_page()
-                self.assertFalse(response.context['checklist_processing_enabled'])
-                self.assertEqual(button, 'Upload photos')
-                self.assertIn('id="engineer-legacy-analysis-form"',content)
-                self.assertIn('Submit photos for AI Analysis',content)
+                self.assertFalse(service.enabled(self.checklist))
+                self.assertEqual(self.checklist.workflow_type, workflow)
+                self.assertEqual(button, 'Upload selected photos')
+                self.assertIn('id="capture-submit-form"',content)
+                self.assertIn('Submit to QA',content)
+                self.assertNotIn('AI Checklist & Drawings', content)
+                self.assertEqual(SurveyProcessingJob.objects.count(), 0)
 
     def test_right_only_branding_stays_in_right_output_slot(self):
         self.checklist.branding_snapshot = {'clients': [
@@ -211,23 +214,15 @@ class SurveyIntegrationRegressionTests(TestCase):
         other = Checklist.objects.create(project=self.project, user=self.engineer,
             quality_reviewer=self.quality, site_id='SYNTHETIC-FOREIGN-REVISION',
             answer_data={'custom': {'contact': 'Different immutable submission'}})
-        self.client.force_login(self.engineer)
-        action = reverse('survey_processing_action', args=[other.pk])
-        for data in [
-            {'action': 'retry', 'revision_id': revision.pk},
-            {'action': 'review', 'revision_id': revision.pk, 'decision': 'accept', 'finding_ids': '["manufacturer"]'},
-        ]:
-            with self.subTest(action=data['action']):
-                self.assertEqual(self.client.post(action, data).status_code, 404)
+        for operation in [lambda:service.retry(self.request(),other.pk,revision.pk),
+                          lambda:service.review(self.request(),other.pk,revision.pk,'accept',ids=['manufacturer'])]:
+            with self.assertRaises(Http404):operation()
 
     def test_malformed_correction_object_is_a_handled_saved_record_error(self):
         revision = self.ready()
-        self.client.force_login(self.engineer)
-        action = reverse('survey_processing_action', args=[self.checklist.pk])
-        result = self.client.post(action, {'action': 'review', 'revision_id': revision.pk,
-            'decision': 'correct', 'finding_ids': '["manufacturer"]', 'corrections': '[]', 'reason': 'Bad shape'})
-        self.assertEqual(result.status_code, 409)
-        self.assertIn('correction object', result.json()['error'])
+        with self.assertRaisesMessage(ValidationError,'correction object'):
+            service.review(self.request(),self.checklist.pk,revision.pk,'correct',
+                ids=['manufacturer'],corrections=[],reason='Bad shape')
         self.assertFalse(revision.processing_events.filter(action='correct').exists())
 
     def test_extracted_record_correction_cannot_edit_approved_section(self):

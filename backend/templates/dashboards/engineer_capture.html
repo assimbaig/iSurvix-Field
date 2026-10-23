@@ -7,6 +7,7 @@
   <header class="capture-header"><div><a href="{% url 'task_explorer' %}" data-task-return>&larr; My tasks</a><h1>Site photos</h1><p><strong>{{ checklist.site_id|default:'Site not assigned' }}</strong> &middot; {{ checklist.project.name }}</p></div><span id="capture-stage" class="capture-stage">{{ checklist.workflow_label }}</span></header>
   <details class="capture-site-details"><summary>Task information</summary><dl id="capture-site-info"><div><dt>Site ID</dt><dd>{{ checklist.site_id|default:'Not recorded' }}</dd></div><div><dt>Project</dt><dd>{{ checklist.project.name }}</dd></div><div><dt>Engineer</dt><dd>{{ checklist.user.get_full_name|default:checklist.user.username }}</dd></div></dl></details>
   <p id="capture-message" class="capture-message" role="status" aria-live="polite">Loading saved photos...</p>
+  <p id="capture-correction-reason" class="capture-correction-notice" role="status" hidden></p>
   <section id="capture-submit-confirmation" class="capture-confirmation" aria-labelledby="capture-confirmation-title" hidden><h2 id="capture-confirmation-title">Submitted to QA</h2><p id="capture-confirmation-copy">Your site information and photos have been submitted for review.</p><a href="{% url 'task_explorer' %}" data-task-return>Return to my tasks</a></section>
   <section id="capture-recovery" class="capture-recovery" aria-label="Interrupted uploads" hidden></section>
   <section class="capture-upload-panel" id="capture-upload-panel" aria-labelledby="capture-upload-title">

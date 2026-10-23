@@ -93,6 +93,10 @@ class PhotoWorkflowTests(PhotoValidationTests):
         self.user.profile.role = Profile.Roles.ENGINEER
         self.user.profile.project = self.project
         self.user.profile.save()
+        self.reviewer=User.objects.create_user('photo_workflow_lead')
+        self.reviewer.profile.role=Profile.Roles.TEAM_LEAD
+        self.reviewer.profile.project=self.project
+        self.reviewer.profile.save()
         self.schema = {'title':'Photo fixture','sections':[{'id':'general','title':'General','fields':[{'id':'condition','type':'text','label':'Condition'}]}]}
         template = ChecklistTemplate.objects.create(name='Photo fixture', definition=deepcopy(self.schema), published=True)
         self.project.checklist_template = template
@@ -103,6 +107,11 @@ class PhotoWorkflowTests(PhotoValidationTests):
 
     def post_json(self, path, data=None, client=None):
         return (client or self.client).post(self.base+path,json.dumps(data or {}),content_type='application/json')
+
+    def reviewer_json(self,path,data=None):
+        self.client.force_login(self.reviewer)
+        try:return self.post_json(path,data)
+        finally:self.client.force_login(self.user)
 
     def upload(self):
         response = self.client.post(self.base+'upload/',{'files':[self.image()]})
@@ -150,29 +159,29 @@ class PhotoWorkflowTests(PhotoValidationTests):
         job,draft = self.draft()
         self.survey.refresh_from_db()
         self.assertEqual(self.survey.answer_data,{})
-        response = self.post_json(f'drafts/{draft.pk}/accept/')
+        response = self.reviewer_json(f'drafts/{draft.pk}/accept/')
         self.assertEqual(response.status_code,200,response.content)
         self.survey.refresh_from_db()
         self.assertEqual(self.survey.answer_data['custom']['condition'],'Visible corrosion')
         self.assertEqual(self.survey.section_approvals,{})
         self.assertEqual(self.survey.status,Checklist.Status.DRAFT)
         self.assertEqual(self.survey.review_history[-1]['action'],'accept_photo_draft')
-        self.assertEqual(self.post_json(f'drafts/{draft.pk}/accept/').status_code,409)
+        self.assertEqual(self.reviewer_json(f'drafts/{draft.pk}/accept/').status_code,409)
 
     def test_stale_missing_and_approved_fields_block_accept(self):
         job,draft = self.draft()
         self.survey.answer_data={'custom':{'condition':'Human changed'}}
         self.survey.save()
-        self.assertEqual(self.post_json(f'drafts/{draft.pk}/accept/').status_code,409)
+        self.assertEqual(self.reviewer_json(f'drafts/{draft.pk}/accept/').status_code,409)
         self.survey.answer_data={}
         self.survey.section_approvals={'general':{'by':'Reviewer'}}
         self.survey.save()
-        self.assertEqual(self.post_json(f'drafts/{draft.pk}/accept/').status_code,409)
+        self.assertEqual(self.reviewer_json(f'drafts/{draft.pk}/accept/').status_code,409)
         self.survey.section_approvals={}
         self.survey.save()
         draft.field_id='missing'
         draft.save()
-        self.assertEqual(self.post_json(f'drafts/{draft.pk}/accept/').status_code,409)
+        self.assertEqual(self.reviewer_json(f'drafts/{draft.pk}/accept/').status_code,409)
 
     @patch('core.photo_service.verify_vision')
     @patch('core.photo_service.ollama')
@@ -208,7 +217,7 @@ class PhotoWorkflowTests(PhotoValidationTests):
         job.refresh_from_db()
         self.assertEqual(job.status,'failed')
         self.assertNotIn('sensitive',job.error)
-        self.assertEqual(self.post_json(f'jobs/{job.pk}/retry/').status_code,200)
+        self.assertEqual(self.reviewer_json(f'jobs/{job.pk}/retry/').status_code,200)
         analyze.side_effect=None
         analyze.return_value=self.proposal()['drafts']
         self.assertTrue(process_next())
@@ -228,7 +237,8 @@ class PhotoWorkflowTests(PhotoValidationTests):
         self.survey.status=Checklist.Status.FINAL
         self.survey.save()
         for path in ['upload/','enqueue/',f'jobs/{job.pk}/retry/',f'drafts/{draft.pk}/accept/']:
-            self.assertEqual(self.post_json(path).status_code,409)
+            self.assertEqual(self.post_json(path).status_code,403)
+            self.assertEqual(self.reviewer_json(path).status_code,409)
 
     def test_inference_lease_prevents_parallel_consumers(self):
         from .photo_queue import inference_lease

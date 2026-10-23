@@ -54,7 +54,9 @@ def access(request, checklist_id, edit=False, quality=False):
         raise Http404()
     role = role_for(actor)
     owner = role == Profile.Roles.ENGINEER and c.user_id == actor.pk
+    if role==Profile.Roles.ENGINEER and not owner:raise Http404()
     assigned_qa = role == Profile.Roles.QUALITY_ENGINEER and qa_id(c) == actor.pk
+    if role==Profile.Roles.QUALITY_ENGINEER and not assigned_qa:raise Http404()
     if c.governance_mode == 'independent':
         from .independent_workflow import assigned_site_access
         if not assigned_site_access(actor,c): raise Http404()
@@ -113,6 +115,8 @@ def photos(snapshot, c):
 def state(request, checklist_id):
     from . import survey_processing as pipeline, survey_upload_sessions as uploads
     c, flags = access(request, checklist_id)
+    if role_for(request.user)==Profile.Roles.CLIENT:
+        raise PermissionDenied('Use the shared QA-reviewed evidence view for this activity.')
     snapshot = source_snapshot(c)
     revision = current_revision(c)
     job = revision.processing_job if revision else None
@@ -121,13 +125,20 @@ def state(request, checklist_id):
     qa = User.objects.filter(pk=qa_id(c)).first()
     from .review_route_service import route_for
     route = route_for(c) if c.governance_mode == 'independent' else None
+    correction_reason=''
+    if flags['can_edit'] and c.status==Checklist.Status.REJECTED:
+        returned=route.events.filter(to_stage='engineer',action__in=['reject','return']).order_by('-sequence').first() if route else None
+        correction_reason=returned.reason if returned else c.comment or ''
     return {'site_id': c.site_id, 'project': c.project.name,
         'site_info': {key: info.get(key, '') for key in ('site_name', 'address', 'city', 'region')},
         'photos': photos(snapshot, c), 'categories': CATEGORIES, **flags,
         'submitted': c.status not in {Checklist.Status.DRAFT, Checklist.Status.REJECTED},
         'stage': route.stage if route else 'quality_engineer' if c.status in {Checklist.Status.SUBMITTED, Checklist.Status.REVIEW} else 'engineer',
         'qa_name': (qa.get_full_name() or qa.get_username()) if qa else '',
-        'ai': {'status': job.status, 'completed': job.completed, 'total': job.total, 'error': job.error} if job else {'status': 'not_submitted', 'completed': 0, 'total': 0, 'error': ''},
+        'correction_reason':correction_reason,
+        'ai': ({'status': job.status, 'completed': job.completed, 'total': job.total, 'error': job.error} if job else
+            {'status': 'not_submitted', 'completed': 0, 'total': 0, 'error': ''}) if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER else
+            {'status':'submitted' if revision else 'not_submitted'},
         'digest': pipeline.digest(snapshot), 'config_error': configuration_error(c),
         'upload_state': uploads.state(request, c, flags)}
 
@@ -224,12 +235,13 @@ def reviewed_payload(revision):
         if pipeline.digest(result.payload) != result.digest: raise ValidationError('Saved AI result integrity verification failed.')
         payload = deepcopy(result.payload)
     else:
-        payload = pipeline.prepare_checklist(revision.snapshot, {'findings': [], 'missing': [], 'conflicts': []})
-    items = {item['id']: item for item in payload['checklist_items']}
-    for event in revision.processing_events.filter(action__in=['qa_answer', 'qa_mapping']).order_by('pk'):
-        for ident, updates in event.payload.get('items', {}).items():
-            if ident in items: items[ident].update(deepcopy(updates))
-    return payload
+        if revision.snapshot.get('schema',{}).get('sections'):
+            payload = pipeline.prepare_checklist(revision.snapshot, {'findings': [], 'missing': [], 'conflicts': []})
+        else:
+            payload={'checklist_items':[],'findings':[],'missing':[],'conflicts':[],
+                'suggested_items':[],'drawing_records':[]}
+    from .qa_matching import replay
+    return replay(revision,payload)
 
 
 def missing_for_review(c):
@@ -254,7 +266,9 @@ def missing_for_review(c):
             from .evidence_rules import validate_evidence_rules
             try:
                 rules=validate_evidence_rules(field['evidence_rules'])
-                if len({s.get('source_id') for s in sources})<rules.get('min_photos',1):missing.append(field['label']+' requires '+str(rules.get('min_photos',1))+' distinct source photos')
+                from .qa_matching import photo_id
+                originals={photo_id(s) for s in sources if photo_id(s) is not None}
+                if len(originals)<rules.get('min_photos',1):missing.append(field['label']+' requires '+str(rules.get('min_photos',1))+' distinct source photos')
                 # Rich criteria remain explicit QA attestations tied to actual
                 # sources/reason; an available image alone never satisfies them.
                 if any(key not in {'version','min_photos','notes'} and value not in (False,None,[],{},'any') for key,value in rules.items()) and (not item.get('accepted') or not item.get('reason')):
@@ -293,19 +307,20 @@ def projected_checklist(c):
     if not enabled(c):return c
     revision=current_revision(c)
     if not revision:return c
-    view=copy(c);view.answer_data=deepcopy(c.answer_data or {});view.image_data=deepcopy(c.image_data or {})
+    view=copy(c);view.answer_data=deepcopy(c.answer_data or {});view.image_data={}
     answers=view.answer_data.setdefault('custom',{})
     sources={p['id']:p for p in revision.snapshot['photos']}
-    for item in reviewed_payload(revision)['checklist_items']:
+    payload=reviewed_payload(revision)
+    for item in payload['checklist_items']:
+        answers.pop(item['id'],None)
         if item.get('accepted'):
             answers[item['id']]=deepcopy(item.get('value'))
-            paths=[]
-            for ref in item.get('sources',[]):
-                ident=str(ref.get('source_id',''))
-                if ident.startswith('photo:') and ident.split(':')[1].isdigit():
-                    source=sources.get(int(ident.split(':')[1]))
-                    if source:paths.append(source['original'])
-            if paths:view.image_data[item['id']]=paths
+    from .qa_matching import link_state
+    for link in link_state(revision,payload):
+        if link['state']!='qa_confirmed':continue
+        source=sources[link['photo_id']]
+        paths=view.image_data.setdefault(link['field_id'],[])
+        if source['original'] not in paths:paths.append(source['original'])
     return view
 
 
@@ -328,12 +343,34 @@ def review_state(request, checklist_id):
         if not completed:raise PermissionDenied('QA review is not yet shared with the Client.')
         for item in payload['checklist_items']:
             for key in ('reason','qa_by','confidence','conflict'):item.pop(key,None)
-    return {'revision_id': revision.pk, 'source_digest': revision.digest, 'review_digest': review_signature,
+            if not item.get('accepted'):item.update(value=None,proposed_answer=None,status='Missing',sources=[])
+            else:
+                item['sources']=[{key:value for key,value in source.items() if key not in {'mapping_reason','reviewed_by'}}
+                    for source in item.get('sources',[])]
+    result={'revision_id': revision.pk, 'source_digest': revision.digest, 'review_digest': review_signature,
+        'revision_number':revision.number,'workflow_label':c.workflow_label,'workflow_stage':c.workflow_stage,
+        'workflow_status':c.status,
+        'evidence_review_role':role_for(request.user),
         'can_review': flags['can_review'] and not completed, 'completed': completed,
         'config_error': configuration_error(c), 'ai': {'status':'reviewed','completed':0,'total':0,'error':''} if client else state(request, checklist_id)['ai'],
         'photos': photos(revision.snapshot, c), 'items': payload['checklist_items'],
         'can_complete': flags['can_review'] and not completed and not missing_for_review(c),
         'missing': missing_for_review(c)}
+    if not client:
+        from . import qa_matching
+        private=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER
+        result.update(qa_matching.state(revision,payload,request.user,private=private))
+        details=qa_matching.catalog(revision)
+        for item in result['items']:item.update(details.get(item['id'],{}))
+        for photo in result['photos']:photo['observations']=result['observations'].get(photo['id'],[])
+        if not private:
+            confirmed={(link['photo_id'],link['field_id']) for link in result['links']}
+            for item in result['items']:
+                item['sources']=[source for source in item.get('sources',[]) if (qa_matching.photo_id(source),item['id']) in confirmed]
+                for key in ('reason','qa_by','confidence','conflict'):item.pop(key,None)
+                if not item.get('accepted'):item.update(value=None,proposed_answer=None,status='Missing')
+            result['ai']={'status':'reviewed' if completed else 'pending_qa_review','completed':0,'total':0,'error':''}
+    return result
 
 
 @transaction.atomic
@@ -344,6 +381,8 @@ def review_action(request, checklist_id, data):
     c, flags = access(request, checklist_id, quality=True)
     revision = current_revision(c)
     if not revision or not pipeline.current(revision): raise ValidationError('The submitted source changed. Return it for Engineer correction.')
+    from . import qa_matching
+    qa_matching.require_revision(revision,data)
     if data.get('action') == 'retry':
         if configuration_error(c): raise ValidationError(configuration_error(c))
         job = revision.processing_job
@@ -354,6 +393,10 @@ def review_action(request, checklist_id, data):
         return review_state(request, checklist_id)
     if completion_event(revision): raise ValidationError('This QA package is complete and locked. Use the review route to return it for correction.')
     payload = reviewed_payload(revision)
+    if data.get('action') in qa_matching.LINK_ACTIONS|{'reorder'}:
+        if configuration_error(c):raise ValidationError(configuration_error(c))
+        qa_matching.action(revision,c,request.user,data,payload)
+        return review_state(request,checklist_id)
     if data.get('expected_review_digest') != pipeline.review_digest(payload): raise ValidationError('The QA review changed. Refresh before saving another decision.')
     action = data.get('action')
     if action == 'complete':
@@ -374,6 +417,8 @@ def review_action(request, checklist_id, data):
     allowed = {p['id']:p for p in revision.snapshot['photos']}
     if any(i not in allowed for i in ids): raise ValidationError('A photo is outside this submitted evidence revision.')
     field = fields[ident]
+    from .template_views import require_field_editable
+    require_field_editable(c,ident)
     if field.get('system') and data.get('value',c.site_id)!=c.site_id: raise ValidationError('The linked site ID must match the saved survey.')
     updates={'sources':[{'source_id':'photo:'+str(i),'reference':allowed[i]['filename']} for i in ids],
              'reason':reason.strip()[:4000],'qa_by':request.user.pk}
@@ -383,8 +428,6 @@ def review_action(request, checklist_id, data):
         if value not in (None,'',[],{}) and field['type']!='photo':validate_answer(field,value)
         updates.update(value=value,proposed_answer=value,accepted=True,conflict=False,
             status='Confirmed from evidence' if ids else 'Reported' if value not in (None,'',[],{}) else 'Missing')
-    elif field['type']=='photo':
-        updates.update(value=None,accepted=bool(ids),status='Confirmed from evidence' if ids else 'Missing')
     SurveyProcessingEvent.objects.create(revision=revision,actor=request.user,action='qa_answer' if action=='answer' else 'qa_mapping',
         reason=reason.strip()[:4000],payload={'items':{ident:updates}})
     return review_state(request,checklist_id)

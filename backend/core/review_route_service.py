@@ -134,6 +134,9 @@ def act_on_route(actor,checklist,action,reason='',expected_token=None):
         route.stage=STAGES[index-1];route.mode='clarification'
         from .category_intake import enabled as intake_enabled,current_revision
         if intake_enabled(checklist) and route.stage=='quality_engineer':
+            # This explicit one-step return authorises a new QA review cycle.
+            # Only current edit locks reopen; frozen decisions/source stay intact.
+            checklist.section_approvals={};checklist.quality_approval={}
             from .survey_processing_models import SurveyProcessingEvent
             SurveyProcessingEvent.objects.create(revision=current_revision(checklist),actor=actor,action='qa_reopen',reason=reason.strip())
     else:

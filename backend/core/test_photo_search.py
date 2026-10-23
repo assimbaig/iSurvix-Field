@@ -52,12 +52,14 @@ class FastPhotoSearchTests(TestCase):
         with patch.object(self.native,'embed') as encode:
             self.assertFalse(search.process_next());encode.assert_not_called()
         results=[]
-        for actor in [self.engineer,self.quality,self.lead]:
+        for actor in [self.quality,self.lead]:
             self.client.force_login(actor)
             response=self.client.get(reverse('photo_fast_state',args=[self.checklist.pk]))
             self.assertEqual(response.status_code,200,response.content)
             results.append(response.json()['results'])
-        self.assertEqual(results[0],results[1]);self.assertEqual(results[1],results[2])
+        self.assertEqual(results[0],results[1])
+        self.client.force_login(self.engineer)
+        self.assertEqual(self.client.get(reverse('photo_fast_state',args=[self.checklist.pk])).status_code,403)
     def test_schema_rematch_reuses_vector_but_not_prior_checklist_ranking(self):
         self.run_batch()
         self.checklist.schema_snapshot['sections'][0]['fields'][0]['label']='Changed subject'
@@ -82,7 +84,7 @@ class FastPhotoSearchTests(TestCase):
         with self.assertRaises(RuntimeError):search.process_batch(self.job,[self.photo],lost)
         self.assertEqual(PhotoSearchResult.objects.count(),0)
     def test_server_paginates_two_results_and_rejects_foreign_activity(self):
-        self.run_batch();self.client.force_login(self.engineer)
+        self.run_batch();self.client.force_login(self.quality)
         response=self.client.get(reverse('photo_fast_state',args=[self.checklist.pk])+'?page=999')
         self.assertEqual(len(response.json()['results']),1)
         self.assertEqual(response.json()['page'],1)

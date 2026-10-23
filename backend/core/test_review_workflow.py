@@ -317,6 +317,8 @@ class ReviewWorkflowTests(TestCase):
             page=self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
             if actor.is_superuser:
                 self.assertEqual(page.status_code,403)
+            elif actor==self.engineer:
+                self.assertRedirects(page,reverse('photo_workspace',args=[self.survey.pk]),fetch_redirect_response=False)
             else:
                 self.assertFalse(page.context['can_review'])
         self.survey.refresh_from_db()
@@ -338,8 +340,7 @@ class ReviewWorkflowTests(TestCase):
         self.survey.save()
         self.client.force_login(self.engineer)
         page=self.client.get(reverse('custom_checklist',args=[self.survey.pk]))
-        self.assertTrue(page.context['can_submit'])
-        self.assertFalse(page.context['can_review'])
+        self.assertRedirects(page,reverse('photo_workspace',args=[self.survey.pk]),fetch_redirect_response=False)
         response=self.client.post(reverse('engineer_checklist_submit',args=['EngStage',self.survey.pk]))
         self.assertEqual(response.status_code,302)
         self.survey.refresh_from_db()

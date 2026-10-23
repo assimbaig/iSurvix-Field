@@ -53,6 +53,8 @@ def learning(request, checklist_id):
 @login_required
 @require_GET
 def state(request, checklist_id):
+    from .category_intake import deny_engineer_ai
+    deny_engineer_ai(request,checklist_id)
     return JsonResponse(service.learning_state(request.user, checklist_id))
 
 

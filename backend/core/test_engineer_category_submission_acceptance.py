@@ -123,6 +123,7 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
     def qa_action(self, action, **data):
         state = self.qa_state()
         return self.post('photo_capture_review_action', {'action': action,
+            'revision_id': state['revision_id'], 'source_digest': state['source_digest'],
             'expected_review_digest': state['review_digest'], **data})
 
     def route(self, actor, action, reason='Synthetic source-backed review'):
@@ -315,10 +316,17 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
                 self.client.force_login(self.quality)
                 qa = self.client.get(reverse('custom_checklist', args=[self.checklist.pk]))
                 self.assertEqual(qa.status_code, 200, qa.content)
+                self.assertEqual(self.qa_state()['ai']['status'], status)
                 self.checklist.refresh_from_db()
                 self.assertEqual(self.checklist.review_route_record.stage, 'quality_engineer')
                 self.client.force_login(self.engineer)
                 self.assertEqual(self.client.get(reverse('photo_workspace', args=[self.checklist.pk])).status_code, 200)
+                capture = self.state()
+                self.assertEqual(capture['ai']['status'], 'submitted')
+                self.assertNotIn('Synthetic model unavailable', json.dumps(capture))
+                self.assertNotIn('error', capture['ai'])
+                self.assertNotIn('completed', capture['ai'])
+                self.assertNotIn('total', capture['ai'])
                 self.assertFalse(revision.processing_events.filter(action='engineer_complete').exists())
 
     def test_same_project_unassigned_reviewers_cannot_read_private_category_package(self):
@@ -412,6 +420,8 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
         returned = self.route(self.quality, 'reject', 'Synthetic Engineer must add a missing photograph')
         self.assertEqual(returned.status_code, 302, returned.content)
         self.client.force_login(self.engineer)
+        returned_state = self.state()
+        self.assertEqual(returned_state['correction_reason'], 'Synthetic Engineer must add a missing photograph')
         self.upload('Tower', ('synthetic-correction',))
         resubmitted, _ = self.submit()
         self.assertIn(resubmitted.status_code, (200, 201), resubmitted.content)
@@ -512,6 +522,7 @@ class EngineerCategorySubmissionAcceptanceTests(TestCase):
         self.assertEqual(saved.status_code, 200, saved.content)
         events = revision.processing_events.count()
         stale = self.post('photo_capture_review_action', {'action': 'answer',
+            'revision_id': original['revision_id'], 'source_digest': original['source_digest'],
             'expected_review_digest': original['review_digest'], 'field_id': 'contact',
             'value': 'Stale overwrite', 'reason': 'Stale request', 'photo_ids': []}, actor=self.quality)
         self.assertEqual(stale.status_code, 409, stale.content)

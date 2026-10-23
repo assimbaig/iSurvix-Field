@@ -111,6 +111,10 @@ class SurveyPrefillTests(TestCase):
         return parsed
 
     def test_custom_form_get_prefills_only_missing_editable_values_and_preserves_manual_clear(self):
+        reviewer=User.objects.create_user('prefill_lead')
+        reviewer.profile.role=Profile.Roles.TEAM_LEAD;reviewer.profile.project=self.project
+        reviewer.profile.company=self.company;reviewer.profile.save()
+        self.client.force_login(reviewer)
         url=reverse('custom_checklist',args=[self.survey.pk])
         before=deepcopy(self.survey.answer_data);updated=self.survey.updated_at
         response=self.client.get(url)
@@ -136,6 +140,11 @@ class SurveyPrefillTests(TestCase):
         self.assertEqual(self.survey.updated_at,updated)
 
     def test_custom_form_readonly_get_never_renders_suggested_account_values_as_answers(self):
+        reviewer=User.objects.create_user('prefill_quality')
+        reviewer.profile.role=Profile.Roles.QUALITY_ENGINEER;reviewer.profile.project=self.project
+        reviewer.profile.company=self.company;reviewer.profile.save()
+        self.survey.quality_reviewer=reviewer;self.survey.save(update_fields=['quality_reviewer'])
+        self.client.force_login(reviewer)
         for status in [Checklist.Status.SUBMITTED,Checklist.Status.FINAL]:
             with self.subTest(status=status):
                 self.survey.status=status
