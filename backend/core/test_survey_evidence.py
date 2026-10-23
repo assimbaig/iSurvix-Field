@@ -249,6 +249,37 @@ class SurveyInferenceTests(SimpleTestCase):
 
     @patch('core.survey_evidence.local_ai.ollama')
     @patch('core.photo_service.verify_vision')
+    def test_truncated_native_source_retries_once_with_same_image_and_larger_bound(self, vision, native):
+        native.side_effect = [{'done_reason':'length','message':{'content':'{"findings":['}}, response()]
+        result = evidence.analyse_source(self.source(), 'synthetic-model')
+        self.assertEqual(native.call_count,2)
+        first,second=[call.args[1] for call in native.call_args_list]
+        self.assertGreater(second['options']['num_predict'],first['options']['num_predict'])
+        self.assertLessEqual(second['options']['num_predict'],6144)
+        self.assertEqual(first['messages'],second['messages'])
+        self.assertEqual(first['format'],second['format'])
+        self.assertTrue(first['messages'][1]['images'])
+        self.assertEqual(result['findings'][0]['verification_status'],'needs_review')
+        self.assertFalse(result['findings'][0]['measured'])
+
+    @patch('core.survey_evidence.local_ai.ollama')
+    @patch('core.photo_service.verify_vision')
+    def test_repeated_truncation_stops_after_bounded_retry_without_accepting_partial_json(self, vision, native):
+        native.return_value={'done_reason':'length','message':{'content':'{"findings":['}}
+        with self.assertRaisesMessage(evidence.EvidenceError,'response was incomplete'):
+            evidence.analyse_source(self.source(), 'synthetic-model')
+        self.assertEqual(native.call_count,2)
+
+    @patch('core.survey_evidence.local_ai.ollama')
+    @patch('core.photo_service.verify_vision')
+    def test_malformed_complete_response_is_not_retried_or_accepted(self, vision, native):
+        native.return_value={'done_reason':'stop','message':{'content':'not JSON'}}
+        with self.assertRaises(evidence.EvidenceError):
+            evidence.analyse_source(self.source(), 'synthetic-model')
+        native.assert_called_once()
+
+    @patch('core.survey_evidence.local_ai.ollama')
+    @patch('core.photo_service.verify_vision')
     def test_invalid_responses_never_apply_answers(self, vision, native):
         for invalid in [
             {'message': {'content': 'not JSON'}},

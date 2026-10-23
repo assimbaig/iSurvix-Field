@@ -92,12 +92,12 @@ class EngineerBulkCategoryTests(TestCase):
         self.assertEqual(self.audits().count(),1)
         self.unchanged_originals()
 
-    def test_singleton_shape_and_general_info_alias_remain_supported(self):
+    def test_singleton_shape_remains_supported_with_photo_categories(self):
         response=self.client.post(reverse('photo_capture_category',args=[self.checklist.pk]),
-            json.dumps({'photo_id':self.photo.pk,'group':'General Info','expected_digest':self.state()['digest']}),
+            json.dumps({'photo_id':self.photo.pk,'group':'Electrical','expected_digest':self.state()['digest']}),
             content_type='application/json')
         self.assertEqual(response.status_code,200,response.content)
-        self.assertEqual(self.groups()[self.photo.pk],'')
+        self.assertEqual(self.groups()[self.photo.pk],'Electrical')
         self.assertEqual(response.json()['category_update']['selected_count'],1)
         self.assertEqual(self.audits().get().details['photo_id'],self.photo.pk)
 

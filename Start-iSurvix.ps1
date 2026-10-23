@@ -59,6 +59,8 @@ if ($aiReady) {
 } else { Write-Host 'Ollama is not responding. Start Ollama and use Check connection in the app.' }
 try {
     & (Join-Path $projectRoot 'scripts\Start-PhotoAI.ps1') -Model $Model
+    # Text assistance must use the same verified project runtime as photos.
+    $env:ISURVIX_OLLAMA_URL = $env:ISURVIX_PHOTO_OLLAMA_URL
 } catch {
     $env:ISURVIX_PHOTO_OLLAMA_URL = $env:ISURVIX_OLLAMA_URL
     Write-Host "Dedicated photo AI unavailable: $($_.Exception.Message) Using the existing local AI queue."

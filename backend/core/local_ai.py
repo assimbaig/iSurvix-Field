@@ -119,6 +119,16 @@ def installed_models():
             and not any(alias in m['name'].lower() for alias in ('-cloud', ':cloud'))]
 
 
+def _runner_unavailable(error):
+    """Classify the known local runtime failure without returning private paths."""
+    try:
+        payload=json.loads(error.read(32768))
+        detail=payload.get('error','') if isinstance(payload,dict) else ''
+    except (OSError,ValueError,TypeError,AttributeError):
+        return False
+    return isinstance(detail,str) and 'llama-server' in detail.lower() and 'binary not found' in detail.lower()
+
+
 def allowed_surveys(request):
     from .access import accessible_projects,role_for,is_super_admin
     if is_super_admin(request.user):
@@ -167,7 +177,8 @@ def status(request):
         return denied
     try:
         models = installed_models()
-        return JsonResponse({'connected': True, 'model': settings.OLLAMA_MODEL, 'model_installed': settings.OLLAMA_MODEL in models, 'models': models})
+        return JsonResponse({'connected': True, 'model': settings.OLLAMA_MODEL, 'model_installed': settings.OLLAMA_MODEL in models,
+            'models': models,'inference_ready':None})
     except (ValueError, OSError, URLError, HTTPError, TimeoutError):
         return JsonResponse({'connected': False, 'error': 'Ollama is unavailable. Open Ollama on this PC and retry.'}, status=503)
 
@@ -224,7 +235,12 @@ def chat(request):
         if not isinstance(answer, str) or not answer.strip():
             raise ValueError('No answer returned.')
         return JsonResponse({'answer': answer, 'model': model, 'local': True})
-    except (ValueError, OSError, URLError, HTTPError, TimeoutError):
+    except HTTPError as exc:
+        if _runner_unavailable(exc):
+            return JsonResponse({'code':'local_runner_unavailable','error':
+                'Ollama is running, but its model runner is unavailable. Restart iSurvix with Start-iSurvix.cmd and retry.'},status=503)
+        return JsonResponse({'error':'The local model did not complete the answer. Check Ollama and retry; first load can take longer.'},status=503)
+    except (ValueError, OSError, URLError, TimeoutError):
         return JsonResponse({'error': 'The local model did not complete the answer. Check Ollama and retry; first load can take longer.'}, status=503)
     finally:
         lease.__exit__(None, None, None)

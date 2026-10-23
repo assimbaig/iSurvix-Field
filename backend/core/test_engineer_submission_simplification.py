@@ -41,7 +41,7 @@ class EngineerSubmissionSimplificationTests(TestCase):
             checklist_required=False)
         self.checklist.save(update_fields=['checklist_template'])
 
-    def test_ungrouped_upload_preserves_original_bytes_and_never_starts_ai(self):
+    def test_category_upload_preserves_original_bytes_and_never_starts_ai(self):
         self.client.force_login(self.engineer)
         session = pipeline.upload_session(self.request(), self.checklist.pk)
         image = BytesIO()
@@ -49,12 +49,13 @@ class EngineerSubmissionSimplificationTests(TestCase):
         original = image.getvalue()
         with patch('core.photo_service.verify_vision') as vision:
             response = self.client.post(reverse('photo_upload', args=[self.checklist.pk]), {
+                'group': 'Civil',
                 'processing_upload_token': str(session.token),
                 'files': [SimpleUploadedFile('synthetic-ungrouped.png', original, content_type='image/png')],
             })
         self.assertEqual(response.status_code, 201, response.content)
         photo = self.checklist.photo_evidence.get(pk=response.json()['photos'][0]['id'])
-        self.assertEqual(photo.group, '')
+        self.assertEqual(photo.group, 'Civil')
         self.assertEqual(Path(photo.original.path).read_bytes(), original)
         self.assertEqual(self.checklist.processing_revisions.count(), 0)
         self.assertEqual(self.checklist.photo_jobs.count(), 0)

@@ -246,9 +246,10 @@ def upload(request, checklist_id):
     authorize()
     from .field_photo_service import GROUPS
     group=request.POST.get('group','')
-    if group=='General Info':group=''
+    if group=='General Info' or role_for(request.user)=='ENGINEER' and group not in {'Civil','Electrical','Tower'}:
+        raise ValidationError('General Info contains site data. Choose Civil, Electrical or Tower for photos.')
     if group not in GROUPS:
-        raise ValidationError('Leave the upload group empty, or choose Civil, Electrical or Tower.')
+        raise ValidationError('Choose Civil, Electrical or Tower. Older uploads without a category remain Uncategorised.')
     files=request.FILES.getlist('files')
     if not 1<=len(files)<=20:
         return error(ValueError('Submit between 1 and 20 photos per batch.'))

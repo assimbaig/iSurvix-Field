@@ -1,5 +1,22 @@
 # iSurvix Field: local Codex development brief
 
+## PAUSED by owner - 23 October 2026, 22:23 local
+
+Save checkpoint only. All execution, local web/fixture services and three AI
+worker services are paused. **Do not call Ollama, including health/model-list
+requests, or restart its service/workers until the owner explicitly confirms
+the repair is complete.** Do not automatically run the launcher on resume.
+
+Current branch: `fix/engineer-general-information-20261023`, based on merged PR15
+at `405c507`. General Info is now site data; only Civil/Electrical/Tower are new
+photo destinations, with older unclassified originals retained. General Info and
+automatic native photo submission have functional verification. QA assistant
+runtime repair is coded and native-view tested; browser success is pending
+because the model service was unavailable at the last pre-pause check. The
+QA-rejection/Engineer-return journey remains unverified. No final stable full
+suite or push for this branch has occurred. Exact evidence, remaining tasks and
+resume restrictions: `docs/development/PAUSED_STATUS_20261023.md`.
+
 ## Current: Engineer category upload and QA matching - 23 October 2026
 
 Engineer bulk-selection follow-up: saved-photo checkboxes and shared category

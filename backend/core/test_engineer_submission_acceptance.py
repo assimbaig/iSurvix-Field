@@ -75,7 +75,7 @@ class EngineerSubmissionAcceptanceTests(TestCase):
         self.client.force_login(actor)
         return self.client.post(reverse('survey_processing_action', args=[self.checklist.pk]), data)
 
-    def upload(self, actor=None, token=None, color='purple', group=''):
+    def upload(self, actor=None, token=None, color='purple', group='Civil'):
         image = BytesIO()
         Image.new('RGB', (48, 32), color).save(image, 'PNG')
         raw = image.getvalue()

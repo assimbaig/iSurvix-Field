@@ -1,4 +1,11 @@
 import json
+import ast
+from io import BytesIO
+from pathlib import Path
+import subprocess
+import tempfile
+from types import SimpleNamespace
+from urllib.error import HTTPError
 from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import TestCase, Client, override_settings
@@ -137,3 +144,66 @@ class LocalAITests(TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=3)
+
+    def test_local_settings_use_configured_photo_runtime_unless_text_is_explicit(self):
+        settings_path=Path(__file__).resolve().parents[1]/'checklist'/'settings_local.py'
+        tree=ast.parse(settings_path.read_text())
+        names={'OLLAMA_BASE_URL','PHOTO_OLLAMA_BASE_URL'}
+        selected=[statement for statement in tree.body if isinstance(statement,ast.Assign)
+            and any(isinstance(target,ast.Name) and target.id in names for target in statement.targets)]
+        code=compile(ast.Module(body=selected,type_ignores=[]),str(settings_path),'exec')
+        cases=[({},('http://127.0.0.1:11434','http://127.0.0.1:11434')),
+            ({'ISURVIX_PHOTO_OLLAMA_URL':'http://127.0.0.1:11435'},('http://127.0.0.1:11435','http://127.0.0.1:11435')),
+            ({'ISURVIX_OLLAMA_URL':'http://127.0.0.1:11436','ISURVIX_PHOTO_OLLAMA_URL':'http://127.0.0.1:11435'},
+             ('http://127.0.0.1:11436','http://127.0.0.1:11435'))]
+        for environment,expected in cases:
+            with self.subTest(environment=environment):
+                # Evaluate actual configuration assignments without importing
+                # settings again or touching secrets, media or operational DBs.
+                namespace={'os':SimpleNamespace(environ=environment)}
+                exec(code,namespace)
+                self.assertEqual(tuple(namespace[name] for name in ('OLLAMA_BASE_URL','PHOTO_OLLAMA_BASE_URL')),expected)
+
+    def test_windows_launcher_aligns_text_after_verified_photo_startup(self):
+        root=Path(__file__).resolve().parents[2]
+        temporary_root=root/'.local'/'test-runs';temporary_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='launcher-selection-',dir=temporary_root) as temporary:
+            fixture=Path(temporary);(fixture/'scripts').mkdir()
+            (fixture/'scripts'/'Start-PhotoAI.ps1').write_text("param($Model)\n$env:ISURVIX_PHOTO_OLLAMA_URL='http://127.0.0.1:11435'\n")
+            harness=fixture/'harness.ps1'
+            harness.write_text('''param([string]$RealLauncher,[string]$FixtureRoot)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$tree=[System.Management.Automation.Language.Parser]::ParseFile($RealLauncher,[ref]$tokens,[ref]$errors)
+if ($errors.Count) { throw 'Launcher syntax is invalid.' }
+$blocks=$tree.FindAll({param($node) $node -is [System.Management.Automation.Language.TryStatementAst] -and $node.Body.Extent.Text.Contains('Start-PhotoAI.ps1')},$true)
+if ($blocks.Count -ne 1) { throw 'Find the dedicated local runtime startup block.' }
+$projectRoot=$FixtureRoot;$Model='qwen3.5:4b'
+$env:ISURVIX_OLLAMA_URL='http://127.0.0.1:11434'
+$body=$blocks[0].Body.Extent.Text
+. ([scriptblock]::Create($body.Substring(1,$body.Length-2)))
+@{text=$env:ISURVIX_OLLAMA_URL;photo=$env:ISURVIX_PHOTO_OLLAMA_URL}|ConvertTo-Json -Compress
+''')
+            result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+                '-File',str(harness),'-RealLauncher',str(root/'Start-iSurvix.ps1'),'-FixtureRoot',str(fixture)],
+                stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(json.loads(result.stdout),{'text':'http://127.0.0.1:11435','photo':'http://127.0.0.1:11435'})
+
+    @patch('core.local_ai.ollama')
+    def test_qa_runner_missing_error_is_specific_redacted_and_preserves_survey(self,call):
+        quality=User.objects.create_user('local_qa')
+        quality.profile.role=Profile.Roles.QUALITY_ENGINEER;quality.profile.project=self.project;quality.profile.save()
+        self.survey.quality_reviewer=quality;self.survey.save(update_fields=['quality_reviewer'])
+        self.client.force_login(quality)
+        private='PRIVATE_RUNTIME_PATH_AND_PROMPT'
+        body=json.dumps({'error':'error starting llama-server: llama-server binary not found '+private}).encode()
+        call.side_effect=[{'models':[{'name':'qwen3.5:4b'}]},HTTPError('http://127.0.0.1:11434/api/chat',500,'Internal server error',{},BytesIO(body))]
+        before=(self.survey.answer_data.copy(),self.survey.status,self.survey.section_approvals.copy())
+        response=self.post({'question':'Reply with READY only.','checklist_id':self.survey.pk})
+        self.assertEqual(response.status_code,503,response.content)
+        self.assertEqual(response.json()['code'],'local_runner_unavailable')
+        self.assertIn('Start-iSurvix.cmd',response.json()['error'])
+        self.assertNotIn(private,response.content.decode())
+        self.survey.refresh_from_db()
+        self.assertEqual((self.survey.answer_data,self.survey.status,self.survey.section_approvals),before)
