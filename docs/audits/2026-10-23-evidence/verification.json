@@ -1,0 +1,390 @@
+{
+  "date": "2026-10-23",
+  "timezone": "Asia/Riyadh",
+  "repository": "assimbaig/iSurvix-Field",
+  "base_commit": "d2a053b326931fb6627eb65e2a98193197a91a20",
+  "repair_branch": "fix/agency-audit-20261023",
+  "agency_fork_commit": "5baafd5f1452e9785c413065b033ec083ab27757",
+  "execution_mode": "Codex specialist sessions loaded verified Agency profiles; Windows installation was not controlled",
+  "source_fingerprint_algorithm": "SHA256 of sorted changed backend/scripts path + NUL + file SHA256 + newline; unchanged source inherited from base_commit",
+  "source_fingerprint": "e457f651290b4eb6eda64b4fbf7ff3b069d61294819d0b02411c6971030045da",
+  "changed_source_sha256": {
+    "backend/core/__init__.py": "d83936746d207efda9db34d03e976857f9f15d4a1c3044804c1518cc64e4b2a0",
+    "backend/core/access.py": "79ae998b7bbf18ef9e7d28349dee6b3cc57dee49c4a164b61e73f6325c7899ba",
+    "backend/core/account_views.py": "6eceaa15e88abb6c6cec6bd261f6af2a10a1103a48be0759b2ca6287a0f566ea",
+    "backend/core/admin.py": "e27675b71879346bf33bbc56d22d98e49b58f763356f347e0233212c9334e9e8",
+    "backend/core/governance_forms.py": "b07dd1ebc4131eee00c8baa1b94c8276c6b66383f1a6edb4ba196d1174e32d4c",
+    "backend/core/governance_models.py": "9deea5b68ada36d0c27708dd5fda45d48240c58c37319efef29d1d9ae04927f4",
+    "backend/core/governance_views.py": "f1210a92aa78cc07c01f5410557ea431cd81cfd8e834da5812dd3160323cc00a",
+    "backend/core/independent_workflow.py": "58da8c8082c9d8fe4e1c0a7458fbd05eea9a1387a9c78b15d794bc8a3fb57d95",
+    "backend/core/local_ai.py": "aac8f309f8a78fa73579ec7ccfb5f1c3b09f8bb433f2baa595ba52964a147fab",
+    "backend/core/management/commands/audit_project_manager_migration.py": "5625f3a977b6d085dd1b95dffc87e822afea5dfd5dac501c5fcb2312b33501b2",
+    "backend/core/management/commands/consolidate_project_managers.py": "5aaf58776939ba72fabe0c097ea42c3377dd6b71299c8cdd09420197eebccea2",
+    "backend/core/measurement_units.py": "665666c5113631f32067f785989139b6e246fd651214dbbebe7ec34d4b2f19ae",
+    "backend/core/migration_test_utils.py": "ce3b79efe6bca6f34a9faa2f2f67297ac354f25ee0b120ee30816c6366db0f7c",
+    "backend/core/migrations/0004_checklist_status_comment.py": "f80051ecdd08d94db26fe4ed25eb8a8d73c3c21e92a8df79a87420f49cac8142",
+    "backend/core/migrations/0029_industry_catalog.py": "b6ae3e41b5d1208f55582387df936cc799ca08301c683e60f6440a6ea874fe36",
+    "backend/core/migrations/0030_admin_industry.py": "e9b1ef91aa3a9781ee964c368f6d7716226795a3b520bf477ac201f634b212b1",
+    "backend/core/migrations/0033_preserve_legacy_clients.py": "fd23d46f9e271adf775f1d0b83ca900ae8d92847cd1761a6d7a2b1d19f082e44",
+    "backend/core/migrations/0051_consolidate_project_manager_admin.py": "27b5565234d34f3c064c49978861fdde2cdcaf770e4ba8962afeb687f01b1e26",
+    "backend/core/migrations/0052_temporary_login_throttle.py": "062f6552aa7972d7aec13921eead22f660ab9753eeb7df0457a89f5cbdb85004",
+    "backend/core/migrations/0053_audit_append_only_options.py": "c61b87218643b51f09edeea543967909e89cad7240c906333320ae118bf47f8b",
+    "backend/core/models.py": "605e5aa7afdaedc1642dcb1cb016437e13523e2d5299f563a6000f2df82bb112",
+    "backend/core/photo_views.py": "771730f09e3c0937046945af60d1ff27c1c963e9068680a21da4ea7b02cb86fe",
+    "backend/core/remote_worker_service.py": "c93c9c49a6b89a1cb4ab848f6469f42a2baf420ba3aa2cfc7ec13d5f43e07d2d",
+    "backend/core/roadmap_service.py": "7b776d88ce222ac8af947ed08118bd62c2100e404726db20b3e2105dd7e23f51",
+    "backend/core/roadmap_views.py": "524d18f0afbf9624c827a5a96626dfc88bd794e5e6ecee7cdaa083fe1a3ef087",
+    "backend/core/survey_drawings.py": "0b42c5984600e3de4d41c4b2e0bd9308803038434a958aa1d72fca6742bae9ed",
+    "backend/core/survey_evidence.py": "84c1cc1622c6b18e74b6796cdb6450f125c5b6c0d0806ae800d19d7b53e3a4a3",
+    "backend/core/survey_processing.py": "f46a6d57a910ed92130aa5c459cccd37281d9e2315f597dce91c6cb02a711791",
+    "backend/core/test_admin_industry.py": "3ad321b7506d063ba0817f959435e4861c6ff3360d9b7c3263c17a8590cde894",
+    "backend/core/test_assistant_capability.py": "6c650c5501c758b32b6b93a187381e2a78719bdf8f1709323934eb7d5c1519f5",
+    "backend/core/test_client_photo_privacy.py": "f747b777fc473ff47d4062b4aa6f77276e3d4407ef6a2ef4f454f26ed1edfc64",
+    "backend/core/test_company_access.py": "3a6b9ee4966e5a69f7c69ddfbd1b6e1c56e5d008548306df3a764adda9ae1e53",
+    "backend/core/test_governance_audit_integrity.py": "36ecd27a160d92024da28d8c9c7d8272391ed0455c664da961c33fd0e82b72c8",
+    "backend/core/test_legacy_client_migration.py": "92a2260b35a50fb294585dec17ee41c8cf3a17249eeab9e27dfc09ec0b379ea8",
+    "backend/core/test_login_throttle.py": "4c00277c675c9ba4fa780657eda87c7cbf2e894589257ba8f0a0822700f13334",
+    "backend/core/test_measurement_unit_worker_pin.py": "e496b25450496082356b3198df47ce2568274285d0b4d7d67745ca3bb1aa95e5",
+    "backend/core/test_native_runtime_privacy.py": "85a20e63a5265697c7d8e45ec7ba6a940576743f178279869cbda93dfccf1a44",
+    "backend/core/test_project_manager_consolidation.py": "7c5866800398b2d577e828a1bc6967dfa7c4449fbe8ed51761839327c78dc812",
+    "backend/core/test_review_workflow.py": "c00cc5f2adefd45d725de576780472d90821f7acbf6066956504f2f1ebb88046",
+    "backend/core/test_scientific_unit_regressions.py": "eb919145ff79ffbd8a419d0d2bb8af0a32217a4ef58d1a4783432c4bc8ab83f5",
+    "backend/core/test_survey_unicode_regressions.py": "119941a1a76ee3c27d8417d235941397e60bc8eb36d06c2d5fce5d778d9de2b3",
+    "backend/templates/dashboards/governance_workspace.html": "1bed2603ca44b8a8ef980b2a131a58c3e3aa1f6388ec2fcf098e3a59a87fa970",
+    "backend/templates/dashboards/photo_workspace.html": "f67efbe4017ad477d53ea32dd84b33a8f4ae36448b8ae3d3f96e1520186921a7",
+    "scripts/run_backend_tests.py": "54f7f6d936f23bde20f2d7ae0904ae1f4480014f6275b34cadcd6b57808d3817",
+    "scripts/setup_evidence_models.py": "18c130ea0fda1d26b233b1396177b9bb3e280d10912a734199212e9d4cb030c7"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "django": "6.1.2",
+    "onnxruntime": "1.31.0",
+    "opencv": "5.0.0",
+    "pymupdf": "2.0",
+    "pillow": "10.4.0",
+    "ezdxf": "1.4.5",
+    "node": "24.19.0",
+    "os": "Linux"
+  },
+  "baseline": {
+    "tests": 735,
+    "seconds": 125.05,
+    "exit_code": 0,
+    "ORT_DISABLE_TELEMETRY": "1",
+    "log_sha256": "27ebc61d59955b64a451a23f783f759c33ec50414b5a66af9b35404dbace3d18"
+  },
+  "candidate_full_suite": {
+    "tests": 805,
+    "seconds": 127.212,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "command": "ORT_DISABLE_TELEMETRY=1 timeout 240s python -c 'import faulthandler, runpy, sys; faulthandler.enable(all_threads=True); faulthandler.dump_traceback_later(50, repeat=True); sys.argv=[\"scripts/run_backend_tests.py\", \"--verbosity\", \"2\"]; runpy.run_path(\"scripts/run_backend_tests.py\", run_name=\"__main__\")'",
+    "ordinary_command": "python scripts/run_backend_tests.py --verbosity 2",
+    "guarded_python_external_attempts": 0,
+    "in_process_fixture_connections": 33,
+    "native_packet_trace_verified": false,
+    "log_sha256": "234fc763de5db1a8ab9b34d246b9ce6cc336b7e6d58efda4188c09129f25372b",
+    "periodic_watchdog_notes": "Nonfatal50-second stack snapshots showed ordinary password hashing; tests continued."
+  },
+  "earlier_native_instability": {
+    "status": "OPEN",
+    "exit_code": 139,
+    "log_sha256": "f31317b5bf97b2ba70ecb3ce22c36f378e1afa446b42d2d2b1c83a8dd3976b4a",
+    "last_announced_test": "core.test_photo_workflow.PhotoWorkflowTests.test_lost_lease_after_single_vision_call_prevents_metadata_cache",
+    "isolated_case": {
+      "tests": 1,
+      "seconds": 0.271,
+      "result": "PASS"
+    },
+    "unicode_pil_opencv_gc_probe": {
+      "unicode_exports": 20,
+      "image_conversions": 1000,
+      "result": "PASS",
+      "receipt": "Agency i18n session report; no inference,downloads,external access or source edits"
+    },
+    "root_cause": "Not established; last test name and subsequent passing retry do not establish cause or closure"
+  },
+  "production_checks": [
+    {
+      "name": "check",
+      "pass": true,
+      "detail": "System check identified no issues (0 silenced)."
+    },
+    {
+      "name": "makemigrations",
+      "pass": true,
+      "detail": "No changes detected"
+    },
+    {
+      "name": "anonymous_survey",
+      "pass": true,
+      "http_status": 404
+    },
+    {
+      "name": "anonymous_photo_library",
+      "pass": true,
+      "http_status": 404
+    },
+    {
+      "name": "direct_media",
+      "pass": true,
+      "http_status": 404
+    },
+    {
+      "name": "cross_project_custom_checklist",
+      "pass": true,
+      "http_status": 404
+    },
+    {
+      "name": "cross_project_photo_workspace",
+      "pass": true,
+      "http_status": 404
+    },
+    {
+      "name": "login_csrf_enforced",
+      "pass": true,
+      "http_status": 403
+    },
+    {
+      "name": "password_login",
+      "pass": true,
+      "http_status": 302
+    },
+    {
+      "name": "https_redirect",
+      "pass": true,
+      "http_status": 301
+    }
+  ],
+  "production_settings": {
+    "debug": false,
+    "local_ai_enabled": false,
+    "secure_session_cookie": true,
+    "secure_csrf_cookie": true
+  },
+  "roles": [
+    {
+      "role": "ADMIN",
+      "label": "Admin / Project Manager",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    },
+    {
+      "role": "SUPER_ADMIN",
+      "label": "Super Admin",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    },
+    {
+      "role": "TEAM_LEAD",
+      "label": "Team Lead",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    },
+    {
+      "role": "ENGINEER",
+      "label": "Engineer",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    },
+    {
+      "role": "QUALITY_ENGINEER",
+      "label": "Quality Engineer",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    },
+    {
+      "role": "CLIENT",
+      "label": "Client",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    },
+    {
+      "role": "project_manager",
+      "label": "Project Manager (legacy)",
+      "http_status": 200,
+      "navigation": true,
+      "role_layout": true,
+      "logout_control": true
+    }
+  ],
+  "upload_capacity_smoke": {
+    "fixture": "200 distinct 320x240 synthetic PNGs; sequential batches of 20",
+    "batch_http_statuses": [
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201
+    ],
+    "stored_photos": 200,
+    "original_bytes_preserved": true,
+    "repeat_batch_status": 201,
+    "count_after_repeat": 200,
+    "duration_seconds": 1.008,
+    "pass": true
+  },
+  "browser": {
+    "roles": [
+      {
+        "role": "ADMIN",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      },
+      {
+        "role": "SUPER_ADMIN",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      },
+      {
+        "role": "TEAM_LEAD",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      },
+      {
+        "role": "ENGINEER",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      },
+      {
+        "role": "QUALITY_ENGINEER",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      },
+      {
+        "role": "CLIENT",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      },
+      {
+        "role": "project_manager",
+        "password_login": true,
+        "navigation": true,
+        "role_layout": true,
+        "logout_control": true,
+        "dead_assistant_links": 0
+      }
+    ],
+    "flows": [
+      {
+        "name": "engineer_checklist",
+        "pass": true
+      },
+      {
+        "name": "engineer_photo_upload",
+        "pass": true,
+        "http_status": 201
+      },
+      {
+        "name": "engineer_excel_download",
+        "pass": true,
+        "filename": "browser-fixture-checklist.xlsx"
+      },
+      {
+        "name": "engineer_logout",
+        "pass": true
+      },
+      {
+        "name": "client_private_ai_hidden",
+        "pass": true,
+        "http_status": 200
+      }
+    ],
+    "browser_errors": [],
+    "external_resources": "blocked for isolated fixture testing",
+    "browser": "153.0.8010.0",
+    "mobile": {
+      "width": 390,
+      "document_width": 390,
+      "navigation_present": true
+    },
+    "pass": true
+  },
+  "other_checks": {
+    "pip_check": "PASS",
+    "javascript_syntax": [
+      "survey_processing.js",
+      "photo_field_workflow.js",
+      "photo_workspace.js"
+    ],
+    "frontend_retained_checks": {
+      "result": "PASS",
+      "source": "Frozen d2a053b; frontend files unchanged by repair",
+      "scripts": [
+        "check-preview.cjs",
+        "check-workspace.cjs",
+        "check-engineer.cjs",
+        "check-site-routing.cjs"
+      ]
+    },
+    "diff_check": "PASS"
+  },
+  "independent_checks": {
+    "numeric_unicode": 30,
+    "role_login_client_audit_assistant": 32,
+    "workerpin_nativeprivacy": 8,
+    "repaired_legacy_migration_fixtures": 8,
+    "pre0051_default_database_preflight": "PASS after independently reproduced failure and repair",
+    "unicode_repeat_receipt": {
+      "tests": 7,
+      "repeats": 10,
+      "total_executions": 70,
+      "result": "PASS",
+      "receipt": "Agency i18n implementation session; reviewer also ran seven in independent30-test group and inspected rendered table"
+    }
+  },
+  "boundaries": {
+    "operational_data_changed": false,
+    "production_deployed": false,
+    "main_updated": false,
+    "native_fullsite_benchmark": false,
+    "target_cad_visual_acceptance": false,
+    "physical_phone_acceptance": false,
+    "production_backup_restore_drill": false,
+    "owner_retention_policy_approved": false,
+    "remote_ci_run": false
+  },
+  "readiness": {
+    "local_latest_full_run": "PASS",
+    "native_process_stability": "OPEN",
+    "production_promotion": "NOT_READY",
+    "reason": "Unexplained prior native exit139 and outstanding staging/field/recovery/CI/policy gates"
+  }
+}

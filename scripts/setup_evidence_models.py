@@ -2,6 +2,9 @@
 import os
 from pathlib import Path
 
+# Public model installation does not authorize native analytics traffic.
+os.environ['ORT_DISABLE_TELEMETRY'] = '1'
+
 root=Path(__file__).resolve().parents[1]
 cache=root/'.local/models/embeddings'
 cache.mkdir(parents=True,exist_ok=True)

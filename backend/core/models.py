@@ -155,19 +155,21 @@ class Project(models.Model):
 
 class Profile(models.Model):
 	class Roles(models.TextChoices):
-		ADMIN = 'ADMIN', 'Project Admin'
+		ADMIN = 'ADMIN', 'Admin / Project Manager'
 		SUPER_ADMIN = 'SUPER_ADMIN', 'Super Admin'
 		TEAM_LEAD = 'TEAM_LEAD', 'Team Lead'
 		ENGINEER = 'ENGINEER', 'Engineer'
 		QUALITY_ENGINEER = 'QUALITY_ENGINEER', 'Quality Engineer'
 		CLIENT = 'CLIENT', 'Client'
-		PROJECT_MANAGER = 'project_manager', 'Project Manager'
+		# Retained only for reading legacy policies and pre-migration fixtures.
+		# It is deliberately excluded from current account/form choices below.
+		PROJECT_MANAGER = 'project_manager', 'Project Manager (legacy)'
 
 	admin_industry_pending = models.BooleanField(default=False)
 	admin_industry = models.ForeignKey(IndustryCatalog, null=True, blank=True, on_delete=models.PROTECT, related_name='industry_admins')
 	company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.PROTECT, related_name='profiles')
 	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-	role = models.CharField(max_length=20, choices=Roles.choices)
+	role = models.CharField(max_length=20, choices=[choice for choice in Roles.choices if choice[0] != 'project_manager'])
 	project = models.ForeignKey(
 		Project,
 		on_delete=models.SET_NULL,
@@ -183,6 +185,8 @@ class Profile(models.Model):
 		help_text="Use values like TL1, TL2, Eng1, Eng2",
 	)
 	failed_attempts = models.PositiveSmallIntegerField(default=0)
+	# Password failures use a temporary throttle, never the deliberate Admin lock.
+	login_locked_until = models.DateTimeField(null=True, blank=True, editable=False)
 	is_locked = models.BooleanField(default=False)
 
 	def save(self,*args,**kwargs):
@@ -205,6 +209,10 @@ class ProjectMembership(models.Model):
 	project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='memberships')
 	is_active = models.BooleanField(default=True)
 	is_primary = models.BooleanField(default=False)
+	# A migration-only delegation preserves an existing PM's exact project scope
+	# after its account becomes Admin. It never changes a project's named owner.
+	# Ordinary invitation/grant forms cannot create this entitlement.
+	legacy_admin_access = models.BooleanField(default=False, editable=False)
 	expires_at = models.DateTimeField(null=True, blank=True)
 	granted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='granted_project_memberships')
 	created_at = models.DateTimeField(auto_now_add=True)

@@ -10,15 +10,16 @@ def bind_existing_admins(apps,schema_editor):
     Membership=apps.get_model('core','ProjectMembership')
     Industry=apps.get_model('core','IndustryCatalog')
     Invitation=apps.get_model('core','ProjectInvitation')
-    for profile in Profile.objects.filter(role='ADMIN'):
-        ids=set(Membership.objects.filter(user_id=profile.user_id,is_active=True).values_list('project_id',flat=True))
+    alias=schema_editor.connection.alias
+    for profile in Profile.objects.using(alias).filter(role='ADMIN'):
+        ids=set(Membership.objects.using(alias).filter(user_id=profile.user_id,is_active=True).values_list('project_id',flat=True))
         if profile.project_id:ids.add(profile.project_id)
-        codes=set(Project.objects.filter(pk__in=ids).values_list('industry',flat=True))
-        industry=Industry.objects.filter(code=next(iter(codes))).first() if len(codes)==1 else None
-        Profile.objects.filter(pk=profile.pk).update(admin_industry_id=industry.pk if industry else None,admin_industry_pending=not bool(industry))
-    for invitation in Invitation.objects.filter(role='ADMIN').select_related('project'):
-        industry=Industry.objects.filter(code=invitation.project.industry).first()
-        if industry:Invitation.objects.filter(pk=invitation.pk).update(admin_industry_id=industry.pk)
+        codes=set(Project.objects.using(alias).filter(pk__in=ids).values_list('industry',flat=True))
+        industry=Industry.objects.using(alias).filter(code=next(iter(codes))).first() if len(codes)==1 else None
+        Profile.objects.using(alias).filter(pk=profile.pk).update(admin_industry_id=industry.pk if industry else None,admin_industry_pending=not bool(industry))
+    for invitation in Invitation.objects.using(alias).filter(role='ADMIN').select_related('project'):
+        industry=Industry.objects.using(alias).filter(code=invitation.project.industry).first()
+        if industry:Invitation.objects.using(alias).filter(pk=invitation.pk).update(admin_industry_id=industry.pk)
 
 
 class Migration(migrations.Migration):

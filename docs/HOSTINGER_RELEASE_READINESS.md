@@ -33,7 +33,12 @@ authenticated role presentation; photo-library links no longer depend on a local
 inference service. Existing project authorization, read-only states and upload
 permissions still govern access. Local AI stays disabled in production.
 
-## Verification completed
+## Original preparation verification at 6cf575d (historical)
+
+This table records the initial hosted-navigation preparation. The later repair
+adds migrations 0051–0053 and further regressions; use the post-sync audit and
+its evidence summary for current results and migration instructions. The old
+"no new migrations" result below applies only to the original preparation.
 
 | Check | Result |
 |---|---|
@@ -46,9 +51,11 @@ permissions still govern access. Local AI stays disabled in production.
 | JavaScript syntax | Survey-processing and photo-field-workflow scripts passed |
 | Whitespace | `git diff --check` passed |
 
-The backend runner isolates databases, media and model caches, denies external
-connections, and permits its own HTTP fixtures. Its full run recorded zero external
-network attempts. Worker inference in deterministic tests is controlled; these
+The backend runner isolates databases, media and model caches, guards Python
+socket connections, and permits its own HTTP fixtures. Its counter recorded zero
+guarded Python external attempts. It is not a native packet-level network audit;
+the later ONNX telemetry finding and opt-out are recorded in the post-sync audit.
+Worker inference in deterministic tests is controlled; these
 results do not prove the real PC model or a deployed HTTPS connection.
 
 Validation used Python 3.12.14 with all declared requirements installed, including
@@ -81,8 +88,13 @@ Django 6.1.2, Pillow 10.4.0, PyMuPDF 2.0, ezdxf 1.4.5 and Gunicorn 21.2.0.
 7. Release only after those checks pass, then add the Field login link to the
    company website using the confirmed application URL.
 
-Browser verification could not run here: the required Chromium download returned
-an invalid archive. No claim of browser acceptance is made. Hostinger server
-controls were absent from the active tool set even though their configuration
-entries existed. No server configuration, DNS, credentials, database, uploaded
-evidence, corporate website or production service was changed.
+The initial browser download returned an invalid archive. A later local Chromium
+fixture run succeeded, and the post-sync repair was checked again: canonical and
+compatibility role logins/navigation/logout, engineer upload and Excel download,
+Client private-proposal filtering and a 390px layout passed. External resources
+were blocked; live maps/CDNs, physical phones and deployed acceptance remain open.
+See the [dated post-sync audit](audits/2026-10-23-post-sync-audit.md) and its evidence
+summary for the reviewed candidate, subsequent fixes, migration plan and limits.
+Hostinger server controls were unavailable during the original preparation. No
+server configuration, DNS, credentials, operational database, uploaded evidence,
+corporate website or production service was changed by these local checks.

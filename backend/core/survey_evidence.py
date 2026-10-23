@@ -13,6 +13,7 @@ import math
 import re
 import zipfile
 from io import BytesIO
+from decimal import Decimal, InvalidOperation, localcontext
 from pathlib import Path, PurePosixPath
 from typing import Literal
 from xml.etree import ElementTree
@@ -22,6 +23,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError as SchemaError, field_validator
 
 from . import local_ai
+from .measurement_units import NUMERIC_EVIDENCE_UNITS, numeric_evidence_unit
 
 
 MAX_DOCUMENT_BYTES = 30 * 1024 * 1024
@@ -500,14 +502,32 @@ def analyse_source(source, model, base_url=None):
 
 
 def _normalised_value(item):
+    """Compare exact supported quantities without rewriting source observations.
+
+    Decimal numeric text is common in model observations. Converting it to float
+    or rounding to a fixed precision can hide disagreements. Unit case is also
+    evidence: unknown symbols must never be folded into a supported prefix.
+    """
     value = item.get('value')
-    unit = str(item.get('unit', '')).strip().lower()
-    factors = {'mm': .001, 'cm': .01, 'm': 1., 'km': 1000.}
-    if type(value) in (int, float) and unit in factors:
-        return ('length_m', round(value * factors[unit], 9))
-    if type(value) in (int, float):
-        return (unit, round(float(value), 9))
-    return (unit, json.dumps(value, ensure_ascii=False, sort_keys=True).strip().casefold())
+    unit = str(item.get('unit', '')).strip()
+    text = json.dumps(value, ensure_ascii=False, sort_keys=True, default=str).strip().casefold()
+    try:
+        canonical = numeric_evidence_unit(unit)
+    except ValidationError:
+        return ('unsupported_unit', unit, text)
+    numeric = type(value) in (int, float, Decimal) or (
+        isinstance(value, str) and (canonical or item.get('category') == 'measurement'))
+    if numeric:
+        try:
+            number = Decimal(str(value))
+            if number.is_finite() and (not number or abs(number.adjusted()) <= 10000):
+                dimension, factor = NUMERIC_EVIDENCE_UNITS.get(canonical, ('unitless', Decimal(1)))
+                with localcontext() as context:
+                    context.prec = max(28, len(number.as_tuple().digits) + 32)
+                    return ('numeric', dimension, number * factor)
+        except InvalidOperation:
+            pass
+    return ('recorded_text', canonical, text)
 
 
 def reconcile_results(results):

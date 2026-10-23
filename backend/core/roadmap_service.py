@@ -34,8 +34,8 @@ def require_no_blocking_findings(checklist):
 def qualify_template(actor,project,workflow_type,criteria_reference,inspection_method,reason):
     from .governance_views import lock_governance,audit
     lock_governance(actor)
-    if is_super_admin(actor) or role_for(actor) not in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER} or not can_access_project(actor,project):
-        raise PermissionDenied('Technical qualification requires an active project Team Lead or historical Project Manager; administrative privilege is insufficient.')
+    if is_super_admin(actor) or role_for(actor)!=Profile.Roles.TEAM_LEAD or not can_access_project(actor,project):
+        raise PermissionDenied('Technical qualification requires an active project Team Lead; administrative privilege is insufficient.')
     expected='construction' if workflow_type==Checklist.WorkflowType.CONSTRUCTION_INSPECTION else 'telecom'
     from .industry_service import industry_family
     if workflow_type not in Checklist.WorkflowType.values or industry_family(project)!=expected:
@@ -99,7 +99,10 @@ def finding_action(actor,finding,action,reason,photo_ids=None):
     elif action=='retest':
         policy=getattr(checklist,'review_policy',None)
         assigned=bool(policy and actor.pk in {policy.l2_reviewer_id,policy.l3_approver_id})
-        if is_super_admin(actor) or not assigned or role_for(actor) not in {Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER}:raise PermissionDenied('Independent retest requires the explicitly assigned technical reviewer.')
+        allowed={Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER}
+        if policy and policy.workflow_version==1 and policy.l3_approver_id==actor.pk:
+            allowed.add(Profile.Roles.ADMIN)
+        if is_super_admin(actor) or not assigned or role_for(actor) not in allowed:raise PermissionDenied('Independent retest requires the explicitly assigned technical reviewer.')
         if finding.status!='remedied' or actor.pk==finding.created_by_id or finding.events.filter(action='remedy',actor=actor).exists():raise ValidationError('Record remedy first; the retest actor must be independent of the finding author and remediator.')
         finding.status='closed'
     else:raise ValidationError('Choose remedy or independently verified retest.')

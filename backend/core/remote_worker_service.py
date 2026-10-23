@@ -35,11 +35,14 @@ LEASE_SECONDS = 600
 
 
 def versions():
-    from . import survey_checklist_mapping as mapping
+    from . import survey_checklist_mapping as mapping, measurement_units
     # Windows Git checkouts may use CRLF while the VPS checkout uses LF. Their
     # reviewed Python implementation is identical; transport compatibility must
     # not depend on the operating system's checkout line-ending convention.
-    source = b''.join(Path(module.__file__).read_bytes().replace(b'\r\n', b'\n') for module in (evidence, mapping))
+    # Numeric reconciliation also depends on the shared unit vocabulary. Pin
+    # that source so a helper-only semantic change cannot mix PC/server releases.
+    source = b''.join(Path(module.__file__).read_bytes().replace(b'\r\n', b'\n')
+                      for module in (evidence, mapping, measurement_units))
     return {'protocol': PROTOCOL, 'pipeline': pipeline.PIPELINE_VERSION,
             'evidence': evidence.EXTRACTION_VERSION, 'mapping': mapping.VERSION,
             'implementation': hashlib.sha256(source).hexdigest()}

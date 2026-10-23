@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from .models import Company, Project, Profile, ProjectMembership, ChecklistTemplate, Checklist, ProjectInvitation, ClientOrganization, IndustryCatalog
 from .access import can_access_project, user_project_ids
+from .migration_test_utils import isolated_migration_database
 
 
 @override_settings(ROOT_URLCONF='checklist.urls_local', ALLOWED_HOSTS=['testserver'], SECURE_SSL_REDIRECT=False, PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
@@ -190,6 +191,7 @@ class CompanyAccessTests(TestCase):
         self.assertEqual(self.client.post(reverse('governance_project_admin',args=[self.foreign.pk]),{'administrator':self.admin.pk}).status_code,400)
 
 class CompanyMigrationPreservationTests(TransactionTestCase):
+    @isolated_migration_database
     def test_company_migration_preserves_legacy_scope_without_extra_grants(self):
         from django.db import connection
         from django.db.migrations.executor import MigrationExecutor

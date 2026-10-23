@@ -2,7 +2,9 @@
 
 Current end-user manual: [Word](manual/iSurvix_Field_Software_Manual.docx) and [PDF](manual/iSurvix_Field_Software_Manual.pdf), version1.7 dated22 October2026. Existing paths and original history are preserved. Read the operational amendment on pages18–19 before relying on later features.
 
-The current main source2d9440c and audited later developmentb907601 are different states. This documentation PR targets feat/secure-outbound-survey-workers deliberately; it does not promote runtime code into main or prove what is installed. Human review is required. Current roles and historical policy precedence are explained in ROLES_AND_INVITATIONS.md and the manual. The roadmap APPLICATION_PLAN.md retains future modules as planned.
+The 22 October source baseline compared main2d9440c with later developmentb907601. On 23 October, PRs10–12 merged the audit/manual and hosted navigation fix into feat/secure-outbound-survey-workers at d2a053b; main remained unchanged. The [post-sync audit and repair record](audits/2026-10-23-post-sync-audit.md) records the subsequent fixes, test scope and remaining acceptance gates. Source review does not prove what is installed. Current role precedence is explained in ROLES_AND_INVITATIONS.md. The roadmap APPLICATION_PLAN.md retains future modules as planned.
+
+The repair source has six current selectable roles, with Project Manager using the existing Admin role. Legacy signed histories remain unchanged; ambiguous account bindings require explicit setup before consolidation. Client photo evidence excludes internal unaccepted AI proposals. The controlled Word/PDF manual linked above remains v1.7; read the dated source amendment until a release-specific edition is regenerated and approved.
 
 The [22 October report](audits/2026-10-22-ifield-scope-audit.md) is the initial source baseline. Its persistent report identity, exact source coverage, excluded preview releases, open findings and preserved acceptance blockers are recorded in AUDIT_CHECKPOINT.json. There is no verified production counting baseline. Do not interpret null counters as zero or import Engineering Intelligence version44 or its findings.
 

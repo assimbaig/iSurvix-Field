@@ -63,7 +63,9 @@ def local_context(request):
         Profile.Roles.ENGINEER:('audit','teal','E6-2','Engineer'),
         Profile.Roles.QUALITY_ENGINEER:('audit','teal','Q6-2','QA Engineer'),
     }
-    selection=choices.get(role)
+    # Pre-migration compatibility uses the existing Admin shell too; no seventh
+    # dashboard is introduced. Authorization still comes from access.py.
+    selection=choices.get(Profile.Roles.ADMIN if role==Profile.Roles.PROJECT_MANAGER else role)
     design=dict(zip(('layout','palette','code','label'),selection)) if selection else None
     if design:
         design['role']=role
@@ -80,7 +82,13 @@ def local_context(request):
             ('construction_inspection', 'Construction / Inspection', 'construction'),
         ] if industry in industries and role != Profile.Roles.SUPER_ADMIN
     ]
-    return {'local_ai_enabled': getattr(settings, 'LOCAL_AI_ENABLED', False),'role_design':design,
+    from django.urls import reverse,NoReverseMatch
+    assistant_url=None
+    if getattr(settings,'LOCAL_AI_ENABLED',False) and design:
+        try:assistant_url=reverse('local_assistant')
+        except NoReverseMatch:pass
+    return {'local_ai_enabled': getattr(settings, 'LOCAL_AI_ENABLED', False),
+            'local_assistant_url':assistant_url,'local_assistant_available':bool(assistant_url),'role_design':design,
             'shell_projects': projects, 'shell_modules': modules}
 
 

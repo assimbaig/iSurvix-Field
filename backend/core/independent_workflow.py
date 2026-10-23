@@ -128,7 +128,8 @@ def _roles_valid(checklist,l2,l3,version=2):
         raise ValidationError('Submission, validation and approval require three different people.')
     expected=((engineer,Profile.Roles.ENGINEER),(l2,Profile.Roles.QUALITY_ENGINEER if version==2 else Profile.Roles.TEAM_LEAD),(l3,Profile.Roles.TEAM_LEAD if version==2 else Profile.Roles.PROJECT_MANAGER))
     for person,role in expected:
-        if role_for(person)!=role or not can_access_project(person,checklist.project_id):
+        permitted={Profile.Roles.ADMIN,Profile.Roles.PROJECT_MANAGER} if version==1 and person.pk==l3.pk else {role}
+        if role_for(person) not in permitted or not can_access_project(person,checklist.project_id):
             raise ValidationError('Each assigned person must have the required active project role.')
 
 
@@ -243,7 +244,7 @@ def review_revision(actor,checklist,revision_id,action,reason=''):
         raise ValidationError('This revision already has a final review decision.')
     role=role_for(actor)
     l2=actor.pk==revision.l2_reviewer_id and role==(Profile.Roles.QUALITY_ENGINEER if revision.workflow_version==2 else Profile.Roles.TEAM_LEAD)
-    l3=actor.pk==revision.l3_approver_id and role==(Profile.Roles.TEAM_LEAD if revision.workflow_version==2 else Profile.Roles.PROJECT_MANAGER)
+    l3=actor.pk==revision.l3_approver_id and role in ({Profile.Roles.TEAM_LEAD} if revision.workflow_version==2 else {Profile.Roles.ADMIN,Profile.Roles.PROJECT_MANAGER})
     if actor.pk==revision.submitted_by_id or not (l2 or l3):
         raise PermissionDenied('Administrative privilege cannot sign an independent technical stage.')
     if action not in {'validate','approve','return'}:
@@ -337,6 +338,7 @@ def accessible_revision(actor,revision_id):
             raise Http404()
     elif not assigned_site_access(actor,revision.checklist):
         historical_role=(Profile.Roles.QUALITY_ENGINEER if revision.workflow_version==2 else Profile.Roles.TEAM_LEAD) if actor.pk==revision.l2_reviewer_id else (Profile.Roles.TEAM_LEAD if revision.workflow_version==2 else Profile.Roles.PROJECT_MANAGER) if actor.pk==revision.l3_approver_id else None
-        if not historical_role or role_for(actor)!=historical_role or not can_access_project(actor,revision.checklist.project_id):
+        permitted={Profile.Roles.ADMIN,Profile.Roles.PROJECT_MANAGER} if historical_role==Profile.Roles.PROJECT_MANAGER else {historical_role}
+        if not historical_role or role_for(actor) not in permitted or not can_access_project(actor,revision.checklist.project_id):
             raise Http404()
     return revision

@@ -76,7 +76,7 @@ def issue_guard(actor,project,role,company=None,industry=None):
             raise PermissionDenied('A project-free invitation requires Super Admin, an Admin role, a company and an active industry.')
         return
     project_role_guard(actor,project,{Profile.Roles.ADMIN})
-    allowed={Profile.Roles.ADMIN,Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.PROJECT_MANAGER,Profile.Roles.QUALITY_ENGINEER} if is_super_admin(actor) else {Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.PROJECT_MANAGER,Profile.Roles.QUALITY_ENGINEER}
+    allowed={Profile.Roles.ADMIN,Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.QUALITY_ENGINEER} if is_super_admin(actor) else {Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.QUALITY_ENGINEER}
     if role not in allowed:
         raise PermissionDenied('This invitation role is outside your authority.')
 
@@ -141,6 +141,13 @@ def workspace_context(request,**extra):
     if active_view=='administration' and not admin:raise PermissionDenied('Administration requires a scoped administrative role.')
     if role==Profile.Roles.CLIENT:
         review_queue=[survey for survey in surveys if survey.can_client_decide]
+    elif role==Profile.Roles.ADMIN:
+        # Only the named frozen v1 approver may finish an outstanding legacy
+        # signature. Admin does not become a stage in the current v2 route.
+        review_queue=[survey for survey in surveys.filter(
+            review_policy__workflow_version=1,review_policy__l3_approver=actor,
+            status__in=[Checklist.Status.SUBMITTED,Checklist.Status.REVIEW,Checklist.Status.PARTIAL])
+            if survey.workflow_stage=='project_manager']
     elif role in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER,Profile.Roles.QUALITY_ENGINEER}:
         expected_stage={Profile.Roles.QUALITY_ENGINEER:'quality_engineer',Profile.Roles.TEAM_LEAD:'team_lead',Profile.Roles.PROJECT_MANAGER:'project_manager'}[role]
         review_queue=[survey for survey in surveys.filter(status__in=[Checklist.Status.SUBMITTED,Checklist.Status.REVIEW,Checklist.Status.PARTIAL]) if survey.workflow_stage==expected_stage]
@@ -160,7 +167,7 @@ def workspace_context(request,**extra):
         if member.profile.project_id and not member.project_memberships.filter(project_id=member.profile.project_id).exists():
             active_ids.add(member.profile.project_id)
         member.can_manage_account=is_super_admin(actor) or active_ids.issubset(actor_ids)
-    context={'active_view':active_view,'selected_industry':selected_industry,'industry_choices':list(IndustryCatalog.objects.filter(code__in=accessible_projects(actor).values_list('industry',flat=True)).values_list('code','name')) if not super_admin else list(IndustryCatalog.objects.values_list('code','name')),'can_administer':admin,'review_queue':review_queue,'reports':surveys.filter(status=Checklist.Status.FINAL),'can_qualify':role in {Profile.Roles.TEAM_LEAD,Profile.Roles.PROJECT_MANAGER},'role':role,'role_label':dict(Profile.Roles.choices).get(role,'Unassigned'),
+    context={'active_view':active_view,'selected_industry':selected_industry,'industry_choices':list(IndustryCatalog.objects.filter(code__in=accessible_projects(actor).values_list('industry',flat=True)).values_list('code','name')) if not super_admin else list(IndustryCatalog.objects.values_list('code','name')),'can_administer':admin,'review_queue':review_queue,'reports':surveys.filter(status=Checklist.Status.FINAL),'can_qualify':role==Profile.Roles.TEAM_LEAD,'role':role,'role_label':dict(Profile.Roles.choices).get(role,'Unassigned'),
         'is_super_admin':is_super_admin(actor),'is_project_admin':role==Profile.Roles.ADMIN,
         'can_create_project':bool(role==Profile.Roles.ADMIN and not super_admin and not actor.profile.admin_industry_pending and actor.profile.admin_industry_id and actor.profile.admin_industry.is_active and company_id_for(actor)),
         'is_client':role==Profile.Roles.CLIENT,'can_client_approve':not super_admin and role in {Profile.Roles.ADMIN,Profile.Roles.CLIENT},
@@ -478,7 +485,8 @@ def member(request,user_id):
         if action=='unlock':
             profile.is_locked=False
             profile.failed_attempts=0
-            profile.save(update_fields=['is_locked','failed_attempts'])
+            profile.login_locked_until=None
+            profile.save(update_fields=['is_locked','failed_attempts','login_locked_until'])
         elif action=='role':
             if profile.role==Profile.Roles.CLIENT:
                 raise PermissionDenied('Client roles cannot be converted through membership controls.')
@@ -524,8 +532,9 @@ def reset(request):
             if form.is_valid():
                 sessions=Session.objects.count()
                 invitations=ProjectInvitation.objects.filter(accepted_at__isnull=True,revoked_at__isnull=True).update(revoked_at=timezone.now())
-                profiles=Profile.objects.filter(is_locked=True).update(is_locked=False,failed_attempts=0)
-                Profile.objects.exclude(failed_attempts=0).update(failed_attempts=0)
+                profiles=Profile.objects.filter(is_locked=True).update(is_locked=False,failed_attempts=0,login_locked_until=None)
+                Profile.objects.exclude(failed_attempts=0).update(failed_attempts=0,login_locked_until=None)
+                Profile.objects.filter(login_locked_until__isnull=False).update(login_locked_until=None)
                 Session.objects.all().delete()
                 audit(request.user,'access_maintenance_reset',sessions=sessions,invitations=invitations,unlocked_profiles=profiles)
                 logout(request)

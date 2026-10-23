@@ -1,0 +1,44 @@
+iField Agency audit — 23 October 2026
+
+Updated source baseline: d2a053b326931fb6627eb65e2a98193197a91a20
+Repair branch: fix/agency-audit-20261023
+Source-file hashes and full command: verification.json in this directory.
+
+Baseline (native telemetry opted out): 735 tests / 125.050 seconds / exit0.
+Final candidate diagnostic full run: 805 tests / 127.212 seconds / exit0.
+Failures: 0. Errors: 0. Skips: 0.
+Guarded Python external connections: 0. In-process fixture connections: 33.
+These counters do not measure native C networking. Native packet tracing was unavailable.
+
+Earlier candidate full-run process: native segmentation fault / exit139.
+Last announced test: core.test_photo_workflow.PhotoWorkflowTests.test_lost_lease_after_single_vision_call_prevents_metadata_cache
+That test passed alone in0.271 seconds. Its last-announced location does not establish root cause.
+The diagnostic retry passed all805 tests. Native instability remains OPEN pending root-cause investigation.
+
+Browser: Chromium153.0.8010.0, local disposable HTTPS fixture.
+Six canonical role logins plus legacy PM compatibility: PASS, navigation/layout/logout present.
+Visible dead hosted assistant links: 0.
+Engineer checklist/upload201/valid Excel download/logout: PASS.
+Client pending-AI/job-error filtering and hidden internal panels: PASS.
+390px viewport: document width390px. JavaScript page errors: 0.
+External browser resources blocked; no physical-device/CDN/map or production acceptance claimed.
+
+Production-mode security check, warnings as errors: PASS.
+Migration drift: no changes detected.
+Anonymous evidence/direct-media/cross-project denial, login CSRF and HTTPS redirect: PASS.
+200 distinct320x240 synthetic PNGs: ten20-image batches returned201, originals matched hashes,
+and retrying20 images left200 stored. This is not native-AI or real-resolution load acceptance.
+
+Dependency consistency: PASS. Retained four frontend scripts: PASS on unchanged frontend source.
+Changed-path JavaScript syntax and git diff --check: PASS.
+Populated migration/preflight, ownership/signature preservation and concurrent login tests: PASS.
+Independent reviewer checks: 30 numeric/Unicode +32 role/login/privacy/audit/capability
++8 worker/runtime privacy +8 legacy migration fixture checks: PASS.
+Unicode implementation receipt:7 new tests x10 repeat runs (70 executions): PASS;
+reviewer independently ran the Unicode cases and inspected rendered Arabic.
+Additional native stress receipt:20 Unicode exports +1000 PIL/OpenCV conversions/GC: PASS.
+
+Production promotion: NOT READY.
+Open gates include unexplained native process instability, reproducible Linux/Windows CI/locks,
+actual VPS/PC job receipt, real-site AI/engineering acceptance, full recovery drill,
+physical phones/accessibility, deferred account bindings and owner privacy/retention decisions.
