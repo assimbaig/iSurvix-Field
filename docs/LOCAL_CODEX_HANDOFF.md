@@ -1,5 +1,26 @@
 # iSurvix Field: local Codex development brief
 
+## PAUSED by owner - QA redesign, sketches/reports and AI Pause/Resume
+
+The owner explicitly said to save pending fixes and pause development, then said
+the PC would be switched off. All development agents and owned test processes
+are stopped. Save/checkpoint and orderly local app/worker shutdown are the only
+remaining actions. Do not resume implementation or testing until the owner asks.
+Completed AI analyses and original evidence remain durable; do not reset jobs.
+
+The QA redesign is saved WIP, not a verified release. Backend focused tests passed;
+the new UI has not had actual after-browser verification and has a known
+scroll-restoration timing issue. Engineer sketches/report uploads and per-job
+Pause/Resume are accepted pending tasks, inspected/planned only, not implemented.
+The previous948-test success belongs to `e179206`, not this WIP. Exact files,
+evidence, blockers and restart scope:
+`docs/development/PAUSED_QA_QUICK_REVIEW_20261023.md`.
+
+Keep the code, database, originals, credentials and private fixtures under this
+F: project. The earlier pre-edit checkpoint is
+`.local/backups/project-checkpoint-20261023-233824`; the final pause checkpoint
+and local commit are recorded in `.local/qa-quick-review-20261023`.
+
 ## Latest QA AI follow-up: visible progress and safe model recovery
 
 23 October 2026, after checkpoint `52a0881`; branch unchanged. The QA bar now sits
