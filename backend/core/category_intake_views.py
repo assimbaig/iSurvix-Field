@@ -64,4 +64,9 @@ def review_state(request,checklist_id):
 @require_POST
 @api_errors
 def review_action(request,checklist_id):
-    return JsonResponse(intake.review_action(request,checklist_id,body(request)))
+    data=body(request)
+    verified=None
+    if data.get('action')=='retry_current_model':
+        from .survey_model_identity import prepare_recovery
+        verified=prepare_recovery(request,checklist_id,data)
+    return JsonResponse(intake.review_action(request,checklist_id,data,verified_model_identity=verified))

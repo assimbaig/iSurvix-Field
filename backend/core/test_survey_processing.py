@@ -102,7 +102,8 @@ class SurveyProcessingTests(TestCase):
     def processing(self, analyse=None, render_failure=None):
         stack = ExitStack()
         self.addCleanup(stack.close)
-        stack.enter_context(patch('core.photo_service.verify_vision', return_value={'capabilities': ['vision'], 'digest': 'synthetic-model'}))
+        stack.enter_context(patch('core.photo_service.verify_vision', return_value={
+            'capabilities': ['vision'], 'digest': 'synthetic-model','_manifest_digest':'a'*64}))
         stack.enter_context(patch('core.photo_queue.photo_inference_lease', side_effect=lambda: nullcontext(lambda: None)))
         stack.enter_context(patch('core.photo_queue.inference_lease', side_effect=lambda *args, **kwargs: nullcontext(lambda: None)))
         vision = stack.enter_context(patch('core.survey_evidence.analyse_source', side_effect=analyse or self.analysed))

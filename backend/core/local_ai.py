@@ -279,7 +279,7 @@ def chat(request):
     except HTTPError as exc:
         if _runner_unavailable(exc):
             return JsonResponse({'code':'local_runner_unavailable','error':
-                'Ollama is running, but its model runner is unavailable. Restart iSurvix with Start-iSurvix.cmd and retry.'},status=503)
+                'Ollama is running, but its model runner is unavailable. Repair or restart Ollama, then reopen iSurvix with Start-iSurvix.cmd. Uploaded photos are preserved.'},status=503)
         return JsonResponse({'error':'The local model did not complete the answer. Check Ollama and retry; first load can take longer.'},status=503)
     except (ValueError, OSError, URLError, TimeoutError):
         return JsonResponse({'error': 'The local model did not complete the answer. Check Ollama and retry; first load can take longer.'}, status=503)

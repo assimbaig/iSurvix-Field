@@ -308,7 +308,7 @@ class RemoteSurveyWorkerTests(Fixtures, TestCase):
 
     def test_unsupported_local_model_cannot_claim_remote_work(self):
         client = RemoteSurveyClient('https://synthetic.example.invalid', self.token, Path(self.photo.original.path).parent / 'private-model-test')
-        with patch('core.local_ai.ollama', side_effect=[{'models': [{'name': 'qwen3.5:4b'}]}, {'capabilities': ['completion']}]), self.assertRaises(ValueError):
+        with patch('core.photo_service.assistant_ollama', side_effect=[{'models': [{'name': 'qwen3.5:4b'}]}, {'capabilities': ['completion']}]), self.assertRaises(ValueError):
             client.process_once()
         self.revision.processing_job.refresh_from_db()
         self.assertEqual(self.revision.processing_job.attempts, 0)

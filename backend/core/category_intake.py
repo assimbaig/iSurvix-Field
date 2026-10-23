@@ -395,6 +395,16 @@ def review_state(request, checklist_id):
     if role_for(request.user) in {Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD}:
         from .engineer_general_info import describe as general_information
         result['general_information']=general_information(c,{'can_edit':False},revision)
+    if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .survey_model_identity import recovery_state
+        result['model_recovery']=recovery_state(c,revision,flags['can_review'] and not completed)
+        from .survey_processing import ACTIVE
+        from django.db.models import Q
+        result['ai']['queue_ahead']=SurveyProcessingJob.objects.filter(
+            Q(status__in=ACTIVE-{'queued'})|Q(status='queued',pk__lt=revision.processing_job.pk)
+            ).exclude(pk=revision.processing_job.pk).count() if revision.processing_job.status=='queued' else 0
+        result['ai']['error_code']='model_identity_changed' if revision.processing_job.error.startswith('[model_identity_changed]') else ''
+        result['ai']['note']='Photo observations are saved as analysis runs. Checklist suggestions appear after all submitted evidence has been analysed.'
     if not client:
         from . import qa_matching
         private=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER
@@ -413,7 +423,7 @@ def review_state(request, checklist_id):
 
 
 @transaction.atomic
-def review_action(request, checklist_id, data):
+def review_action(request, checklist_id, data, *, verified_model_identity=None):
     from . import survey_processing as pipeline
     from .template_service import validate_answer
     Checklist.objects.select_for_update().get(pk=checklist_id)
@@ -422,6 +432,14 @@ def review_action(request, checklist_id, data):
     if not revision or not pipeline.current(revision): raise ValidationError('The submitted source changed. Return it for Engineer correction.')
     from . import qa_matching
     qa_matching.require_revision(revision,data)
+    if data.get('action')=='retry_current_model':
+        if configuration_error(c):raise ValidationError(configuration_error(c))
+        from .survey_model_identity import recover
+        try:
+            with transaction.atomic():recover(request,c,revision,data,verified=verified_model_identity)
+        except DatabaseError as exc:
+            raise ValidationError('Model recovery could not be saved. No processing attempt was changed; refresh and retry.') from exc
+        return review_state(request,checklist_id)
     if data.get('action') == 'retry':
         if configuration_error(c): raise ValidationError(configuration_error(c))
         job = revision.processing_job

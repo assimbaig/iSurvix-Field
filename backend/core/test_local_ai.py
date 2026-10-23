@@ -169,9 +169,9 @@ class LocalAITests(TestCase):
         temporary_root=root/'.local'/'test-runs';temporary_root.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='launcher-selection-',dir=temporary_root) as temporary:
             fixture=Path(temporary);(fixture/'scripts').mkdir()
-            (fixture/'scripts'/'Start-PhotoAI.ps1').write_text("param($Model)\n$env:ISURVIX_PHOTO_OLLAMA_URL='http://127.0.0.1:11435'\n")
+            (fixture/'scripts'/'Start-PhotoAI.ps1').write_text("param($Model)\n$env:ISURVIX_PHOTO_OLLAMA_URL='http://127.0.0.1:11435'\n'dedicated'|Set-Content -LiteralPath (Join-Path $PSScriptRoot 'started.txt')\n")
             harness=fixture/'harness.ps1'
-            harness.write_text('''param([string]$RealLauncher,[string]$FixtureRoot)
+            harness.write_text('''param([string]$RealLauncher,[string]$FixtureRoot,[int]$ExistingVisionReady=0)
 $ErrorActionPreference='Stop'
 $tokens=$null;$errors=$null
 $tree=[System.Management.Automation.Language.Parser]::ParseFile($RealLauncher,[ref]$tokens,[ref]$errors)
@@ -179,16 +179,24 @@ if ($errors.Count) { throw 'Launcher syntax is invalid.' }
 $blocks=$tree.FindAll({param($node) $node -is [System.Management.Automation.Language.TryStatementAst] -and $node.Body.Extent.Text.Contains('Start-PhotoAI.ps1')},$true)
 if ($blocks.Count -ne 1) { throw 'Find the dedicated local runtime startup block.' }
 $projectRoot=$FixtureRoot;$Model='qwen3.5:4b'
+$existingVisionReady=[bool]$ExistingVisionReady
 $env:ISURVIX_OLLAMA_URL='http://127.0.0.1:11434'
 $body=$blocks[0].Body.Extent.Text
 . ([scriptblock]::Create($body.Substring(1,$body.Length-2)))
 @{text=$env:ISURVIX_OLLAMA_URL;photo=$env:ISURVIX_PHOTO_OLLAMA_URL}|ConvertTo-Json -Compress
 ''')
-            result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
-                '-File',str(harness),'-RealLauncher',str(root/'Start-iSurvix.ps1'),'-FixtureRoot',str(fixture)],
-                stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=30)
-            self.assertEqual(result.returncode,0,result.stderr)
-            self.assertEqual(json.loads(result.stdout),{'text':'http://127.0.0.1:11435','photo':'http://127.0.0.1:11435'})
+            for ready,port in [(True,11434),(False,11435)]:
+                with self.subTest(existing_vision_ready=ready):
+                    marker=fixture/'scripts'/'started.txt'
+                    if marker.exists():marker.unlink()
+                    result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+                        '-File',str(harness),'-RealLauncher',str(root/'Start-iSurvix.ps1'),'-FixtureRoot',str(fixture),
+                        '-ExistingVisionReady',str(int(ready))],
+                        stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=30)
+                    self.assertEqual(result.returncode,0,result.stderr)
+                    self.assertEqual(json.loads(result.stdout.strip().splitlines()[-1]),
+                        {'text':f'http://127.0.0.1:{port}','photo':f'http://127.0.0.1:{port}'})
+                    self.assertEqual(marker.exists(),not ready,'A healthy installed service must not launch the second runtime')
 
     @patch('core.local_ai.ollama')
     def test_qa_runner_missing_error_is_specific_redacted_and_preserves_survey(self,call):
@@ -204,6 +212,7 @@ $body=$blocks[0].Body.Extent.Text
         self.assertEqual(response.status_code,503,response.content)
         self.assertEqual(response.json()['code'],'local_runner_unavailable')
         self.assertIn('Start-iSurvix.cmd',response.json()['error'])
+        self.assertIn('Repair or restart Ollama',response.json()['error'])
         self.assertNotIn(private,response.content.decode())
         self.survey.refresh_from_db()
         self.assertEqual((self.survey.answer_data,self.survey.status,self.survey.section_approvals),before)

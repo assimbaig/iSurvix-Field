@@ -104,14 +104,12 @@ class RemoteSurveyClient:
             raise WorkerConnectionError('The survey server connection was interrupted; saved local results are preserved.') from None
 
     def model_identity(self):
+        from .survey_model_identity import verified_identity
         model = settings.OLLAMA_MODEL
-        endpoint = getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
-        survey_evidence._vision_check(model, endpoint)
-        details = local_ai.ollama('/api/show', {'model': model}, base_url=endpoint)
-        # Same pinned identity as the existing in-process survey worker.
-        identity = hashlib.sha256(json.dumps({'model': model, 'details': details, 'pipeline': versions()['pipeline']},
-            sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()).hexdigest()
-        return model, identity
+        # Derived from actual verified local metadata before claiming anything;
+        # the server never supplies an expected old pin for this client to echo.
+        self._model_identity_proof=verified_identity(model,versions()['pipeline'])
+        return model,self._model_identity_proof['fingerprint']
 
     def _atomic_cache(self, path, value):
         if path.resolve().parent != self.cache:
@@ -200,7 +198,10 @@ class RemoteSurveyClient:
 
     def process_once(self):
         model, identity = self.model_identity()
-        response = self.request('claim/', {'versions': versions(), 'model': model, 'model_digest': identity})
+        payload={'versions':versions(),'model':model,'model_digest':identity}
+        proof=getattr(self,'_model_identity_proof',None)
+        if proof:payload['model_identity']=proof
+        response = self.request('claim/',payload)
         job = response.get('job')
         if not job:
             return False

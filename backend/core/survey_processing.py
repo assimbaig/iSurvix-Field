@@ -502,7 +502,7 @@ def render_drawing_set(revision, payload, released=False, actor=None):
 
 def process_next():
     from . import survey_evidence as evidence
-    from .photo_service import verify_vision
+    from .survey_model_identity import verified_identity,pin
     from .local_ai import InferenceBusy
     from .photo_queue import photo_inference_lease
     job = claim()
@@ -511,12 +511,9 @@ def process_next():
     try:
         worker_guard(job.revision)
         with photo_inference_lease() as check:
-            details = verify_vision(job.model)
+            identity = verified_identity(job.model,job.pipeline_version)
             check()
-        identity = digest({'model': job.model, 'details': details, 'pipeline': job.pipeline_version})
-        if job.model_digest and job.model_digest != identity:
-            raise ValidationError('The pinned model changed. Submit a new revision after explicitly selecting the model.')
-        progress(job, model_digest=identity)
+        pin(job,identity)
         snapshot = job.revision.snapshot
         catalog = [{k: f[k] for k in ('id', 'label', 'type') if k in f}
             for section in snapshot['schema']['sections'] for f in section['fields']]
@@ -550,7 +547,7 @@ def process_next():
                     progress(job)
                     SurveySourceAnalysis.objects.get_or_create(revision=job.revision, source_id=source['source_id'],
                         defaults={'payload': analysed, 'digest': digest(analysed)})
-            progress(job, completed=count, total=max(job.total, count))
+            progress(job, completed=max(job.completed,count), total=max(job.total, count))
         progress(job, 'preparing_checklist', total=count)
         result = SurveyProcessingResult.objects.filter(revision=job.revision).first()
         if not result:

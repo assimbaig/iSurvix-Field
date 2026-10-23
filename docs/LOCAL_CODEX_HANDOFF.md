@@ -1,5 +1,31 @@
 # iSurvix Field: local Codex development brief
 
+## Latest QA AI follow-up: visible progress and safe model recovery
+
+23 October 2026, after checkpoint `52a0881`; branch unchanged. The QA bar now sits
+beside its actual saved count on desktop/mobile. Current460-photo work resumed
+from68 retained analyses using exact legacy-model proof; all68 digests survived.
+The untouched400-photo job was explicitly recovered under the owner's retry
+instruction, remains the same revision/job and is queued behind active work.
+No source answer or engineering approval was changed. Historical failure remains
+history rather than the current submission's status.
+
+Ollama remains on repaired loopback11434, qwen3.5:4b. The actual RTX3060Ti/8GB
+samples showed74-75% activity and full model GPU residency; no50% cap, hardware
+tuning or extra model download was applied. A lower cap would not add capacity.
+Model identity now uses the actual photo endpoint's manifest rather than volatile
+installation metadata; old pins require exact compatibility proof. Zero-progress
+recovery has scoped/stale/lock/idempotency guards and an explicit QA reason.
+
+Final full suite: **948 passed in 330.540s**, native exit0, source stable,
+zero failures/errors/skips. Actual QA pages and persisted progress were checked;
+eight isolated UI states/positive native-metadata recovery and negative guards
+passed independent review. Exact evidence, source fingerprint, limitations and
+startup/check commands: `docs/development/QA_AI_RECOVERY_PROGRESS.md`.
+Private operational evidence remains under `.local/qa-ai-live-20261023`; only
+synthetic progress screenshots are committed. Whole-site completion, model
+accuracy, sustained throughput and production acceptance are not claimed.
+
 ## Current release candidate: Engineer site data and repaired local AI
 
 23 October 2026. Branch `fix/engineer-general-information-20261023`, based on
