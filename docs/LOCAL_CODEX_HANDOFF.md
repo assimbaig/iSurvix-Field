@@ -1,5 +1,20 @@
 # iSurvix Field: local Codex development brief
 
+## Project synchronization - 23 October 2026
+
+The combined review branch is `chore/project-sync-20261023`, based on the saved
+`b907601` project. It includes `6cf575d` (hosted role navigation and photo links
+when local AI is disabled) and the `c4f77e2` audit/manual amendment, retained as
+cherry-pick `8e84b8d`. Existing review branches and pull requests are preserved.
+Current verification is recorded in `docs/development/PROJECT_SYNC_20261023.json`.
+
+This synchronization does not resolve the audit findings or establish a production
+release. In particular, SI unit case handling, non-ASCII drawing labels, approved
+drawing references and full-site AI validation remain outstanding. GitHub `main`
+and the deployment are unchanged. Operational data is preserved and migrations
+0048-0050 have not been applied to the local operational database by this update.
+Use the checkpoint and migration procedure before a normal operational upgrade.
+
 ## Release hardening verification — 21 October 2026
 
 The current feature branch is `feat/secure-outbound-survey-workers`, based on the
