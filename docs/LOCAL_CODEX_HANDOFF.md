@@ -1,5 +1,42 @@
 # iSurvix Field: local Codex development brief
 
+## PR13 local update and scope - 23 October 2026
+
+Owner direction: improve and stabilize the existing survey/inspection, checklist,
+evidence, review and drawing workflows. Do not add more product modules.
+
+PR13 is merged into `feat/secure-outbound-survey-workers` as `b0455521`.
+The local checkout `update/pr13-local-20261023` uses its approved source
+`f76e416`; GitHub's commit comparison confirms no file differences between that
+source and the merge. Normal Git fetch failed twice because this PC could not
+resolve github.com; no remote branch was overwritten or promoted to main.
+
+Before upgrade, checkpoint `.local/backups/project-checkpoint-20261023-175137`
+passed archive CRC verification. The actual database upgrade was rehearsed on a
+restored copy before applying migrations 0048-0053 locally. Preflight found zero
+legacy PM profiles and zero pending PM invitations. All 53 existing core tables
+retain their original rows/column values, and 806 media files plus 12 private or
+configuration files retain their hashes. SQLite integrity is OK. Do not migrate
+back to 0050: migration 0051 is forward-only; use the verified recovery snapshot
+and a reviewed recovery procedure instead.
+
+Current Windows verification: 805 isolated backend tests passed in 271.267 seconds
+with no failures/errors/skips and no guarded Python external network attempts.
+Django, migration-drift, pending-migration and dependency checks passed; all four
+retained frontend scripts and both workflow JavaScript syntax checks passed.
+Edge checked all six role workspaces and Engineer/Client photo views at 390px,
+with zero JavaScript errors or failed local HTTP requests. Browser records/media
+were isolated synthetic copies, not operational approval tests. Private receipts
+are under `.local/pr13-local-20261023`.
+
+The earlier native exit139 crash remains unresolved; a passing Windows run does
+not establish its cause or close A12. Client read-only wording remains A13. Keep
+real-site AI accuracy/throughput, approved drawing geometry/target CAD acceptance,
+staging HTTPS/PC worker, recovery/device/accessibility and privacy-operation gates
+open. Review potentially affected historical scientific values against original
+evidence; do not overwrite signed records. No new modules, production deployment,
+operational approvals, password resets or automatic reprocessing were performed.
+
 ## Project synchronization - 23 October 2026
 
 The combined review branch is `chore/project-sync-20261023`, based on the saved
