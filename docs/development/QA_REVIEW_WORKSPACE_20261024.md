@@ -1,6 +1,7 @@
 # Site Review / QA workspace
 
 Delivery record for the 24 October 2026 reference-layout redesign.
+Implementation: `32d49df`; [draft PR18](https://github.com/assimbaig/iSurvix-Field/pull/18).
 Branch: `feat/qa-review-workspace-20261024`. The owner merged PR17 during this
 task; the base was fast-forwarded to `948bfc9` after verifying its committed tree
 was identical to `03b5eed`. No working changes were overwritten. No PR merge or

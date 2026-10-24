@@ -2,6 +2,11 @@
 
 ## Latest local candidate - reference QA workspace, 24 October 2026
 
+Implementation `32d49dfd8d150c9f5ebc9fd93b83e51907051bab` is pushed in
+**draft PR18**: https://github.com/assimbaig/iSurvix-Field/pull/18, targeting
+`feat/secure-outbound-survey-workers`. It is not merged or deployed. Final recovery
+metadata is `.local/qa-site-compact-20261024/release-checkpoint.json`.
+
 Current branch: `feat/qa-review-workspace-20261024`. The owner merged PR17 during
 this task. After fetching, the branch base fast-forwarded to `948bfc9`, whose
 committed tree exactly matched `03b5eed`; all working changes were preserved.
