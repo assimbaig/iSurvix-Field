@@ -2,6 +2,7 @@
 import hashlib
 import secrets
 import hmac
+from urllib.parse import urlencode
 from datetime import timedelta
 from functools import wraps
 from django.contrib import messages
@@ -176,6 +177,24 @@ def workspace_context(request,**extra):
         'scope_label':chosen.name if chosen else 'All assigned projects','companies':Company.objects.all() if is_super_admin(actor) else Company.objects.filter(pk=company_id_for(actor)),
         'clientorg_form':ClientOrganizationForm(),'client_organization_form':ClientOrganizationForm(),'client_organizations':ClientOrganization.objects.all() if super_admin else ClientOrganization.objects.filter(company_id=company_id_for(actor),industry_id=getattr(actor.profile,'admin_industry_id',None)),'company_form':CompanyForm(),'surveys':surveys,'assignments':assignments,'invitations':invites,'members':members,
         'admin_industry_form':AdminIndustryForm(),'project_form':ProjectForm(actor=actor),'invite_form':InvitationForm(actor=actor),'assignment_form':AssignmentForm(actor=actor)}
+    engineer_home=role==Profile.Roles.ENGINEER and active_view=='my_work'
+    if engineer_home:
+        unlinked_assignments=assignments.filter(checklist__isnull=True)
+        pending_assignments=unlinked_assignments.filter(status__in=[WorkAssignment.Status.PENDING,WorkAssignment.Status.IN_PROGRESS])
+        project_query={'project':str(chosen.pk) if chosen else 'all'}
+        if selected_industry:project_query['industry']=selected_industry
+        def task_url(work=None):
+            query=dict(project_query)
+            if work:query['work']=work
+            return reverse('task_explorer')+'?'+urlencode(query)
+        context.update({
+            'engineer_home':True,
+            'engineer_home_metrics':[
+                {'key':'assigned','label':'Total assigned scope','count':surveys.count()+unlinked_assignments.count(),'url':task_url()},
+                {'key':'pending','label':'Pending for submission','count':surveys.filter(status=Checklist.Status.DRAFT).count()+pending_assignments.count(),'url':task_url('pending')},
+                {'key':'returned','label':'Rejected pending for response','count':surveys.filter(status=Checklist.Status.REJECTED).count(),'url':task_url('returned')},
+            ],
+        })
     if super_admin:
         context['recent_audit']=GovernanceAudit.objects.select_related('actor','project').order_by('-created_at','-pk')[:12]
         context.update({'industries':IndustryCatalog.objects.all(),'industry_form':IndustryForm(),'sites':assignments,'counts':{'clients':ClientOrganization.objects.count(),'projects':Project.objects.count(),'sites':WorkAssignment.objects.count(),'users':User.objects.count(),'industries':IndustryCatalog.objects.count()}})
