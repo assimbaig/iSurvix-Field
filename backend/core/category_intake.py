@@ -447,7 +447,17 @@ def review_state(request, checklist_id):
         result.update(qa_matching.state(revision,payload,request.user,private=private))
         details=qa_matching.catalog(revision)
         for item in result['items']:item.update(details.get(item['id'],{}))
-        for photo in result['photos']:photo['observations']=result['observations'].get(photo['id'],[])
+        for photo in result['photos']:
+            photo['observations']=result['observations'].get(photo['id'],[])
+            if private:
+                match=result['photo_matches'].get(str(photo['id']))
+                if match:
+                    original=photo.get('filename','')
+                    display=match.get('display_name') or original
+                    photo['original_filename']=original
+                    photo['display_name']=display
+                    photo['filename']=display
+                    photo['photo_match']={key:value for key,value in match.items() if key!='display_name'}
         if not private:
             confirmed={(link['photo_id'],link['field_id']) for link in result['links']}
             for item in result['items']:

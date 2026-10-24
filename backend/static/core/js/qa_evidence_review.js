@@ -11,6 +11,7 @@
   let state=null,category='',section='',selectedID=null,selection=new Set(),expanded=new Set(['']);
   let busy=false,dirty=false,stale=true,timer=null,pollFailures=0,visibleLimit=36,dragging=null,drawerFocus=null;
   let viewerID=null,viewerTriggerID=null,viewerList=[],zoom=1,returnFocus=null,moveLink=null,lastFailure='',recoveryRequest=null;
+  let photoMatchNotice=null;
   let siteEditingID=null,assignmentPoint,progressPolling=false,lastProgressError='',analysisDetailMode=null,compareSources=false,pointFilter='all',photoFilter='all',photoSearch='',gallerySize='medium',galleryOffset=0,collection='unassigned',draftGuard=null,reviewDrawerFocus=null,documentObjectURL=null,documentReturnFocus=null,panX=0,panY=0,panStart=null,galleryScrollBeforeViewer=0,footerHome=null,documentRequest=null,photoToolsMode=null;const collapsedSections=new Set();
   const say=(text,error=false)=>{el('qa-review-message').textContent=text;el('qa-review-message').classList.toggle('qa-evidence-error',error);};
   function renderSiteInformation(){
@@ -350,6 +351,38 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
     else if(photo?.duplicate?.kind==='possible')messages.push(`Possible duplicate of photo #${photo.duplicate.photo_id} — verify`);
     if(photo?.analysis_reused){const reused=photo.analysis_reused,label=Number.isInteger(reused.revision_number)&&reused.revision_number>0?'revision '+reused.revision_number:'revision record #'+reused.revision_id;messages.push(`Reused analysis · ${label}; QA review is still required`);}
     return messages.join(' · ');
+  }
+  function photoDisplayName(photo){return !teamLead&&typeof photo?.photo_match?.display_name==='string'&&photo.photo_match.display_name.trim()?photo.photo_match.display_name:photo?.filename||'Source photo';}
+  function renderPhotoMatch(photo){
+    el('qa-preview-display-name').textContent=photoDisplayName(photo);el('qa-preview-original-filename').textContent='Original file: '+(photo.filename||'Filename not recorded');
+    const panel=el('qa-preview-match-panel'),host=el('qa-preview-match-candidates'),summary=el('qa-preview-match-summary'),feedback=el('qa-preview-match-feedback');panel.hidden=teamLead;host.replaceChildren();
+    const notice=photoMatchNotice?.photo_id===photo.id&&photoMatchNotice.revision_id===state?.revision_id?photoMatchNotice:null;feedback.textContent=notice?.text||'';feedback.classList.toggle('qa-evidence-error',!!notice?.error);if(teamLead)return;
+    const match=photo.photo_match||{},candidates=Array.isArray(match.candidates)?match.candidates:[],valid=candidates.filter(candidate=>typeof candidate.field_id==='string'&&state.items.some(item=>item.id===candidate.field_id));
+    summary.textContent=match.status==='pending'?'Checklist suggestions are pending. Saved observations and manual matching remain available.':match.status==='failed'?'AI matching did not finish for this revision. Manual matching remains available.':match.status==='unmatched'?'No supported checklist match was recorded. Review this source and assign it manually when supported.':valid.length?`${valid.length} suggested checklist location${valid.length===1?'':'s'}; QA review is required.`:'No saved ranked suggestions are available for this approved checklist revision.';
+    for(const candidate of valid){
+      const item=state.items.find(item=>item.id===candidate.field_id),row=node('li',undefined,'qa-photo-candidate');row.dataset.candidateField=candidate.field_id;if(Number.isInteger(candidate.rank)&&candidate.rank>0)row.value=candidate.rank;
+      const rank=Number.isInteger(candidate.rank)&&candidate.rank>0?String(candidate.rank):'Not recorded';row.append(node('strong',`Rank ${rank} · ${candidate.label||item.label}`),node('small',[candidate.category,candidate.section].filter(Boolean).join(' / ')));
+      if(typeof candidate.score==='number'&&Number.isFinite(candidate.score))row.append(node('small',`Relative support: ${candidate.score.toFixed(3)}${candidate.score_kind?' · '+String(candidate.score_kind).replaceAll('_',' '):''}`));
+      row.append(node('p',candidate.reason||'No matching explanation was recorded.'));
+      const linked=linksForPhoto(photo.id).find(link=>link.field_id===candidate.field_id),isConfirmed=!!linked&&confirmed(link),button=node('button',isConfirmed?'QA confirmed':linked?'Confirm link':'Add link');button.type='button';button.dataset.confirmCandidate=candidate.field_id;button.disabled=isConfirmed||!canEdit()||dirty||!fieldEditable(candidate.field_id);button.title=item.locked?'This approved checklist point is locked.':isConfirmed?'This source link is already QA-confirmed.':'Confirm this photo link only; checklist acceptance and other evidence links stay unchanged.';
+      button.addEventListener('click',async()=>{
+        if(!canEdit()||dirty||!fieldEditable(candidate.field_id))return;button.disabled=true;photoMatchNotice={photo_id:photo.id,revision_id:state.revision_id,text:'Saving this photo link…',error:false};feedback.textContent=photoMatchNotice.text;
+        await confirmLinks([photo.id],candidate.field_id);const saved=linksForPhoto(photo.id).some(link=>link.field_id===candidate.field_id&&confirmed(link));photoMatchNotice={photo_id:photo.id,revision_id:state.revision_id,text:saved?'Photo link confirmed. Checklist acceptance and workflow approval are unchanged.':lastFailure||'The link was not saved. Refresh the review and retry.',error:!saved};const current=state.photos.find(source=>source.id===photo.id);if(current)renderPhotoMatch(current);
+      });row.append(button);host.append(row);
+    }
+  }
+  function renderPhotoObservations(photo,provided){
+    const analysis=el('qa-preview-analysis');analysis.parentElement.hidden=teamLead;analysis.replaceChildren();if(teamLead)return;
+    const observation=provided??(photo.observations?.length?photo.observations:photo.observation||photo.ai_observation||photo.analysis||photo.ai_analysis||photo.visual_metadata);
+    if(observation){
+      analysis.append(node('p','Unverified observations from this source. Inspect the photo before using a value.'));const entries=Array.isArray(observation)?observation:[observation];
+      for(const finding of entries){const row=node('article',undefined,'qa-ai-finding');if(typeof finding==='string')row.append(node('p',finding));else if(finding&&typeof finding==='object'){
+        row.append(node('strong',finding.label||finding.component||finding.category||'Saved observation'));
+        if(finding.value!==null&&finding.value!==undefined&&finding.value!=='')row.append(node('p','Extracted value: '+(typeof finding.value==='object'?JSON.stringify(finding.value):String(finding.value))+(finding.unit?' '+finding.unit:'')));
+        if(finding.evidence_quote)row.append(node('p','Visible source: '+finding.evidence_quote));if(finding.mapping_reason||finding.reason)row.append(node('p',finding.mapping_reason||finding.reason));if(finding.uncertainty)row.append(node('p','Uncertainty: '+finding.uncertainty));if(finding.confidence!==null&&finding.confidence!==undefined&&finding.confidence!=='')row.append(node('small','Recorded source confidence: '+finding.confidence));if(finding.reference)row.append(node('small','Source: '+finding.reference));
+      }analysis.append(row);}
+      const raw=node('details');raw.append(node('summary','Advanced saved source data'),node('pre',typeof observation==='string'?observation:JSON.stringify(observation,null,2)));analysis.append(raw);
+    }else analysis.append(node('p','No saved AI observations are available for this source photo. Manual review remains available.'));
   }
   function renderPhotos(){
     const host=el('qa-review-photos'),pane=el('qa-photo-pane').querySelector('.qa-photo-pane-scroll'),scroll=pane.scrollTop;host.replaceChildren();host.dataset.thumbnailSize=gallerySize;

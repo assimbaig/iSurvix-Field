@@ -310,6 +310,59 @@ def numeric_evidence_value(field, finding):
     return formatted(converted), expected
 
 
+def _safe_filename_part(value, limit=56):
+    """Return a short readable display-name component, never a storage path."""
+    text = re.sub(r'[^A-Za-z0-9]+', '_', str(value or '')).strip('_')
+    return text[:limit].strip('_')
+
+
+def generated_photo_names(snapshot, findings):
+    """Build stable revision-scoped names while retaining every source filename.
+
+    These are QA-facing aliases only. Originals, upload filenames, hashes and
+    storage paths are left untouched. Candidate ranks guide the label but are
+    not interpreted as calibrated probabilities.
+    """
+    site = _safe_filename_part(snapshot.get('site_id'), 80) or 'Site'
+    fields = {field['id']: field for section in snapshot.get('schema', {}).get('sections', [])
+              for field in section.get('fields', []) if isinstance(field, dict) and isinstance(field.get('id'), str)}
+    by_photo = {}
+    for finding in findings if isinstance(findings, list) else []:
+        if not isinstance(finding, dict):
+            continue
+        source = str(finding.get('source_id') or '')
+        match = re.fullmatch(r'photo:(\d+)(?::crop:\d+)?', source)
+        if not match:
+            continue
+        candidates = finding.get('candidate_fields') or finding.get('candidates') or []
+        ranked = [candidate for candidate in candidates if isinstance(candidate, dict)
+                  and isinstance(candidate.get('field_id'), str)] if isinstance(candidates, list) else []
+        ranked.sort(key=lambda candidate: (candidate.get('rank', 10**9), candidate['field_id']))
+        field_id = ranked[0]['field_id'] if ranked else finding.get('field_hint')
+        field = fields.get(field_id) if isinstance(field_id, str) else None
+        title = field.get('label') if field else finding.get('component')
+        confidence = finding.get('confidence')
+        value = finding.get('value')
+        if confidence == 'high' and finding.get('basis') == 'recorded' and finding.get('evidence_quote') and value not in (None, '', [], {}):
+            title = f"{title or 'Evidence'}_{value}"
+        if title:
+            by_photo.setdefault(int(match.group(1)), []).append((
+                0 if confidence == 'high' else 1,
+                ranked[0].get('rank', 10**9) if ranked else 0,
+                _safe_filename_part(title)))
+    names = {}
+    photos = snapshot.get('photos', [])
+    for serial, photo in enumerate(sorted(photos, key=lambda item: int(item.get('id', 0))), 1):
+        photo_id = photo.get('id')
+        choices = sorted(by_photo.get(photo_id, []))
+        title = next((entry[2] for entry in choices if entry[2]), '') or 'Evidence'
+        suffix = Path(str(photo.get('filename') or '')).suffix.lower()
+        if suffix not in {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tif', '.tiff', '.heic', '.heif'}:
+            suffix = '.img'
+        names[str(photo_id)] = f'{site}_{serial:06d}_{title[:56]}{suffix}'
+    return names
+
+
 def prepare_checklist(snapshot, reconciliation):
     """Complete published structure; conservative mapping leaves ambiguity visible."""
     fields = [(s, f) for s in snapshot['schema']['sections'] for f in s['fields']]
@@ -393,9 +446,11 @@ def prepare_checklist(snapshot, reconciliation):
             'accepted': False, 'conflict': conflict,
             'unit': unit,
             'reason': 'Check the original evidence before acceptance.' if matches else 'Submitted data; verify it.' if status == 'Reported' else 'No supported answer was extracted.'})
-    return {'checklist_items': proposals, 'findings': reconciliation.get('findings', []),
+    findings = reconciliation.get('findings', [])
+    return {'checklist_items': proposals, 'findings': findings,
         'conflicts': conflicts, 'missing': missing,
-        'suggested_items': reconciliation.get('suggested_items', []), 'drawing_records': []}
+        'suggested_items': reconciliation.get('suggested_items', []), 'drawing_records': [],
+        'photo_names': generated_photo_names(snapshot, findings)}
 
 
 def reviewed_payload(revision):

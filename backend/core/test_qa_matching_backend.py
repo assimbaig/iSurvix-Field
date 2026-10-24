@@ -210,6 +210,71 @@ class QAMatchingBackendTests(TestCase):
         item['id']='manufacturer';item['value']='SyntheticCo'
         self.assertEqual(len(qa_matching.valid_ai_sources(item,findings)),1)
 
+    def test_high_confidence_photo_location_can_be_suggested_for_unanswered_inspection(self):
+        from .survey_processing_models import SurveyProcessingResult
+        field_id = 'civil_photo'
+        source_id = 'photo:' + str(self.ids[0])
+        for section in self.revision.snapshot['schema']['sections']:
+            for field in section['fields']:
+                if field['id'] == field_id:
+                    field['type'] = 'inspection'
+        self.checklist.schema_snapshot = deepcopy(self.revision.snapshot['schema'])
+        self.checklist.save(update_fields=['schema_snapshot'])
+        finding = {'source_id': source_id, 'reference': 'synthetic-inspection.png',
+            'finding_key': source_id + ':finding:1', 'field_hint': field_id,
+            'component': 'foundation inspection evidence', 'value': None,
+            'notes': 'Visible foundation and footing evidence.', 'confidence': 'high',
+            'basis': 'visible', 'unit': '', 'verification_status': 'needs_review'}
+        payload = pipeline.prepare_checklist(self.revision.snapshot,
+            {'findings': [finding], 'missing': [], 'conflicts': []})
+        SurveyProcessingResult.objects.create(revision=self.revision, payload=payload,
+            digest=pipeline.digest(payload))
+        SurveySourceAnalysis.objects.create(revision=self.revision, source_id=source_id,
+            payload={'source_id': source_id, 'reference': 'synthetic-inspection.png',
+                     'findings': [finding]}, digest=pipeline.digest(
+                         {'source_id': source_id, 'reference': 'synthetic-inspection.png',
+                          'findings': [finding]}))
+
+        state = self.qa_state()
+        self.assertIn((self.ids[0], field_id),
+            {(link['photo_id'], link['field_id']) for link in state['links']})
+        suggested = next(link for link in state['links']
+            if link['photo_id'] == self.ids[0] and link['field_id'] == field_id)
+        self.assertEqual(suggested['state'], 'ai_suggested')
+        point = next(item for item in state['items'] if item['id'] == field_id)
+        self.assertFalse(point['accepted'])
+        self.assertIsNone(point['value'])
+
+    def test_photo_preview_projects_ranked_matches_and_generated_name_without_losing_source_name(self):
+        source_id = 'photo:' + str(self.ids[0])
+        payload = pipeline.prepare_checklist(self.revision.snapshot, {'findings': [
+            {'source_id': source_id, 'reference': 'original-radio.jpg', 'field_hint': 'manufacturer',
+             'candidate_fields': [{'field_id': 'manufacturer', 'rank': 1, 'score': 0.82,
+                 'score_kind': 'lexical_similarity', 'reason': 'The label observation fits this field.'}],
+             'value': 'SyntheticCo', 'unit': '', 'basis': 'recorded', 'evidence_quote': 'SyntheticCo',
+             'confidence': 'high'}], 'missing': [], 'conflicts': []})
+        payload['photo_matches'] = [{'source_id': source_id, 'state': 'proposed',
+            'reason': 'AI suggested this source link; QA confirmation is required.',
+            'requires_qa': True, 'candidates': [{'field_id': 'manufacturer', 'rank': 1,
+                'score': 0.82, 'score_kind': 'lexical_similarity',
+                'reason': 'The label observation fits this field.'}]}]
+        payload['photo_names'] = {str(self.ids[0]): 'SYNTHETIC_000001_Cabinet_SyntheticCo.png'}
+        SurveyProcessingResult.objects.create(revision=self.revision, payload=payload,
+            digest=pipeline.digest(payload))
+        source = next(photo for photo in self.revision.snapshot['photos'] if photo['id'] == self.ids[0])
+        SurveySourceAnalysis.objects.create(revision=self.revision, source_id=source_id,
+            payload={'source_id': source_id, 'reference': source['filename'],
+                'findings': payload['findings']}, digest=pipeline.digest({'source_id': source_id,
+                'reference': source['filename'], 'findings': payload['findings']}))
+
+        state = self.qa_state()
+        preview = next(photo for photo in state['photos'] if photo['id'] == self.ids[0])
+        self.assertEqual(preview['display_name'], 'SYNTHETIC_000001_Cabinet_SyntheticCo.png')
+        self.assertEqual(preview['original_filename'], source['filename'])
+        self.assertEqual(preview['photo_match']['status'], 'proposed')
+        self.assertEqual(preview['photo_match']['candidates'][0]['field_id'], 'manufacturer')
+        self.assertEqual(preview['photo_match']['candidates'][0]['label'], 'Manufacturer')
+
     def test_original_and_crops_count_as_one_link_and_one_required_photo(self):
         from .category_intake import missing_for_review
         source='photo:'+str(self.ids[0])

@@ -3,7 +3,42 @@ const checks=[];
 function verify(label,assertion){try{assertion();checks.push({label,passed:true});}catch(error){checks.push({label,passed:false,error:error.message});process.exitCode=1;}}
 const data={revision_id:2,items:[{id:'review_point',type:'text',label:'Actual checklist point',reason:'No supported answer was extracted.'}],photos:[],links:[],unassigned_photo_ids:[],review_digest:'review',source_digest:'source',display_order:{},order_digest:'order',can_review:true};
 function selected(){const c=controller();c.storage.set('qa-evidence-view:/local/photos/7/',JSON.stringify({revision_id:2,step:'evidence',category:'Civil',selectedID:'review_point',scroll:{}}));c.qa.applyState(data,true);c.flush();return c;}
+const allText=node=>[node.textContent||'',...(node.children||[]).map(allText)].join(' ');
+const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(child=>findNode(child,predicate)).find(Boolean);
 (async()=>{
+  const matching=selected(),rankedPhoto={id:17,filename:'original-surveyor-017.png',group:'Civil',photo_match:{status:'proposed',display_name:'SITE_000017_Breaker.png',candidates:[{field_id:'review_point',label:'Breaker condition',section:'Distribution board',category:'Electrical',rank:1,reason:'The recorded breaker and its label support this approved point.',score:1.12,score_kind:'relative_support'}]}};
+  matching.qa.applyState({...data,photos:[rankedPhoto],items:[{...data.items[0],category:'Electrical'}]});
+  verify('A QA display name never hides or changes the uploaded original filename',()=>{
+    assert.equal(typeof matching.qa.photoDisplayName,'function');assert.equal(matching.qa.photoDisplayName(rankedPhoto),'SITE_000017_Breaker.png');assert.equal(matching.qa.photoDisplayName({filename:'original.png'}),'original.png');assert.equal(rankedPhoto.filename,'original-surveyor-017.png');
+  });
+  verify('The photo details show actual ranked support, its reason and original filename without probability percentages',()=>{
+    assert.equal(typeof matching.qa.renderPhotoMatch,'function');matching.qa.renderPhotoMatch(rankedPhoto);const text=allText(matching.element('qa-preview-match-candidates'))+' '+allText(matching.element('qa-preview-match-summary'));
+    assert.match(text,/Breaker condition/);assert.match(text,/recorded breaker/);assert.match(text,/1\.120/);assert.doesNotMatch(text,/%/);assert.match(allText(matching.element('qa-preview-original-filename')),/original-surveyor-017\.png/);
+  });
+  verify('An unmatched photo stays honestly unmatched rather than receiving an invented checklist candidate',()=>{
+    assert.equal(typeof matching.qa.renderPhotoMatch,'function');matching.qa.renderPhotoMatch({...rankedPhoto,photo_match:{status:'unmatched',display_name:'SITE_000017_Unmatched.png',candidates:[]}});assert.match(allText(matching.element('qa-preview-match-summary')),/No supported checklist match/i);assert.equal(matching.element('qa-preview-match-candidates').children.length,0);
+  });
+  verify('Extracted zero values, measurement units and source quotes remain beside the selected photo',()=>{
+    assert.equal(typeof matching.qa.renderPhotoObservations,'function');matching.qa.renderPhotoObservations(rankedPhoto,[{component:'Breaker reading',value:0,unit:'V',evidence_quote:'Meter display 0 V',confidence:'high'}]);const text=allText(matching.element('qa-preview-analysis'));assert.match(text,/0 V/);assert.match(text,/Meter display 0 V/);
+  });
+  verify('Pending and failed matching remain distinct from a supported match',()=>{
+    assert.equal(typeof matching.qa.renderPhotoMatch,'function');matching.qa.renderPhotoMatch({...rankedPhoto,photo_match:{status:'pending',candidates:[]}});assert.match(allText(matching.element('qa-preview-match-summary')),/pending/i);
+    matching.qa.renderPhotoMatch({...rankedPhoto,photo_match:{status:'failed',candidates:[]}});assert.match(allText(matching.element('qa-preview-match-summary')),/did not finish|failed/i);
+  });
+  if(typeof matching.qa.renderPhotoMatch==='function'){
+    const prior={photo_id:17,field_id:'other_point',state:'qa_confirmed'},reviewData={...data,photos:[rankedPhoto],items:[{...data.items[0],accepted:false},{id:'other_point',type:'photo',accepted:false}],links:[prior]},requests=[];
+    matching.qa.applyState(reviewData);matching.qa.prepareModeTest();matching.context.fetch=async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,json:async()=>({...reviewData,links:[prior,{photo_id:17,field_id:'review_point',state:'qa_confirmed'}]})};};matching.qa.renderPhotoMatch(rankedPhoto);
+    const button=findNode(matching.element('qa-preview-match-candidates'),node=>node.dataset?.confirmCandidate==='review_point');
+    if(button?.listeners?.click)await button.listeners.click();
+    verify('Confirming a candidate uses the existing guarded link action and preserves other links and engineering decisions',()=>{
+      assert.equal(requests.length,1);assert.equal(requests[0].action,'confirm_link');assert.equal(requests[0].photo_id,17);assert.equal(requests[0].field_id,'review_point');assert.equal(requests[0].revision_id,2);assert.equal(requests[0].source_digest,'source');assert.equal(requests[0].expected_review_digest,'review');assert.equal(matching.qa.snapshot().links.length,2);assert.equal(matching.qa.snapshot().items[0].accepted,false);
+    });
+    matching.qa.applyState({...reviewData,items:[{...data.items[0],locked:true}]});matching.qa.renderPhotoMatch(rankedPhoto);
+    verify('A candidate cannot confirm against an approved locked point',()=>assert.equal(findNode(matching.element('qa-preview-match-candidates'),node=>node.dataset?.confirmCandidate==='review_point')?.disabled,true));
+  }else{
+    verify('Confirming a candidate uses the existing guarded link action and preserves other links and engineering decisions',()=>assert.fail('Candidate matching UI is not implemented.'));
+    verify('A candidate cannot confirm against an approved locked point',()=>assert.fail('Candidate matching UI is not implemented.'));
+  }
   const locked=selected();locked.qa.prepareModeTest();locked.qa.applyState({...data,items:[{...data.items[0],locked:true},{id:'other',locked:false}],photos:[{id:1}],links:[{photo_id:1,field_id:'review_point',state:'qa_confirmed'}]});locked.element('qa-review-photos').querySelectorAll=()=>[{dataset:{evidencePhoto:'1'},closest:()=>null}];locked.qa.selectVisiblePhotos();locked.element('qa-assignment-target').value='other';
   verify('A locked source cannot open a bulk Move dialog or throw when another target is selected',()=>assert.doesNotThrow(()=>locked.qa.openBulkMove()));
   verify('Bulk Move stays disabled when the source checkpoint is approved',()=>{assert.equal(typeof locked.qa.canMoveSelection,'function');assert.equal(locked.qa.canMoveSelection(),false);});

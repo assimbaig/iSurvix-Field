@@ -7,7 +7,7 @@ const filename=path.resolve(__dirname,'../backend/static/core/js/qa_evidence_rev
 function controller(options={}){
   const elements=new Map(),storage=new Map(),frames=[];
   const element=id=>{if(!elements.has(id))elements.set(id,{dataset:{},attributes:{},children:[],scrollTop:0,value:id==='qa-photo-view'?'linked':'',open:false,
-    getAttribute(name){return name==='href'?'/checklist/1/':this.attributes[name]??null;},querySelector(){return element(id+':child');},querySelectorAll(){return [];},addEventListener(){},removeAttribute(){},setAttribute(name,value){this.attributes[name]=String(value);},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;},scrollIntoView(){},showModal(){this.open=true;},focus(){this.focused=true;},
+    listeners:{},getAttribute(name){return name==='href'?'/checklist/1/':this.attributes[name]??null;},querySelector(){return element(id+':child');},querySelectorAll(){return [];},addEventListener(name,callback){this.listeners[name]=callback;},click(event={}){this.listeners.click?.({target:this,preventDefault(){},...event});},removeAttribute(){},setAttribute(name,value){this.attributes[name]=String(value);},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;},scrollIntoView(){},showModal(){this.open=true;},focus(){this.focused=true;},
     classList:{toggle(){}},textContent:''});return elements.get(id);};
   const app=element('qa-evidence-review');app.dataset={quickReview:'true',reviewUser:'42',reviewRole:options.role||'QUALITY_ENGINEER'};
   const script=fs.readFileSync(filename,'utf8').replace('  function controls(){',`
@@ -21,6 +21,11 @@ function controller(options={}){
       pointMatchesFilter:typeof pointMatchesFilter==='function'?pointMatchesFilter:null,
       submissionCounts:typeof submissionCounts==='function'?submissionCounts:null,
       boundedPan:typeof boundedPan==='function'?boundedPan:null,photoMetadataText,linkedDocuments,dataItems,evidenceItems,
+      renderPreview:typeof renderPreview==='function'?renderPreview:null,
+      renderPhotoMatch:typeof renderPhotoMatch==='function'?renderPhotoMatch:null,
+      renderPhotoObservations:typeof renderPhotoObservations==='function'?renderPhotoObservations:null,
+      photoDisplayName:typeof photoDisplayName==='function'?photoDisplayName:null,
+      openPreview:typeof openPreview==='function'?openPreview:null,
       selectVisiblePhotos:typeof selectVisiblePhotos==='function'?selectVisiblePhotos:null,
       photoSelectionSummary:typeof photoSelectionSummary==='function'?photoSelectionSummary:null,
       openBulkMove,canMoveSelection:typeof canMoveSelection==='function'?canMoveSelection:null,

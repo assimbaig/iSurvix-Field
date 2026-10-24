@@ -213,6 +213,7 @@ class NativeBindingTests(SimpleTestCase):
     def test_empty_candidates_and_cloud_alias_do_not_call_model(self, ollama):
         batch = self.batch()
         batch['catalog'] = []
+        batch['finding_candidates']={item['finding_key']:[] for item in batch['findings']}
         result = mapping.bind_batch(batch, 'synthetic-local-model')
         self.assertEqual(result['unassigned'], ['photo:17:finding:1'])
         with self.assertRaises(mapping.MappingError):
@@ -299,3 +300,69 @@ class MappingIntegrationTests(TestCase):
         item = next(item for item in service.reviewed_payload(revision)['checklist_items'] if item['id'] == 'manufacturer')
         self.assertIn(item['value'], (None, ''))
         self.assertEqual(item['sources'], [])
+
+
+class RankedPhotoCandidateContractTests(SimpleTestCase):
+    def test_ranked_candidates_keep_best_and_alternates_with_similarity_not_probability(self):
+        template=schema([field('a_model','Cabinet model number'),field('z_brand','Cabinet manufacturer')])
+        batch=list(mapping.mapping_batches(analysis(),template))[0]
+        candidates=batch['finding_candidates']['photo:17:finding:1']
+        self.assertEqual(candidates[0]['field_id'],'z_brand')
+        self.assertEqual([item['rank'] for item in candidates],list(range(1,len(candidates)+1)))
+        self.assertTrue(all(item['score_kind']=='lexical_similarity' and 'probability' not in item for item in candidates))
+        with patch.object(mapping.local_ai,'ollama',return_value=native([{'finding_key':'photo:17:finding:1','field_id':'z_brand','reason':'Legible manufacturer label.'}])):
+            result=mapping.bind_batch(batch,'synthetic-model')
+        self.assertEqual(result['bindings'][0]['candidates'],candidates)
+        self.assertEqual(result['bindings'][0]['alternates'][0]['field_id'],'a_model')
+        self.assertEqual(result['photo_matches'][0]['state'],'proposed')
+
+    def test_merged_batch_cannot_assign_other_findings_candidate(self):
+        observations=analysis([
+            {'category':'equipment','component':'radio manufacturer','value':'Co','confidence':'high'},
+            {'category':'other','component':'concrete slab','value':'Visible slab','confidence':'high'}])
+        template=schema([field('radio','Radio manufacturer'),field('slab','Concrete slab')]+[field('f'+str(i),'Distant unrelated topic '+str(i)) for i in range(41)])
+        with patch.object(mapping,'_semantic_vectors',side_effect=mapping.MappingError('Unavailable fixture')):
+            batch=list(mapping.mapping_batches(observations,template))[0]
+        self.assertEqual([x['field_id'] for x in batch['finding_candidates']['photo:17:finding:1']],['radio'])
+        with patch.object(mapping.local_ai,'ollama',return_value=native([{'finding_key':'photo:17:finding:1','field_id':'slab','reason':'Cross-finding wrong candidate.'}])):
+            with self.assertRaises(mapping.MappingError):mapping.bind_batch(batch,'synthetic-model')
+        decision=mapping.response_schema(batch)['properties']['decisions']['properties']['photo:17:finding:1']
+        self.assertEqual(decision['properties']['field_id']['anyOf'][0]['enum'],['radio'])
+
+    def test_no_findings_photo_remains_explicitly_unmatched_without_model(self):
+        observations=[{'source_id':'photo:17','model':'synthetic-model','findings':[]}]
+        batches=list(mapping.mapping_batches(observations,schema([field('tower','Tower condition')])))
+        self.assertEqual(len(batches),1)
+        with patch.object(mapping.local_ai,'ollama') as model:
+            result=mapping.bind_batch(batches[0],'synthetic-model')
+        model.assert_not_called()
+        self.assertEqual(result['photo_matches'][0]['source_id'],'photo:17')
+        self.assertEqual(result['photo_matches'][0]['state'],'unmatched')
+        self.assertTrue(result['photo_matches'][0]['reason'])
+
+    def test_unassigned_preserves_ranked_options_and_reason_unknown_candidate_rejected(self):
+        batch=list(mapping.mapping_batches(analysis(),schema([field('brand','Cabinet manufacturer')])))[0]
+        with patch.object(mapping.local_ai,'ollama',return_value={'message':{'content':json.dumps({'decisions':{'photo:17:finding:1':{'field_id':None,'reason':'The manufacturer label is unreadable.'}}})}}):
+            result=mapping.bind_batch(batch,'synthetic-model')
+        self.assertEqual(result['photo_matches'][0]['state'],'unmatched')
+        self.assertIn('unreadable',result['photo_matches'][0]['reason'])
+        self.assertTrue(result['photo_matches'][0]['candidates'])
+        batch['finding_candidates']['photo:17:finding:1'][0]['field_id']='foreign'
+        with patch.object(mapping.local_ai,'ollama') as model:
+            with self.assertRaises(mapping.MappingError):mapping.bind_batch(batch,'synthetic-model')
+            model.assert_not_called()
+
+    def test_low_confidence_binding_keeps_ranked_candidates_but_photo_unmatched(self):
+        observations=analysis();observations[0]['findings'][0]['confidence']='low'
+        batch=list(mapping.mapping_batches(observations,schema([field('brand','Cabinet manufacturer')])))[0]
+        with patch.object(mapping.local_ai,'ollama',return_value=native([{'finding_key':'photo:17:finding:1','field_id':'brand','reason':'Possible manufacturer label; unclear source.'}])):
+            result=mapping.bind_batch(batch,'synthetic-model')
+        self.assertEqual(result['photo_matches'][0]['state'],'unmatched')
+        self.assertIn('uncertain',result['photo_matches'][0]['reason'].lower())
+        self.assertTrue(result['photo_matches'][0]['candidates'])
+
+    def test_complete_photo_outcomes_include_no_findings_even_when_mapping_skipped(self):
+        observations=[{'source_id':'photo:18','findings':[]},*analysis()]
+        result=mapping.photo_candidate_outcomes(observations,[])
+        self.assertEqual([item['source_id'] for item in result],['photo:17','photo:18'])
+        self.assertTrue(all(item['state']=='unmatched' and item['requires_qa'] for item in result))

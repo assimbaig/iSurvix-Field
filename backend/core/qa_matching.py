@@ -51,12 +51,17 @@ def photo_id(source):
 
 
 def valid_ai_sources(item,findings):
-    """Raw observations remain in findings; unsupported candidates are not links."""
-    if item.get('conflict') or item.get('confidence')!='high' or item.get('status') in {'Missing','Not applicable'} or item.get('value') in (None,'',[],{}):return []
+    """Return high-confidence evidence locations, independent of answer state.
+
+    A photo can be relevant to an unanswered inspection point without proving
+    pass/fail or supplying an answer value. Evidence location and checklist
+    answer confidence are separate decisions; conflicts still suppress AI links.
+    """
+    if item.get('conflict'):return []
     result=[]
     for source in item.get('sources',[]):
         matching=[f for f in findings if f.get('source_id')==source.get('source_id') and f.get('field_hint')==item['id'] and
-            f.get('value') not in (None,'',[],{}) and f.get('confidence')=='high' and not f.get('mapping_unassigned')]
+            f.get('confidence')=='high' and not f.get('mapping_unassigned')]
         if matching:result.append(deepcopy(source))
     return result
 
@@ -98,10 +103,13 @@ def link_state(revision,payload):
             seen.add((pid,item['id']))
             explanations=[finding.get('mapping_reason','') for finding in payload.get('findings',[])
                 if photo_id(finding)==pid and finding.get('field_hint')==item['id'] and finding.get('mapping_reason')]
+            evidence_findings=[finding for finding in payload.get('findings',[])
+                if photo_id(finding)==pid and finding.get('field_hint')==item['id']
+                and finding.get('confidence')=='high' and not finding.get('mapping_unassigned')]
             result.append({'photo_id':pid,'field_id':item['id'],
                 'state':'qa_confirmed' if confirmed else 'ai_suggested',
                 'reason':source.get('mapping_reason',item.get('reason','')) if confirmed else ' · '.join(dict.fromkeys(explanations))[:4000],
-                'confidence':None if confirmed else item.get('confidence'),
+                'confidence':None if confirmed else 'high' if evidence_findings else item.get('confidence'),
                 'source':'QA review' if confirmed else 'Local AI Analysis'})
     return result
 
@@ -125,14 +133,57 @@ def state(revision,payload,actor,private=True):
     ids=[p['id'] for p in revision.snapshot['photos']]
     order,signature=order_state(revision,actor.pk)
     observations={pid:[] for pid in ids}
+    final_findings={finding.get('finding_key'):finding for finding in payload.get('findings',[])
+        if isinstance(finding,dict) and isinstance(finding.get('finding_key'),str)}
     for record in revision.source_analyses.all() if private else []:
         from .survey_processing import digest
         if digest(record.payload)!=record.digest:raise ValidationError('Saved source analysis integrity verification failed.')
         pid=photo_id({'source_id':record.source_id})
         if pid not in observations:continue
         for finding in record.payload.get('findings',[]):
-            observations[pid].append({**deepcopy(finding),'source_id':record.source_id,
+            enriched=deepcopy(finding)
+            final=final_findings.get(finding.get('finding_key'))
+            if final:enriched.update(deepcopy(final))
+            observations[pid].append({**enriched,'source_id':record.source_id,
                 'reference':record.payload.get('reference','')})
+    photo_matches={}
+    if private:
+        fields=catalog(revision)
+        saved_matches={str(row.get('source_id','')):row for row in payload.get('photo_matches',[])
+            if isinstance(row,dict) and isinstance(row.get('source_id'),str)}
+        job_status=getattr(getattr(revision,'processing_job',None),'status','')
+        display_names=payload.get('photo_names') if isinstance(payload.get('photo_names'),dict) else {}
+        if not display_names:
+            from .survey_processing import generated_photo_names
+            display_names=generated_photo_names(revision.snapshot,payload.get('findings',[]))
+        for photo in revision.snapshot.get('photos',[]):
+            pid=photo.get('id')
+            source_id='photo:'+str(pid)
+            saved=saved_matches.get(source_id)
+            if saved:
+                status=saved.get('state') if saved.get('state') in {'proposed','unmatched'} else 'unmatched'
+                reason=str(saved.get('reason') or '')[:4000]
+                raw_candidates=saved.get('candidates',[])
+            elif job_status=='ready_for_review':
+                status='unmatched';reason='No supported checklist match was saved for this photo.';raw_candidates=[]
+            elif job_status=='failed':
+                status='failed';reason='AI analysis failed. The original photo is available for manual review.';raw_candidates=[]
+            else:
+                status='pending';reason='AI analysis has not completed for this photo.';raw_candidates=[]
+            candidates=[]
+            if isinstance(raw_candidates,list):
+                for candidate in raw_candidates[:10]:
+                    if not isinstance(candidate,dict):continue
+                    ident=candidate.get('field_id');field=fields.get(ident)
+                    if not field:continue
+                    score=candidate.get('score');kind=candidate.get('score_kind')
+                    if type(score) not in (int,float) or not isinstance(kind,str) or not kind.endswith('_similarity'):
+                        score=None;kind=''
+                    candidates.append({'field_id':ident,'label':next((entry['label'] for section in revision.snapshot['schema'].get('sections',[]) for entry in section.get('fields',[]) if entry.get('id')==ident),ident),
+                        'section':field['section_title'],'category':field['category'],'rank':candidate.get('rank') if type(candidate.get('rank')) is int else len(candidates)+1,
+                        'reason':str(candidate.get('reason') or '')[:600],'score':score,'score_kind':kind})
+            photo_matches[str(pid)]={'status':status,'reason':reason,'display_name':display_names.get(str(pid),''),
+                'candidates':candidates,'requires_qa':True}
     history=[{'id':event.pk,'action':event.action,'by':event.actor.get_username(),
         'time':event.created_at.isoformat(),'reason':event.reason,'details':event.payload}
         for event in revision.processing_events.filter(action__in=['qa_link','qa_display_order','qa_mapping','qa_answer']).select_related('actor').order_by('-pk')[:100]] if private else []
@@ -141,7 +192,7 @@ def state(revision,payload,actor,private=True):
         'confirmed':sum(link['state']=='qa_confirmed' for link in links)}
     return {'links':links,'unassigned_photo_ids':[pid for pid in ids if pid not in assigned],
         'counts':counts,'display_order':order,'order_digest':signature,
-        'observations':observations,'matching_history':history}
+        'observations':observations,'photo_matches':photo_matches,'matching_history':history}
 
 
 def require_revision(revision,data):
