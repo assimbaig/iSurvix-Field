@@ -1,5 +1,53 @@
 # iSurvix Field: local Codex development brief
 
+## Latest local candidate - reference QA workspace, 24 October 2026
+
+Implementation `32d49dfd8d150c9f5ebc9fd93b83e51907051bab` is pushed in
+**draft PR18**: https://github.com/assimbaig/iSurvix-Field/pull/18, targeting
+`feat/secure-outbound-survey-workers`. It is not merged or deployed. Final recovery
+metadata is `.local/qa-site-compact-20261024/release-checkpoint.json`.
+
+Current branch: `feat/qa-review-workspace-20261024`. The owner merged PR17 during
+this task. After fetching, the branch base fast-forwarded to `948bfc9`, whose
+committed tree exactly matched `03b5eed`; all working changes were preserved.
+No PR merge or production deployment was performed by this task.
+
+The existing QA screen now has a compact identity/status strip, searchable
+approved checklist tree, dominant paged evidence gallery and adjacent review
+pane/drawers. All166 approved IDs and460 photos were exercised in isolated saved
+records, including General Info data fields and custom groups. Site Information
+keeps all required fields in a shorter three-column table with source comparison.
+Explicit Save and Save & next, dirty/stale reconciliation, partial link failures,
+approved-source locks and viewer focus restoration passed real browser checks.
+PDF preview now uses a protected bounded first-page raster from installed
+PyMuPDF; full originals and existing source policies remain unchanged.
+
+Final source-stable backend suite: **1,040 passed in345.067s**, zero failures,
+errors or skips, zero external connections. Fingerprint:
+`5710f85f54288c7c9e88628bac7f3175b1a067700af7338693f4e168745e5689`.
+Eight frontend scripts passed108 behavior assertions; independent QA passed175
+browser assertions across15 runs. Django/migration/dependency/syntax checks and
+the214-file static asset build passed. No migration or new dependency required.
+2,091 preexisting operational media/private files matched the pre-edit checkpoint.
+
+The local app was reloaded and verified at `http://127.0.0.1:8000/login/`; its
+served JS matches final source. Existing AI workers and loopback11435 runtime
+were not stopped/reset. No native model calls were needed for this UI task.
+Isolated8917/8919 fixture servers are stopped. Do not restore an old operational
+database over legitimate later worker/user activity.
+
+Separate Agency AppSec review: **W1 Low**, private PDF raster cache lacks a
+derivative hash check after privileged storage mutation. Original PDF hashes
+and project/revision authorization held. **W1 and earlier S1/S2/S3/R1/R2 remain
+unfixed pending explicit owner approval.** Do not treat new feature requests as
+permission to repair them. Read `SECURITY_REVIEW_QA_WORKSPACE_20261024.md`.
+
+Current behavior, exact checks, screenshots and manual test steps:
+`docs/development/QA_REVIEW_WORKSPACE_20261024.md`. Requirement-by-requirement
+evidence: `QA_REVIEW_REDESIGN_ACCEPTANCE_20261024.json`. Final commit/PR and backup
+receipt are recorded under `.local/qa-site-compact-20261024` during delivery.
+Earlier two-pane/draft-PR17 statements below are historical.
+
 ## Latest verified local candidate - 24 October 2026
 
 Delivery: implementation commit `fbf23205c8ae7d14c198ca9831fe171d243cb7b2`

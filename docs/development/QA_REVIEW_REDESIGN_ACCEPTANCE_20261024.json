@@ -1,0 +1,312 @@
+{
+  "date": "2026-10-24",
+  "branch": "feat/qa-review-workspace-20261024",
+  "requirements_source": "docs/development/QA_REVIEW_REDESIGN_REQUIREMENTS_20261024.md",
+  "base_commit": "948bfc974b60e6b0565e68e5b174d545a5b416bb",
+  "checkpoint": ".local/backups/project-checkpoint-20261024-154811",
+  "status_note": "All18 scoped functional/procedure groups have verification evidence and Git delivery; security findings remain unfixed and approval-pending. This does not certify production security or universal correctness.",
+  "requirements": [
+    {
+      "id": "R01",
+      "requirement": "Inspect the application first",
+      "expected_behavior": "Before editing:\n- Read AGENTS.md and relevant repository instructions.\n- Identify the route, page components, styling system, API endpoints, state management, and tests used by this workspace.\n- Trace checklist loading, evidence loading, photo assignment, review saving, AI status, and final decisions.\n- Identify existing reusable tree, gallery, drawer, dialog, and toolbar components.\n- Inspect existing Agency Agents definitions if available.\n\nUse relevant Agency Agents for frontend implementation, UX/accessibility review, and QA/testing if supported in this environment. Give each agent a concrete scope and avoid conflicting edits. If the agent framework is unavailable, state that clearly and perform the work directly.\n\nDo not invent backend capabilities, API responses, counts, or successful test results.",
+      "implementation_location": [
+        "AGENTS.md",
+        "docs/LOCAL_CODEX_HANDOFF.md",
+        "docs/development/QA_REVIEW_WORKSPACE_20261024.md"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Read instructions and actual installed Agency definitions; inspected routes/state/API and clean03b5eed; checkpoint154811 integrity/CRC/bundle passed. Feature branch dedicated. PR17 was subsequently merged by owner; fetched and fast-forwarded to948bfc9 only after verifying identical committed source trees, preserving every working edit.",
+      "status": "Verified"
+    },
+    {
+      "id": "R02",
+      "requirement": "Required desktop layout",
+      "expected_behavior": "Use the available viewport efficiently:\nA. Existing application header/navigation\nB. Compact site identity and workflow strip\nC. Compact review summary and AI status\nD. Main workspace:\n- Left: checklist tree\n- Centre: evidence gallery and document sections\n- Right: review panel\nE. Compact save/navigation controls\n\nSuggested desktop proportions:\n- Left tree: approximately 250\u2013280 px.\n- Centre: flexible, largest area.\n- Right review panel: approximately 300\u2013340 px.\n\nThese are starting values, not rigid dimensions. Adapt them to the real application shell and viewport.\nAt smaller desktop widths, allow the review panel to become a drawer or collapsible panel so the evidence remains usable.\nDo not squeeze all three columns into unreadable widths.\n\nAvoid excessive blank space, large purple blocks, oversized fields, and stacked banners.\nUse restrained colours, thin borders, clear labels, and consistent compact spacing.\nRetain readable text; do not copy the reference\u2019s tiny text or excessive truncation.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Real1920/1366 desktop3panes;900/390 primary gallery and drawers; gallery is largest desktop pane.",
+      "status": "Verified"
+    },
+    {
+      "id": "R03",
+      "requirement": "Compact site header",
+      "expected_behavior": "Show real data where available:\n- Site ID and site name.\n- Project.\n- Submission revision.\n- Workflow status.\n- Assigned reviewer or task owner, if supported.\n\nKeep \u201cBack to my reviews\u201d accessible.\nMove secondary actions into \u201cMore tools.\u201d\nDo not fabricate missing metadata.\nRetain access to Site information, Review evidence, Decision.\nReplace the large coloured step bars with compact tabs or a small step indicator.\nPreserve workflow restrictions on the Decision step.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Actual site/project/name/revision/owner, compacttabs/backlink, Moretools retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R04",
+      "requirement": "Review summary and AI status",
+      "expected_behavior": "Replace the current large AI analysis block with a compact status row containing:\n- Actual AI state.\n- Processed / total eligible evidence.\n- Progress percentage, when the denominator is valid.\n- Appropriate Pause / Resume control.\n- Refresh only if still needed.\n- Expandable details.\n\nExpanded details can show submitted photos; unique assigned photos; unique unassigned photos; suggested links; confirmed links; failures and retries, if available.\n\nDefine counters precisely:\n- Photo counts and link counts are different.\n- A photo linked to multiple points must not inflate unique-photo totals.\n- Distinguish current-point counts from submission-wide counts.\n- Never show zero for an unknown or still-loading value.\n\nThe current screenshot appears to show conflicting assignment information. Investigate the scope and source of each counter and correct misleading labels or calculations with focused tests.\n\nAI must not block manual review. Preserve checklist visibility during analysis wherever supported.\nIf the current backend delays generated content until analysis finishes, communicate that limitation accurately while keeping existing template points and manual evidence review usable.\nDo not allow polling or refreshes to reset the selected point, scroll position, or unsaved review input.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Persistedqueued/processing/paused/failed/ready states; actual unique-photo versus link counts; manual review remains available.",
+      "status": "Verified"
+    },
+    {
+      "id": "R05",
+      "requirement": "Left checklist tree",
+      "expected_behavior": "Build a compact, searchable, expandable tree:\nProject/template -> Category -> Section, where applicable -> Checklist point.\nUse the actual approved template hierarchy and ordering.\nDo not infer hierarchy from titles when structured data exists.\nDo not silently rename, remove, or reorder approved checklist points.\n\nEach point: title; review status using icon and text/tooltip; linked evidence count where useful.\nCategory completion: \u201cReviewed X / Y\u201d. Do not confuse reviewed-point counts with evidence counts.\n\nProvide filters: All points; Pending review; Pass; Fail; Not applicable if supported; Missing evidence.\nUse existing result values and permissions. Do not introduce new backend enums just to match these labels.\n\nSeparate evidence collections: Unassigned photos; AI suggestions needing confirmation.\nThese are collections, not fake checklist points.\n\nInteraction:\n- Clicking a point opens its evidence and review values.\n- Keep selected point highlighted and expanded categories preserved on save/refresh.\n- Scroll active point into view on Next/Previous.\n- Search includes section names and point titles.\n- Full text on hover/focus when truncated.\n- Keyboard navigation and accessible expand/collapse controls.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "All166stable IDs;60GeneralInfo fields route to real table; section/title search; custom unknown structured group remains evidence.",
+      "status": "Verified"
+    },
+    {
+      "id": "R06",
+      "requirement": "Centre evidence workspace",
+      "expected_behavior": "Centre is the dominant area. Selected point shows full title; category/section breadcrumb; current review status; linked evidence count; approved guidance in expandable area.\nGroup evidence into Photos / Documents / Other supported evidence.\nClearly label AI suggestions versus confirmed evidence.\n\nPhoto toolbar: selected count; Select all visible results; Clear selection; evidence-scope filter; thumbnail-size control; available assignment/link actions.\n\u201cSelect all visible\u201d must not select hidden/unloaded items.\n\nCards: real thumbnail; checkbox; filename/readable label; confirmed/suggested/unassigned indicator; available capture date/GPS; relevant review status if supported.\nResponsive grid roughly3\u20135columns according to width/size. Useful defaults; lazy loading/pagination; stable ordering; loading/empty/failed-image/retry states.\nHundreds of photos: no full-resolution originals in gallery, reuse thumbnail URLs, no per-render regeneration, responsive scroll/selection.\nOnly uploaded evidence, no stock/decorative images.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Actual thumbnails;36perpage; Selectallshown; page-specific selection counts; filename search/size; source-only downloads not loaded as gallery images.",
+      "status": "Verified"
+    },
+    {
+      "id": "R07",
+      "requirement": "Photo viewer",
+      "expected_behavior": "Large viewer: zoom; pan when zoomed; next/previous in current filtered collection; filename; available capture time/GPS; current links; clear AI status; permitted original download; close/Escape.\nRotation only view-only unless an actual existing editing workflow exists.\nPreserve point/gallery position after close and restore keyboard focus to triggering thumbnail.\nNo storage credentials or unauthorized download bypass.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Viewer zoom/pan/Next/realautomaticfullrefresh/Escape restores original thumbnail and gallery scroll; actualEXIF/missing metadata.",
+      "status": "Verified"
+    },
+    {
+      "id": "R08",
+      "requirement": "Document sections",
+      "expected_behavior": "Collapsible section title/count, filename, preview, permitted download.\nUse actual file types; supported existing types safely; no arbitrary HTML trusted rendering.\nClear missing-document / unavailable-preview / loading-failure / access-denied states.\nFailed preview cannot look like empty successful preview.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Real linked PDF preview visually inspected SYN-REPORT-17 and decoded safe PNG; protected full original.",
+      "status": "Verified"
+    },
+    {
+      "id": "R09",
+      "requirement": "Right review panel",
+      "expected_behavior": "Compact beside evidence: existing-supported result selector; reviewer remarks; required correction reason; labelled expandable AI observation; save state.\nDo not prefill the human correction-reason field with \u201cNo supported answer was extracted\u201d or other AI placeholder text.\nAI observations cannot overwrite reviewer input.\nDistinguish absent AI, suggested result, human-confirmed result.\nNo auto-approval from AI or linked evidence; preserve review/final approvals.\nCompact initially sized textareas, expandable as needed.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Human reason never AI-prefilled; saved human notes retained; explicit per-point review and separate final workflow.",
+      "status": "Verified"
+    },
+    {
+      "id": "R10",
+      "requirement": "Assignment/linking",
+      "expected_behavior": "Preserve: link selected to current point; link to another permitted point; confirm AI; remove link; move where supported.\nLink versus move explicit. Unlink/move cannot delete originals; explain removed associations before action.\nNo invented batch endpoints. Existing per-item API batch must handle/report partial success/failure.\nRefresh affected counts after success, keep retry selection on failure.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Single/multi links, partial failure/retry, reasonedMove and locked-source disabled/nonthrowing; originals unchanged.",
+      "status": "Verified"
+    },
+    {
+      "id": "R11",
+      "requirement": "Save/navigation",
+      "expected_behavior": "Consistently visible Previous / Next / Save / Save & next.\nNext cannot silently discard dirty input. Save & next waits for confirmed success.\nFailed save stays on same point with input intact; prevent duplicates; existing stale/concurrency checks.\nNo premature Saved; useful error/retry. Preserve existing explicit save model; no invented autosave.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "ActualSave vsSaveNext, doubleclick guard,503inputretention, genuine409 and explicit same-source reconciliation, cross-revision draft block.",
+      "status": "Verified"
+    },
+    {
+      "id": "R12",
+      "requirement": "Scrolling/responsiveness",
+      "expected_behavior": "Deliberate bounded panes, no excessive nested scrolling or independent scroll area for every evidence section.\nAt1920\u00d71080/1366\u00d7768: usable tree, centre largest, accessible save controls, no page-wide horizontal overflow, overlapping/clipped panels/menus.\nTablet/phone: checklistdrawer, evidenceprimary, reviewtab/drawer/bottomsheet, controlsnotcovercontent, touchusable.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "1920x1080/1366x768/900/390 plus200%-equivalent viewport; bounded pane geometry and initial mobile photo visibility.",
+      "status": "Verified"
+    },
+    {
+      "id": "R13",
+      "requirement": "Accessibility",
+      "expected_behavior": "Label icon buttons; visible focus; non-colour status; logical tab order; correct dialog focus; readable contrast; browserzoom usability; reducedmotion ifanimated.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "True nativeTab/ShiftTab loops with collapsedgroups, bothdrawerEscape focusreturn, unobscured navigation, modal focus restoration.",
+      "status": "Verified"
+    },
+    {
+      "id": "R14",
+      "requirement": "Data/workflow safety",
+      "expected_behavior": "Preserve reviewrecords, originals, checklistIDs, submissionrevisions, confirmedlinks, roles, audits, finalrules.\nStableIDs, never arrayindexes for identity. No crosssite/project/revision mixing.\nNo weakening auth for previews/downloads. Any necessary backendsecurity/policy change separately identified under approval rule.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Source/schema166IDs/460originals/category/filenames/snapshot/revision retained; TL readonly, Engineer403, Client404 protected concealment.",
+      "status": "Verified"
+    },
+    {
+      "id": "R15",
+      "requirement": "Realistic fixtures",
+      "expected_behavior": "Controlled isolated environment, no destructive productionoperations.\nCover166points/460photos; emptysubmission; zerolinkpoint; multiphoto point; sharedphoto; documentonly; longtitles/names; AIprocessing/paused/completed/failed; absentcapturemetadata; brokenthumb; savefailure; partialassignment; dirtyAIrefresh; supportedread-only/reviewerroles.\nMeaningful behaviour/data-integrity/regression tests, not implementation mirrors.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "166/460+shared/documentonly/zeroevidence/AIstates/EXIF/empty409/brokenthumb/partialsave/dirtyrefresh/readonly cases exercised.",
+      "status": "Verified"
+    },
+    {
+      "id": "R16",
+      "requirement": "Required verification",
+      "expected_behavior": "Applicable lint, typechecking, tests, productionbuild, browserinteractions.\nBrowser: open; expand/search; selectpoint; inspectphotos; vieweropen/close; documentpreview; testlink/unlink; save result; Save&next; reloadpersistence; dirtyAIrefresh; responsive.\nInspectconsole/failedrequests, fixintroducedreproduciblebugs, rerunaffectedchecks.\nDo not claim100% or allpassed without specific evidence; list blockedchecks/remainingissues.",
+      "implementation_location": [
+        "scripts/run_backend_tests.py",
+        "frontend/check-qa-workspace.cjs",
+        "frontend/check-qa-guided-state.cjs",
+        "backend/core/test_qa_review_workspace_data.py",
+        "backend/core/test_qa_document_preview.py"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Final source-stable backend1040passed/345.067s with0fail/errors/skips,0external connections,33in-process fixtures. Eight frontend scripts108behavior assertions pass;175browser assertions/15runs. Django check/migration drift/pending/pip/JSsyntax pass;214Django static assets built privately and SHA-checked against final source. No configured lint/TypeScript/bundler pipeline exists; not claimed as executed. Source fingerprint5710f85f54288c7c9e88628bac7f3175b1a067700af7338693f4e168745e5689.",
+      "status": "Verified"
+    },
+    {
+      "id": "R17",
+      "requirement": "Acceptance",
+      "expected_behavior": "Compactchecklist/evidencehierarchy; photos/docsimmediateonselection; reviewformsecondary; compactnonblockingAI; consistent scopedcounts; search/filters/selection/viewer/linking/save/navigationwork; dirtyrefreshsafe; existingpermissions/approvals; specifieddesktop/mobile; checkswithgapdisclosure.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Integrated saved-data acceptance demonstrated; no new module/auth/engineering approval policy.",
+      "status": "Verified"
+    },
+    {
+      "id": "R18",
+      "requirement": "Delivery",
+      "expected_behavior": "Dedicatedbranch; concisechangedfiles/behaviour; before/after1920\u00d71080/1366\u00d7768; mobile; exactchecks/results; limitations; draftPRifaccesspermits.\nNo merge or deploy.",
+      "implementation_location": [
+        "backend/templates/dashboards/qa_evidence_review.html",
+        "backend/static/core/js/qa_evidence_review.js",
+        "backend/static/core/css/qa_quick_review.css"
+      ],
+      "verification_method": "Independent real saved-data browser checks in final-qa-receipt.json, public controller tests, and relevant authenticated Django regressions.",
+      "actual_result": "Dedicated feature branch feat/qa-review-workspace-20261024; implementation32d49df pushed; actual draftPR18 created at https://github.com/assimbaig/iSurvix-Field/pull/18 against owner-merged PR17 integration branch. Requested before/after1920/1366 plusmobile screenshots, exact checks, limits, manual guide and independent security report delivered. No PR merge or production deployment.",
+      "status": "Verified"
+    }
+  ],
+  "summary": {
+    "requirements": 18,
+    "verified": 18,
+    "in_progress": 0,
+    "reproduced_functional_failures": 0,
+    "security_findings_fixed": false
+  },
+  "verification": {
+    "backend": {
+      "tests": 1040,
+      "passed": 1040,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 345.067,
+      "source_fingerprint": "5710f85f54288c7c9e88628bac7f3175b1a067700af7338693f4e168745e5689",
+      "external_connections": 0,
+      "in_process_fixture_connections": 33
+    },
+    "frontend_scripts": 8,
+    "frontend_behavior_assertions": 108,
+    "browser_assertions": 175,
+    "browser_runs": 15,
+    "static_asset_files": 214,
+    "existing_operational_files_unchanged": 2091
+  },
+  "security": {
+    "report": "docs/development/SECURITY_REVIEW_QA_WORKSPACE_20261024.md",
+    "probes": 5,
+    "new_finding": {
+      "id": "W1",
+      "severity": "Low",
+      "issue": "Private cached PDF raster bytes lack a derivative hash check; requires private-storage write access or out-of-band fault.",
+      "recommendation": "Bind a verified derivative digest to source/page/render version and reject or regenerate mismatches after owner approval."
+    },
+    "existing_findings_still_open": [
+      "S1",
+      "S2",
+      "S3",
+      "R1",
+      "R2"
+    ],
+    "fixes_require_owner_approval": true,
+    "fixed": false
+  },
+  "limitations": [
+    "This UI task made no native Ollama calls and is not an AI throughput/accuracy benchmark.",
+    "PDF in-app preview is a clearly labelled first-page raster; full original remains a protected download. XLSX remains download-only.",
+    "Zoom was tested through the200%-equivalent960x540 CSS viewport withDPR2, not manual browser GUI zoom.",
+    "Security reviewW1 and earlier findings remain unfixed pending explicit owner approval.",
+    "Final full-suite/source-hash and Git/PR delivery are owned and reported by the lead."
+  ],
+  "screenshots": {
+    "before_1920": "output/screenshots/qa-site-compact/workspace-before-1920x1080.png",
+    "after_1920": "output/screenshots/qa-site-compact/workspace-after-1920x1080.png",
+    "before_1366": "output/screenshots/qa-site-compact/workspace-before-1366x768.png",
+    "after_1366": "output/screenshots/qa-site-compact/workspace-after-1366x768.png",
+    "mobile": "output/screenshots/qa-site-compact/workspace-after-390x844.png"
+  },
+  "delivery": {
+    "implementation_commit": "32d49dfd8d150c9f5ebc9fd93b83e51907051bab",
+    "pull_request": "https://github.com/assimbaig/iSurvix-Field/pull/18",
+    "draft": true,
+    "merged": false,
+    "deployed": false
+  }
+}

@@ -36,7 +36,8 @@ def catalog(revision):
         for field in section.get('fields',[]):
             category,known,source=category_for(section,field)
             result[field['id']]={'category':category,'category_label':CATEGORY_LABELS[category],
-                'category_known':known,'category_source':source,'section_id':section['id'],'section_title':section['title'],
+                'category_known':known,'category_source':source,'group':section.get('group',''),
+                'section_id':section['id'],'section_title':section['title'],
                 'instruction':str(field.get('instruction') or field.get('instructions') or field.get('help') or
                     field.get('description') or field.get('help_text') or field.get('question') or ''),
                 'required':field.get('required',False),'photo_required':field.get('photo_required',False),
