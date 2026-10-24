@@ -11,6 +11,7 @@ urlpatterns=[
  path('<int:checklist_id>/capture/documents/remove/',capture.document_remove,name='photo_capture_document_remove'),
  path('<int:checklist_id>/capture/documents/<int:document_id>/',capture.document,name='photo_capture_document'),
  path('<int:checklist_id>/capture/review/',capture.review_state,name='photo_capture_review_state'),
+ path('<int:checklist_id>/capture/review/progress/',capture.review_progress,name='photo_capture_review_progress'),
  path('<int:checklist_id>/capture/review/action/',capture.review_action,name='photo_capture_review_action'),
  path('<int:checklist_id>/upload-session/',v.processing_upload_session,name='photo_processing_upload_session'),
  path('<int:checklist_id>/fast-state/',v.fast_state,name='photo_fast_state'),

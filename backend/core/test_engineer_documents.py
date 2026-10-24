@@ -293,4 +293,3 @@ class EngineerDocumentUnitTests(SimpleTestCase):
         result=retained_item_sources(revision,payload,'x')
         self.assertEqual(result,[valid]);result[0]['reference']='edited'
         self.assertEqual(valid['reference'],'page 2')
-

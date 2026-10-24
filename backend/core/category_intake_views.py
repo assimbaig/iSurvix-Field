@@ -95,6 +95,16 @@ def review_state(request,checklist_id):
 
 
 @login_required
+@require_GET
+@api_errors
+def review_progress(request,checklist_id):
+    from .qa_review_progress import progress
+    response=JsonResponse(progress(request,checklist_id))
+    response['Cache-Control']='private, no-store'
+    return response
+
+
+@login_required
 @require_POST
 @api_errors
 def review_action(request,checklist_id):

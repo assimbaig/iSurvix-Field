@@ -16,7 +16,7 @@ LABELS={'engineer':'Engineer','quality_engineer':'Quality Engineer','team_lead':
 ROLES={'engineer':Profile.Roles.ENGINEER,'quality_engineer':Profile.Roles.QUALITY_ENGINEER,'team_lead':Profile.Roles.TEAM_LEAD,'client':Profile.Roles.CLIENT}
 
 def route_for(checklist):
-    return ReviewRoute.objects.select_related('revision').filter(checklist_id=checklist.pk).first()
+    return ReviewRoute.objects.select_related('revision').defer('revision__snapshot').filter(checklist_id=checklist.pk).first()
 
 def token_for(route,checklist):
     data=[route.pk,route.layer_count,route.reviewers,route.stage,route.mode,route.revision_id,route.generation,checklist.updated_at.isoformat(),checklist.status]

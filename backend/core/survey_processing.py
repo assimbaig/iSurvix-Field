@@ -521,10 +521,12 @@ def process_next():
     try:
         boundary(job)
         worker_guard(job.revision)
-        with photo_inference_lease() as check:
-            identity = verified_identity(job.model,job.pipeline_version)
-            check()
+        # Metadata readiness does not consume the GPU slot. A cache-only
+        # revision can finish while another job owns actual inference.
+        identity = verified_identity(job.model,job.pipeline_version)
         pin(job,identity)
+        from .survey_acceleration import ObservationReuse
+        reuse = ObservationReuse(job.revision, identity['fingerprint'])
         snapshot = job.revision.snapshot
         catalog = [{k: f[k] for k in ('id', 'label', 'type') if k in f}
             for section in snapshot['schema']['sections'] for f in section['fields']]
@@ -535,6 +537,8 @@ def process_next():
         for source in evidence.extract_sources(records(snapshot['photos']), records(snapshot['documents'])):
             boundary(job)
             source['field_catalog'] = small_catalog
+            source['schema_digest'] = digest(snapshot['schema'])
+            source['template_id'] = snapshot.get('template_id')
             count += 1
             if count > 2000:
                 raise ValidationError('This submission exceeds 2000 bounded evidence pages/images. Split its documents.')
@@ -542,12 +546,19 @@ def process_next():
             if cached:
                 if digest(cached.payload) != cached.digest:
                     raise ValidationError('Saved source analysis failed integrity verification.')
+                reuse.remember_legacy_visual(source, cached.payload)
             else:
                 progress(job, total=max(job.total, count))
-                with photo_inference_lease() as check:
-                    analysed = evidence.analyse_source(source, job.model,
-                        base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
-                    check()
+                with transaction.atomic():
+                    progress(job)
+                    reuse.flush_visuals()
+                analysed = reuse.lookup(source)
+                if analysed is None:
+                    with photo_inference_lease() as check:
+                        analysed = evidence.analyse_source(source, job.model,
+                            base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
+                        check()
+                    analysed = reuse.stamp(source, analysed)
                 if source.get('image_b64'):
                     import base64
                     from django.core.files.base import ContentFile
@@ -559,8 +570,12 @@ def process_next():
                     progress(job)
                     SurveySourceAnalysis.objects.get_or_create(revision=job.revision, source_id=source['source_id'],
                         defaults={'payload': analysed, 'digest': digest(analysed)})
+                reuse.remember(source, analysed)
             progress(job, completed=max(job.completed,count), total=max(job.total, count))
             boundary(job)
+        with transaction.atomic():
+            progress(job)
+            reuse.flush_visuals()
         progress(job, 'preparing_checklist', total=count)
         result = SurveyProcessingResult.objects.filter(revision=job.revision).first()
         if not result:

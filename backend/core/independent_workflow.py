@@ -20,7 +20,9 @@ def revision_state(revision):
 
 
 def policy_for(checklist):
-    return ChecklistReviewPolicy.objects.select_related('current_revision').filter(checklist=checklist).first()
+    # Role/stage checks need revision identity and digest, not its complete
+    # evidence snapshot. Integrity/report callers still load it on actual use.
+    return ChecklistReviewPolicy.objects.select_related('current_revision').defer('current_revision__snapshot').filter(checklist=checklist).first()
 
 
 def is_independent(checklist):

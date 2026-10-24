@@ -210,6 +210,7 @@ def workspace(request, checklist_id):
         capture.access(request,checklist_id)
         return render(request,'dashboards/qa_evidence_review.html',{'checklist':checklist,
             'review_state_url':reverse('photo_capture_review_state',args=[checklist.pk]),
+            'review_progress_url':reverse('photo_capture_review_progress',args=[checklist.pk]),
             'review_action_url':reverse('photo_capture_review_action',args=[checklist.pk]),
             'qa_approval_url':reverse('custom_checklist',args=[checklist.pk]),
             'evidence_role_title':'Team Lead evidence review' if role_for(request.user)=='TEAM_LEAD' else 'QA evidence review',

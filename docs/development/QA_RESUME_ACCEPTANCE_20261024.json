@@ -1,19 +1,20 @@
 {
-  "scope": "Resumed QA guided review, Engineer supporting-document uploads, per-job AI Pause/Resume and preservation/regression verification; no unrelated modules.",
+  "scope": "Resumed QA guided review, Engineer supporting documents, per-job AI Pause/Resume, then owner-requested one-table/per-cell/two-pane QA refinement, scalar polling and safe duplicate/inference reuse; no unrelated modules.",
   "date": "2026-10-24",
   "branch": "fix/qa-guided-documents-pause-20261024",
-  "source_base_commit": "5ceb0a7f9f2afdbfaa5d4eec1498f91ba4238aa6",
-  "status_note": "Working-tree functional acceptance is evidence-based; final full-suite and separate security review are still in progress here. Lead must update R34/R35 before final delivery.",
+  "source_base_commit": "9ad13ec68d5b4e8ad6ab99aa700087a974a062d7",
+  "status_note": "All41 scoped implementation/verification procedure rows have actual recorded evidence, including the final source-stable full suite. Verified security-review procedure does not mean its reproduced defects were fixed: all listed security findings remain open and require owner approval. This is a local review candidate, not production acceptance or a claim of universal correctness.",
   "summary": {
-    "requirements": 36,
-    "verified": 34,
-    "in_progress": 2
+    "requirements": 41,
+    "verified": 41,
+    "in_progress": 0,
+    "security_findings_fixed": false
   },
   "browser": {
     "synthetic_saved_data": true,
     "operational_accounts_used": false,
     "native_model_calls_by_browser_drivers": 0,
-    "successful_assertions": 125,
+    "successful_assertions": 212,
     "note": "Counts include per-run JavaScript/network guard checks; they are assertions, not independent requirements or an estimated coverage percentage.",
     "runs": {
       "smoke": {
@@ -71,6 +72,69 @@
         "js_errors": 0,
         "error": null,
         "receipt": ".local/qa-resume-20261024/after-clean-upload-status-browser.json"
+      },
+      "lead-client-close": {
+        "assertions": 8,
+        "passed": 8,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-lead-client-close-browser.json"
+      },
+      "ui-redesign-layout": {
+        "assertions": 6,
+        "passed": 6,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-ui-redesign-layout-browser.json"
+      },
+      "ui-redesign-cells": {
+        "assertions": 12,
+        "passed": 12,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-ui-redesign-cells-browser.json"
+      },
+      "ui-redesign-matching": {
+        "assertions": 16,
+        "passed": 16,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-ui-redesign-matching-browser.json"
+      },
+      "ui-redesign-progress": {
+        "assertions": 10,
+        "passed": 10,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-ui-redesign-progress-browser.json"
+      },
+      "native-reused-ui": {
+        "assertions": 8,
+        "passed": 8,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-native-reused-ui-browser.json"
+      },
+      "duplicate-tags": {
+        "assertions": 10,
+        "passed": 10,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-duplicate-tags-browser.json"
+      },
+      "site-edit-discoverability": {
+        "assertions": 10,
+        "passed": 10,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-site-edit-discoverability-browser.json"
+      },
+      "analysis-details-mobile": {
+        "assertions": 7,
+        "passed": 7,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-analysis-details-mobile-browser.json"
       }
     }
   },
@@ -304,7 +368,7 @@
       "expected_behavior": "Running pause stops safely after a durable evidence boundary and survives worker interruption/recovery.",
       "implementation_location": "survey_pause.py; survey_processing.py; remote_worker_service.py",
       "verification_method": "Root local/remote focused unit/integration pause checks and independent functional review6 tests.",
-      "actual_result": "Completed checkpoints/drawing transaction retained; pausing intent is not treated as failure; expired leases settle to paused and paused work is not reclaimed as running.",
+      "actual_result": "Completed checkpoints/drawing transaction retained; pausing intent is not treated as failure; expired leases settle to paused and paused work is not reclaimed as running. Ordinary repeat-request/restart checks do not resolve security finding S1(stale Resume replay); that finding remains approval-pending.",
       "status": "Verified"
     },
     {
@@ -344,16 +408,16 @@
       "expected_behavior": "Run the final source-stable full suite and required checks; deliver current startup/worker guidance.",
       "implementation_location": "scripts/run_backend_tests.py; docs/LOCAL_CODEX_HANDOFF.md; root delivery report",
       "verification_method": "Final full-suite/source fingerprint and current Django/migration/dependency/frontend checks.",
-      "actual_result": "Initial changing-source960-test diagnostic had2 QA redirect test failures; both fixed with preserved assertions and10 focused tests green. Final source-stable full suite and final guide are owned by the lead and still pending at this ledger checkpoint.",
-      "status": "In progress"
+      "actual_result": "Final source-stable backend run:1030passed in344.692s,exit0,no failures/errors/skips,zero external network attempts,33 in-process fixture connections. Before/after fingerprint110152861b8d06dee79154bb44a2deaaf125abf3ba3a7a45782aa8cbf1155cf2 matches final source. Seven frontend checks/71unit assertions, Django check, migration drift/pending migrations, pip check, five readiness cases, two-consumer startup unit and PS parsing passed. Exact app/two-survey-consumer/photo/search startup and manual verification are in QA_TWO_PANE_AND_AI_REUSE_20261024.md. Independent saved-data browser assertions212; native final benchmark and preservation are separately recorded.",
+      "status": "Verified"
     },
     {
       "id": "R35",
       "expected_behavior": "After functional completion, independently attack/review security and report severity/recommendations; do not automatically fix findings.",
       "implementation_location": "Installed Agency AppSec profile; separate root security review",
-      "verification_method": "Independent read-only AppSec review after functional completion.",
-      "actual_result": "Separate reviewer is running. QA functional repairs preceded that review; findings from that separate review require owner approval before remediation.",
-      "status": "In progress"
+      "verification_method": "Independent read-only AppSec review after functional completion; SECURITY_REVIEW_QA_DOCUMENTS_PAUSE_20261024.md and SECURITY_REVIEW_QA_REFINEMENT_20261024.md.",
+      "actual_result": "Separate Agency AppSec reviews performed13 original probes and a closing14-probe refinement superset(includes earlier10), plus recheck of original13. Reports retain S1Medium,S2Low,S3Low,R1Low and new R2Low(partial worker startup cleanup), plus documented hardening/policy observations. Some probes reproduce undesirable behavior; successful probe execution is not security acceptance. No findings fixed; owner approval required before remediation.",
+      "status": "Verified"
     },
     {
       "id": "R36",
@@ -362,8 +426,84 @@
       "verification_method": "Read-only operational comparison with consistent recovery checkpoint.",
       "actual_result": "Read-only pre-restart comparison found59 core tables exactly unchanged. After owner-authorized operational app/worker resume at11:20UTC,59 tables were compared again: no old records deleted, prior immutable rows unchanged, checklist answers/approvals and photo originals/task/category identities unchanged, job checkpoints not reset;1915 existing media/private files hash unchanged. Expected lease/job progress and new source analyses are retained. Operational qa01 pause/resume audit events were not generated by isolated QA(actor4,port8917) and were not undone. All QA test approvals/uploads/rejections were clearly synthetic isolated records.",
       "status": "Verified"
+    },
+    {
+      "id": "R37",
+      "expected_behavior": "Restore compact readable QA subheading tabs with consistent desktop/mobile layout.",
+      "implementation_location": "qa_evidence_review.html; qa_evidence_review.css",
+      "verification_method": "New actual browser baseline and after-layout desktop/mobile checks.",
+      "actual_result": "Blue subheading tabs were checked in actual desktop and390px mobile saved-data views: three aligned controls, readable wrapping and no overlap/page overflow; latest template/JS/CSS were loaded after restarting the cached-template fixture.",
+      "status": "Verified"
+    },
+    {
+      "id": "R38",
+      "expected_behavior": "Replace the split Site information view with one large table and per-cell Edit unlock, keeping frozen source and system cells protected.",
+      "implementation_location": "qa_site_information.py; category_intake.py; qa_evidence_review.js",
+      "verification_method": "ui_redesign_red.cjs plus new per-cell saved-data/edit/stale/failure/lock browser acceptance.",
+      "actual_result": "Red baseline reproduced missing table/Edit. Latest actual cell journey12checks passed; final presentation10checks passed at1440/390, including initial unobscured Edit with longsiteID/failedAI, single-cell Save/Cancel, source/order preservation, systemID409 protection and Client-closed record locks. Full failed-analysis explanation remains accessible and user-opened details survived a real scalar tick(7checks).",
+      "status": "Verified"
+    },
+    {
+      "id": "R39",
+      "expected_behavior": "Review uses exactly two panes: combined category/section/checklist tree left and photos right; retain single/multi matching.",
+      "implementation_location": "qa_evidence_review.html; qa_evidence_review.js; qa_evidence_review.css",
+      "verification_method": "Actual visible-pane count and category tree/photo batch assignment with saved link checks.",
+      "actual_result": "Red baseline reproduced3panes; latest layout6checks and matching16checks passed on real saved records. Combined left category/section/point tree and right photos support multi-Assign, explicit reasoned batchMove,503 nofalse success, unrelated-link preservation, photoDnD, refresh counts, actual keyboard drawer loop and mobile layout. Nested pointDnD preserves source/IDs/decisions.",
+      "status": "Verified"
+    },
+    {
+      "id": "R40",
+      "expected_behavior": "Make QA progress responsive with lightweight polling and lazy selected-photo analysis; measure request/inference changes honestly.",
+      "implementation_location": "qa_review_progress.py; survey_acceleration.py; qa_evidence_review.js",
+      "verification_method": "Before/after scoped requests and real native benchmark; preserve dirty edits, rich review data and source boundaries.",
+      "actual_result": "Actual scalar browser journey10checks passed: automatic503recovery, real hidden-tab suppression, dirty-input preservation, lazy selected-photo observations and one rich reload only for stage change. Same200photo/2000finding ORM fixture: full4,306,668B/41queries/256.234ms median; scalar251B/10queries/5.500ms; selected-photo10,519B/12queries/6.395ms. This is serialization, not image throughput. A native compact-vs-canonical trial did not establish a speed benefit; production remains canonical with all observation fields retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R41",
+      "expected_behavior": "Identify exact/possible duplicate images without deleting evidence, and safely reuse exact-context prior inference to avoid duplicate work.",
+      "implementation_location": "survey_acceleration.py; category_intake.py; qa_evidence_review.js",
+      "verification_method": "Actual duplicate image fixtures, stable-context cache reuse plus metadata/schema/model mismatch negative cases and native inference counts.",
+      "actual_result": "Actual decoded-pixel PNG fixture produced exact re-encoding and possible brightness tags(10browserchecks), retained all3originals and never skipped similarity or accepted work. Final native benchmark: first pass2actual image generations46.922s; unchanged newrevision1.578s with0generations/2reused sources even while GPUslot was held by other work. QA independently recomputed both final native source identities against final code; both matched. Actual native UI8checks verified reuse provenance/QA-still-required and real revision ordinal. Independent acceleration7unit/integration tests cover context/fullschema/template/model/prompt changes, cross-task denial, near-vs-exact, unchanged raw history and no inherited acceptance. These numbers do not claim unique photos process30xfaster or a sustained batch rate.",
+      "status": "Verified"
     }
   ],
+  "security_review": {
+    "reports": [
+      "docs/development/SECURITY_REVIEW_QA_DOCUMENTS_PAUSE_20261024.md",
+      "docs/development/SECURITY_REVIEW_QA_REFINEMENT_20261024.md"
+    ],
+    "approval_pending_findings": [
+      {
+        "id": "S1",
+        "severity": "Medium",
+        "gap": "An older Resume can override a newer Pause; add control-generation/idempotency guards after approval."
+      },
+      {
+        "id": "S2",
+        "severity": "Low",
+        "gap": "Owning Admin retained-document access differs across the two routes; decide and unify the historical-access policy after approval."
+      },
+      {
+        "id": "S3",
+        "severity": "Low",
+        "gap": "A nonexistent task ID can return500; normalize scoped missing-ID handling after approval."
+      },
+      {
+        "id": "R1",
+        "severity": "Low",
+        "gap": "Selected-photo progress checks task membership rather than immutable-submission membership; tighten it after approval."
+      },
+      {
+        "id": "R2",
+        "severity": "Low",
+        "gap": "If starting the second survey consumer fails, an earlier worker can escape startup cleanup; put acquisition in a cleanup scope and retain handles incrementally after approval."
+      }
+    ],
+    "policy_and_hardening_observations_also_remain_open": true,
+    "findings_fixed": false,
+    "successful_probe_execution_is_not_security_approval": true
+  },
   "limitations": [
     "Native model benchmark used synthetic sources; no Z93004/site or manufacturer accuracy benchmark is claimed.",
     "No physical mobile device coverage; desktop1440 and mobile390 browser widths checked.",
@@ -371,5 +511,17 @@
     "Pause waits for the active bounded source to finish/save; it does not instantly interrupt GPU computation.",
     "Standard installed Ollama11434 has a missing runner binary; the existing project runtime11435 was verified instead.",
     "Server/production deploy, merge and publishing are not part of this resumed verification."
-  ]
+  ],
+  "final_backend": {
+    "tests": 1030,
+    "passed": 1030,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 344.692,
+    "source_fingerprint": "110152861b8d06dee79154bb44a2deaaf125abf3ba3a7a45782aa8cbf1155cf2",
+    "command": ".local\\venv\\Scripts\\python.exe scripts\\run_backend_tests.py",
+    "external_network_attempts": 0,
+    "in_process_fixture_connections": 33
+  }
 }

@@ -2,7 +2,17 @@
 
 Review date: 24 October 2026. Scope: the existing Django survey and inspection application. This guide describes six current roles and the existing review workflow; it is not a plan for additional modules or a production-readiness certificate.
 
-The permission, routing and workspace checks use isolated Django records and synthetic evidence. The category-upload workflow supersedes the earlier Engineer checklist/AI review steps. Actual local vision was also exercised with synthetic images; this establishes integration, not real-site accuracy, physical-device acceptance or production readiness. Current verification evidence is recorded in docs/development/ENGINEER_CATEGORY_QA_WORKFLOW.json.
+The permission, routing and workspace checks use isolated Django records and synthetic evidence. The category-upload workflow supersedes the earlier Engineer checklist/AI review steps. Actual local vision was also exercised with synthetic images; this establishes integration, not real-site accuracy, physical-device acceptance or production readiness. Current verification evidence is recorded in docs/development/QA_RESUME_ACCEPTANCE_20261024.json; older stage evidence remains in docs/development/ENGINEER_CATEGORY_QA_WORKFLOW.json.
+
+Latest verification: 1,030 isolated backend tests passed, seven frontend scripts
+passed (71 unit assertions), and independent desktop/mobile saved-data journeys
+were checked. QA now uses one Site information table and two review panes.
+Engineer sketch/report uploads and authorized AI Pause/Resume are available.
+Strict raw-analysis reuse reduces repeated work without inheriting approvals;
+exact/possible duplicate tags retain every original. Current local AI uses the
+verified existing project runtime on loopback11435. Known security findings
+(one Medium, four Low plus hardening/policy observations) remain open pending
+owner approval; see both docs/development/SECURITY_REVIEW_QA_*_20261024 reports.
 
 ## How access is decided
 
@@ -75,10 +85,12 @@ The Engineer cannot match photos to checklist points, confirm/reject AI links, a
 
 - Open tasks where they are the named QA reviewer and still have effective project access.
 - Use My reviews, then Site information, Review evidence and Decision in the same workspace. Save & next advances only after the answer is saved. More tools retains secondary matching, history and processing actions.
+- Site information uses one table. Edit unlocks a permitted QA value individually; Save records the correction and note, while Cancel relocks without saving. Submitted source/system values and approved sections stay protected. Review evidence uses a combined category/checkpoint tree beside the photos; assign single/multiple selections or explicitly move selected links with a reason.
 - Open the category submission immediately, including while AI is pending, processing or failed. Inspect original source photographs, approved checklist requirements and revision history.
 - Review General Info, Civil, Electrical and Tower in a compact category/checklist/photo workspace. Required points remain visible without evidence. Not Assigned means no checklist links, not merely no link to the selected point.
 - Add, confirm, remove or explicitly reassign individual photo links. Drag-and-drop and click/touch actions use the same revision-bound permission checks. Other valid links remain intact.
 - Inspect source photos and QA-visible AI observations/explanations in the viewer. Unsupported suggestions remain unassigned. Preserve original Engineer categories as provenance, even for a valid cross-category link.
+- Treat Exact duplicate and Possible duplicate labels as browsing aids. Originals and links are retained. Reused analysis comes from the same task and matching model/evidence context; QA acceptance is still required.
 - Open Submitted site information to compare the Engineer's frozen General Info values and source notes with the checklist review. This source view is read-only; QA corrections use the existing review controls.
 - Open the submission's sketches/reports and any available AI document observations from Site information. A report does not replace a required site photograph.
 - Pause AI Analysis or resume it at the current QA stage. A running evidence task finishes and saves before the pause takes effect. Completed analyses remain saved, manual review remains available, and Engineer submission remains separate from these controls.
@@ -228,7 +240,7 @@ Older submission, review and source records are retained. Current Engineer inter
 3. QA: drag a photo onto a checkpoint or use Assign to checklist point. Confirm/correct links separately from reviewing answers and accepting work. Refresh to check persistence. Complete QA evidence review before using the existing approval action.
 4. Team Lead: inspect the completed package in the read-only three-pane workspace. Approve or return one step with a reason. Four-layer tasks continue to the named Client; three-layer tasks close after the required reviews.
 
-## Verification evidence and limits
+## Earlier General Info verification evidence and limits
 
 - Final stable isolated backend run: **929 tests passed in 308.208 seconds**, native exit 0; no failures, errors or skips. Source fingerprints matched throughout.
 - Django, migration drift/pending migrations, dependency, all four retained frontend scripts and 33 JavaScript syntax checks passed. Retained frontend VM checks are separate from real browser verification.

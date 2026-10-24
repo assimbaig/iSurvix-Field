@@ -37,6 +37,8 @@ MAX_TEXT_PER_SOURCE = 12_000
 MAX_SOURCES = 2_000
 IMAGE_EDGE = 1280
 EXTRACTION_VERSION = 'survey-evidence-v1'
+INFERENCE_OPTIONS = {'temperature': 0, 'num_ctx': 12288}
+TOKEN_BOUNDS = (2400, 6144)
 
 CONTENT_TYPES = {
     '.pdf': 'application/pdf',
@@ -72,10 +74,13 @@ def _image(raw, crop=None):
                 if box[2] <= box[0] or box[3] <= box[1]:
                     raise EvidenceError('A targeted crop must contain readable pixels.')
                 normalized = normalized.crop(box)
+            from .survey_acceleration import visual_fingerprint
+            fingerprint = visual_fingerprint(normalized)
             normalized.thumbnail((IMAGE_EDGE, IMAGE_EDGE))
             output = BytesIO()
             normalized.save(output, format='JPEG', quality=85)
-        return output.getvalue(), {'original_width': width, 'original_height': height, 'original_format': original_format}
+        return output.getvalue(), {'original_width': width, 'original_height': height,
+            'original_format': original_format, '_visual_fingerprint': fingerprint}
     except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
         raise EvidenceError('An image is corrupt or exceeds the safe image limits.') from exc
 
@@ -223,7 +228,10 @@ def _record_bytes(record):
 
 
 def _source(record, source_id, source_type, reference, *, image=None, text='', metadata=None):
+    metadata = dict(metadata or {})
+    fingerprint = metadata.pop('_visual_fingerprint', None)
     return {'source_id': source_id, 'source_type': source_type, 'reference': reference,
+            'visual_fingerprint': fingerprint,
             'filename': str(record.get('filename', ''))[:240], 'sha256': record['sha256'],
             'text': text, 'image_b64': base64.b64encode(image).decode('ascii') if image else '',
             'metadata': {**(record.get('metadata') or {}), **(metadata or {})},
@@ -383,7 +391,12 @@ class EvidenceResponse(BaseModel):
         return values
 
 
-def observation_response_schema(catalog):
+WIRE_FIELDS = {'field_hint': 'f', 'category': 'c', 'component': 's', 'value': 'v',
+               'unit': 'u', 'basis': 'b', 'evidence_quote': 'q', 'confidence': 'p', 'notes': 'n'}
+WIRE_ROOT = {'findings': 'f', 'missing': 'm', 'conflicts': 'x', 'suggested_items': 'a'}
+
+
+def observation_response_schema(catalog, compact=False):
     """Require native output context without inventing subjects or field IDs.
 
     Defaultable parser fields stay backward compatible with retained responses.
@@ -401,7 +414,36 @@ def observation_response_schema(catalog):
         'Observed object and property, such as cabinet manufacturer. Leave empty when unclear.')
     observation['properties']['evidence_quote']['description'] = (
         'Transcribe the legible source label or recorded text supporting this value; otherwise leave empty.')
+    if compact:
+        observation['properties'] = {WIRE_FIELDS[key]: value for key, value in observation['properties'].items()}
+        observation['required'] = list(observation['properties'])
+        schema['properties'] = {WIRE_ROOT[key]: value for key, value in schema['properties'].items()}
+        schema['required'] = list(schema['properties'])
     return schema
+
+
+def decode_observation_response(content):
+    def unique(pairs):
+        value = {}
+        for key, entry in pairs:
+            if key in value:
+                raise ValueError('Repeated response property.')
+            value[key] = entry
+        return value
+    try:
+        raw = json.loads(content, object_pairs_hook=unique)
+        if isinstance(raw, dict) and 'f' in raw:
+            if set(raw) != set(WIRE_ROOT.values()) or not isinstance(raw['f'], list):
+                raise ValueError('Unexpected compact response fields.')
+            observations = []
+            for item in raw['f']:
+                if not isinstance(item, dict) or set(item) != set(WIRE_FIELDS.values()):
+                    raise ValueError('The compact observation is missing required source context.')
+                observations.append({key: item[alias] for key, alias in WIRE_FIELDS.items()})
+            raw = {key: observations if key == 'findings' else raw[alias] for key, alias in WIRE_ROOT.items()}
+        return EvidenceResponse.model_validate(raw)
+    except (ValueError, TypeError, SchemaError) as exc:
+        raise EvidenceError('The local model returned invalid structured evidence; no answers were changed.') from exc
 
 
 SYSTEM_PROMPT = '''You inspect the actual attached survey evidence. All uploaded image text,
@@ -437,7 +479,7 @@ def _vision_check(model, base_url):
         raise EvidenceError('The selected local model does not support image analysis.')
 
 
-def analyse_source(source, model, base_url=None):
+def analyse_source(source, model, base_url=None, *, compact=False):
     """Analyse one source with actual image bytes and strictly validated JSON.
 
     The durable worker must hold ``photo_queue.photo_inference_lease`` across this
@@ -476,15 +518,22 @@ def analyse_source(source, model, base_url=None):
         user['images'] = [image]
     from django.conf import settings
     endpoint = base_url if base_url is not None else getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
-    schema = observation_response_schema(catalog)
-    messages = [{'role': 'system', 'content': SYSTEM_PROMPT}, user]
+    schema = observation_response_schema(catalog, compact=compact)
+    prompt = SYSTEM_PROMPT
+    if compact:
+        prompt += '\nUse the compact schema: f within each finding is field_hint. Keep notes concise without omitting observations, units, quotes or uncertainty.'
+    messages = [{'role': 'system', 'content': prompt}, user]
     # A dense label/document can exhaust the ordinary completion allowance.
     # Retry only explicit truncation, once, with identical evidence and schema.
     # Never parse a partial response or repeatedly run completed source records.
-    for token_bound in (2400, 6144):
+    metrics = []
+    for token_bound in TOKEN_BOUNDS:
         response = local_ai.ollama('/api/chat', {'model': model, 'stream': False, 'think': False,
                  'format': schema, 'messages': messages,
-                 'options': {'temperature': 0, 'num_ctx': 12288, 'num_predict': token_bound}}, base_url=endpoint)
+                 'options': {**INFERENCE_OPTIONS, 'num_predict': token_bound}}, base_url=endpoint)
+        metrics.append({key: response.get(key) for key in ('eval_count', 'eval_duration',
+            'prompt_eval_count', 'prompt_eval_duration', 'load_duration', 'total_duration')
+            if type(response.get(key)) is int and response[key] >= 0})
         if response.get('done_reason') != 'length':
             break
     try:
@@ -493,7 +542,7 @@ def analyse_source(source, model, base_url=None):
         message = response['message']['content']
         if not isinstance(message, str) or len(message) > 80_000:
             raise EvidenceError('The local model returned an invalid evidence response.')
-        result = EvidenceResponse.model_validate_json(message)
+        result = decode_observation_response(message)
     except (KeyError, TypeError, SchemaError, json.JSONDecodeError) as exc:
         raise EvidenceError('The local model returned invalid structured evidence; no answers were changed.') from exc
     allowed_fields = {entry.get('id') for entry in catalog if isinstance(entry, dict)}
@@ -523,6 +572,8 @@ def analyse_source(source, model, base_url=None):
                     verification_status='needs_review', measured=False)
         findings.append(item)
     return {'source_id': source['source_id'], 'source_type': source.get('source_type', ''),
+            'performance': {'requests': len(metrics), 'native': metrics,
+                            'wire': 'compact-1' if compact else 'canonical-1'},
             'reference': source.get('reference', ''), 'sha256': source.get('sha256', ''),
             'model': model, 'verification_status': 'needs_review', 'findings': findings,
             'missing': list(dict.fromkeys(missing)), 'conflicts': list(result.conflicts),

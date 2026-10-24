@@ -430,6 +430,16 @@ def review_state(request, checklist_id):
                 for key in ('reason','qa_by','confidence','conflict'):item.pop(key,None)
                 if not item.get('accepted'):item.update(value=None,proposed_answer=None,status='Missing')
             result['ai']={'status':'reviewed' if completed else 'pending_qa_review','completed':0,'total':0,'error':''}
+    if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .qa_site_information import table as site_information_table
+        result['site_information_table']=site_information_table(c,result['general_information'],result['items'],
+            can_review=result['can_review'] and not result['config_error'])
+        from .qa_review_progress import token as progress_token
+        result['progress_token']=progress_token(c,revision)
+        from .survey_acceleration import photo_duplicates
+        duplicates=photo_duplicates(revision)
+        for photo in result['photos']:
+            photo.update({'duplicate':None,'analysis_reused':None,**duplicates.get(photo['id'],{})})
     return result
 
 
@@ -480,6 +490,9 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
             payload={'package':payload,'review_digest':pipeline.review_digest(payload)})
         return review_state(request, checklist_id)
     if action not in {'answer', 'map'}: raise ValidationError('Choose a supported QA review action.')
+    preserve=data.get('preserve_evidence',False)
+    if type(preserve) is not bool or preserve and (action!='answer' or data.get('photo_ids')):
+        raise ValidationError('Save a checklist value separately from changes to its photo evidence.')
     ident = data.get('field_id'); reason = data.get('reason', '')
     fields = {field['id']:field for section in revision.snapshot['schema'].get('sections',[]) for field in section.get('fields',[])}
     if ident not in fields: raise ValidationError('Choose an actual item from the approved checklist.')
@@ -496,12 +509,18 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     updates={'sources':[{'source_id':'photo:'+str(i),'reference':allowed[i]['filename']} for i in ids]+
              retained_item_sources(revision,payload,ident),
              'reason':reason.strip()[:4000],'qa_by':request.user.pk}
+    existing=next((item for item in payload['checklist_items'] if item['id']==ident),{})
+    if preserve:
+        # A value-only cell save neither freezes an empty photo selection nor
+        # turns AI suggestions into confirmed assignments. Existing link events
+        # and any later AI proposals retain their independent matching state.
+        updates={'reason':reason.strip()[:4000],'qa_value_by':request.user.pk}
     if action=='answer':
         value=data.get('value')
         if field['type']=='number' and type(value) in (int,float):value=str(value)
         if value not in (None,'',[],{}) and field['type']!='photo':validate_answer(field,value)
         updates.update(value=value,proposed_answer=value,accepted=True,conflict=False,
-            status='Confirmed from evidence' if updates['sources'] else 'Reported' if value not in (None,'',[],{}) else 'Missing')
+            status='Confirmed from evidence' if (existing.get('sources') if preserve else updates['sources']) else 'Reported' if value not in (None,'',[],{}) else 'Missing')
     SurveyProcessingEvent.objects.create(revision=revision,actor=request.user,action='qa_answer' if action=='answer' else 'qa_mapping',
         reason=reason.strip()[:4000],payload={'items':{ident:updates}})
     return review_state(request,checklist_id)
