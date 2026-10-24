@@ -2,6 +2,14 @@
 
 ## Latest verified local candidate - 24 October 2026
 
+Delivery: implementation commit `fbf23205c8ae7d14c198ca9831fe171d243cb7b2`
+is pushed. Draft PR17: https://github.com/assimbaig/iSurvix-Field/pull/17,
+targeting `feat/secure-outbound-survey-workers`; it has not been merged/deployed.
+Recovery checkpoint `.local/backups/project-checkpoint-20261024-153144`
+contains3,293 archived files, consistent operational/QA SQLite snapshots
+(integrity OK), verified ZIP CRC, SHA manifest and Git history bundle. Final
+delivery metadata is saved privately alongside that checkpoint.
+
 The owner resumed development and requested the simplified two-pane QA review,
 one-window Site information table with individual cell editing, restored blue
 subheading tabs, faster AI work and duplicate-photo annotations. These changes
