@@ -83,6 +83,8 @@ def source_snapshot(c):
     groups = dict(c.photo_evidence.values_list('pk','group'))
     snapshot['photos'] = [{**photo, 'group': groups[photo['id']]}
                           for photo in snapshot['photos'] if photo['id'] not in excluded]
+    from .engineer_documents import snapshot as document_snapshot
+    snapshot['documents']=document_snapshot(c,snapshot['documents'])
     snapshot['intake'] = {key: value for key, value in snapshot['intake'].items() if key not in CONTROL_KEYS}
     from .engineer_general_info import CONTEXT_KEY,CONTEXT_VERSION
     context=snapshot['intake'].get(CONTEXT_KEY,{})
@@ -135,10 +137,12 @@ def state(request, checklist_id):
         returned=route.events.filter(to_stage='engineer',action__in=['reject','return']).order_by('-sequence').first() if route else None
         correction_reason=returned.reason if returned else c.comment or ''
     from .engineer_general_info import describe as general_information
+    from .engineer_documents import rows as document_rows,limits as document_limits
     return {'site_id': c.site_id, 'project': c.project.name,
         'general_information':general_information(c,flags,revision),
         'site_info': {key: info.get(key, '') for key in ('site_name', 'address', 'city', 'region')},
         'photos': photos(snapshot, c), 'categories': CATEGORIES, **flags,
+        'documents':document_rows(snapshot,c),'document_upload':document_limits(),
         'submitted': c.status not in {Checklist.Status.DRAFT, Checklist.Status.REJECTED},
         'stage': route.stage if route else 'quality_engineer' if c.status in {Checklist.Status.SUBMITTED, Checklist.Status.REVIEW} else 'engineer',
         'qa_name': (qa.get_full_name() or qa.get_username()) if qa else '',
@@ -294,9 +298,11 @@ def missing_for_review(c):
         required = field.get('required')
         value = item.get('value')
         sources = item.get('sources', [])
+        from .qa_matching import photo_id
+        photo_sources={photo_id(source) for source in sources if photo_id(source) is not None}
         if required and (not item.get('accepted') or (field['type'] != 'photo' and value in (None, '', [], {}))):
             missing.append(field['label'] + ' requires a QA-reviewed answer')
-        if (field.get('photo_required') or field['type'] == 'photo' and required or field.get('evidence_rules')) and not sources:
+        if (field.get('photo_required') or field['type'] == 'photo' and required or field.get('evidence_rules')) and not photo_sources:
             missing.append(field['label'] + ' requires matched source evidence')
         if field.get('evidence_rules'):
             from .evidence_rules import validate_evidence_rules
@@ -393,9 +399,14 @@ def review_state(request, checklist_id):
         'can_complete': flags['can_review'] and not completed and not missing_for_review(c),
         'missing': missing_for_review(c)}
     if role_for(request.user) in {Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD}:
+        from .engineer_documents import rows as document_rows
+        result['documents']=document_rows(revision.snapshot,c,revision=revision,
+            include_analysis=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER)
         from .engineer_general_info import describe as general_information
         result['general_information']=general_information(c,{'can_edit':False},revision)
     if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .survey_pause import flags as pause_flags
+        result['ai'].update(pause_flags(request,c,revision))
         from .survey_model_identity import recovery_state
         result['model_recovery']=recovery_state(c,revision,flags['can_review'] and not completed)
         from .survey_processing import ACTIVE
@@ -419,6 +430,16 @@ def review_state(request, checklist_id):
                 for key in ('reason','qa_by','confidence','conflict'):item.pop(key,None)
                 if not item.get('accepted'):item.update(value=None,proposed_answer=None,status='Missing')
             result['ai']={'status':'reviewed' if completed else 'pending_qa_review','completed':0,'total':0,'error':''}
+    if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .qa_site_information import table as site_information_table
+        result['site_information_table']=site_information_table(c,result['general_information'],result['items'],
+            can_review=result['can_review'] and not result['config_error'])
+        from .qa_review_progress import token as progress_token
+        result['progress_token']=progress_token(c,revision)
+        from .survey_acceleration import photo_duplicates
+        duplicates=photo_duplicates(revision)
+        for photo in result['photos']:
+            photo.update({'duplicate':None,'analysis_reused':None,**duplicates.get(photo['id'],{})})
     return result
 
 
@@ -432,6 +453,10 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     if not revision or not pipeline.current(revision): raise ValidationError('The submitted source changed. Return it for Engineer correction.')
     from . import qa_matching
     qa_matching.require_revision(revision,data)
+    if data.get('action') in {'pause_ai','resume_ai'}:
+        from .survey_pause import control
+        control(request,checklist_id,revision.pk,data['action'],data.get('expected_digest') or data.get('source_digest'))
+        return review_state(request,checklist_id)
     if data.get('action')=='retry_current_model':
         if configuration_error(c):raise ValidationError(configuration_error(c))
         from .survey_model_identity import recover
@@ -465,6 +490,9 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
             payload={'package':payload,'review_digest':pipeline.review_digest(payload)})
         return review_state(request, checklist_id)
     if action not in {'answer', 'map'}: raise ValidationError('Choose a supported QA review action.')
+    preserve=data.get('preserve_evidence',False)
+    if type(preserve) is not bool or preserve and (action!='answer' or data.get('photo_ids')):
+        raise ValidationError('Save a checklist value separately from changes to its photo evidence.')
     ident = data.get('field_id'); reason = data.get('reason', '')
     fields = {field['id']:field for section in revision.snapshot['schema'].get('sections',[]) for field in section.get('fields',[])}
     if ident not in fields: raise ValidationError('Choose an actual item from the approved checklist.')
@@ -477,14 +505,22 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     from .template_views import require_field_editable
     require_field_editable(c,ident)
     if field.get('system') and data.get('value',c.site_id)!=c.site_id: raise ValidationError('The linked site ID must match the saved survey.')
-    updates={'sources':[{'source_id':'photo:'+str(i),'reference':allowed[i]['filename']} for i in ids],
+    from .engineer_documents import retained_item_sources
+    updates={'sources':[{'source_id':'photo:'+str(i),'reference':allowed[i]['filename']} for i in ids]+
+             retained_item_sources(revision,payload,ident),
              'reason':reason.strip()[:4000],'qa_by':request.user.pk}
+    existing=next((item for item in payload['checklist_items'] if item['id']==ident),{})
+    if preserve:
+        # A value-only cell save neither freezes an empty photo selection nor
+        # turns AI suggestions into confirmed assignments. Existing link events
+        # and any later AI proposals retain their independent matching state.
+        updates={'reason':reason.strip()[:4000],'qa_value_by':request.user.pk}
     if action=='answer':
         value=data.get('value')
         if field['type']=='number' and type(value) in (int,float):value=str(value)
         if value not in (None,'',[],{}) and field['type']!='photo':validate_answer(field,value)
         updates.update(value=value,proposed_answer=value,accepted=True,conflict=False,
-            status='Confirmed from evidence' if ids else 'Reported' if value not in (None,'',[],{}) else 'Missing')
+            status='Confirmed from evidence' if (existing.get('sources') if preserve else updates['sources']) else 'Reported' if value not in (None,'',[],{}) else 'Missing')
     SurveyProcessingEvent.objects.create(revision=revision,actor=request.user,action='qa_answer' if action=='answer' else 'qa_mapping',
         reason=reason.strip()[:4000],payload={'items':{ident:updates}})
     return review_state(request,checklist_id)

@@ -53,8 +53,13 @@ if ($aiReady) {
         try {
             $details = Invoke-RestMethod -Uri 'http://127.0.0.1:11434/api/show' -Method Post -ContentType 'application/json' -Body (@{ model = $Model } | ConvertTo-Json) -TimeoutSec 10
             if (@($details.capabilities) -contains 'vision' -and -not $details.remote_host -and -not $details.remote_model) {
-                $existingVisionReady = $true
-                Write-Host 'The installed model reports local vision capability. The worker rechecks before analyzing images.'
+                . (Join-Path $projectRoot 'scripts\Test-LocalAIRuntime.ps1')
+                $existingVisionReady = Test-LocalAIRuntime -Model $Model -ServiceUrl $env:ISURVIX_OLLAMA_URL
+                if ($existingVisionReady) {
+                    Write-Host 'Local vision metadata and a bounded generation request succeeded. The worker rechecks actual image processing.'
+                } else {
+                    Write-Host 'Ollama metadata responds, but local generation failed. Checking the existing project photo AI runtime.'
+                }
             } else { Write-Host 'This model does not report local vision support. Photo analysis will remain blocked.' }
         } catch { Write-Host 'Vision capability could not be verified. The photo worker will require verification before analysis.' }
     }
@@ -84,7 +89,8 @@ if (-not $NoBrowser) { Start-Process "http://127.0.0.1:$Port/local/" }
 $runStamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $worker = Start-Process -FilePath $venvPython -ArgumentList @('manage.py', 'photo_worker') -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $projectRoot ".local\worker-$runStamp.stdout.log") -RedirectStandardError (Join-Path $projectRoot ".local\worker-$runStamp.stderr.log") -PassThru
 $searchWorker = Start-Process -FilePath $venvPython -ArgumentList @('manage.py', 'photo_search_worker') -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $projectRoot ".local\photo-search-$runStamp.stdout.log") -RedirectStandardError (Join-Path $projectRoot ".local\photo-search-$runStamp.stderr.log") -PassThru
-$surveyWorker = Start-Process -FilePath $venvPython -ArgumentList @('manage.py', 'survey_processing_worker') -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $projectRoot ".local\survey-processing-$runStamp.stdout.log") -RedirectStandardError (Join-Path $projectRoot ".local\survey-processing-$runStamp.stderr.log") -PassThru
+. (Join-Path $projectRoot 'scripts\Start-SurveyWorkers.ps1')
+$surveyWorkers = @(Start-iSurvixSurveyWorkers -PythonPath $venvPython -ProjectRoot $projectRoot -RunStamp $runStamp)
 Write-Host 'The independent photo pipeline is running: image analysis, checklist comparison, then human confirmation. Durable stages survive restart.'
 Push-Location (Join-Path $projectRoot 'backend')
 try { & $venvPython manage.py runserver "127.0.0.1:$Port" --noreload } finally {
@@ -93,5 +99,7 @@ try { & $venvPython manage.py runserver "127.0.0.1:$Port" --noreload } finally {
     # exact worker tree so it cannot remain detached after the launcher exits.
     if ($worker -and -not $worker.HasExited) { & taskkill.exe /PID $worker.Id /T /F | Out-Null }
     if ($searchWorker -and -not $searchWorker.HasExited) { & taskkill.exe /PID $searchWorker.Id /T /F | Out-Null }
-    if ($surveyWorker -and -not $surveyWorker.HasExited) { & taskkill.exe /PID $surveyWorker.Id /T /F | Out-Null }
+    foreach ($surveyWorker in $surveyWorkers) {
+        if ($surveyWorker -and -not $surveyWorker.HasExited) { & taskkill.exe /PID $surveyWorker.Id /T /F | Out-Null }
+    }
 }

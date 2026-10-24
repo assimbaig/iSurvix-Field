@@ -54,10 +54,54 @@ def remove(request,checklist_id):
 
 
 @login_required
+@require_POST
+@api_errors
+def document_upload(request,checklist_id):
+    from .engineer_documents import upload
+    try:
+        response=JsonResponse(upload(request,checklist_id),status=201)
+    except DatabaseError:
+        response=JsonResponse({'error':'Supporting documents could not be saved. Saved originals are preserved; refresh and retry.'},status=503)
+    response['Cache-Control']='private, no-store'
+    return response
+
+
+@login_required
+@require_POST
+@api_errors
+def document_remove(request,checklist_id):
+    from .engineer_documents import remove
+    try:
+        response=JsonResponse(remove(request,checklist_id,body(request)))
+    except DatabaseError:
+        response=JsonResponse({'error':'The document removal could not be saved. Refresh and retry.'},status=503)
+    response['Cache-Control']='private, no-store'
+    return response
+
+
+@login_required
+@require_GET
+@api_errors
+def document(request,checklist_id,document_id):
+    from .engineer_documents import delivery
+    return delivery(request,checklist_id,document_id)
+
+
+@login_required
 @require_GET
 @api_errors
 def review_state(request,checklist_id):
     return JsonResponse(intake.review_state(request,checklist_id))
+
+
+@login_required
+@require_GET
+@api_errors
+def review_progress(request,checklist_id):
+    from .qa_review_progress import progress
+    response=JsonResponse(progress(request,checklist_id))
+    response['Cache-Control']='private, no-store'
+    return response
 
 
 @login_required

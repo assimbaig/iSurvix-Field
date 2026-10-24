@@ -114,6 +114,7 @@ def explorer(request):
     projects,checklists,assignments=scopes(request.user)
     client=role_for(request.user)==Profile.Roles.CLIENT
     engineer=role_for(request.user)==Profile.Roles.ENGINEER
+    quality=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER
     if client and request.GET.get('assignee'):raise PermissionDenied('Client task views do not expose personnel filters.')
     form_data=request.GET.copy()
     if form_data.get('project')=='all':form_data['project']=''
@@ -153,6 +154,9 @@ def explorer(request):
             if c.schema_snapshot:
                 try:row['url']=reverse('photo_workspace',args=[c.pk])+'?'+urlencode({'return_to':back})
                 except NoReverseMatch:pass
+            if quality:
+                from .category_intake import enabled as category_enabled
+                if category_enabled(c):row['review_url']=reverse('photo_workspace',args=[c.pk])+'?'+urlencode({'qa_step':'decision','return_to':back})
         else:
             row['stage']=dict(WorkAssignment.Status.choices).get(row['task_status'],row['task_status'])
             row['url']=''
@@ -192,7 +196,7 @@ def explorer(request):
     create_query={'return_to':back}
     if data.get('project'):create_query['project']=data['project'].pk
     response=render(request,'dashboards/task_explorer.html',{'sort_aria':sort_aria,'active_view':'tasks','selected_project_id':str(data['project'].pk) if data.get('project') else '', 'selected_industry':data.get('industry',''),'status_counts':status_counts,'module_tabs':module_tabs,'sort_links':sort_links,'form':form,'page_obj':page,'filter_query':query.urlencode(),'export_query':export_query.urlencode(),'is_client':client,'total':page.paginator.count,
-        'is_engineer':engineer,'engineer_task_buckets':engineer_task_buckets,
+        'is_engineer':engineer,'is_quality_engineer':quality,'engineer_task_buckets':engineer_task_buckets,
         'can_create_tasks':role_for(request.user) in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD},'create_task_url':reverse('task_create')+'?'+urlencode(create_query)})
     response['Cache-Control']='private, no-store'
     return response

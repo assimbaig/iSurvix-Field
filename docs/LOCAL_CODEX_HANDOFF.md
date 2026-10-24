@@ -1,5 +1,103 @@
 # iSurvix Field: local Codex development brief
 
+## Latest verified local candidate - 24 October 2026
+
+Delivery: implementation commit `fbf23205c8ae7d14c198ca9831fe171d243cb7b2`
+is pushed. Draft PR17: https://github.com/assimbaig/iSurvix-Field/pull/17,
+targeting `feat/secure-outbound-survey-workers`; it has not been merged/deployed.
+Recovery checkpoint `.local/backups/project-checkpoint-20261024-153144`
+contains3,293 archived files, consistent operational/QA SQLite snapshots
+(integrity OK), verified ZIP CRC, SHA manifest and Git history bundle. Final
+delivery metadata is saved privately alongside that checkpoint.
+
+The owner resumed development and requested the simplified two-pane QA review,
+one-window Site information table with individual cell editing, restored blue
+subheading tabs, faster AI work and duplicate-photo annotations. These changes
+are implemented on `fix/qa-guided-documents-pause-20261024`, preserving the earlier
+verified documents/Pause-Resume checkpoint `9ad13ec`, WIP `3668cbb`, and merged
+PR16 history `8aeb872` via merge checkpoint `5ceb0a7`. The historical pause and
+older model-health statements below do not describe the current runtime.
+
+Final source-stable isolated backend suite: **1,030 passed in 344.692s**, no
+failures/errors/skips, zero external network attempts. Source fingerprint:
+`110152861b8d06dee79154bb44a2deaaf125abf3ba3a7a45782aa8cbf1155cf2`.
+Seven frontend checks pass (71 unit assertions), alongside Django, migration,
+dependency and Windows startup checks. Independent real saved-data browser
+receipts, security reviews and requirement statuses are recorded in
+`docs/development/QA_RESUME_ACCEPTANCE_20261024.json`.
+
+Current app: `http://127.0.0.1:8000/login/`; the app, two durable survey-worker
+consumers, photo worker and search worker are running. They use the existing
+project Ollama runtime on **loopback11435** with installed `qwen3.5:4b`. The
+standard11434 service responds to metadata but native generation fails because
+its runner binary is absent. Do not claim that service is healthy or restart/
+reinstall it silently. Real image/photo and rasterized PDF requests succeeded
+against11435; no model was downloaded and Ollama is not public.
+
+Lightweight progress measured251B/10queries/5.500ms versus a4.3MB/41query/256.234ms
+full review response on the same synthetic200-photo fixture. Strict raw-analysis
+reuse retained model/context/schema/source guards: a new synthetic revision
+reached review in1.578s with zero inference requests while another task held the
+GPU lease; its first pass made two actual image requests in46.922s. This is not
+a sustained unique-photo throughput or site-accuracy benchmark. No human answer
+or approval was inherited. The two consumers still share one GPU inference slot.
+
+Separate Agency AppSec reviews report **S1 Medium** (stale Resume replay),
+**S2/S3/R1/R2 Low** (retained-file policy, missing-task500, optional-photo revision
+scope, partial worker startup cleanup) and documented hardening observations.
+**None is fixed: the owner explicitly requires approval before security finding
+remediation.** Read both SECURITY_REVIEW_QA_*_20261024 reports before new work.
+Passing adversarial probes means reproduction/guard checks ran, not security
+approval. Do not merge or deploy this candidate automatically.
+
+Data/approval preservation was checked against the pre-edit archive; services may
+append legitimate worker records and the owner may use the app. Do not restore
+the old database to erase those later actions. Recovery archives and receipts
+remain in `.local/backups` and `.local/qa-resume-20261024`. Isolated test evidence
+is synthetic; no operational survey was approved/rejected by test scripts.
+
+Implementation, exact app/worker commands, test steps, speed evidence and limits:
+`docs/development/QA_TWO_PANE_AND_AI_REUSE_20261024.md`. User-role permissions:
+`docs/manual/USER_PERMISSIONS_AND_ISSUES.md`. Use `Start-iSurvix.cmd` for GUI
+startup. No new modules or unrequested security fixes are authorized.
+
+## Resumed by owner - 24 October 2026
+
+The owner explicitly resumed the saved QA review, Engineer sketch/report uploads,
+and per-job AI Pause/Resume work. The pause instructions below are historical.
+Current feature branch: `fix/qa-guided-documents-pause-20261024`; saved WIP
+`3668cbb` and merged PR16 `8aeb872` are both retained. Before editing, the existing
+backup helper created `.local/backups/project-checkpoint-20261024-140010` with
+database integrity and archive CRC checks passing (2,910 files).
+
+New owner development rules are recorded in
+`docs/development/DEVELOPMENT_RULES.md`: failing tests first, unit and integration
+coverage, then separate security review. Report security findings with severity
+and recommendations; owner approval is required before fixing those findings.
+Agency backend, frontend and independent testing roles are coordinating this
+resume. Do not treat the previous passing suite as verification of current work.
+
+## PAUSED by owner - QA redesign, sketches/reports and AI Pause/Resume
+
+The owner explicitly said to save pending fixes and pause development, then said
+the PC would be switched off. All development agents and owned test processes
+are stopped. Save/checkpoint and orderly local app/worker shutdown are the only
+remaining actions. Do not resume implementation or testing until the owner asks.
+Completed AI analyses and original evidence remain durable; do not reset jobs.
+
+The QA redesign is saved WIP, not a verified release. Backend focused tests passed;
+the new UI has not had actual after-browser verification and has a known
+scroll-restoration timing issue. Engineer sketches/report uploads and per-job
+Pause/Resume are accepted pending tasks, inspected/planned only, not implemented.
+The previous948-test success belongs to `e179206`, not this WIP. Exact files,
+evidence, blockers and restart scope:
+`docs/development/PAUSED_QA_QUICK_REVIEW_20261023.md`.
+
+Keep the code, database, originals, credentials and private fixtures under this
+F: project. The earlier pre-edit checkpoint is
+`.local/backups/project-checkpoint-20261023-233824`; the final pause checkpoint
+and local commit are recorded in `.local/qa-quick-review-20261023`.
+
 ## Latest QA AI follow-up: visible progress and safe model recovery
 
 23 October 2026, after checkpoint `52a0881`; branch unchanged. The QA bar now sits

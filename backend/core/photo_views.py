@@ -186,6 +186,8 @@ def workspace(request, checklist_id):
         return render(request,'dashboards/engineer_capture.html',{'checklist':c,'can_edit':flags['can_edit'],
             'capture_state_url':reverse('photo_capture_state',args=[c.pk]),'capture_submit_url':reverse('photo_capture_submit',args=[c.pk]),
             'capture_category_url':reverse('photo_capture_category',args=[c.pk]),'capture_remove_url':reverse('photo_capture_remove',args=[c.pk]),
+            'capture_document_upload_url':reverse('photo_capture_document_upload',args=[c.pk]),
+            'capture_document_remove_url':reverse('photo_capture_document_remove',args=[c.pk]),
             'upload_url':reverse('photo_upload',args=[c.pk]),'upload_session_url':reverse('photo_processing_upload_session',args=[c.pk])})
     access=None
     if role_for(request.user) in {'QUALITY_ENGINEER','TEAM_LEAD'}:
@@ -193,15 +195,27 @@ def workspace(request, checklist_id):
     else:
         access=survey_access(request,checklist_id)
         checklist=access['checklist']
+    qa_context={}
+    if role_for(request.user)=='QUALITY_ENGINEER':
+        from .review_route_service import route_context
+        routed=route_context(request.user,checklist)
+        qa_context={'is_quality_engineer':True,'review_route':routed,
+            'qa_quick_review':capture.enabled(checklist),
+            'qa_decision_return_to':reverse('photo_workspace',args=[checklist.pk])+'?qa_step=decision',
+            'qa_legacy_fallback':not capture.enabled(checklist) or not routed,
+            'qa_legacy_decision_url':reverse('roadmap_activity' if checklist.governance_mode=='independent' else 'custom_checklist',args=[checklist.pk]),
+            'qa_history_url':reverse('roadmap_activity',args=[checklist.pk])+'#review-submissions',
+            'qa_report_url':reverse('custom_checklist_download',args=[checklist.pk])}
     if capture.enabled(checklist) and role_for(request.user) in {'QUALITY_ENGINEER','TEAM_LEAD'}:
         capture.access(request,checklist_id)
         return render(request,'dashboards/qa_evidence_review.html',{'checklist':checklist,
             'review_state_url':reverse('photo_capture_review_state',args=[checklist.pk]),
+            'review_progress_url':reverse('photo_capture_review_progress',args=[checklist.pk]),
             'review_action_url':reverse('photo_capture_review_action',args=[checklist.pk]),
             'qa_approval_url':reverse('custom_checklist',args=[checklist.pk]),
             'evidence_role_title':'Team Lead evidence review' if role_for(request.user)=='TEAM_LEAD' else 'QA evidence review',
             'evidence_review_role':role_for(request.user),
-            'decision_label':'Team Lead decision & workflow' if role_for(request.user)=='TEAM_LEAD' else 'QA decision & workflow'})
+            'decision_label':'Team Lead decision & workflow' if role_for(request.user)=='TEAM_LEAD' else 'QA decision & workflow',**qa_context})
     if access is None:
         access=survey_access(request,checklist_id)
         checklist=access['checklist']
@@ -210,7 +224,7 @@ def workspace(request, checklist_id):
     from .survey_processing import enabled
     internal=role_for(request.user) in {'ENGINEER','QUALITY_ENGINEER','TEAM_LEAD'}
     client=role_for(request.user)=='CLIENT'
-    return render(request,'dashboards/photo_workspace.html',{'client_evidence_view':client,'checklist_processing_enabled':enabled(checklist),'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.none() if client else checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.none() if client else PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':'' if client else settings.OLLAMA_MODEL})
+    return render(request,'dashboards/photo_workspace.html',{'client_evidence_view':client,'checklist_processing_enabled':enabled(checklist),'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.none() if client else checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.none() if client else PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':'' if client else settings.OLLAMA_MODEL,**qa_context})
 
 @require_GET
 @api_errors

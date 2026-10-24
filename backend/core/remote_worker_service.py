@@ -116,7 +116,7 @@ def _lock(credential, job_id, token, guard=True):
     lease = RemoteSurveyLease.objects.select_for_update().get(job=job)
     if (job.revision.checklist.project_id not in _projects(credential) or lease.credential_id != credential.pk
             or str(lease.token) != str(token) or job.lease_owner != 'remote:' + lease.token.hex
-            or not job.lease_until or job.lease_until <= timezone.now() or job.status not in pipeline.ACTIVE):
+            or not job.lease_until or job.lease_until <= timezone.now() or job.status not in pipeline.ACTIVE | {'pausing'}):
         raise PermissionDenied('This worker lease is inactive, expired or outside its project scope.')
     if lease.versions != versions():
         raise ValidationError('This saved job is pinned to another reviewed worker release. Restore the matching release before resuming its checkpoints.')
@@ -134,6 +134,8 @@ def _extend(job, lease):
 
 def claim(credential, payload):
     _compatible(payload)
+    from .survey_pause import settle_expired
+    settle_expired(_projects(credential))
     if payload.get('model') != getattr(settings, 'OLLAMA_MODEL', 'qwen3.5:4b') or not isinstance(payload.get('model_digest'), str) or not re.fullmatch(r'[a-f0-9]{64}', payload['model_digest']):
         raise ValidationError('The installed local vision model does not match the server model requirement.')
     proof=payload.get('model_identity')
@@ -294,6 +296,10 @@ def _finish(job, lease, credential):
 def next_task(credential, job_id, token):
     with transaction.atomic():
         job, lease = _lock(credential, job_id, token)
+        if job.status == 'pausing':
+            from .survey_pause import _paused
+            _paused(job)
+            return {'complete': True, 'status': 'paused'}
         _extend(job, lease)
         _prepare_sources(job, lease)
         task = job.remote_tasks.filter(kind='source', completed_digest='').first()
@@ -408,7 +414,7 @@ def fail(credential, job_id, token, code, retryable=False):
         raise ValidationError('Use a supported, credential-free worker failure code.')
     with transaction.atomic():
         job, lease = _lock(credential, job_id, token)
-        job.status, job.error = ('queued' if retryable else 'failed'), messages[code]
+        job.status, job.error = ('paused' if job.status == 'pausing' else 'queued' if retryable else 'failed'), messages[code]
         job.lease_owner, job.lease_until = '', None
         job.save()
         _audit(credential, 'interrupted' if retryable else 'failed', job.revision.checklist.project, job_id=job.pk, code=code)
@@ -420,7 +426,7 @@ def preparation_failure(credential, job_id, token):
     try:
         with transaction.atomic():
             job, lease = _lock(credential, job_id, token, guard=False)
-            job.status = 'failed'
+            job.status = 'paused' if job.status == 'pausing' else 'failed'
             job.error = 'Server evidence preparation or drawing generation failed. Saved source checkpoints and originals are preserved; check server storage/logs, then retry.'
             job.lease_owner, job.lease_until = '', None
             job.save()

@@ -42,12 +42,20 @@ class RoleDesignTests(TestCase):
         for role,user in self.users.items():
             self.client.force_login(user)
             response=self.client.get(reverse('governance_home'))
+            if role==Profile.Roles.QUALITY_ENGINEER:
+                self.assertRedirects(response,reverse('task_explorer'),fetch_redirect_response=False)
+                response=self.client.get(reverse('task_explorer'))
+                self.assertContains(response,'My reviews')
+                self.assertFalse(response.context['can_create_tasks'])
+                self.assertEqual(self.client.get(reverse('task_create')).status_code,403)
             self.assertEqual(response.status_code,200)
             self.assertEqual(response.context['role_design'],self.context(user))
             self.assertContains(response,'data-role="'+role+'"')
             self.assertContains(response,'data-layout="'+self.context(user)['layout']+'"')
             self.assertContains(response,'data-palette="'+self.context(user)['palette']+'"')
-            self.assertEqual(bool(response.context['can_assign']),role in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD})
+            scope_response=(self.client.get(reverse('governance_home'),{'view':'my_work'})
+                            if role==Profile.Roles.QUALITY_ENGINEER else response)
+            self.assertEqual(bool(scope_response.context['can_assign']),role in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD})
         self.client.force_login(self.users[Profile.Roles.SUPER_ADMIN])
         self.assertEqual(self.client.get(reverse('custom_checklist',args=[self.survey.pk])).status_code,403)
     def test_shared_capture_review_and_photo_pages_keep_role_design_without_role_escalation(self):

@@ -6,7 +6,7 @@
   const canReview = root.dataset.canReview === 'true';
   const isClient = root.dataset.isClient === 'true';
   const selected = new Set();
-  const activeStatuses = new Set(['queued', 'analysing_evidence', 'preparing_checklist', 'preparing_drawings']);
+  const activeStatuses = new Set(['queued', 'analysing_evidence', 'preparing_checklist', 'preparing_drawings', 'pausing']);
   const stageCodes = ['queued', 'analysing_evidence', 'preparing_checklist', 'preparing_drawings', 'ready_for_review'];
   let state = {}, selectedRevisionId = '', page = 0, busy = false, polling = false, stateStale = false, renderedSignature = '', correctionItem = null, correctionMode = 'checklist';
   let geometryRecords = [], geometryDirty = false, geometryEditIndex = -1, geometryRevisionId = '';
@@ -37,7 +37,7 @@
   };
   const csrf = () => root.querySelector('[name=csrfmiddlewaretoken]')?.value || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
   const currentRevision = () => array(state.revisions).find(revision => String(revision.id) === String(selectedRevisionId)) || null;
-  const ready = revision => revision && !activeStatuses.has(statusKey(revision.status)) && statusKey(revision.status) !== 'failed' && array(revision.checklist_items).length > 0;
+  const ready = revision => revision && !activeStatuses.has(statusKey(revision.status)) && !['failed','paused'].includes(statusKey(revision.status)) && array(revision.checklist_items).length > 0;
   const editable = revision => !stateStale && canReview && ready(revision) && revision.current !== false && !revision.released && statusKey(revision.status) !== 'released';
   const feedback = (message, error = false) => {
     const target = byId('sp-feedback');
@@ -124,7 +124,7 @@
     byId('sp-status').textContent = label;
     const total = Number(active?.total || 0), completed = Number(active?.completed || 0);
     const status = statusKey(active?.status), evidenceProgress = total ? Math.max(0, Math.min(1, completed / total)) : 0;
-    const stageProgress = {queued: 0, analysing_evidence: 5 + evidenceProgress * 75, preparing_checklist: 85, preparing_drawings: 95, ready_for_review: 100, released: 100, failed: evidenceProgress * 80};
+    const stageProgress = {queued: 0, analysing_evidence: 5 + evidenceProgress * 75, preparing_checklist: 85, preparing_drawings: 95, ready_for_review: 100, released: 100, failed: evidenceProgress * 80,paused:5+evidenceProgress*75,pausing:5+evidenceProgress*75};
     const percentage = Number(active?.progress ?? stageProgress[status] ?? 0);
     byId('sp-progress').value = Number.isFinite(percentage) ? Math.max(0, Math.min(100, percentage)) : 0;
     byId('sp-counts').textContent = active ? `Revision ${active.revision} · ${completed} of ${total} evidence units processed${state.upload_state?.inflight ? ' · Uploads are still open' : ''}${active.message ? ` · ${active.message}` : ''}` : 'Complete saved survey inputs and finish uploads before submitting.';
@@ -140,6 +140,8 @@
     const retry = byId('sp-retry');
     retry.hidden = !(root.dataset.canSubmit === 'true' && status === 'failed');
     retry.disabled = busy || stateStale;
+    const pause=byId('sp-pause');if(pause){pause.hidden=isClient||root.dataset.isEngineer==='true'||!(active?.can_pause||active?.can_resume||status==='pausing');pause.disabled=busy||stateStale||!(active?.can_pause||active?.can_resume);pause.textContent=status==='pausing'?'Pause requested':active?.can_resume?'Resume AI':'Pause AI';pause.title=active?.pause_message||'Pause after the current evidence item. Completed analyses are retained.';}
+    const pauseMessage=byId('sp-pause-message');if(pauseMessage){pauseMessage.hidden=!active?.pause_message;pauseMessage.textContent=active?.pause_message||'';}
   }
   function renderRevisions() {
     const revisions = array(state.revisions);
@@ -434,6 +436,7 @@
     root.querySelectorAll('#sp-upload-sessions button').forEach(button => { button.disabled = busy || stateStale || button.dataset.allowed !== 'true'; });
     byId('sp-refresh').disabled = polling || busy;
     byId('sp-retry').disabled = busy || stateStale;
+    if(byId('sp-pause'))byId('sp-pause').disabled=busy||stateStale||!(state.active?.can_pause||state.active?.can_resume);
     byId('sp-revision').disabled = busy || polling || sectionLoading;
     const correctionSave = byId('sp-correction-form').querySelector('button[type=submit]');
     if (correctionSave) correctionSave.disabled = busy || stateStale;
@@ -509,7 +512,7 @@
     if (!response.ok) throw new Error(errorMessage(payload));
     return payload.state || payload;
   }
-  const progressKeys = ['status', 'label', 'completed', 'total', 'error', 'ready_for_review', 'message'];
+  const progressKeys = ['status', 'label', 'completed', 'total', 'error', 'ready_for_review', 'message','source_digest','can_pause','can_resume','pause_message'];
   function mergeSummary(revision, summary) {
     const next = {...revision};
     for (const key of progressKeys) if (Object.prototype.hasOwnProperty.call(summary, key)) next[key] = summary[key];
@@ -631,6 +634,7 @@
     byId('sp-sidebar').classList.toggle('is-open', open);
   });
   byId('sp-retry').addEventListener('click', () => action('retry', {revision_id: state.active?.id || selectedRevisionId}, 'Processing retry queued.'));
+  byId('sp-pause')?.addEventListener('click',()=>{const revision=state.active;if(!revision||byId('sp-pause').disabled)return;const resume=!!revision.can_resume;action(resume?'resume':'pause',{revision_id:revision.id,expected_digest:revision.source_digest},resume?'AI Analysis queued to continue from saved checkpoints.':'Pause requested. The current evidence item can finish before processing stops.');});
   byId('sp-revision').addEventListener('change', async event => {
     if (busy) { event.target.value = selectedRevisionId; return; }
     if (geometryDirty && !window.confirm('Discard unsaved measured drawing edits and open another saved revision?')) { event.target.value = selectedRevisionId; return; }

@@ -19,6 +19,10 @@
   const limits = new Map(), openGroups = new Set(['','Civil']);
   const node = (tag, text, className) => {const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
   const message = (text, error=false) => {el('capture-message').textContent=text;el('capture-message').classList.toggle('capture-error',error);const viewerMessage=el('capture-preview-message');if(viewerMessage&&el('capture-preview').open){viewerMessage.textContent=text;viewerMessage.classList.toggle('capture-error',error);}};
+  const documents=window.iSurvixEngineerDocuments.create({root,csrf,getState:()=>saved,
+    busy:()=>uploadBusy||mutationBusy||submitBusy||generalBusy,blocked:()=>stale||uploadBusy||mutationBusy||submitBusy||generalBusy,
+    setBusy:value=>{uploadBusy=value;controls();},setSession:token=>{uploadToken=token;},
+    uncheck:()=>{el('capture-uploads-finished').checked=false;},changed:controls,request,acceptState,load,message});
   function rememberSelection(){try{sessionStorage.setItem(selectionKey,JSON.stringify(Array.from(selection)));}catch{}}
   function reconcileSelection(){const present=new Set((saved?.photos||[]).map(p=>String(p.id)));selection=saved?.can_edit?new Set(Array.from(selection).filter(id=>present.has(id))):new Set();rememberSelection();}
   function selectPhoto(id,checked){if(!saved?.can_edit||stale||uploadBusy||mutationBusy||submitBusy)return;const key=String(id);if(!saved.photos.some(p=>String(p.id)===key))return;if(checked)selection.add(key);else selection.delete(key);rememberSelection();selectionControls();}
@@ -74,7 +78,7 @@
   }
   function generalChanged(field,input){field=generalInfo?.fields.find(current=>current.id===field.id&&current.scope===field.scope)||field;if(!generalInfo?.can_edit||field.locked||!field.editable||generalBusy||submitBusy)return;const key=generalKey(field);generalDraft.set(key,input.value);if(input.value===generalBase.get(key)&&!input.validity.badInput)generalDirty.delete(key);else generalDirty.add(key);el('capture-uploads-finished').checked=false;rememberGeneral();generalStatus(generalDirty.size?'Unsaved site information. Save it now, or Submit to QA will save it first.':'');const row=input.closest('.capture-info-field');row.classList.toggle('is-dirty',generalDirty.has(key));row.querySelector('.capture-info-source').textContent=generalSource(field)+(field.source_note?' · '+field.source_note:'');controls();}
   function generalControls(){const busy=uploadBusy||mutationBusy||submitBusy||generalBusy,editable=!!generalInfo?.can_edit&&!stale;
-    el('capture-general-panel').hidden=currentView!=='general';el('capture-photo-area').hidden=currentView==='general';el('capture-general-tab').disabled=busy;el('capture-general-tab').setAttribute('aria-selected',String(currentView==='general'));el('capture-general-tab').setAttribute('aria-pressed',String(currentView==='general'));
+    el('capture-general-panel').hidden=currentView!=='general';el('capture-photo-area').hidden=currentView!=='photos';el('capture-documents-panel').hidden=currentView!=='documents';el('capture-general-tab').disabled=busy;el('capture-general-tab').setAttribute('aria-selected',String(currentView==='general'));el('capture-general-tab').setAttribute('aria-pressed',String(currentView==='general'));el('capture-documents-tab').setAttribute('aria-selected',String(currentView==='documents'));el('capture-documents-tab').setAttribute('aria-pressed',String(currentView==='documents'));
     el('capture-general-state').textContent=generalDirty.size?'Unsaved':generalInfo?.read_only?'Read-only':'Site data';el('capture-general-mode').textContent=!generalLoaded?(generalLoadError?'Site information unavailable':'Loading saved site data...'):generalInfo.frozen?'Submitted snapshot · read-only':generalInfo.read_only?'Read-only':generalDirty.size?'Unsaved changes':generalNeedsSave?'Prefilled information':'Saved site data';
     el('capture-general-save').hidden=!!generalInfo&&!generalInfo.can_edit;el('capture-general-save').disabled=!editable||busy||!generalLoaded||!generalDirty.size&&!generalNeedsSave;el('capture-general-save').textContent=generalBusy?'Saving site information...':'Save site information';el('capture-general-discard').hidden=!!generalInfo&&!generalInfo.can_edit;el('capture-general-discard').disabled=busy||!generalDirty.size;
     el('capture-general-fields').querySelectorAll('[data-general-field]').forEach(input=>{const field=generalInfo?.fields.find(f=>f.id===input.dataset.generalField&&f.scope===input.dataset.generalScope);input.disabled=!editable||busy||!field?.editable||!!field?.locked;});
@@ -98,7 +102,7 @@
     if(!response.ok){const error=new Error(result.error||result.message||`Request failed (${response.status}).`);error.status=response.status;throw error;}
     return result;
   }
-  function incomplete(){return pending.some(p=>p.status!=='uploaded');}
+  function incomplete(){return pending.some(p=>p.status!=='uploaded')||documents.incomplete();}
   function controls(){
     const busy=uploadBusy||mutationBusy||submitBusy||generalBusy;
     const editable=!!saved?.can_edit&&!stale;
@@ -117,13 +121,14 @@
     el('capture-upload-category').textContent=`Add photos to ${label(category)}`;
     let guidance=generalDirty.size?'Submit to QA will save your edited site information first.':'Finish uploading and review the uploaded photos below before submitting.';
     if(stale)guidance='Refresh the saved site before submitting.';
-    else if(incomplete())guidance='Upload or remove all selected photos before submitting. Retry any failed uploads.';
+    else if(incomplete())guidance='Upload or remove all selected photos and documents before submitting. Retry any failed uploads.';
     else if(saved?.config_error)guidance=saved.config_error;
     else if(saved&&!saved.can_submit&&!saved.submitted)guidance='Submission is unavailable for the current task stage or your assignment.';
     el('capture-submit-guidance').textContent=guidance;
     const returnedPhotos=el('capture-returned-photos');if(returnedPhotos)returnedPhotos.disabled=busy||stale||!saved?.can_edit;
     selectionControls();
     generalControls();
+    documents.controls();
   }
   function categorySelect(value,onChange,attribute){
     const select=node('select');select.setAttribute('aria-label','Photo category');select.setAttribute(attribute,'');
@@ -178,7 +183,7 @@
     const info=el('capture-site-info'),base=[['Site ID',saved.site_id],['Project',saved.project]];
     const extra=saved.site_info||{};[['Site name',extra.site_name],['Address',extra.address],['City',extra.city],['Region',extra.region]].forEach(pair=>{if(pair[1])base.push(pair);});
     info.replaceChildren();base.forEach(([key,value])=>{const d=node('div');d.append(node('dt',key),node('dd',value||'Not recorded'));info.append(d);});
-    if(saved.submitted)el('capture-confirmation-copy').textContent=`Your site information and ${saved.photos.length} photo${saved.photos.length===1?'':'s'} are saved and submitted${saved.qa_name?' to '+saved.qa_name:' to QA'}. You can follow the task status in My tasks.`;
+    if(saved.submitted){const count=saved.documents?.length||0;el('capture-confirmation-copy').textContent=`Your site information, ${saved.photos.length} photo${saved.photos.length===1?'':'s'}${count?' and '+count+' supporting document'+(count===1?'':'s'):''} are saved and submitted${saved.qa_name?' to '+saved.qa_name:' to QA'}. You can follow the task status in My tasks.`;}
   }
   function renderRecovery(){
     const box=el('capture-recovery');box.replaceChildren();const sessions=saved?.upload_state?.sessions||[];
@@ -191,7 +196,7 @@
       box.append(row);
     });
   }
-  function acceptState(value){if(!Array.isArray(value.photos)||typeof value.digest!=='string')throw new Error('The saved site response is incomplete. Please refresh.');const current=viewerKind==='saved'?viewerItems[viewerIndex]?.id:null;saved=value;stale=false;reconcileSelection();renderSite();updateGeneral(value.general_information);renderPhotos();renderRecovery();if(viewerKind==='saved'&&viewerItems.length){viewerItems=saved.photos.map(viewerPhoto);const index=viewerItems.findIndex(photo=>photo.id===current);viewerIndex=index>=0?index:Math.min(viewerIndex,viewerItems.length-1);if(el('capture-preview').open){if(viewerIndex>=0)renderPreview();else el('capture-preview').close();}}controls();return value;}
+  function acceptState(value){if(!Array.isArray(value.photos)||typeof value.digest!=='string')throw new Error('The saved site response is incomplete. Please refresh.');const current=viewerKind==='saved'?viewerItems[viewerIndex]?.id:null;saved=value;stale=false;reconcileSelection();renderSite();updateGeneral(value.general_information);renderPhotos();renderRecovery();documents.render();if(viewerKind==='saved'&&viewerItems.length){viewerItems=saved.photos.map(viewerPhoto);const index=viewerItems.findIndex(photo=>photo.id===current);viewerIndex=index>=0?index:Math.min(viewerIndex,viewerItems.length-1);if(el('capture-preview').open){if(viewerIndex>=0)renderPreview();else el('capture-preview').close();}}controls();return value;}
   async function load(){
     try{return acceptState(await request(root.dataset.stateUrl));}
     catch(error){stale=true;if(!generalLoaded){generalLoadError=error.message;el('capture-general-fields').textContent='Site information could not be loaded. Refresh the saved site to retry.';generalStatus(error.message,true);}controls();throw error;}
@@ -237,8 +242,8 @@
       try{await load();}catch(error){failed=true;message(error.message,true);}
       uploadBusy=false;pending=pending.filter(p=>p.status!=='uploaded');renderPending();controls();
       el('capture-progress').value=100*uploaded/selected.length;
-      el('capture-progress-label').textContent=`${uploaded} of ${selected.length} photos saved${duplicates?' · '+duplicates+' exact duplicates reused':''}${failed?' · retry remaining photos':''}`;
-      if(!failed)message(`${uploaded} photos saved${duplicates?' ('+duplicates+' exact duplicates reused)':''}. Review the categories, then submit to QA.`);
+      el('capture-progress-label').textContent=`Last upload: ${uploaded} of ${selected.length} photos saved${duplicates?' · '+duplicates+' exact duplicates reused':''}${failed?' · retry remaining photos':''}`;
+      if(!failed)message(`Last upload: ${uploaded} photo${uploaded===1?'':'s'} saved${duplicates?' ('+duplicates+' exact duplicates reused)':''}. ${saved?.photos.length||0} site photos saved in total. Review the categories, then submit to QA.`);
     }
   }
   async function mutate(url,data,success){
@@ -272,7 +277,7 @@
   ['capture-bulk-category','capture-preview-bulk-category'].forEach(id=>el(id).addEventListener('change',event=>{bulkTarget=event.target.value;selectionControls();}));
   ['capture-move-selected','capture-preview-move-selected'].forEach(id=>el(id).addEventListener('click',moveSelected));
   el('capture-preview-refresh').addEventListener('click',async()=>{if(uploadBusy||mutationBusy||submitBusy)return;mutationBusy=true;controls();try{await load();message('Saved photos refreshed.');}catch(error){message(error.message,true);}finally{mutationBusy=false;controls();}});
-  el('capture-general-tab').addEventListener('click',showGeneral);root.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{currentView='photos';category=button.dataset.category;openGroups.add(category);renderPhotos();controls();}));
+  el('capture-general-tab').addEventListener('click',showGeneral);el('capture-documents-tab').addEventListener('click',()=>{currentView='documents';controls();});root.querySelectorAll('[data-category]').forEach(button=>button.addEventListener('click',()=>{currentView='photos';category=button.dataset.category;openGroups.add(category);renderPhotos();controls();}));
   ['capture-files','capture-camera'].forEach(id=>el(id).addEventListener('change',event=>{addFiles(event.target.files);event.target.value='';}));
   const drop=el('capture-drop-zone');['dragenter','dragover'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.add('is-dragging');}));['dragleave','drop'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.remove('is-dragging');if(type==='drop')addFiles(event.dataTransfer.files);}));
   el('capture-general-form').addEventListener('submit',async event=>{event.preventDefault();try{await saveGeneral();}catch{}});
@@ -282,7 +287,7 @@
   el('capture-uploads-finished').addEventListener('change',controls);
   el('capture-submit-form').addEventListener('submit',async event=>{
     event.preventDefault();if(el('capture-submit-qa').disabled||!el('capture-uploads-finished').checked)return;if(!el('capture-general-form').checkValidity()){showGeneral();el('capture-general-form').reportValidity();return;}
-    submitBusy=true;controls();let siteSaved=false;try{await saveGeneral(true);siteSaved=true;await request(root.dataset.submitUrl,{uploads_finished:true,expected_digest:saved.digest});await load();if(!saved.submitted)throw new Error('Submission was not confirmed by the server. Refresh the task status before trying again.');message('Submitted to QA. Your saved site information and photos are preserved.');el('capture-submit-confirmation').scrollIntoView({behavior:'smooth',block:'center'});}
+    submitBusy=true;controls();let siteSaved=false;try{await saveGeneral(true);siteSaved=true;await request(root.dataset.submitUrl,{uploads_finished:true,expected_digest:saved.digest});await load();if(!saved.submitted)throw new Error('Submission was not confirmed by the server. Refresh the task status before trying again.');message('Submitted to QA. Your saved site information, photos and supporting documents are preserved.');el('capture-submit-confirmation').scrollIntoView({behavior:'smooth',block:'center'});}
     catch(error){message((siteSaved?'Site information is saved. QA submission was not confirmed. ':'')+error.message,true);if(!siteSaved){showGeneral();el('capture-general-status').tabIndex=-1;el('capture-general-status').focus();}else try{await load();}catch{};}finally{submitBusy=false;controls();}
   });
   addEventListener('beforeunload',event=>{if(uploadBusy||mutationBusy||submitBusy||generalBusy||generalDirty.size||incomplete()){event.preventDefault();event.returnValue='';}});

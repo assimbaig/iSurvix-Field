@@ -62,7 +62,7 @@ def source_link(revision, source):
         except ValueError:
             return result
         if any(d['id'] == number for d in revision.snapshot['documents']):
-            result['url'] = reverse('survey_processing_document', args=[revision.checklist_id, number])
+            result['url'] = reverse('survey_processing_document', args=[revision.checklist_id, number]) + '?revision_id=' + str(revision.pk)
     cache = getattr(revision, '_source_cache', None)
     saved = cache.get(ident) if cache is not None else revision.source_analyses.filter(source_id=ident).first()
     if saved and saved.payload.get('preview_file'):
@@ -77,13 +77,14 @@ def _page(query, number, size):
 
 def _summary(row):
     return {'id': row['id'], 'revision': row['number'], 'status': row['processing_job__status'],
+        'source_digest': row['digest'],
         'label': pipeline.STAGES.get(row['processing_job__status'], row['processing_job__status']),
         'completed': row['processing_job__completed'], 'total': row['processing_job__total'],
         'error': row['processing_job__error'], 'created_at': row['created_at'].isoformat(), 'detailed': False}
 
 
 def _summaries(c):
-    return c.processing_revisions.values('id', 'number', 'created_at', 'processing_job__status',
+    return c.processing_revisions.values('id', 'number', 'digest', 'created_at', 'processing_job__status',
         'processing_job__completed', 'processing_job__total', 'processing_job__error').order_by('-number')
 
 
@@ -129,11 +130,16 @@ def serialize(request, checklist_id, compact=False):
         if flags['is_client'] and (not is_current or not revision.drawing_sets.filter(released=True).exists()):
             continue
         data = {'id': revision.pk, 'revision': revision.number, 'status': job.status,
+            'source_digest': revision.digest,
             'label': pipeline.STAGES.get(job.status, job.status), 'current': is_current,
             'completed': job.completed, 'total': job.total, 'error': job.error,
             'created_at': revision.created_at.isoformat(), 'findings': [], 'checklist_items': [],
             'missing': [], 'conflicts': [], 'drawings': [], 'events': [], 'sources': [], 'drawing_records': [],
             'can_release': False, 'release_blocker': 'Processing must finish first.', 'detailed': True}
+        from .survey_pause import flags as pause_flags
+        data.update(pause_flags(request, c, status=job.status))
+        if not is_current:
+            data.update(can_pause=False, can_resume=False)
         from .category_intake import revision_enabled
         has_result=hasattr(revision,'processing_result')
         if has_result or revision_enabled(revision):
@@ -214,6 +220,21 @@ def progress(request, checklist_id):
     # Clients use the authorised released-output view. Processing drafts stay private.
     rows = [] if flags['is_client'] else [_summary(row) for row in _summaries(c)[:25]]
     active = rows[0] if rows else None
+    if active:
+        from .survey_pause import flags as pause_flags
+        active.update(pause_flags(request, c, status=active['status']))
+        from .category_intake import enabled as capture_enabled
+        # A paused legacy survey remains editable. Recheck only this stopped
+        # source, not every revision on every ordinary progress tick. Paused
+        # clients do not poll, and old integrations need not update updated_at.
+        if active['status'] in {'paused', 'pausing'} and not capture_enabled(c):
+            signature = pipeline.digest(pipeline.freeze_data(c))
+            unchanged = active['source_digest'] == signature or c.processing_revisions.filter(
+                pk=active['id'], processing_events__action='applied',
+                processing_events__payload__source_digest=signature).exists()
+            if not unchanged:
+                active.update(can_pause=False, can_resume=False,
+                    pause_message='Survey inputs changed. Open the current processing details; this retained revision cannot be resumed with different inputs.')
     data = {'enabled': True, 'access': flags, 'revisions': rows, 'active': active,
         'latest_revision_id': active and active['id'], 'detail_token': _detail_token(c, active),
         'upload_state': uploads.state(request, c, flags)}
@@ -260,7 +281,7 @@ def state(request, checklist_id):
 @guarded
 def action(request, checklist_id):
     name = request.POST.get('action', '')
-    if name in {'submit','retry','review','release','geometry'}:
+    if name in {'submit','retry','review','release','geometry','pause','resume'}:
         from .category_intake import deny_engineer_ai
         deny_engineer_ai(request,checklist_id)
     c, flags = pipeline.access(request, checklist_id)
@@ -315,6 +336,10 @@ def action(request, checklist_id):
         return JsonResponse({'revision_id': revision.pk, 'created': created}, status=201 if created else 200)
     elif name == 'retry':
         pipeline.retry(request, checklist_id, request.POST.get('revision_id'))
+    elif name in {'pause', 'resume'}:
+        from .survey_pause import control
+        control(request, checklist_id, request.POST.get('revision_id'),
+                name + '_ai', request.POST.get('expected_digest'))
     elif name in {'review', 'release'}:
         pipeline.review(request, checklist_id, request.POST.get('revision_id'),
             'release' if name == 'release' else request.POST.get('decision'),
@@ -330,6 +355,15 @@ def action(request, checklist_id):
 @require_GET
 @guarded
 def document(request, checklist_id, document_id):
+    from .engineer_documents import configuration, delivery
+    from .category_intake import access as capture_access, enabled as capture_enabled
+    from .access import role_for
+    # Category capture has its own submission and source-membership rules; the
+    # original document route must use those same rules as the new workspace.
+    if role_for(request.user) in {'ENGINEER', 'QUALITY_ENGINEER', 'TEAM_LEAD'}:
+        candidate, _ = capture_access(request, checklist_id)
+        if configuration(candidate) is not None or capture_enabled(candidate):
+            return delivery(request, checklist_id, document_id)
     c, flags = pipeline.access(request, checklist_id)
     if flags['is_client']:
         raise Http404()

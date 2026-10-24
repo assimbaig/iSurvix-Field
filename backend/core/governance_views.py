@@ -208,6 +208,8 @@ def workspace_response(request,status=200,**context):
 def home(request):
     if role_for(request.user) is None:
         raise PermissionDenied('This account does not have active workspace access.')
+    if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER and not request.GET:
+        return redirect('task_explorer')
     return workspace_response(request)
 
 
