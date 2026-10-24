@@ -114,9 +114,26 @@ def configuration_error(c):
 
 
 def photos(snapshot, c):
-    return [{'id': p['id'], 'filename': p['filename'], 'group': p.get('group', ''),
-             'preview_url': reverse('photo_evidence', args=[c.pk, p['id'], 'preview']),
-             'original_url': reverse('photo_evidence', args=[c.pk, p['id'], 'original'])} for p in snapshot['photos']]
+    import math
+    result=[]
+    for photo in snapshot['photos']:
+        recorded=photo.get('metadata')
+        recorded=recorded if isinstance(recorded,dict) else {}
+        metadata={}
+        captured=recorded.get('captured_at')
+        if isinstance(captured,str) and captured.strip():metadata['captured_at']=captured
+        gps=recorded.get('gps')
+        if isinstance(gps,dict):
+            lat,lon=gps.get('latitude'),gps.get('longitude')
+            if (type(lat) in (int,float) and type(lon) in (int,float)
+                    and -90<=lat<=90 and -180<=lon<=180
+                    and math.isfinite(lat) and math.isfinite(lon)):
+                metadata['gps']={'latitude':lat,'longitude':lon}
+        result.append({'id':photo['id'],'filename':photo['filename'],'group':photo.get('group',''),
+            'metadata':metadata,
+            'preview_url':reverse('photo_evidence',args=[c.pk,photo['id'],'preview']),
+            'original_url':reverse('photo_evidence',args=[c.pk,photo['id'],'original'])})
+    return result
 
 
 def state(request, checklist_id):
@@ -375,9 +392,11 @@ def review_state(request, checklist_id):
     payload = reviewed_payload(revision)
     review_signature = pipeline.review_digest(payload)
     completed = bool(completion_event(revision))
+    from .template_views import field_is_locked
     field_details = {field['id']: {'type': field['type'], 'required': field.get('required', False),
         'section_id':section['id'],'section_title': section['title'], 'options': field.get('options', []),
-        'columns':field.get('columns',[]),'unit':field.get('unit',''),'system':field.get('system','')}
+        'columns':field.get('columns',[]),'unit':field.get('unit',''),'system':field.get('system',''),
+        'locked':field_is_locked(c,field['id'])}
         for section in c.schema_snapshot.get('sections', []) for field in section.get('fields', [])}
     for item in payload['checklist_items']: item.update(field_details.get(item['id'], {}))
     client=role_for(request.user)==Profile.Roles.CLIENT
@@ -399,6 +418,12 @@ def review_state(request, checklist_id):
         'can_complete': flags['can_review'] and not completed and not missing_for_review(c),
         'missing': missing_for_review(c)}
     if role_for(request.user) in {Profile.Roles.QUALITY_ENGINEER,Profile.Roles.TEAM_LEAD}:
+        from .models import ChecklistTemplate
+        template=c.checklist_template
+        template_id=revision.snapshot.get('template_id')
+        if not template or template.pk!=template_id:
+            template=ChecklistTemplate.objects.filter(pk=template_id).first()
+        result['template']={'id':template.pk,'name':template.name,'version':template.version} if template else None
         from .engineer_documents import rows as document_rows
         result['documents']=document_rows(revision.snapshot,c,revision=revision,
             include_analysis=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER)

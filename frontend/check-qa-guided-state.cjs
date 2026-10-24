@@ -1,34 +1,27 @@
-/* Behavioural regression checks for the real saved-task QA controller.
- * DOM rendering is stubbed; requestAnimationFrame is deliberately deferred so
- * a zeroed/new pane cannot overwrite the saved review position before restore.
- */
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
-const filename=path.resolve(__dirname,'../backend/static/core/js/qa_evidence_review.js');
-function controller(){
-  const elements=new Map(),storage=new Map(),frames=[];
-  const element=id=>{if(!elements.has(id))elements.set(id,{dataset:{},attributes:{},children:[],scrollTop:0,value:id==='qa-photo-view'?'linked':'',open:false,
-    getAttribute(name){return name==='href'?'/checklist/1/':this.attributes[name]??null;},querySelector(){return element(id+':child');},querySelectorAll(){return [];},addEventListener(){},removeAttribute(){},setAttribute(name,value){this.attributes[name]=String(value);},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;},scrollIntoView(){},
-    classList:{toggle(){}},textContent:''});return elements.get(id);};
-  const app=element('qa-evidence-review');app.dataset={quickReview:'true',reviewUser:'42',reviewRole:'QUALITY_ENGINEER'};
-  const script=fs.readFileSync(filename,'utf8').replace('  function controls(){',`
-    renderAll=()=>{el('qa-review-items').scrollTop=0;el('qa-photo-pane').querySelector('.qa-photo-pane-scroll').scrollTop=0;};
-    renderSiteInformation=()=>{};copySiteSource=()=>{};initialiseGuided=()=>{};schedule=()=>{};
-    globalThis.qa={applyState,setStep,remember,restorePaneScroll,renderStatus,renderInline,submitDecision,renderGuidedCategories,renderAssignmentTargets,chooseItem,photoAdvisory,
-      siteCellEditable:typeof siteCellEditable==='function'?siteCellEditable:null,
-      siteRows,
-      applyProgressTick:typeof applyProgressTick==='function'?applyProgressTick:null,fetchProgress,
-      snapshot:()=>state,
-      photoModeChanged:typeof photoModeChanged==='function'?photoModeChanged:null,
-      prepareModeTest(){renderPhotos=()=>{};renderPointHeader=()=>{};controls=()=>{};}};return;
-  function controls(){`);
-  const context={document:{getElementById:element,createElement:tag=>element('created:'+tag+':'+elements.size)},location:{href:'http://localhost/local/photos/7/',pathname:'/local/photos/7/'},
-    history:{replaceState(){}},URL,innerWidth:1440,Option:function(text,value){const option=element('option:'+elements.size);option.textContent=text;option.value=value;return option;},sessionStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},
-    requestAnimationFrame:callback=>frames.push(callback),confirm:()=>true};
-  vm.createContext(context);vm.runInContext(script,context,{filename});
-  return{qa:context.qa,element,storage,context,flush(){while(frames.length)frames.shift()();}};
-}
+/* Actual QA controller unit regressions; integration is verified separately. */
+const assert=require('node:assert/strict');
+const controller=require('./qa-controller-test-harness.cjs');
 const data={revision_id:2,items:[],photos:[],links:[],unassigned_photo_ids:[],review_digest:'review',source_digest:'source',display_order:{},order_digest:'order'};
 let checks=0;
+{
+  const c=controller(),rows=[
+    {key:'general:required_blank',id:'required_blank',field_id:'required_blank',scope:'general',label:'Required blank',value:'',submitted_value:'',required:true,can_edit:true,status:'Missing'},
+    {key:'context:zero',id:'zero',field_id:null,scope:'context',label:'Recorded zero',value:0,submitted_value:0},
+    {key:'context:false',id:'false',field_id:null,scope:'context',label:'Recorded false',value:false,submitted_value:false}];
+  c.qa.applyState({...data,can_review:true,items:[{id:'required_blank',type:'text'}],site_information_table:{rows}},true);c.flush();
+  const before=JSON.stringify(c.qa.snapshot()),table=c.qa.siteInformationTable(),head=table.children[1].children[0],body=table.children[2];
+  assert.equal(head.children.filter(column=>!column.hidden).length,3,'Compact default has three useful columns while source comparison remains secondary');checks++;
+  assert.equal(body.children.length,rows.length,'Every required and source-only field remains in the initial table');checks++;
+  assert.equal(body.children[0].dataset.siteRequired,'true','Missing required fields remain explicitly identifiable');checks++;
+  assert.equal(body.children[0].dataset.siteMissing,'true','A blank required value is not disguised as complete');checks++;
+  assert.equal(body.children[1].children.find(cell=>cell.dataset.siteColumn==='value').children[0].textContent,'0','Source-only zero remains visible in the compact value column');checks++;
+  assert.equal(body.children[2].children.find(cell=>cell.dataset.siteColumn==='value').children[0].textContent,'false','Source-only false remains visible in the compact value column');checks++;
+  assert.equal(typeof c.qa.toggleSiteComparison,'function','Source comparison is a working control');
+  c.qa.toggleSiteComparison();const compared=c.qa.siteInformationTable();
+  assert.equal(compared.children[1].children[0].children.filter(column=>!column.hidden).length,4,'Compare reveals the original-value column');checks++;
+  assert.equal(JSON.stringify(c.qa.snapshot()),before,'Comparison never edits submitted values, review answers or evidence');checks++;
+  assert.equal(JSON.parse(c.storage.get('qa-evidence-view:/local/photos/7/')).compareSources,true,'The comparison preference is saved without changing the review');checks++;
+}
 {
   const c=controller();
   assert.match(c.qa.photoAdvisory({analysis_reused:{revision_id:99,revision_number:2,source_id:'photo:1'}}),/Reused analysis · revision 2;/,'Reused-analysis labels use the user revision number rather than the database ID');checks++;

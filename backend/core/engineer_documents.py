@@ -11,6 +11,7 @@ import uuid
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -96,6 +97,8 @@ def rows(snapshot,c,*,revision=None,include_analysis=False):
             'kind_label':LABELS.get(kind,'Supporting document'),'content_type':document['content_type'],
             'size':document['size'],'original_url':original,'is_image':is_image,'can_preview':can_preview,
             'preview_url':base+'?'+urlencode({**query,'preview':1}) if can_preview else ''}
+        if document['content_type']=='application/pdf':
+            value['raster_preview_url']=base+'?'+urlencode({**query,'preview':1,'raster':1,'page':1})
         if include_analysis:
             value['analyses']=analyses.get(document['id'],[])
         result.append(value)
@@ -180,6 +183,34 @@ def remove(request,checklist_id,data):
     return capture.state(request,checklist_id)
 
 
+def _pdf_raster(doc,page):
+    """Bounded image derivative; never rewrite or browser-execute the original."""
+    import hashlib
+    import math
+    import pymupdf
+    with doc.original.open('rb') as original:
+        raw=original.read(MAX_DOCUMENT_BYTES+1)
+    if len(raw)>MAX_DOCUMENT_BYTES or hashlib.sha256(raw).hexdigest()!=doc.sha256:
+        raise ValidationError('The PDF source bytes no longer match the saved original. Preview was not served.')
+    try:
+        with pymupdf.open(stream=raw,filetype='pdf') as pdf:
+            if pdf.needs_pass:raise ValueError('Encrypted PDF')
+            count=len(pdf)
+            if not 1<=page<=count:raise Http404()
+            name=f'survey_processing/document_previews/{doc.pk}/{doc.sha256}-page{page}-v1.png'
+            if not default_storage.exists(name):
+                selected=pdf[page-1];extent=max(selected.rect.width,selected.rect.height)
+                if not math.isfinite(extent) or extent<=0:raise ValueError('Invalid page dimensions')
+                scale=min(2.0,1598/extent)
+                image=selected.get_pixmap(matrix=pymupdf.Matrix(scale,scale),alpha=False).tobytes('png')
+                default_storage.save(name,ContentFile(image))
+    except Http404:
+        raise
+    except Exception as exc:
+        raise ValidationError('The PDF preview could not be rendered. Its original is retained for authorized download.') from exc
+    return default_storage.open(name,'rb'),count
+
+
 def delivery(request,checklist_id,document_id):
     """An exact current source or a source frozen in an authorised revision."""
     from . import category_intake as capture
@@ -199,8 +230,18 @@ def delivery(request,checklist_id,document_id):
     if doc.sha256!=record['sha256'] or doc.original.name!=record['original']:
         raise ValidationError('The saved supporting document does not match its submitted source.')
     inline=request.GET.get('preview')=='1' and doc.content_type in {'image/jpeg','image/png','image/webp','application/pdf'}
-    response=FileResponse(doc.original.open('rb'),content_type=doc.content_type,
-        as_attachment=not inline,filename=doc.filename)
+    if request.GET.get('raster')=='1':
+        if not inline or doc.content_type!='application/pdf':raise Http404()
+        number=request.GET.get('page','1')
+        if not number.isascii() or not number.isdigit() or len(number)>6:raise Http404()
+        page=int(number)
+        stream,count=_pdf_raster(doc,page)
+        response=FileResponse(stream,content_type='image/png',filename=f'{doc.filename}.page-{page}.png')
+        response['X-Document-Preview-Page']=str(page)
+        response['X-Document-Preview-Pages']=str(count)
+    else:
+        response=FileResponse(doc.original.open('rb'),content_type=doc.content_type,
+            as_attachment=not inline,filename=doc.filename)
     response['Cache-Control']='private, no-store'
     response['X-Content-Type-Options']='nosniff'
     response['X-Robots-Tag']='noindex, nofollow'
