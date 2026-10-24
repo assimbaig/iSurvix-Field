@@ -42,6 +42,11 @@ class AssistantCapabilityTests(TestCase):
         ):
             with self.subTest(role=role):
                 response = self.workspace(role)
+                if role == Profile.Roles.QUALITY_ENGINEER:
+                    self.assertRedirects(response, reverse('task_explorer'), fetch_redirect_response=False)
+                    response = self.client.get(reverse('task_explorer'), secure=True)
+                    self.assertContains(response, 'My reviews')
+                self.assertEqual(response.status_code, 200)
                 self.assertNotContains(response, 'href="/local/assistant/"')
                 self.assertContains(response, 'id="role-navigation"')
 

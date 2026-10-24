@@ -29,8 +29,9 @@ STAGES = {
     'queued': 'Queued', 'analysing_evidence': 'Analysing evidence',
     'preparing_checklist': 'Preparing checklist', 'preparing_drawings': 'Preparing drawings',
     'ready_for_review': 'Ready for review', 'failed': 'Failed',
+    'pausing': 'Pause requested', 'paused': 'Paused',
 }
-ACTIVE = set(STAGES) - {'ready_for_review', 'failed'}
+ACTIVE = set(STAGES) - {'ready_for_review', 'failed', 'pausing', 'paused'}
 PIPELINE_VERSION = 'survey-pipeline-1'
 logger = logging.getLogger(__name__)
 
@@ -170,7 +171,7 @@ def submit(request, checklist_id, uploads_finished):
             existing = c.processing_revisions.filter(processing_events__action='applied', processing_events__payload__source_digest=signature).first()
         if existing:
             return existing, False
-        if c.processing_revisions.filter(processing_job__status__in=ACTIVE).exists():
+        if c.processing_revisions.filter(processing_job__status__in=ACTIVE | {'pausing', 'paused'}).exists():
             raise ValidationError('The previous revision is still processing. Wait for it to finish before submitting changed inputs.')
         number = (c.processing_revisions.aggregate(n=Max('number'))['n'] or 0) + 1
         revision = SurveyProcessingRevision.objects.create(checklist=c, number=number, digest=signature, snapshot=snapshot, submitted_by=request.user)
@@ -214,6 +215,8 @@ def worker_guard(revision):
 
 def claim():
     from .remote_worker_models import RemoteWorkerProject
+    from .survey_pause import settle_expired
+    settle_expired()
     now = timezone.now()
     with transaction.atomic():
         job = SurveyProcessingJob.objects.select_for_update().filter(
@@ -235,13 +238,19 @@ def progress(job, status=None, **values):
     with transaction.atomic():
         worker_guard(job.revision)
         saved = SurveyProcessingJob.objects.select_for_update().get(pk=job.pk)
-        if saved.lease_owner != job.lease_owner or saved.lease_until <= timezone.now():
+        if saved.lease_owner != job.lease_owner or not saved.lease_until or saved.lease_until <= timezone.now():
             raise ValidationError('The processing lease expired; another worker may resume safely.')
         for name, value in values.items():
             setattr(saved, name, value)
         if status:
-            saved.status = status
-        if saved.status in ACTIVE:
+            if saved.status != 'pausing':
+                saved.status = status
+            elif status == 'ready_for_review':
+                # A request can arrive after the final boundary check. All
+                # outputs are durable here; retain pause intent without leaving
+                # an ownerless future lease that no worker can acknowledge.
+                saved.status = 'paused'
+        if saved.status in ACTIVE | {'pausing'}:
             saved.lease_until = timezone.now() + timedelta(seconds=max(300, getattr(settings, 'OLLAMA_TIMEOUT', 180) + 120))
         saved.save()
         job.completed, job.total = saved.completed, saved.total
@@ -505,10 +514,12 @@ def process_next():
     from .survey_model_identity import verified_identity,pin
     from .local_ai import InferenceBusy
     from .photo_queue import photo_inference_lease
+    from .survey_pause import boundary, ProcessingPaused, yield_job
     job = claim()
     if not job:
         return False
     try:
+        boundary(job)
         worker_guard(job.revision)
         with photo_inference_lease() as check:
             identity = verified_identity(job.model,job.pipeline_version)
@@ -522,6 +533,7 @@ def process_next():
             return [{**x, 'path': default_storage.path(x['original'])} for x in items]
         count = 0
         for source in evidence.extract_sources(records(snapshot['photos']), records(snapshot['documents'])):
+            boundary(job)
             source['field_catalog'] = small_catalog
             count += 1
             if count > 2000:
@@ -548,6 +560,7 @@ def process_next():
                     SurveySourceAnalysis.objects.get_or_create(revision=job.revision, source_id=source['source_id'],
                         defaults={'payload': analysed, 'digest': digest(analysed)})
             progress(job, completed=max(job.completed,count), total=max(job.total, count))
+            boundary(job)
         progress(job, 'preparing_checklist', total=count)
         result = SurveyProcessingResult.objects.filter(revision=job.revision).first()
         if not result:
@@ -561,6 +574,7 @@ def process_next():
                 bindings = {}
                 unassigned = set()
                 for batch in mapping_batches(analyses, snapshot['schema']):
+                    boundary(job)
                     cached = job.revision.source_analyses.filter(source_id=batch['key']).first()
                     if cached:
                         if digest(cached.payload) != cached.digest or cached.payload.get('batch_identity') != batch['identity'] or cached.payload.get('identity') != binding_identity(batch, job.model):
@@ -575,6 +589,7 @@ def process_next():
                         with transaction.atomic():
                             progress(job)
                             SurveySourceAnalysis.objects.create(revision=job.revision, source_id=batch['key'], payload=mapped, digest=digest(mapped))
+                    boundary(job)
                     for binding in mapped['bindings']:
                         bindings[binding['finding_key']] = binding
                     unassigned.update(mapped.get('unassigned', []))
@@ -592,6 +607,7 @@ def process_next():
                 progress(job)
                 result, _ = SurveyProcessingResult.objects.get_or_create(revision=job.revision,
                     defaults={'payload': payload, 'digest': digest(payload)})
+        boundary(job)
         progress(job, 'preparing_drawings')
         with transaction.atomic():
             progress(job)
@@ -601,9 +617,12 @@ def process_next():
             c=job.revision.checklist
             drawing_scope=c.workflow_type==Checklist.WorkflowType.TELECOM_SURVEY and c.checklist_template_id and c.checklist_template.published and c.checklist_template.checklist_required
             if not revision_enabled(job.revision) or drawing_scope:render_drawing_set(job.revision, result.payload)
+        boundary(job)
         progress(job, 'ready_for_review', error='', lease_owner='', lease_until=None)
+    except ProcessingPaused:
+        return True
     except InferenceBusy:
-        SurveyProcessingJob.objects.filter(pk=job.pk, lease_owner=job.lease_owner).update(status='queued', lease_owner='', lease_until=None)
+        yield_job(job)
         return False  # Let the independent worker back off while shared inference is busy.
     except Exception as exc:
         # Do not expose prompts, document contents, paths or raw model text.
@@ -619,7 +638,7 @@ def process_next():
             safe = str(exc)
         elif isinstance(exc, (ConnectionError, TimeoutError)) or type(exc).__name__ == 'URLError':
             safe = 'The local Ollama service is offline or timed out. Start the configured local service, then retry; completed sources are preserved.'
-        SurveyProcessingJob.objects.filter(pk=job.pk, lease_owner=job.lease_owner).update(status='failed', error=safe, lease_owner='', lease_until=None)
+        yield_job(job, error=safe, failed=True)
         logger.warning('Survey processing failed: job=%s revision=%s error_type=%s', job.pk, job.revision_id, code)
     return True
 

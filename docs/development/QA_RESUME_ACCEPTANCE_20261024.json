@@ -1,0 +1,375 @@
+{
+  "scope": "Resumed QA guided review, Engineer supporting-document uploads, per-job AI Pause/Resume and preservation/regression verification; no unrelated modules.",
+  "date": "2026-10-24",
+  "branch": "fix/qa-guided-documents-pause-20261024",
+  "source_base_commit": "5ceb0a7f9f2afdbfaa5d4eec1498f91ba4238aa6",
+  "status_note": "Working-tree functional acceptance is evidence-based; final full-suite and separate security review are still in progress here. Lead must update R34/R35 before final delivery.",
+  "summary": {
+    "requirements": 36,
+    "verified": 34,
+    "in_progress": 2
+  },
+  "browser": {
+    "synthetic_saved_data": true,
+    "operational_accounts_used": false,
+    "native_model_calls_by_browser_drivers": 0,
+    "successful_assertions": 125,
+    "note": "Counts include per-run JavaScript/network guard checks; they are assertions, not independent requirements or an estimated coverage percentage.",
+    "runs": {
+      "smoke": {
+        "assertions": 26,
+        "passed": 26,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-smoke-browser.json"
+      },
+      "review": {
+        "assertions": 33,
+        "passed": 33,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-review-browser.json"
+      },
+      "documents-pause": {
+        "assertions": 29,
+        "passed": 29,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-documents-pause-browser.json"
+      },
+      "return-and-existing-processing": {
+        "assertions": 12,
+        "passed": 12,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-return-and-existing-processing-browser.json"
+      },
+      "scroll-repro": {
+        "assertions": 4,
+        "passed": 4,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-scroll-repro-browser.json"
+      },
+      "drag-and-keyboard": {
+        "assertions": 8,
+        "passed": 8,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-drag-and-keyboard-browser.json"
+      },
+      "qa-documents-source": {
+        "assertions": 4,
+        "passed": 4,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-qa-documents-source-browser.json"
+      },
+      "clean-upload-status": {
+        "assertions": 9,
+        "passed": 9,
+        "js_errors": 0,
+        "error": null,
+        "receipt": ".local/qa-resume-20261024/after-clean-upload-status-browser.json"
+      }
+    }
+  },
+  "requirements": [
+    {
+      "id": "R01",
+      "expected_behavior": "Resume the preserved working version on a dedicated feature branch with a recoverable checkpoint.",
+      "implementation_location": "docs/LOCAL_CODEX_HANDOFF.md; .local/backups/project-checkpoint-20261024-140010",
+      "verification_method": "Git inspection, fetch comparison and checked source/database archive.",
+      "actual_result": "Original WIP3668cbb retained; merged PR16 was identified without resetting newer work; resumed feature branch and recovery archive retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R02",
+      "expected_behavior": "Use the installed Agency profiles with frontend/backend/independent QA ownership.",
+      "implementation_location": "C:/Users/Muhammad Assim Baig/.agency-agents; development coordination",
+      "verification_method": "Read installed UX/Frontend/Backend/RealityChecker/API profiles; compare actual tasks/changed files.",
+      "actual_result": "Installed profiles were read; separate frontend, documents/backend, lead/pause and independent QA responsibilities executed.",
+      "status": "Verified"
+    },
+    {
+      "id": "R03",
+      "expected_behavior": "Use failing regression tests before implementing new behavior, then refactor.",
+      "implementation_location": "frontend/check-qa-guided-state.cjs; frontend/check-engineer-documents.cjs; backend/core/test_survey_pause.py; backend/core/test_engineer_documents.py",
+      "verification_method": "Observed failing tests and real-browser reproductions followed by passing retests.",
+      "actual_result": "Scroll loss, available-photo viewer mismatch, named form action shadow and missing category ARIA were independently reproduced before their fixes; document and pause implementers retained red/green unit/integration evidence.",
+      "status": "Verified"
+    },
+    {
+      "id": "R04",
+      "expected_behavior": "Provide unit and real database integration tests for each changed feature.",
+      "implementation_location": "frontend/check-qa-guided-state.cjs; frontend/check-engineer-documents.cjs; frontend/check-survey-pause.cjs; backend/core/test_engineer_documents.py; backend/core/test_survey_pause.py; backend/core/test_resume_qa_regressions.py",
+      "verification_method": "Focused controller/unit checks, Django HTTP/database tests and independent browser/native checks.",
+      "actual_result": "Relevant focused checks passed; independent existing-role tests10/10 and route regressions3/3 passed. Final full-suite result is separately tracked in R34; mocked ordinary tests are not claimed as native inference.",
+      "status": "Verified"
+    },
+    {
+      "id": "R05",
+      "expected_behavior": "QA starts in a focused My reviews task list while retaining secondary filters/tools.",
+      "implementation_location": "backend/core/governance_views.py; backend/templates/dashboards/task_explorer.html",
+      "verification_method": "after-smoke-browser.json; desktop screenshot.",
+      "actual_result": "QA default redirects to real filtered task explorer; two primary search/project controls, compact table and expandable filters/exports rendered.",
+      "status": "Verified"
+    },
+    {
+      "id": "R06",
+      "expected_behavior": "Preserve filtered task-list context when switching review steps, refreshing and returning.",
+      "implementation_location": "backend/core/task_explorer.py; backend/static/core/js/qa_evidence_review.js; task_wayfinding.js",
+      "verification_method": "Actual filtered queue -> saved workbench -> site/evidence/decision -> refresh -> back URL checks.",
+      "actual_result": "Search/project/status query and return link retained through real successful QA approval.",
+      "status": "Verified"
+    },
+    {
+      "id": "R07",
+      "expected_behavior": "Keep site data, evidence and workflow decisions in one guided saved workbench.",
+      "implementation_location": "backend/templates/dashboards/qa_evidence_review.html; backend/static/core/js/qa_evidence_review.js",
+      "verification_method": "after-smoke-browser.json; after-review-browser.json.",
+      "actual_result": "All three tabs worked at1440px and390px, with same task/revision and preserved step after refresh.",
+      "status": "Verified"
+    },
+    {
+      "id": "R08",
+      "expected_behavior": "General Info shows frozen submitted data and existing QA corrections, not a new photo category.",
+      "implementation_location": "backend/core/engineer_general_info.py; category_intake.py; qa_evidence_review.js",
+      "verification_method": "Actual submitted source labels, explicit QA data answers, Engineer upload state.",
+      "actual_result": "Assigned/profile/site values remained read-only source records; QA explicitly saved corrected GeneralInfo answers; Engineer Civil/Electrical/Tower categories stayed separate.",
+      "status": "Verified"
+    },
+    {
+      "id": "R09",
+      "expected_behavior": "Provide useful uncropped inline evidence viewing and retain enlarged preview/zoom/navigation.",
+      "implementation_location": "backend/static/core/js/qa_evidence_review.js; backend/static/core/css/qa_evidence_review.css",
+      "verification_method": "Real saved photo available-vs-linked viewer regression, previous/next/zoom checks and visual inspection.",
+      "actual_result": "Available mode correctly refreshed primary viewer from1 to2 photos; next/previous,125% zoom and original source controls worked; photographed source aspect ratio retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R10",
+      "expected_behavior": "Preserve assign/confirm/reassign/unlink click alternatives and HTML5 photo drag/drop.",
+      "implementation_location": "backend/core/qa_matching.py; backend/static/core/js/qa_evidence_review.js",
+      "verification_method": "after-review-browser.json; after-drag-and-keyboard-browser.json.",
+      "actual_result": "Real backend links saved through click and DataTransfer drop events; other valid links and Engineer upload category survived.",
+      "status": "Verified"
+    },
+    {
+      "id": "R11",
+      "expected_behavior": "Not Assigned means no checklist links; zero-evidence requirements stay visible.",
+      "implementation_location": "backend/core/qa_matching.py; qa_evidence_review.js",
+      "verification_method": "Multi-link move/unlink and globally unassigned saved-state checks.",
+      "actual_result": "One photo could support2 points; moving/removing one link retained the other; genuinely unlinked photos remained in Not Assigned and zero-link checklist points remained displayed.",
+      "status": "Verified"
+    },
+    {
+      "id": "R12",
+      "expected_behavior": "Save and next advances only after successful explicit human answer acceptance.",
+      "implementation_location": "backend/static/core/js/qa_evidence_review.js",
+      "verification_method": "Successful answers plus cancelled dirty navigation and controlled503 response.",
+      "actual_result": "Typed contact/inspection answers and canonical numeric zero persisted; failed answer save kept note/value/point and did not accept or advance; retry succeeded.",
+      "status": "Verified"
+    },
+    {
+      "id": "R13",
+      "expected_behavior": "Keep matching status, AI proposals, evidence acceptance and engineering approval distinct.",
+      "implementation_location": "backend/core/category_intake.py; qa_matching.py; review_route_service.py",
+      "verification_method": "Link-only save, explicit answer save, completion and separate approval POSTs.",
+      "actual_result": "Confirmed photo links did not accept engineering answers; evidence completion froze package without advancing workflow; separate human QA approval advanced one stage.",
+      "status": "Verified"
+    },
+    {
+      "id": "R14",
+      "expected_behavior": "Retain secondary history, reports, reordered display and AI tools without crowding the primary view.",
+      "implementation_location": "qa_evidence_review.html; qa_evidence_review.js; survey_processing.html",
+      "verification_method": "Actual More tools expansion, matching-history dialog, display-order save/refresh and existing processing page.",
+      "actual_result": "Secondary links/actions remained accessible; display reorder persisted without changing stable IDs, source digest or engineering decisions.",
+      "status": "Verified"
+    },
+    {
+      "id": "R15",
+      "expected_behavior": "Enforce existing QA completion/rejection reasons, stale tokens and duplicate-decision protection.",
+      "implementation_location": "backend/core/review_route_views.py; review_route_service.py",
+      "verification_method": "Actual incomplete approval unavailable, real409 stale decision, controlled503 failure, repeated decision integration regression.",
+      "actual_result": "Early reasoned return remained available; approval required completed review; stale/failure retained typed reason; successful human approval created only one stage/signature.",
+      "status": "Verified"
+    },
+    {
+      "id": "R16",
+      "expected_behavior": "QA rejection returns one step; Engineer retains original evidence and can correct/resubmit.",
+      "implementation_location": "category_intake.py; engineer_capture.js; review_route_service.py",
+      "verification_method": "after-return-and-existing-processing-browser.json; current integration regressions.",
+      "actual_result": "Real QA rejection returned3 photos and reason to Engineer, who uploaded a fourth photo and resubmitted; QA received a new revision with all prior photo IDs and same approved checklist IDs.",
+      "status": "Verified"
+    },
+    {
+      "id": "R17",
+      "expected_behavior": "Preserve cross-project/role restrictions, legacy workflows and approved-record locks.",
+      "implementation_location": "category_intake.py; photo_views.py; independent_workflow.py",
+      "verification_method": "Actual foreign/unassigned denial, TeamLead readonly and locked QA records; legacy fallback and role-design integration tests.",
+      "actual_result": "Foreign/unassigned QA access denied; past-approved evidence readonly; TeamLead received reviewed package without QA actions; genuine unmarked inspection/survey retained existing fallback.",
+      "status": "Verified"
+    },
+    {
+      "id": "R18",
+      "expected_behavior": "Desktop/mobile navigation is readable, does not overflow and exposes current selection accessibly.",
+      "implementation_location": "qa_evidence_review.css; qa_evidence_review.js; task_explorer.html",
+      "verification_method": "1440px/390px screenshots; real category drawer focus, expand/collapse and aria-current checks.",
+      "actual_result": "All tested steps had no horizontal page overflow; selected category/section now exposes aria-current; drawer focus and navigation controls worked. Physical-device coverage is not claimed.",
+      "status": "Verified"
+    },
+    {
+      "id": "R19",
+      "expected_behavior": "Restore selection and internal pane scroll on refresh.",
+      "implementation_location": "backend/static/core/js/qa_evidence_review.js",
+      "verification_method": "Actual failing mobile source-pane refresh160px ->0, then exact same browser retest.",
+      "actual_result": "After fix, saved source-pane scroll160px survived full refresh and session storage retained position; controller tests also cover checklist/photo scroll.",
+      "status": "Verified"
+    },
+    {
+      "id": "R20",
+      "expected_behavior": "Engineer can upload real hand sketches and reports as supporting evidence.",
+      "implementation_location": "backend/core/engineer_documents.py; backend/static/core/js/engineer_documents.js; engineer_capture.html",
+      "verification_method": "after-documents-pause-browser.json, real JPEG/PDF/XLSX uploads.",
+      "actual_result": "Hand sketch JPEG and report PDF/XLSX persisted under real saved task with classifications and preview/download controls. Supported formats remain PDF/XLSX/JPEG/PNG/WebP; DOC/DOCX explicitly unsupported.",
+      "status": "Verified"
+    },
+    {
+      "id": "R21",
+      "expected_behavior": "Use bounded document batches, validation and the existing durable upload-session gate.",
+      "implementation_location": "engineer_documents.py; survey_upload_sessions.py; engineer_documents.js",
+      "verification_method": "Document unit/integration limits plus actual browser failed503/corruptPDF and retry.",
+      "actual_result": "1-5 files per batch, existing30MB limit and50 retained documents are enforced; pending/failed selected files blocked Submit; retry saved same source without false success.",
+      "status": "Verified"
+    },
+    {
+      "id": "R22",
+      "expected_behavior": "Original bytes, filename/type and Engineer classification survive refresh and downloads.",
+      "implementation_location": "engineer_documents.py; category_intake.py",
+      "verification_method": "SHA256 of protected JPEG/PDF download compared with synthetic originals, before and after refresh.",
+      "actual_result": "All three saved document kinds/filenames persisted; original SHA256 matched and authenticated Engineer/QA download bytes were identical.",
+      "status": "Verified"
+    },
+    {
+      "id": "R23",
+      "expected_behavior": "Soft removal and deduplication retain old originals and reuse document identity.",
+      "implementation_location": "backend/core/engineer_documents.py",
+      "verification_method": "Actual remove -> draft URL404 -> reupload -> sameID, plus immutable row/history tests.",
+      "actual_result": "Removed document left current source list without deleting original; same PDF restored once with original document ID; original file hashes retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R24",
+      "expected_behavior": "Submitted documents are frozen in both processing and human-review signatures with backward-compatible history.",
+      "implementation_location": "engineer_documents.py; independent_workflow.py; survey_processing.py",
+      "verification_method": "Document signature/revision integration tests and real submitted revision DTO checks.",
+      "actual_result": "Submitted records became readonly; QA URLs include the submitted revision; old signed shapes remain unchanged unless the new versioned document control is enabled.",
+      "status": "Verified"
+    },
+    {
+      "id": "R25",
+      "expected_behavior": "QA/TeamLead receive appropriate frozen source documents; clients cannot access raw private documents.",
+      "implementation_location": "engineer_documents.py; category_intake.py",
+      "verification_method": "Document integration permission/CSRF/cross-project/revoked-user tests plus actual QA download.",
+      "actual_result": "Assigned QA downloaded exact revision-scoped original bytes; client/raw, foreign-project and inactive-user cases denied in focused Django tests; protected files are not exposed through frontend sample storage.",
+      "status": "Verified"
+    },
+    {
+      "id": "R26",
+      "expected_behavior": "Document proposal sources remain traceable when QA edits photo-only answer selections.",
+      "implementation_location": "engineer_documents.py:retained_item_sources; category_intake.py",
+      "verification_method": "Meaningful unit/integration provenance regression.",
+      "actual_result": "Existing same-submission document sources survived QA photo-only edits; no new document matcher or invented checklist requirements were introduced.",
+      "status": "Verified"
+    },
+    {
+      "id": "R27",
+      "expected_behavior": "Submission is immediately available to QA and AI jobs are asynchronous and idempotent.",
+      "implementation_location": "category_intake.py; category_intake_views.py",
+      "verification_method": "Real Engineer submit, QA task queue while jobqueued, replay exact original submission request.",
+      "actual_result": "QA opened photos/documents before any inference; repeated exact POST returned existing revision/job without duplicate submission; Engineer saw simple readonly confirmation.",
+      "status": "Verified"
+    },
+    {
+      "id": "R28",
+      "expected_behavior": "QA can pause/resume queued jobs with persistent honest progress and no source loss.",
+      "implementation_location": "survey_pause.py; category_intake.py; qa_evidence_review.js; survey_processing.js",
+      "verification_method": "Real category and existing processing browser pause/resume, full refresh and503 failedresume.",
+      "actual_result": "Paused state and numeric/bar status survived refresh; failed Resume retained paused state and showed error; successful Resume kept same source digest/revision/photos/documents/counts; manual review stayed available.",
+      "status": "Verified"
+    },
+    {
+      "id": "R29",
+      "expected_behavior": "Running pause stops safely after a durable evidence boundary and survives worker interruption/recovery.",
+      "implementation_location": "survey_pause.py; survey_processing.py; remote_worker_service.py",
+      "verification_method": "Root local/remote focused unit/integration pause checks and independent functional review6 tests.",
+      "actual_result": "Completed checkpoints/drawing transaction retained; pausing intent is not treated as failure; expired leases settle to paused and paused work is not reclaimed as running.",
+      "status": "Verified"
+    },
+    {
+      "id": "R30",
+      "expected_behavior": "Resume/retry handles duplicate delivery, concurrent worker claims and changed inputs without duplicating outputs.",
+      "implementation_location": "survey_pause.py; remote_worker_service.py; survey_processing_views.py",
+      "verification_method": "Independent failing pause regressions -> root fixes -> final focused24 checks.",
+      "actual_result": "Lost-response resume retry remained idempotent after worker claim; stale source controls were disabled/denied; completed output/checkpoint reuse and lease guards passed.",
+      "status": "Verified"
+    },
+    {
+      "id": "R31",
+      "expected_behavior": "AI controls preserve permissions/locks and never make a paused job look ready for review.",
+      "implementation_location": "survey_pause.py; qa_evidence_review.js; survey_processing.js",
+      "verification_method": "Pause permission/backend guard tests and actual-controller status regressions.",
+      "actual_result": "Category Engineer does not gain AI controls; assigned QA/current revision checks remain; paused/pausing counts are labeled honestly and do not unlock ready-only result actions.",
+      "status": "Verified"
+    },
+    {
+      "id": "R32",
+      "expected_behavior": "Verify actual local model vision with actual image bytes through the existing worker.",
+      "implementation_location": "survey_evidence.py; survey_processing.py; existing local Ollama runtime",
+      "verification_method": "native-2/native-result.json; real native worker photo+PDF page requests.",
+      "actual_result": "Root native integration completed2 actual sources in19.094s via installed qwen3.5:4b on private loopback11435, real38KB/50KB image payloads and source bytes retained. Standard11434 still has a missing runner binary; no cloud/model download claim.",
+      "status": "Verified"
+    },
+    {
+      "id": "R33",
+      "expected_behavior": "Retain source-limited draft PDF/DXF outputs without fabricated engineering geometry.",
+      "implementation_location": "survey_drawings.py; survey_processing.py; existing export tests",
+      "verification_method": "Actual native generated PDF/DXF/PNG manifest and visual inspection of register/site/equipment sheets.",
+      "actual_result": "Draft-for-review exports rendered with title block and evidence references; unsupported8 sheet categories were explicitly not generated, not filled with invented geometry. This synthetic run does not establish manufacturer/site accuracy.",
+      "status": "Verified"
+    },
+    {
+      "id": "R34",
+      "expected_behavior": "Run the final source-stable full suite and required checks; deliver current startup/worker guidance.",
+      "implementation_location": "scripts/run_backend_tests.py; docs/LOCAL_CODEX_HANDOFF.md; root delivery report",
+      "verification_method": "Final full-suite/source fingerprint and current Django/migration/dependency/frontend checks.",
+      "actual_result": "Initial changing-source960-test diagnostic had2 QA redirect test failures; both fixed with preserved assertions and10 focused tests green. Final source-stable full suite and final guide are owned by the lead and still pending at this ledger checkpoint.",
+      "status": "In progress"
+    },
+    {
+      "id": "R35",
+      "expected_behavior": "After functional completion, independently attack/review security and report severity/recommendations; do not automatically fix findings.",
+      "implementation_location": "Installed Agency AppSec profile; separate root security review",
+      "verification_method": "Independent read-only AppSec review after functional completion.",
+      "actual_result": "Separate reviewer is running. QA functional repairs preceded that review; findings from that separate review require owner approval before remediation.",
+      "status": "In progress"
+    },
+    {
+      "id": "R36",
+      "expected_behavior": "Preserve operational database, originals, private configuration and approvals.",
+      "implementation_location": ".local/backups/project-checkpoint-20261024-140010; isolated test databases/media",
+      "verification_method": "Read-only operational comparison with consistent recovery checkpoint.",
+      "actual_result": "Read-only pre-restart comparison found59 core tables exactly unchanged. After owner-authorized operational app/worker resume at11:20UTC,59 tables were compared again: no old records deleted, prior immutable rows unchanged, checklist answers/approvals and photo originals/task/category identities unchanged, job checkpoints not reset;1915 existing media/private files hash unchanged. Expected lease/job progress and new source analyses are retained. Operational qa01 pause/resume audit events were not generated by isolated QA(actor4,port8917) and were not undone. All QA test approvals/uploads/rejections were clearly synthetic isolated records.",
+      "status": "Verified"
+    }
+  ],
+  "limitations": [
+    "Native model benchmark used synthetic sources; no Z93004/site or manufacturer accuracy benchmark is claimed.",
+    "No physical mobile device coverage; desktop1440 and mobile390 browser widths checked.",
+    "Word DOC/DOCX parser and document-to-checklist manual matcher were not added; supported extraction/document sources reuse existing pipeline.",
+    "Pause waits for the active bounded source to finish/save; it does not instantly interrupt GPU computation.",
+    "Standard installed Ollama11434 has a missing runner binary; the existing project runtime11435 was verified instead.",
+    "Server/production deploy, merge and publishing are not part of this resumed verification."
+  ]
+}

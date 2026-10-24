@@ -186,6 +186,8 @@ def workspace(request, checklist_id):
         return render(request,'dashboards/engineer_capture.html',{'checklist':c,'can_edit':flags['can_edit'],
             'capture_state_url':reverse('photo_capture_state',args=[c.pk]),'capture_submit_url':reverse('photo_capture_submit',args=[c.pk]),
             'capture_category_url':reverse('photo_capture_category',args=[c.pk]),'capture_remove_url':reverse('photo_capture_remove',args=[c.pk]),
+            'capture_document_upload_url':reverse('photo_capture_document_upload',args=[c.pk]),
+            'capture_document_remove_url':reverse('photo_capture_document_remove',args=[c.pk]),
             'upload_url':reverse('photo_upload',args=[c.pk]),'upload_session_url':reverse('photo_processing_upload_session',args=[c.pk])})
     access=None
     if role_for(request.user) in {'QUALITY_ENGINEER','TEAM_LEAD'}:

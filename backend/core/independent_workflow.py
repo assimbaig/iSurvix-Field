@@ -116,6 +116,13 @@ def content_snapshot(checklist):
     evidence=list(checklist.evidence_analyses.filter(photo__isnull=False).order_by('pk').values('id','photo_id','photo_sha256','schema_digest','rules_version','model_version','tool_version','prompt_version','payload_digest'))
     if evidence and not intake_enabled(checklist):
         data['evidence_analysis']=evidence
+    from .engineer_documents import configuration, snapshot as document_snapshot
+    if configuration(checklist) is not None:
+        # Explicit opt-in keeps every pre-document signed snapshot unchanged.
+        documents=list(checklist.survey_documents.order_by('pk').values(
+            'id','filename','sha256','original','content_type','size'))
+        data['documents']=document_snapshot(checklist,documents)
+        data['capture_documents_version']=1
     return json.loads(json.dumps(data,cls=DjangoJSONEncoder,sort_keys=True))
 
 

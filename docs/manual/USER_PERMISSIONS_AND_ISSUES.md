@@ -1,6 +1,6 @@
 # iSurvix Field - User permissions and improvement register
 
-Review date: 23 October 2026. Scope: the existing Django survey and inspection application. This guide describes six current roles and the existing review workflow; it is not a plan for additional modules or a production-readiness certificate.
+Review date: 24 October 2026. Scope: the existing Django survey and inspection application. This guide describes six current roles and the existing review workflow; it is not a plan for additional modules or a production-readiness certificate.
 
 The permission, routing and workspace checks use isolated Django records and synthetic evidence. The category-upload workflow supersedes the earlier Engineer checklist/AI review steps. Actual local vision was also exercised with synthetic images; this establishes integration, not real-site accuracy, physical-device acceptance or production readiness. Current verification evidence is recorded in docs/development/ENGINEER_CATEGORY_QA_WORKFLOW.json.
 
@@ -44,6 +44,7 @@ Historical version-one independent workflows can retain their original named Tea
 - Save site information explicitly, or use Submit to QA to save current valid entries before handoff. Assigned identity remains protected; this form does not approve engineering work or require full checklist matching.
 - Select Civil, Electrical or Tower to upload multiple camera/gallery photos in bounded batches. General Info is data only. Older unclassified originals remain available as Uncategorised and can be moved before submission.
 - Before submission, move photos between categories or remove an incorrect photo from the active intake. Removal retains original bytes and historical source records.
+- Use Sketches & reports for PDF/XLSX/JPEG/PNG/WebP supporting files, classified as Hand sketch or Report. Upload up to five files per request, 30 MB each, with up to 50 retained originals per site. Preview supported images/PDFs, retry failed transfers and remove incorrect current attachments before submission. Submitted originals remain immutable and earlier revisions retain their files. Word documents are not supported.
 - Retry failed uploads; successful uploads are deduplicated. An unfinished upload envelope must finish or be safely recovered before submission.
 - Select Submit to QA after uploads finish. Missing checklist answers do not block this photo hand-off. Necessary task identity, reviewer, access and upload-completion checks remain.
 - QA receives the frozen submission immediately. A persistent AI job runs separately; uploading alone does not start it. The Engineer receives a simple confirmation rather than matching or AI verification work.
@@ -73,11 +74,14 @@ The Engineer cannot match photos to checklist points, confirm/reject AI links, a
 ### Purpose and permitted work
 
 - Open tasks where they are the named QA reviewer and still have effective project access.
+- Use My reviews, then Site information, Review evidence and Decision in the same workspace. Save & next advances only after the answer is saved. More tools retains secondary matching, history and processing actions.
 - Open the category submission immediately, including while AI is pending, processing or failed. Inspect original source photographs, approved checklist requirements and revision history.
 - Review General Info, Civil, Electrical and Tower in a compact category/checklist/photo workspace. Required points remain visible without evidence. Not Assigned means no checklist links, not merely no link to the selected point.
 - Add, confirm, remove or explicitly reassign individual photo links. Drag-and-drop and click/touch actions use the same revision-bound permission checks. Other valid links remain intact.
 - Inspect source photos and QA-visible AI observations/explanations in the viewer. Unsupported suggestions remain unassigned. Preserve original Engineer categories as provenance, even for a valid cross-category link.
 - Open Submitted site information to compare the Engineer's frozen General Info values and source notes with the checklist review. This source view is read-only; QA corrections use the existing review controls.
+- Open the submission's sketches/reports and any available AI document observations from Site information. A report does not replace a required site photograph.
+- Pause AI Analysis or resume it at the current QA stage. A running evidence task finishes and saves before the pause takes effect. Completed analyses remain saved, manual review remains available, and Engineer submission remains separate from these controls.
 - Enter source-backed derived checklist answers and complete the required QA evidence review. These append-only decisions do not rewrite the Engineer's original answers or photo snapshot.
 - Change personal checkpoint display order within the existing category only. Display order does not edit the template, source links or engineering decisions.
 - Approve the current technical review or return it one step to the Engineer with a reason. A stale token or a change to frozen source inputs blocks a decision.

@@ -1,5 +1,21 @@
 # iSurvix Field: local Codex development brief
 
+## Resumed by owner - 24 October 2026
+
+The owner explicitly resumed the saved QA review, Engineer sketch/report uploads,
+and per-job AI Pause/Resume work. The pause instructions below are historical.
+Current feature branch: `fix/qa-guided-documents-pause-20261024`; saved WIP
+`3668cbb` and merged PR16 `8aeb872` are both retained. Before editing, the existing
+backup helper created `.local/backups/project-checkpoint-20261024-140010` with
+database integrity and archive CRC checks passing (2,910 files).
+
+New owner development rules are recorded in
+`docs/development/DEVELOPMENT_RULES.md`: failing tests first, unit and integration
+coverage, then separate security review. Report security findings with severity
+and recommendations; owner approval is required before fixing those findings.
+Agency backend, frontend and independent testing roles are coordinating this
+resume. Do not treat the previous passing suite as verification of current work.
+
 ## PAUSED by owner - QA redesign, sketches/reports and AI Pause/Resume
 
 The owner explicitly said to save pending fixes and pause development, then said

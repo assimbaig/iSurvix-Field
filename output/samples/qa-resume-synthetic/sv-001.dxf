@@ -1,0 +1,8396 @@
+  0
+SECTION
+  2
+HEADER
+  9
+$ACADVER
+  1
+AC1024
+  9
+$ACADMAINTVER
+ 70
+6
+  9
+$DWGCODEPAGE
+  3
+ANSI_1252
+  9
+$LASTSAVEDBY
+  1
+ezdxf
+  9
+$INSBASE
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$EXTMIN
+ 10
+1e+20
+ 20
+1e+20
+ 30
+1e+20
+  9
+$EXTMAX
+ 10
+-1e+20
+ 20
+-1e+20
+ 30
+-1e+20
+  9
+$LIMMIN
+ 10
+0.0
+ 20
+0.0
+  9
+$LIMMAX
+ 10
+420.0
+ 20
+297.0
+  9
+$ORTHOMODE
+ 70
+0
+  9
+$REGENMODE
+ 70
+1
+  9
+$FILLMODE
+ 70
+1
+  9
+$QTEXTMODE
+ 70
+0
+  9
+$MIRRTEXT
+ 70
+1
+  9
+$LTSCALE
+ 40
+1.0
+  9
+$ATTMODE
+ 70
+1
+  9
+$TEXTSIZE
+ 40
+2.5
+  9
+$TRACEWID
+ 40
+1.0
+  9
+$TEXTSTYLE
+  7
+Standard
+  9
+$CLAYER
+  8
+0
+  9
+$CELTYPE
+  6
+ByLayer
+  9
+$CECOLOR
+ 62
+256
+  9
+$CELTSCALE
+ 40
+1.0
+  9
+$DISPSILH
+ 70
+0
+  9
+$DIMSCALE
+ 40
+1.0
+  9
+$DIMASZ
+ 40
+2.5
+  9
+$DIMEXO
+ 40
+0.625
+  9
+$DIMDLI
+ 40
+3.75
+  9
+$DIMRND
+ 40
+0.0
+  9
+$DIMDLE
+ 40
+0.0
+  9
+$DIMEXE
+ 40
+1.25
+  9
+$DIMTP
+ 40
+0.0
+  9
+$DIMTM
+ 40
+0.0
+  9
+$DIMTXT
+ 40
+2.5
+  9
+$DIMCEN
+ 40
+2.5
+  9
+$DIMTSZ
+ 40
+0.0
+  9
+$DIMTOL
+ 70
+0
+  9
+$DIMLIM
+ 70
+0
+  9
+$DIMTIH
+ 70
+0
+  9
+$DIMTOH
+ 70
+0
+  9
+$DIMSE1
+ 70
+0
+  9
+$DIMSE2
+ 70
+0
+  9
+$DIMTAD
+ 70
+1
+  9
+$DIMZIN
+ 70
+8
+  9
+$DIMBLK
+  1
+
+  9
+$DIMASO
+ 70
+1
+  9
+$DIMSHO
+ 70
+1
+  9
+$DIMPOST
+  1
+
+  9
+$DIMAPOST
+  1
+
+  9
+$DIMALT
+ 70
+0
+  9
+$DIMALTD
+ 70
+3
+  9
+$DIMALTF
+ 40
+0.03937007874
+  9
+$DIMLFAC
+ 40
+1.0
+  9
+$DIMTOFL
+ 70
+1
+  9
+$DIMTVP
+ 40
+0.0
+  9
+$DIMTIX
+ 70
+0
+  9
+$DIMSOXD
+ 70
+0
+  9
+$DIMSAH
+ 70
+0
+  9
+$DIMBLK1
+  1
+
+  9
+$DIMBLK2
+  1
+
+  9
+$DIMSTYLE
+  2
+ISO-25
+  9
+$DIMCLRD
+ 70
+0
+  9
+$DIMCLRE
+ 70
+0
+  9
+$DIMCLRT
+ 70
+0
+  9
+$DIMTFAC
+ 40
+1.0
+  9
+$DIMGAP
+ 40
+0.625
+  9
+$DIMJUST
+ 70
+0
+  9
+$DIMSD1
+ 70
+0
+  9
+$DIMSD2
+ 70
+0
+  9
+$DIMTOLJ
+ 70
+0
+  9
+$DIMTZIN
+ 70
+8
+  9
+$DIMALTZ
+ 70
+0
+  9
+$DIMALTTZ
+ 70
+0
+  9
+$DIMUPT
+ 70
+0
+  9
+$DIMDEC
+ 70
+2
+  9
+$DIMTDEC
+ 70
+2
+  9
+$DIMALTU
+ 70
+2
+  9
+$DIMALTTD
+ 70
+3
+  9
+$DIMTXSTY
+  7
+Standard
+  9
+$DIMAUNIT
+ 70
+0
+  9
+$DIMADEC
+ 70
+0
+  9
+$DIMALTRND
+ 40
+0.0
+  9
+$DIMAZIN
+ 70
+0
+  9
+$DIMDSEP
+ 70
+44
+  9
+$DIMATFIT
+ 70
+3
+  9
+$DIMFRAC
+ 70
+0
+  9
+$DIMLDRBLK
+  1
+
+  9
+$DIMLUNIT
+ 70
+2
+  9
+$DIMLWD
+ 70
+-2
+  9
+$DIMLWE
+ 70
+-2
+  9
+$DIMTMOVE
+ 70
+0
+  9
+$DIMFXL
+ 40
+1.0
+  9
+$DIMFXLON
+ 70
+0
+  9
+$DIMJOGANG
+ 40
+0.785398163397
+  9
+$DIMTFILL
+ 70
+0
+  9
+$DIMTFILLCLR
+ 70
+0
+  9
+$DIMARCSYM
+ 70
+0
+  9
+$DIMLTYPE
+  6
+
+  9
+$DIMLTEX1
+  6
+
+  9
+$DIMLTEX2
+  6
+
+  9
+$DIMTXTDIRECTION
+ 70
+0
+  9
+$LUNITS
+ 70
+2
+  9
+$LUPREC
+ 70
+4
+  9
+$SKETCHINC
+ 40
+1.0
+  9
+$FILLETRAD
+ 40
+10.0
+  9
+$AUNITS
+ 70
+0
+  9
+$AUPREC
+ 70
+2
+  9
+$MENU
+  1
+.
+  9
+$ELEVATION
+ 40
+0.0
+  9
+$PELEVATION
+ 40
+0.0
+  9
+$THICKNESS
+ 40
+0.0
+  9
+$LIMCHECK
+ 70
+0
+  9
+$CHAMFERA
+ 40
+0.0
+  9
+$CHAMFERB
+ 40
+0.0
+  9
+$CHAMFERC
+ 40
+0.0
+  9
+$CHAMFERD
+ 40
+0.0
+  9
+$SKPOLY
+ 70
+0
+  9
+$TDCREATE
+ 40
+2461338.5910416665
+  9
+$TDUCREATE
+ 40
+2458532.153996898
+  9
+$TDUPDATE
+ 40
+2461338.5910416665
+  9
+$TDUUPDATE
+ 40
+2458532.1544311
+  9
+$TDINDWG
+ 40
+0.0
+  9
+$TDUSRTIMER
+ 40
+0.0
+  9
+$USRTIMER
+ 70
+1
+  9
+$ANGBASE
+ 50
+0.0
+  9
+$ANGDIR
+ 70
+0
+  9
+$PDMODE
+ 70
+0
+  9
+$PDSIZE
+ 40
+0.0
+  9
+$PLINEWID
+ 40
+0.0
+  9
+$SPLFRAME
+ 70
+0
+  9
+$SPLINETYPE
+ 70
+6
+  9
+$SPLINESEGS
+ 70
+8
+  9
+$HANDSEED
+  5
+D3
+  9
+$SURFTAB1
+ 70
+6
+  9
+$SURFTAB2
+ 70
+6
+  9
+$SURFTYPE
+ 70
+6
+  9
+$SURFU
+ 70
+6
+  9
+$SURFV
+ 70
+6
+  9
+$UCSBASE
+  2
+
+  9
+$UCSNAME
+  2
+
+  9
+$UCSORG
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSXDIR
+ 10
+1.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSYDIR
+ 10
+0.0
+ 20
+1.0
+ 30
+0.0
+  9
+$UCSORTHOREF
+  2
+
+  9
+$UCSORTHOVIEW
+ 70
+0
+  9
+$UCSORGTOP
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGBOTTOM
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGLEFT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGRIGHT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGFRONT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGBACK
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSBASE
+  2
+
+  9
+$PUCSNAME
+  2
+
+  9
+$PUCSORG
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSXDIR
+ 10
+1.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSYDIR
+ 10
+0.0
+ 20
+1.0
+ 30
+0.0
+  9
+$PUCSORTHOREF
+  2
+
+  9
+$PUCSORTHOVIEW
+ 70
+0
+  9
+$PUCSORGTOP
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGBOTTOM
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGLEFT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGRIGHT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGFRONT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGBACK
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$USERI1
+ 70
+0
+  9
+$USERI2
+ 70
+0
+  9
+$USERI3
+ 70
+0
+  9
+$USERI4
+ 70
+0
+  9
+$USERI5
+ 70
+0
+  9
+$USERR1
+ 40
+0.0
+  9
+$USERR2
+ 40
+0.0
+  9
+$USERR3
+ 40
+0.0
+  9
+$USERR4
+ 40
+0.0
+  9
+$USERR5
+ 40
+0.0
+  9
+$WORLDVIEW
+ 70
+1
+  9
+$SHADEDGE
+ 70
+3
+  9
+$SHADEDIF
+ 70
+70
+  9
+$TILEMODE
+ 70
+1
+  9
+$MAXACTVP
+ 70
+64
+  9
+$PINSBASE
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PLIMCHECK
+ 70
+0
+  9
+$PEXTMIN
+ 10
+1e+20
+ 20
+1e+20
+ 30
+1e+20
+  9
+$PEXTMAX
+ 10
+-1e+20
+ 20
+-1e+20
+ 30
+-1e+20
+  9
+$PLIMMIN
+ 10
+-0.0
+ 20
+-0.0
+  9
+$PLIMMAX
+ 10
+420.0
+ 20
+297.0
+  9
+$UNITMODE
+ 70
+0
+  9
+$VISRETAIN
+ 70
+1
+  9
+$PLINEGEN
+ 70
+0
+  9
+$PSLTSCALE
+ 70
+1
+  9
+$TREEDEPTH
+ 70
+3020
+  9
+$CMLSTYLE
+  2
+Standard
+  9
+$CMLJUST
+ 70
+0
+  9
+$CMLSCALE
+ 40
+20.0
+  9
+$PROXYGRAPHICS
+ 70
+1
+  9
+$MEASUREMENT
+ 70
+1
+  9
+$CELWEIGHT
+370
+-1
+  9
+$ENDCAPS
+280
+0
+  9
+$JOINSTYLE
+280
+0
+  9
+$LWDISPLAY
+290
+1
+  9
+$INSUNITS
+ 70
+4
+  9
+$HYPERLINKBASE
+  1
+
+  9
+$STYLESHEET
+  1
+
+  9
+$XEDIT
+290
+1
+  9
+$CEPSNTYPE
+380
+0
+  9
+$PSTYLEMODE
+290
+1
+  9
+$FINGERPRINTGUID
+  2
+{80945A6A-2F96-47EA-818F-FD6A186E7871}
+  9
+$VERSIONGUID
+  2
+{FFF4A459-533D-4253-B532-9DDF1F36108F}
+  9
+$EXTNAMES
+290
+1
+  9
+$PSVPSCALE
+ 40
+0.0
+  9
+$OLESTARTUP
+290
+0
+  9
+$SORTENTS
+280
+127
+  9
+$INDEXCTL
+280
+0
+  9
+$HIDETEXT
+280
+1
+  9
+$XCLIPFRAME
+280
+1
+  9
+$HALOGAP
+280
+0
+  9
+$OBSCOLOR
+ 70
+257
+  9
+$OBSLTYPE
+280
+0
+  9
+$INTERSECTIONDISPLAY
+280
+0
+  9
+$INTERSECTIONCOLOR
+ 70
+257
+  9
+$DIMASSOC
+280
+2
+  9
+$PROJECTNAME
+  1
+
+  9
+$CAMERADISPLAY
+290
+0
+  9
+$LENSLENGTH
+ 40
+50.0
+  9
+$CAMERAHEIGHT
+ 40
+0.0
+  9
+$STEPSPERSEC
+ 40
+24.0
+  9
+$STEPSIZE
+ 40
+100.0
+  9
+$3DDWFPREC
+ 40
+2.0
+  9
+$PSOLWIDTH
+ 40
+0.005
+  9
+$PSOLHEIGHT
+ 40
+0.08
+  9
+$LOFTANG1
+ 40
+1.570796326795
+  9
+$LOFTANG2
+ 40
+1.570796326795
+  9
+$LOFTMAG1
+ 40
+0.0
+  9
+$LOFTMAG2
+ 40
+0.0
+  9
+$LOFTPARAM
+ 70
+7
+  9
+$LOFTNORMALS
+280
+1
+  9
+$LATITUDE
+ 40
+37.795
+  9
+$LONGITUDE
+ 40
+-122.394
+  9
+$NORTHDIRECTION
+ 40
+0.0
+  9
+$TIMEZONE
+ 70
+-8000
+  9
+$LIGHTGLYPHDISPLAY
+280
+1
+  9
+$TILEMODELIGHTSYNCH
+280
+1
+  9
+$CMATERIAL
+347
+20
+  9
+$SOLIDHIST
+280
+0
+  9
+$SHOWHIST
+280
+1
+  9
+$DWFFRAME
+280
+2
+  9
+$DGNFRAME
+280
+2
+  9
+$REALWORLDSCALE
+290
+1
+  9
+$INTERFERECOLOR
+ 62
+256
+  9
+$CSHADOW
+280
+0
+  9
+$SHADOWPLANELOCATION
+ 40
+0.0
+  0
+ENDSEC
+  0
+SECTION
+  2
+CLASSES
+  0
+CLASS
+  1
+ACDBDICTIONARYWDFLT
+  2
+AcDbDictionaryWithDefault
+  3
+ObjectDBX Classes
+ 90
+0
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+SUN
+  2
+AcDbSun
+  3
+SCENEOE
+ 90
+1153
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+VISUALSTYLE
+  2
+AcDbVisualStyle
+  3
+ObjectDBX Classes
+ 90
+4095
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+MATERIAL
+  2
+AcDbMaterial
+  3
+ObjectDBX Classes
+ 90
+1153
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+SCALE
+  2
+AcDbScale
+  3
+ObjectDBX Classes
+ 90
+1153
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+TABLESTYLE
+  2
+AcDbTableStyle
+  3
+ObjectDBX Classes
+ 90
+4095
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+MLEADERSTYLE
+  2
+AcDbMLeaderStyle
+  3
+ACDB_MLEADERSTYLE_CLASS
+ 90
+4095
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+DICTIONARYVAR
+  2
+AcDbDictionaryVar
+  3
+ObjectDBX Classes
+ 90
+0
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+CELLSTYLEMAP
+  2
+AcDbCellStyleMap
+  3
+ObjectDBX Classes
+ 90
+1152
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+MENTALRAYRENDERSETTINGS
+  2
+AcDbMentalRayRenderSettings
+  3
+SCENEOE
+ 90
+1024
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+ACDBDETAILVIEWSTYLE
+  2
+AcDbDetailViewStyle
+  3
+ObjectDBX Classes
+ 90
+1025
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+ACDBSECTIONVIEWSTYLE
+  2
+AcDbSectionViewStyle
+  3
+ObjectDBX Classes
+ 90
+1025
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+RASTERVARIABLES
+  2
+AcDbRasterVariables
+  3
+ISM
+ 90
+0
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+ACDBPLACEHOLDER
+  2
+AcDbPlaceHolder
+  3
+ObjectDBX Classes
+ 90
+0
+ 91
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+LAYOUT
+  2
+AcDbLayout
+  3
+ObjectDBX Classes
+ 90
+0
+ 91
+0
+280
+0
+281
+0
+  0
+ENDSEC
+  0
+SECTION
+  2
+TABLES
+  0
+TABLE
+  2
+VPORT
+  5
+8
+330
+0
+100
+AcDbSymbolTable
+ 70
+1
+  0
+VPORT
+  5
+CF
+330
+8
+100
+AcDbSymbolTableRecord
+100
+AcDbViewportTableRecord
+  2
+*Active
+ 70
+0
+ 10
+0.0
+ 20
+0.0
+ 11
+1.0
+ 21
+1.0
+ 12
+210.0
+ 22
+148.5
+ 13
+0.0
+ 23
+0.0
+ 14
+0.5
+ 24
+0.5
+ 15
+0.5
+ 25
+0.5
+ 16
+0.0
+ 26
+0.0
+ 36
+1.0
+ 17
+0.0
+ 27
+0.0
+ 37
+0.0
+ 40
+310.0
+ 41
+1.34
+ 42
+50.0
+ 43
+0.0
+ 44
+0.0
+ 50
+0.0
+ 51
+0.0
+ 71
+0
+ 72
+1000
+ 73
+1
+ 74
+3
+ 75
+0
+ 76
+0
+ 77
+0
+ 78
+0
+281
+0
+ 65
+1
+110
+0.0
+120
+0.0
+130
+0.0
+111
+1.0
+121
+0.0
+131
+0.0
+112
+0.0
+122
+1.0
+132
+0.0
+ 79
+0
+146
+0.0
+  0
+ENDTAB
+  0
+TABLE
+  2
+LTYPE
+  5
+2
+330
+0
+100
+AcDbSymbolTable
+ 70
+3
+  0
+LTYPE
+  5
+24
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLinetypeTableRecord
+  2
+ByBlock
+ 70
+0
+  3
+
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+LTYPE
+  5
+25
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLinetypeTableRecord
+  2
+ByLayer
+ 70
+0
+  3
+
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+LTYPE
+  5
+26
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLinetypeTableRecord
+  2
+Continuous
+ 70
+0
+  3
+
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+ENDTAB
+  0
+TABLE
+  2
+LAYER
+  5
+1
+330
+0
+100
+AcDbSymbolTable
+ 70
+11
+  0
+LAYER
+  5
+27
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+0
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+-3
+390
+13
+347
+21
+  0
+LAYER
+  5
+28
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+Defpoints
+ 70
+0
+ 62
+7
+  6
+Continuous
+290
+0
+370
+-3
+390
+13
+347
+21
+  0
+LAYER
+  5
+31
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+BORDER
+ 70
+0
+ 62
+8
+  6
+Continuous
+370
+25
+390
+13
+347
+21
+  0
+LAYER
+  5
+32
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+TITLE
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+35
+390
+13
+347
+21
+  0
+LAYER
+  5
+33
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+TEXT
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+18
+390
+13
+347
+21
+  0
+LAYER
+  5
+34
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+EQUIPMENT
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+35
+390
+13
+347
+21
+  0
+LAYER
+  5
+35
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+MEASURED
+ 70
+0
+ 62
+5
+  6
+Continuous
+370
+25
+390
+13
+347
+21
+  0
+LAYER
+  5
+36
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+DIMENSIONS
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+18
+390
+13
+347
+21
+  0
+LAYER
+  5
+37
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+WARNINGS
+ 70
+0
+ 62
+1
+  6
+Continuous
+370
+25
+390
+13
+347
+21
+  0
+LAYER
+  5
+38
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+LOGOS
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+18
+390
+13
+347
+21
+  0
+LAYER
+  5
+39
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+ROUTES
+ 70
+0
+ 62
+3
+  6
+Continuous
+370
+25
+390
+13
+347
+21
+  0
+ENDTAB
+  0
+TABLE
+  2
+STYLE
+  5
+5
+330
+0
+100
+AcDbSymbolTable
+ 70
+1
+  0
+STYLE
+  5
+29
+330
+5
+100
+AcDbSymbolTableRecord
+100
+AcDbTextStyleTableRecord
+  2
+Standard
+ 70
+0
+ 40
+0.0
+ 41
+1.0
+ 50
+0.0
+ 71
+0
+ 42
+2.5
+  3
+Arial.ttf
+  4
+
+  0
+ENDTAB
+  0
+TABLE
+  2
+VIEW
+  5
+7
+330
+0
+100
+AcDbSymbolTable
+ 70
+0
+  0
+ENDTAB
+  0
+TABLE
+  2
+UCS
+  5
+6
+330
+0
+100
+AcDbSymbolTable
+ 70
+0
+  0
+ENDTAB
+  0
+TABLE
+  2
+APPID
+  5
+3
+330
+0
+100
+AcDbSymbolTable
+ 70
+4
+  0
+APPID
+  5
+2A
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+ACAD
+ 70
+0
+  0
+APPID
+  5
+2F
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+ISURVIX
+ 70
+0
+  0
+APPID
+  5
+D0
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+HATCHBACKGROUNDCOLOR
+ 70
+0
+  0
+APPID
+  5
+D1
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+EZDXF
+ 70
+0
+  0
+ENDTAB
+  0
+TABLE
+  2
+DIMSTYLE
+  5
+4
+330
+0
+100
+AcDbSymbolTable
+ 70
+2
+100
+AcDbDimStyleTable
+  0
+DIMSTYLE
+105
+2B
+330
+4
+100
+AcDbSymbolTableRecord
+100
+AcDbDimStyleTableRecord
+  2
+Standard
+ 70
+0
+ 40
+1.0
+ 41
+2.5
+ 42
+0.625
+ 43
+3.75
+ 44
+1.25
+ 45
+0.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+ 49
+2.5
+140
+2.5
+141
+2.5
+142
+0.0
+143
+0.03937007874
+144
+1.0
+145
+0.0
+146
+1.0
+147
+0.625
+148
+0.0
+ 69
+0
+ 70
+0
+ 71
+0
+ 72
+0
+ 73
+0
+ 74
+0
+ 75
+0
+ 76
+0
+ 77
+1
+ 78
+8
+ 79
+3
+170
+0
+171
+3
+172
+1
+173
+0
+174
+0
+175
+0
+176
+0
+177
+0
+178
+0
+179
+2
+271
+2
+272
+2
+273
+2
+274
+3
+275
+0
+276
+0
+277
+2
+278
+44
+279
+0
+280
+0
+281
+0
+282
+0
+283
+0
+284
+8
+285
+0
+286
+0
+288
+0
+289
+3
+290
+0
+371
+-2
+372
+-2
+  0
+DIMSTYLE
+105
+30
+330
+4
+100
+AcDbSymbolTableRecord
+100
+AcDbDimStyleTableRecord
+  2
+ISURVIX-MM
+ 70
+0
+ 40
+1.0
+ 41
+2.0
+ 42
+0.625
+ 43
+3.75
+ 44
+1.25
+ 45
+0.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+ 49
+2.5
+140
+2.5
+141
+2.5
+142
+0.0
+143
+0.03937007874
+144
+1.0
+145
+0.0
+146
+1.0
+147
+0.625
+148
+0.0
+ 69
+0
+ 70
+0
+ 71
+0
+ 72
+0
+ 73
+0
+ 74
+0
+ 75
+0
+ 76
+0
+ 77
+1
+ 78
+8
+ 79
+3
+170
+0
+171
+3
+172
+1
+173
+0
+174
+0
+175
+0
+176
+0
+177
+0
+178
+0
+179
+2
+271
+0
+272
+2
+273
+2
+274
+3
+275
+0
+276
+0
+277
+2
+278
+44
+279
+0
+280
+0
+281
+0
+282
+0
+283
+0
+284
+8
+285
+0
+286
+0
+288
+0
+289
+3
+290
+0
+371
+-2
+372
+-2
+  0
+ENDTAB
+  0
+TABLE
+  2
+BLOCK_RECORD
+  5
+9
+330
+0
+100
+AcDbSymbolTable
+ 70
+2
+  0
+BLOCK_RECORD
+  5
+17
+330
+9
+100
+AcDbSymbolTableRecord
+100
+AcDbBlockTableRecord
+  2
+*Model_Space
+340
+1A
+ 70
+0
+280
+1
+281
+0
+  0
+BLOCK_RECORD
+  5
+1B
+330
+9
+100
+AcDbSymbolTableRecord
+100
+AcDbBlockTableRecord
+  2
+*Paper_Space
+340
+1E
+ 70
+0
+280
+1
+281
+0
+  0
+ENDTAB
+  0
+ENDSEC
+  0
+SECTION
+  2
+BLOCKS
+  0
+BLOCK
+  5
+18
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockBegin
+  2
+*Model_Space
+ 70
+0
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  3
+*Model_Space
+  1
+
+  0
+ENDBLK
+  5
+19
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockEnd
+  0
+BLOCK
+  5
+1C
+330
+1B
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockBegin
+  2
+*Paper_Space
+ 70
+0
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  3
+*Paper_Space
+  1
+
+  0
+ENDBLK
+  5
+1D
+330
+1B
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockEnd
+  0
+ENDSEC
+  0
+SECTION
+  2
+ENTITIES
+  0
+LWPOLYLINE
+  5
+3B
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbPolyline
+ 90
+4
+ 70
+1
+ 10
+8.0
+ 20
+8.0
+ 10
+412.0
+ 20
+8.0
+ 10
+412.0
+ 20
+289.0
+ 10
+8.0
+ 20
+289.0
+1001
+ISURVIX
+1070
+0
+1000
+cb1fb35eeaf7a12759d482b25df1d189e72e93bbefb6534ada168c0d0c77d927
+  0
+TEXT
+  5
+3C
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+14.0
+ 20
+281.0
+ 30
+0.0
+ 40
+3.4
+  1
+iSurvix | Survey evidence drawings
+ 11
+14.0
+ 21
+281.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+1
+1000
+ca271b2b594b3ae20fe6758503c84dc2610f5b74b4599e1b82772ee4d62c1401
+  0
+TEXT
+  5
+3D
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+14.0
+ 20
+273.0
+ 30
+0.0
+ 40
+4.0
+  1
+SYNTHETIC-NATIVE-24 / Drawing register and verification notes
+ 11
+14.0
+ 21
+273.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+2
+1000
+eed1bf9da22cc86cd6f8272a3b937b4415ffbf4e6ce4251246d4b0feae7bfa1d
+  0
+LINE
+  5
+3E
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+268.0
+ 30
+0.0
+ 11
+406.0
+ 21
+268.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+3
+1000
+fabb2edcae13f57e73a1f627b903eeae108305477d5b7e630aa19b87d305120f
+  0
+TEXT
+  5
+3F
+330
+17
+100
+AcDbEntity
+  8
+WARNINGS
+100
+AcDbText
+ 10
+14.0
+ 20
+65.0
+ 30
+0.0
+ 40
+2.25
+  1
+Evidence record only. No structural capacity, electrical safety or code compliance assessment.
+ 11
+14.0
+ 21
+65.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+4
+1000
+d6fec610bc92615c3c311d14595c9451a92ca656b4d1a224aa79a65f24d77dfa
+  0
+TEXT
+  5
+40
+330
+17
+100
+AcDbEntity
+  8
+WARNINGS
+100
+AcDbText
+ 10
+14.0
+ 20
+59.5
+ 30
+0.0
+ 40
+2.25
+  1
+Unknown dimensions and concealed connections have not been inferred. Review sources before use.
+ 11
+14.0
+ 21
+59.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+5
+1000
+004c9358fcf4ea9352697f4e9a60d9628ec503209701074f1a0d9b75f864ed81
+  0
+TEXT
+  5
+41
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+14.0
+ 20
+48.0
+ 30
+0.0
+ 40
+2.2
+  1
+NORTH: not established unless recorded in the source.
+ 11
+14.0
+ 21
+48.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+6
+1000
+2d8cb346571a382f0af0a69bf609f24529efa5875ad74a5ebdf3ec2fdb33d0f8
+  0
+TEXT
+  5
+42
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+14.0
+ 20
+42.0
+ 30
+0.0
+ 40
+2.2
+  1
+Use the stated scale only. Do not scale evidence schedules.
+ 11
+14.0
+ 21
+42.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+7
+1000
+8c6d44eb90e7e07b274f46ca2cc9c734ef480f35bc5f8a00843ced347af0ac18
+  0
+TEXT
+  5
+43
+330
+17
+100
+AcDbEntity
+  8
+WARNINGS
+100
+AcDbText
+ 10
+14.0
+ 20
+263.0
+ 30
+0.0
+ 40
+2.5
+  1
+Survey documentation. Each drawing is evidence-bound and requires authorised technical review.
+ 11
+14.0
+ 21
+263.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+8
+1000
+3f9be0c641cc206160919869cb12c33902d8d3c9f37b0dfa4b77c5458f9486b6
+  0
+LWPOLYLINE
+  5
+44
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbPolyline
+ 90
+4
+ 70
+1
+ 10
+14.0
+ 20
+254.0
+ 10
+406.0
+ 20
+254.0
+ 10
+406.0
+ 20
+262.0
+ 10
+14.0
+ 20
+262.0
+1001
+ISURVIX
+1070
+9
+1000
+33f621203a1f95b3b96be9152eb848c17e742bf163389456f970ce9347a4f1d1
+  0
+TEXT
+  5
+45
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+16.0
+ 20
+256.3
+ 30
+0.0
+ 40
+2.5
+  1
+Recorded item
+ 11
+16.0
+ 21
+256.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+10
+1000
+e96e1ca678c2ebce4d19d35223bcbfbfde31f6397d361d8b8d5788003a83c618
+  0
+TEXT
+  5
+46
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+121.0
+ 20
+256.3
+ 30
+0.0
+ 40
+2.5
+  1
+Finding / verification status
+ 11
+121.0
+ 21
+256.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+11
+1000
+c29728252525b9fee56a34cdb450d04afeb1d2bd7c5d683dc17d0a8ca43521e3
+  0
+TEXT
+  5
+47
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+301.0
+ 20
+256.3
+ 30
+0.0
+ 40
+2.5
+  1
+Source evidence
+ 11
+301.0
+ 21
+256.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+12
+1000
+c13453eb96e35f87a269b601a879b7ee052a62861d33bd0f92b13c47b93f4f81
+  0
+LINE
+  5
+48
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+241.2
+ 30
+0.0
+ 11
+406.0
+ 21
+241.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+13
+1000
+376678b8cdf2528e26027dd0ca56122b67c6a2abe6fbe3badaa2a050bf030a87
+  0
+LINE
+  5
+49
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+254.0
+ 30
+0.0
+ 11
+14.0
+ 21
+241.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+14
+1000
+0ef47b46817bc9abf04169e9c14f5e49e76291c07424ac3709990ec9a7773f5a
+  0
+LINE
+  5
+4A
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+254.0
+ 30
+0.0
+ 11
+119.0
+ 21
+241.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+15
+1000
+bc8797f2a403e2cbd21762e036ecbd5fe070bdfdf33197f91add8b525c9d0e8a
+  0
+LINE
+  5
+4B
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+254.0
+ 30
+0.0
+ 11
+299.0
+ 21
+241.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+16
+1000
+0b02b3e2613e54c75b892db1aec339f88c493fd2a90b825fad44170cf6378270
+  0
+LINE
+  5
+4C
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+254.0
+ 30
+0.0
+ 11
+406.0
+ 21
+241.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+17
+1000
+0cb644ef6e590daf06dad4c32fd2d0b0784e3f3b38efbeb55bb276ce54ee836f
+  0
+TEXT
+  5
+4D
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+250.9
+ 30
+0.0
+ 40
+2.1
+  1
+SV-002 | Site layout
+ 11
+16.0
+ 21
+250.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+18
+1000
+393f4c263bd6254748645aabe0bc90b72106a8ba0491dd6f72d214603526fc4c
+  0
+TEXT
+  5
+4E
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+250.9
+ 30
+0.0
+ 40
+2.1
+  1
+1 sheet(s) | Evidence schedule only / Not to Scale
+ 11
+121.0
+ 21
+250.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+19
+1000
+fa99cc265003e076e8fa27d18fb7202c8e8770a5ae2cea82c1da3ad5d4969502
+  0
+TEXT
+  5
+4F
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+250.9
+ 30
+0.0
+ 40
+2.1
+  1
+1 recorded findings; sources linked in geometry.json
+ 11
+301.0
+ 21
+250.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+20
+1000
+fdf629222e4a99d42088c75750773dad49631fe3c3e7cf37e76558ba6dec01ee
+  0
+LINE
+  5
+50
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+228.4
+ 30
+0.0
+ 11
+406.0
+ 21
+228.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+21
+1000
+6bcfc8cfda58924993762991508535dbbd7e6dbd58b846dd4d61f2be12882be6
+  0
+LINE
+  5
+51
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+241.2
+ 30
+0.0
+ 11
+14.0
+ 21
+228.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+22
+1000
+815a53c2b81aae078517c46ab2a6b43c2991db79f8ee2ae3f63e1de4bfc5a115
+  0
+LINE
+  5
+52
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+241.2
+ 30
+0.0
+ 11
+119.0
+ 21
+228.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+23
+1000
+500e7291bbe7a135889b7b309582cd3042065fff0af8183f23354dffb3dd1b86
+  0
+LINE
+  5
+53
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+241.2
+ 30
+0.0
+ 11
+299.0
+ 21
+228.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+24
+1000
+48cc0d569bc4fea302b7687ba6367e2eb853f3d8adbdac7f675ff6af19ab7c9c
+  0
+LINE
+  5
+54
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+241.2
+ 30
+0.0
+ 11
+406.0
+ 21
+228.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+25
+1000
+5694af8e9bafa4020a57e7695efcc9423f8b5f1bf6b328e15b5b5bead2a6b3c3
+  0
+TEXT
+  5
+55
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+238.1
+ 30
+0.0
+ 40
+2.1
+  1
+SV-003 | Shelter, equipment and cable routes
+ 11
+16.0
+ 21
+238.1
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+26
+1000
+0a33ddebc257905ff818cbec505402bbe7625ed060552532cbaf08003feeac27
+  0
+TEXT
+  5
+56
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+238.1
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+238.1
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+27
+1000
+01af14a26a6e572983a1b4cd68a1819c85e89316b25ca4de22023d2ff4ba45f3
+  0
+TEXT
+  5
+57
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+238.1
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+238.1
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+28
+1000
+82b60e10cecdcf59dc836afb89007b81e242ea9aa66303050930091bb1ee7b9f
+  0
+LINE
+  5
+58
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+215.6
+ 30
+0.0
+ 11
+406.0
+ 21
+215.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+29
+1000
+97649594e8bf73e06bce25a44df5dea0f6d0739b1255dd84d1cfe95302070b7a
+  0
+LINE
+  5
+59
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+228.4
+ 30
+0.0
+ 11
+14.0
+ 21
+215.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+30
+1000
+122d098bda82da026e9fd029d4a101eab3e2f1b4880c466f3fe02c0f4fd3bd95
+  0
+LINE
+  5
+5A
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+228.4
+ 30
+0.0
+ 11
+119.0
+ 21
+215.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+31
+1000
+070196b9a0493edfc940b37571336223e8e44ca563e384a04859f9c06177b5f9
+  0
+LINE
+  5
+5B
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+228.4
+ 30
+0.0
+ 11
+299.0
+ 21
+215.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+32
+1000
+cacb6d3106363809390b2a2d420a4e194d9f49e1a1372ff80fe5f43059f1c1ff
+  0
+LINE
+  5
+5C
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+228.4
+ 30
+0.0
+ 11
+406.0
+ 21
+215.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+33
+1000
+551700ad16a0e60601b2f032b6221d3d7ee64023ee092e9106a07fce73012361
+  0
+TEXT
+  5
+5D
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+225.3
+ 30
+0.0
+ 40
+2.1
+  1
+SV-004 | Tower elevation, sections and platforms
+ 11
+16.0
+ 21
+225.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+34
+1000
+610a84f919eb066c78e00952645a87168c716fc79a9181b79508789bc36d9b95
+  0
+TEXT
+  5
+5E
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+225.3
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+225.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+35
+1000
+dbe2db8a93b6ef42fe1a58f40a8dc525c81a306cc595db61aee9b8f8f040797e
+  0
+TEXT
+  5
+5F
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+225.3
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+225.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+36
+1000
+3b48aaece470c8bb998c0484d6b1b522af335c764f32d51e0a952ba3fcc3d26f
+  0
+LINE
+  5
+60
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+202.8
+ 30
+0.0
+ 11
+406.0
+ 21
+202.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+37
+1000
+f53dbee63dfdb9f049ba61233df2ac1ee8378265077a348150c42dd54da00e76
+  0
+LINE
+  5
+61
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+215.6
+ 30
+0.0
+ 11
+14.0
+ 21
+202.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+38
+1000
+6bbf2a8eb89a94d405456b4f8838544107ff670ab3a836987023e3064e58e049
+  0
+LINE
+  5
+62
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+215.6
+ 30
+0.0
+ 11
+119.0
+ 21
+202.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+39
+1000
+d9b03d920f81370f1bf62c060c2508aed8100e50cadc5074e2b1dff37c704558
+  0
+LINE
+  5
+63
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+215.6
+ 30
+0.0
+ 11
+299.0
+ 21
+202.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+40
+1000
+0d5ccb0e6fea1a6888fd418adbd6d97e99470654b911f67690ca091c8bcdca3d
+  0
+LINE
+  5
+64
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+215.6
+ 30
+0.0
+ 11
+406.0
+ 21
+202.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+41
+1000
+4c7a64642f5088c552d13bca3ae2205a5bc5478c43683eff6c409b08afaae8e6
+  0
+TEXT
+  5
+65
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+212.5
+ 30
+0.0
+ 40
+2.1
+  1
+SV-005 | Antenna levels and sectors
+ 11
+16.0
+ 21
+212.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+42
+1000
+75958ca78f9149b393dd57730208c6f1a2f9d994a6c5460582f4c5b0ab14db66
+  0
+TEXT
+  5
+66
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+212.5
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+212.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+43
+1000
+ddd36d4acb44d8aa2a653bfdaecc1148ad205e418ef45e2da65e7a34ed9757db
+  0
+TEXT
+  5
+67
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+212.5
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+212.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+44
+1000
+bd551298daa46b8b91bb5da0626e2d8a65f199f2e3d7135db4c15fce677cae9a
+  0
+LINE
+  5
+68
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+190.0
+ 30
+0.0
+ 11
+406.0
+ 21
+190.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+45
+1000
+ac1646972981e8413d283762efc6cf60917246914298d6f619c3f4064727e813
+  0
+LINE
+  5
+69
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+202.8
+ 30
+0.0
+ 11
+14.0
+ 21
+190.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+46
+1000
+a698a896240524eb29fc6ca9af44f443cbac332c848ba8fc9d0fdc6de49adba7
+  0
+LINE
+  5
+6A
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+202.8
+ 30
+0.0
+ 11
+119.0
+ 21
+190.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+47
+1000
+8ba0406131f79695e77d0d90636e42fdbac3f0ba6e78b634abaf78ec0ce6d6da
+  0
+LINE
+  5
+6B
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+202.8
+ 30
+0.0
+ 11
+299.0
+ 21
+190.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+48
+1000
+f195ee4547a80de54c47ed655f060d27f62d39a24e53025dfd412753591085d6
+  0
+LINE
+  5
+6C
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+202.8
+ 30
+0.0
+ 11
+406.0
+ 21
+190.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+49
+1000
+9b2c73c646cc684a1d5ae434a7a4c0d1639dac9805977877070889f8fe60bfa8
+  0
+TEXT
+  5
+6D
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+199.7
+ 30
+0.0
+ 40
+2.1
+  1
+SV-006 | Equipment schedule and mounting records
+ 11
+16.0
+ 21
+199.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+50
+1000
+6a3b896c10590f141ea18f9b5c1451f793df39836b207afba8532decc35c7e82
+  0
+TEXT
+  5
+6E
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+199.7
+ 30
+0.0
+ 40
+2.1
+  1
+1 sheet(s) | Evidence schedule only / Not to Scale
+ 11
+121.0
+ 21
+199.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+51
+1000
+9440fa413675fb63eed2a365b3bf31d8bbf43fcfa5aa4522dd79a93849cbcb76
+  0
+TEXT
+  5
+6F
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+199.7
+ 30
+0.0
+ 40
+2.1
+  1
+2 recorded findings; sources linked in geometry.json
+ 11
+301.0
+ 21
+199.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+52
+1000
+52b466ed89ce47b43cb229ac1cfa8ff6821e6cd5ca147d281b29ebc21f7e6462
+  0
+LINE
+  5
+70
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+177.2
+ 30
+0.0
+ 11
+406.0
+ 21
+177.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+53
+1000
+d6ed10128d42f92f3a37426a6a99924f5f0fb28f9ff8b7e793b9383a528b46a5
+  0
+LINE
+  5
+71
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+190.0
+ 30
+0.0
+ 11
+14.0
+ 21
+177.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+54
+1000
+1ae64a85b4e68015270784ba77512a31e0213a176ea63ca09cabee02d5925c49
+  0
+LINE
+  5
+72
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+190.0
+ 30
+0.0
+ 11
+119.0
+ 21
+177.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+55
+1000
+95aace5d292561052bc6cac7d756fda3c4bf6ec42a6c59ff8422d4be0f48f700
+  0
+LINE
+  5
+73
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+190.0
+ 30
+0.0
+ 11
+299.0
+ 21
+177.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+56
+1000
+6420cf3fca28e03488b8e36d56dc4d0f58f467d1cc34b1937e885cc8330e41d4
+  0
+LINE
+  5
+74
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+190.0
+ 30
+0.0
+ 11
+406.0
+ 21
+177.2
+ 31
+0.0
+1001
+ISURVIX
+1070
+57
+1000
+1ed53c61a21f76bf71b5bc7e5de5229d0c634cf1a6c2a07664d8b2f629ec272d
+  0
+TEXT
+  5
+75
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+186.9
+ 30
+0.0
+ 40
+2.1
+  1
+SV-007 | Enlarged mounting connections
+ 11
+16.0
+ 21
+186.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+58
+1000
+3ddff1dadbb515d894c1ce040194b49fe4b8ef39159c7bc5f8c173fbf927cbca
+  0
+TEXT
+  5
+76
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+186.9
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+186.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+59
+1000
+6bc7a71c8a09df9b71f7d72061a6b1e91321c126454067a547c4096e8a96c015
+  0
+TEXT
+  5
+77
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+186.9
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+186.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+60
+1000
+0dfbdaacca92ca982505d0f5b9ed2bbdaaa4878d02acaa8595f21790f33ac6d5
+  0
+LINE
+  5
+78
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+164.4
+ 30
+0.0
+ 11
+406.0
+ 21
+164.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+61
+1000
+63ebd368cb4ad290ca210b29c4b88f5af812b03965861bae6f1b3f79c350ed55
+  0
+LINE
+  5
+79
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+177.2
+ 30
+0.0
+ 11
+14.0
+ 21
+164.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+62
+1000
+d56ab1bffe25596cfa57904b1d2cb652448790de8115d425236a1c4773cd49ab
+  0
+LINE
+  5
+7A
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+177.2
+ 30
+0.0
+ 11
+119.0
+ 21
+164.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+63
+1000
+4153c6b79e5dd520b357cc53fe5ef620525a57d7fa1239029b619eb0739ff880
+  0
+LINE
+  5
+7B
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+177.2
+ 30
+0.0
+ 11
+299.0
+ 21
+164.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+64
+1000
+6c45a0c2b69465ff984223db51bb4b9aaa409cb616aa8d0f972587bc3f0c363f
+  0
+LINE
+  5
+7C
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+177.2
+ 30
+0.0
+ 11
+406.0
+ 21
+164.4
+ 31
+0.0
+1001
+ISURVIX
+1070
+65
+1000
+fcb67ff3bd6d5b949913415e15793ca0567a9d490eaf2191891b96b36f2c869e
+  0
+TEXT
+  5
+7D
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+174.1
+ 30
+0.0
+ 40
+2.1
+  1
+SV-008 | Power single-line records
+ 11
+16.0
+ 21
+174.1
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+66
+1000
+4ad5cb8fe68a3d4deb7ff8924a7ed77baa7a67b75bad85c132fc5451cece9b85
+  0
+TEXT
+  5
+7E
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+174.1
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+174.1
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+67
+1000
+ba94c22a9c04364a39326f18e1f7014f3a5993be0a41c6d18a06edcf107ebc0e
+  0
+TEXT
+  5
+7F
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+174.1
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+174.1
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+68
+1000
+303eb37928348c0d62e9ae1fc25cf043335a1078d0d224065dd4fd070e3423ad
+  0
+LINE
+  5
+80
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+151.6
+ 30
+0.0
+ 11
+406.0
+ 21
+151.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+69
+1000
+5ea18ec4a0f24f06148b029c611652a21f8407caea74eb0940d32bfc75a1e097
+  0
+LINE
+  5
+81
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+164.4
+ 30
+0.0
+ 11
+14.0
+ 21
+151.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+70
+1000
+857dfda1b55ab5047dee63fe99f5392a979eafc2cb449b94da97b8e7407314b8
+  0
+LINE
+  5
+82
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+164.4
+ 30
+0.0
+ 11
+119.0
+ 21
+151.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+71
+1000
+92883b99781575d6ad543a54815a83a801960917f29ff3db4067a38c675da2a0
+  0
+LINE
+  5
+83
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+164.4
+ 30
+0.0
+ 11
+299.0
+ 21
+151.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+72
+1000
+fec9f480e2a7708fe2092aabcebdecae666eb6e497cd3223462997ae921490b5
+  0
+LINE
+  5
+84
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+164.4
+ 30
+0.0
+ 11
+406.0
+ 21
+151.6
+ 31
+0.0
+1001
+ISURVIX
+1070
+73
+1000
+723d0fbb68a99055253b00dcfef5f2a618a14a234192566a2bd795bbad075d7c
+  0
+TEXT
+  5
+85
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+161.3
+ 30
+0.0
+ 40
+2.1
+  1
+SV-009 | Rectifier and MDB distribution
+ 11
+16.0
+ 21
+161.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+74
+1000
+ae6caeeb2766a43e477f3b7ed0c605ebe354c7eb81b2c7edd1f09ef614b9d7bc
+  0
+TEXT
+  5
+86
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+161.3
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+161.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+75
+1000
+6fdcaa991c2003a0438bf41f25fc1d22d03e05bdc7758d2b4a0858f3a00a0de1
+  0
+TEXT
+  5
+87
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+161.3
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+161.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+76
+1000
+e64aeccdf63e106df4614cb5e010e11cd936ebf45a84c79707a7c68757367dc8
+  0
+LINE
+  5
+88
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+138.8
+ 30
+0.0
+ 11
+406.0
+ 21
+138.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+77
+1000
+e6a0c091e641e15492b517dceae256c3b5d84b0589714beb1724a271a6632f31
+  0
+LINE
+  5
+89
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+151.6
+ 30
+0.0
+ 11
+14.0
+ 21
+138.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+78
+1000
+910600fd75e5354f6cb877a8228115405cb8d157d8f57d573d5306749c085f75
+  0
+LINE
+  5
+8A
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+151.6
+ 30
+0.0
+ 11
+119.0
+ 21
+138.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+79
+1000
+e92fbd1ad7a682e0c42d834c73be6ed3b3263cb03dbb5384eda315038e28f4c3
+  0
+LINE
+  5
+8B
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+151.6
+ 30
+0.0
+ 11
+299.0
+ 21
+138.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+80
+1000
+d4bb4e759f6d7ea2f8891421dbdd91c4ee1d919718c4b00b8f3e20d0688bd78e
+  0
+LINE
+  5
+8C
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+151.6
+ 30
+0.0
+ 11
+406.0
+ 21
+138.8
+ 31
+0.0
+1001
+ISURVIX
+1070
+81
+1000
+26419ef29b0676609adcb23cefeac9e6c9a6d79c3b7d603fabfa5106680ca944
+  0
+TEXT
+  5
+8D
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+148.5
+ 30
+0.0
+ 40
+2.1
+  1
+SV-010 | Roxtec and hatchplate arrangements
+ 11
+16.0
+ 21
+148.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+82
+1000
+b5d03a51f8ee54baac37b068d7eeef14fa343a31838b70460bb7f3331f7a2d0a
+  0
+TEXT
+  5
+8E
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+148.5
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+148.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+83
+1000
+9f5d4c61d733d4f7a53619892c52e50701393e87e689faf68ad7e6ffc3ef6d4e
+  0
+TEXT
+  5
+8F
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+148.5
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+148.5
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+84
+1000
+be4ca872c7f3e9563416fbae23a262b5cac15c153c61d6b1bfcfaa9a6aa370fa
+  0
+LINE
+  5
+90
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+126.0
+ 30
+0.0
+ 11
+406.0
+ 21
+126.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+85
+1000
+0d688f245fb4ae2031608d74f540ad4509f0eb7c4733972cdbd8be27ccba149c
+  0
+LINE
+  5
+91
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+138.8
+ 30
+0.0
+ 11
+14.0
+ 21
+126.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+86
+1000
+2c2606fe0c0a6134cb15e31fcbc4e78edbf1d0cd03b2fad6958e09134ae6163d
+  0
+LINE
+  5
+92
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+138.8
+ 30
+0.0
+ 11
+119.0
+ 21
+126.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+87
+1000
+5ecbcdc309f1a2d3db52b40a86fd6231c82b96ae893aa5a50a54ce148427e131
+  0
+LINE
+  5
+93
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+138.8
+ 30
+0.0
+ 11
+299.0
+ 21
+126.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+88
+1000
+eb455c403fdeb8c04cd38870bcc90dace4ffbcd4387f0710f502fcb3ef78b1bc
+  0
+LINE
+  5
+94
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+138.8
+ 30
+0.0
+ 11
+406.0
+ 21
+126.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+89
+1000
+2f16d309cf8c0ed9aac5e553ac805114e400c0a0af20e96a04130eb31d896c76
+  0
+TEXT
+  5
+95
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+135.7
+ 30
+0.0
+ 40
+2.1
+  1
+SV-011 | Grounding arrangement
+ 11
+16.0
+ 21
+135.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+90
+1000
+7ddb66822dbff492f4bd29c4e0993235b7de3acc097b42bf9eb9f517d659e806
+  0
+TEXT
+  5
+96
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+135.7
+ 30
+0.0
+ 40
+2.1
+  1
+Not generated - supporting information missing
+ 11
+121.0
+ 21
+135.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+91
+1000
+5fd843c767761c5ac9031f15240d72cf10f984feb37f3832837d7673a7fd799d
+  0
+TEXT
+  5
+97
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+135.7
+ 30
+0.0
+ 40
+2.1
+  1
+No geometry or connections assumed
+ 11
+301.0
+ 21
+135.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+92
+1000
+7bb3d793562ba407c3196eefcf1777caa3682106474c9a3e10a39d49988291dc
+  0
+LWPOLYLINE
+  5
+98
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbPolyline
+ 90
+4
+ 70
+1
+ 10
+14.0
+ 20
+107.0
+ 10
+406.0
+ 20
+107.0
+ 10
+406.0
+ 20
+115.0
+ 10
+14.0
+ 20
+115.0
+1001
+ISURVIX
+1070
+93
+1000
+3d9d8e0c1b689e9434da6679f7b4fb45537e32a6f565064ba2a8b86adc2bc781
+  0
+TEXT
+  5
+99
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+16.0
+ 20
+109.3
+ 30
+0.0
+ 40
+2.5
+  1
+Recorded item
+ 11
+16.0
+ 21
+109.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+94
+1000
+3f31253af3f2551d2fc6e959b97109a5d97139033ad332355d12bacb9498f316
+  0
+TEXT
+  5
+9A
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+121.0
+ 20
+109.3
+ 30
+0.0
+ 40
+2.5
+  1
+Finding / verification status
+ 11
+121.0
+ 21
+109.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+95
+1000
+f7d9e7bf7e3522d63c15f307ec8435f80eb1a047804df93127cad7a5bce135f9
+  0
+TEXT
+  5
+9B
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+301.0
+ 20
+109.3
+ 30
+0.0
+ 40
+2.5
+  1
+Source evidence
+ 11
+301.0
+ 21
+109.3
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+96
+1000
+ba13ce97bb67d0352ca13eed930b6c76a29ab356ca71e1c99c77f087d9c68a2e
+  0
+LINE
+  5
+9C
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+99.0
+ 30
+0.0
+ 11
+406.0
+ 21
+99.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+97
+1000
+58ff5f7e5370288ad3224ced70e13aa72085b22dd14590ca6edb4953f7850bfe
+  0
+LINE
+  5
+9D
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+107.0
+ 30
+0.0
+ 11
+14.0
+ 21
+99.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+98
+1000
+3da889ab21aab194cf14ead612e12a1a1fef93eece83457e329e55d44745f000
+  0
+LINE
+  5
+9E
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+107.0
+ 30
+0.0
+ 11
+119.0
+ 21
+99.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+99
+1000
+c122fd2bce690b5979dcf84f109fdb7f961399a7d1c4cb9b525df3162dc8d1db
+  0
+LINE
+  5
+9F
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+107.0
+ 30
+0.0
+ 11
+299.0
+ 21
+99.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+100
+1000
+15da0d130d11fd95618123be51233a57895a44f4a60065081fac33d115399f85
+  0
+LINE
+  5
+A0
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+107.0
+ 30
+0.0
+ 11
+406.0
+ 21
+99.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+101
+1000
+a173871311b7b2cd415dc5648ebf398ea8b0e8f28c4037d732394d953bede625
+  0
+TEXT
+  5
+A1
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+103.9
+ 30
+0.0
+ 40
+2.1
+  1
+Design basis
+ 11
+16.0
+ 21
+103.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+102
+1000
+1a7cf339b2225beec3a50395f6c1d414df35afcc5bda4d8ee2fc9b24020b5495
+  0
+TEXT
+  5
+A2
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+103.9
+ 30
+0.0
+ 40
+2.1
+  1
+No structural/electrical design performed. No governing design code or load combinations claimed.
+ 11
+121.0
+ 21
+103.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+103
+1000
+b01b26edca8661894ff94b77ecbb3ca21f11ca74d80ba1309b542ee81db8b40b
+  0
+TEXT
+  5
+A3
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+103.9
+ 30
+0.0
+ 40
+2.1
+  1
+A design basis and separate calculations are needed for engineering design.
+ 11
+301.0
+ 21
+103.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+104
+1000
+461b5fefe0726290e86f113d396f11433053d8420df303126974627a59df500f
+  0
+LINE
+  5
+A4
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+91.0
+ 30
+0.0
+ 11
+406.0
+ 21
+91.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+105
+1000
+7fd6695f883924c07fee1d1045004602ce2ec4150ab8007fbe30a30d793134ba
+  0
+LINE
+  5
+A5
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+99.0
+ 30
+0.0
+ 11
+14.0
+ 21
+91.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+106
+1000
+365f4518c01003c5c5b0b4761571e8d173e6e8190f5f076d27ffc1e071ff2eaa
+  0
+LINE
+  5
+A6
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+99.0
+ 30
+0.0
+ 11
+119.0
+ 21
+91.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+107
+1000
+d0ffb690b7e08d11407e89b5d98a491aea6fe620600ac9afc7a0acb92b393e44
+  0
+LINE
+  5
+A7
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+99.0
+ 30
+0.0
+ 11
+299.0
+ 21
+91.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+108
+1000
+c3bd2057483f08215f2dd7a28863e4921df17fda360ed01c7748dccf68c5762a
+  0
+LINE
+  5
+A8
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+99.0
+ 30
+0.0
+ 11
+406.0
+ 21
+91.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+109
+1000
+f5a1de0b3f0d59aed1e0ef193b73dbf975d0f651204ca8f5529083edc829774a
+  0
+TEXT
+  5
+A9
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+95.9
+ 30
+0.0
+ 40
+2.1
+  1
+Survey origin
+ 11
+16.0
+ 21
+95.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+110
+1000
+ca5c8cc70156838a654959530cb22e8288ab870460f8273e0264c9931167238d
+  0
+TEXT
+  5
+AA
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+95.9
+ 30
+0.0
+ 40
+2.1
+  1
+Survey 1 | 2026-10-24
+ 11
+121.0
+ 21
+95.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+111
+1000
+37afa515e7d5bfd3c05879d8ae9948279d690582f9cc431b846a398871a80072
+  0
+TEXT
+  5
+AB
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+95.9
+ 30
+0.0
+ 40
+2.1
+  1
+2 linked evidence references
+ 11
+301.0
+ 21
+95.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+112
+1000
+75c010682f44b3157625b2926b1af83a33db535c1e1a43362d4988c3aefbaa27
+  0
+LINE
+  5
+AC
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+83.0
+ 30
+0.0
+ 11
+406.0
+ 21
+83.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+113
+1000
+cea59f9fe28eede4a314181021a60729b8b35ed75c9995b74f3b3852e6d86439
+  0
+LINE
+  5
+AD
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+91.0
+ 30
+0.0
+ 11
+14.0
+ 21
+83.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+114
+1000
+3e4db2135cdf2d0121ffc136a5b91d80d3a6c299ec13cb0feef4c23e7a7d94a7
+  0
+LINE
+  5
+AE
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+91.0
+ 30
+0.0
+ 11
+119.0
+ 21
+83.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+115
+1000
+714ecf44663244526f8a7ba208f263211629942733516c69f0d24de12d8fb6ab
+  0
+LINE
+  5
+AF
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+91.0
+ 30
+0.0
+ 11
+299.0
+ 21
+83.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+116
+1000
+8055f66d4cc5c1c96b96ee7c982e759887d812b482120b33589b26d3200400cb
+  0
+LINE
+  5
+B0
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+91.0
+ 30
+0.0
+ 11
+406.0
+ 21
+83.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+117
+1000
+c85c9fa08ad5cfc088dfd2f6365bc44de0ee4cd706d36e3188bf2eec09592d32
+  0
+TEXT
+  5
+B1
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+87.9
+ 30
+0.0
+ 40
+2.1
+  1
+Drawing symbols
+ 11
+16.0
+ 21
+87.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+118
+1000
+b90ccdc045547262249b9153944da3fbeabacda45c8e341c14044698a8d6c817
+  0
+TEXT
+  5
+B2
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+87.9
+ 30
+0.0
+ 40
+2.1
+  1
+isurvix-generic-symbols-1
+ 11
+121.0
+ 21
+87.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+119
+1000
+2ba84c825b01590c3d295e3e1dcc405c7ccfefb3d4458acc7d01cc87a64623bc
+  0
+TEXT
+  5
+B3
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+87.9
+ 30
+0.0
+ 40
+2.1
+  1
+Generic measured envelopes; Typical - verify against site.
+ 11
+301.0
+ 21
+87.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+120
+1000
+31b4189ff5b1bc4d58e91130da805a16a97318288c71b6e0eeba3bbc7130362d
+  0
+LINE
+  5
+B4
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+75.0
+ 30
+0.0
+ 11
+406.0
+ 21
+75.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+121
+1000
+e58b0972acbe33db836e97311c9570d481229264c10501fad04bb7914b152681
+  0
+LINE
+  5
+B5
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+14.0
+ 20
+83.0
+ 30
+0.0
+ 11
+14.0
+ 21
+75.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+122
+1000
+3daee4803961078cd8d207fe21e6feac354fdb934872e6bdfb332cfc7948c39a
+  0
+LINE
+  5
+B6
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+119.0
+ 20
+83.0
+ 30
+0.0
+ 11
+119.0
+ 21
+75.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+123
+1000
+f30d8db490ed0d4cc190b9c6e93bd9165b49c7415cca6f67b5a72e24b4637289
+  0
+LINE
+  5
+B7
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+299.0
+ 20
+83.0
+ 30
+0.0
+ 11
+299.0
+ 21
+75.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+124
+1000
+a3bad641e7a981eda4ba6990cf284fe0bbab5215834650a32808365b57855eeb
+  0
+LINE
+  5
+B8
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+406.0
+ 20
+83.0
+ 30
+0.0
+ 11
+406.0
+ 21
+75.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+125
+1000
+b19ebdbc9c45674547a4a33a48149a825d9281976ecfdf25403a23e8371e61c1
+  0
+TEXT
+  5
+B9
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+16.0
+ 20
+79.9
+ 30
+0.0
+ 40
+2.1
+  1
+Verification
+ 11
+16.0
+ 21
+79.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+126
+1000
+6f0b2ea1643c96706ab6c44c961c306e7395abd8f3c9364c7ac4f376c0115c66
+  0
+TEXT
+  5
+BA
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+121.0
+ 20
+79.9
+ 30
+0.0
+ 40
+2.1
+  1
+8 missing sheet categories; 0 warnings
+ 11
+121.0
+ 21
+79.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+127
+1000
+6d222e71fe826abc1fb7451f60e2b9755eb206af445f653641852f5155c4ec85
+  0
+TEXT
+  5
+BB
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+301.0
+ 20
+79.9
+ 30
+0.0
+ 40
+2.1
+  1
+Review missing information and conflicts before release.
+ 11
+301.0
+ 21
+79.9
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+128
+1000
+53675f76f9ee24fb5b192075fe7f5eb0c7e6e2c10da4748ec89afb18db399d18
+  0
+LWPOLYLINE
+  5
+BC
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbPolyline
+ 90
+4
+ 70
+1
+ 10
+214.0
+ 20
+8.0
+ 10
+412.0
+ 20
+8.0
+ 10
+412.0
+ 20
+62.0
+ 10
+214.0
+ 20
+62.0
+1001
+ISURVIX
+1070
+129
+1000
+656d88fd939e1742dea4b20a1e7ca784fee1f0b6f2ea4ce9211b4eee13e5262e
+  0
+LINE
+  5
+BD
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+214.0
+ 20
+18.0
+ 30
+0.0
+ 11
+412.0
+ 21
+18.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+130
+1000
+819c6ad335deabbbbe8bd8c503a0b148f15cfe95daa480cd4fe998ce7777f057
+  0
+LINE
+  5
+BE
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+214.0
+ 20
+30.0
+ 30
+0.0
+ 11
+412.0
+ 21
+30.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+131
+1000
+6f702d9135b275c1e41a14fe79734ab6aaa7363829279ff8980411f8aad31bd6
+  0
+LINE
+  5
+BF
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+214.0
+ 20
+42.0
+ 30
+0.0
+ 11
+412.0
+ 21
+42.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+132
+1000
+e288a21e1f0a942c901ce2151489db93ce4783d6083f1553ca194e14c935d4c0
+  0
+LINE
+  5
+C0
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+214.0
+ 20
+52.0
+ 30
+0.0
+ 11
+412.0
+ 21
+52.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+133
+1000
+d9158c72d74dd4679fef8384aaa45890c3e8068a94008bcc95dc267db28defbc
+  0
+LINE
+  5
+C1
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+280.0
+ 20
+8.0
+ 30
+0.0
+ 11
+280.0
+ 21
+18.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+134
+1000
+167024d6656069c57cf9986ce5e8c3af6aa97cbbf58343bcfb0644497fa444f8
+  0
+LINE
+  5
+C2
+330
+17
+100
+AcDbEntity
+  8
+BORDER
+100
+AcDbLine
+ 10
+346.0
+ 20
+8.0
+ 30
+0.0
+ 11
+346.0
+ 21
+18.0
+ 31
+0.0
+1001
+ISURVIX
+1070
+135
+1000
+7e04b09eed1b6140d875e6e0dda27b2986d12dfbbf8bec08514b68155692bba0
+  0
+TEXT
+  5
+C3
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+217.0
+ 20
+55.0
+ 30
+0.0
+ 40
+2.4
+  1
+Project: SYNTHETIC native project
+ 11
+217.0
+ 21
+55.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+136
+1000
+923858ebbd03cf062f9443efe1f479da82161470daf89831ad820ee7b12f5543
+  0
+TEXT
+  5
+C4
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+217.0
+ 20
+45.0
+ 30
+0.0
+ 40
+2.6
+  1
+Site: SYNTHETIC-NATIVE-24
+ 11
+217.0
+ 21
+45.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+137
+1000
+d7d83032718528461b6b9d51c554a05d1e5d35e54a7c56354341e08e33d5959d
+  0
+TEXT
+  5
+C5
+330
+17
+100
+AcDbEntity
+  8
+TITLE
+100
+AcDbText
+ 10
+217.0
+ 20
+34.0
+ 30
+0.0
+ 40
+2.6
+  1
+Drawing register and verification notes
+ 11
+217.0
+ 21
+34.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+138
+1000
+3c46e541ceddc274ea1d606a679f4d4a5288e5be588fcde1deb8eedc3f4d6526
+  0
+TEXT
+  5
+C6
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+217.0
+ 20
+25.0
+ 30
+0.0
+ 40
+2.2
+  1
+SV-001 | Rev 001 | 2026-10-24 | Sheet 1/3
+ 11
+217.0
+ 21
+25.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+139
+1000
+ad91eb88c4bd5d8c9905beeb5ff8fb338cfde40b56d24f0e79916b7872183410
+  0
+TEXT
+  5
+C7
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+217.0
+ 20
+20.7
+ 30
+0.0
+ 40
+2.1
+  1
+Scale: Not to Scale
+ 11
+217.0
+ 21
+20.7
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+140
+1000
+3415482f006ed5ca68a76210f4be7df45a0625f34c967c23579731f37439537b
+  0
+TEXT
+  5
+C8
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+216.0
+ 20
+12.0
+ 30
+0.0
+ 40
+2.1
+  1
+Prepared: synthetic_native_engineer
+ 11
+216.0
+ 21
+12.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+141
+1000
+7ebd450a897792a9b3be3003cd0df95571c78dd0ed20bb0cc50e7036a36d3c3c
+  0
+TEXT
+  5
+C9
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+282.0
+ 20
+12.0
+ 30
+0.0
+ 40
+2.1
+  1
+Checked: Pending human review
+ 11
+282.0
+ 21
+12.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+142
+1000
+1965803316c3b40588bcc937a58bc74ffabab99b8d761702963e58df5f76baf3
+  0
+TEXT
+  5
+CA
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+348.0
+ 20
+12.0
+ 30
+0.0
+ 40
+2.1
+  1
+Approved: Not released
+ 11
+348.0
+ 21
+12.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+143
+1000
+4cee8bb4c75f80472f8f1d75095bd256c6e990e90a99ce956d8388382a60d3ab
+  0
+TEXT
+  5
+CB
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+14.0
+ 20
+32.0
+ 30
+0.0
+ 40
+2.2
+  1
+Revision 001 | 2026-10-24 | Initial / updated review issue
+ 11
+14.0
+ 21
+32.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+144
+1000
+a842288eabb37bb8cf3cba22fd865c434a5e68f23e21bd29c312bd690d020bc0
+  0
+TEXT
+  5
+CC
+330
+17
+100
+AcDbEntity
+  8
+TEXT
+100
+AcDbText
+ 10
+14.0
+ 20
+26.0
+ 30
+0.0
+ 40
+2.2
+  1
+Previous output revisions remain preserved in the survey history.
+ 11
+14.0
+ 21
+26.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+145
+1000
+540ade20fc53f5b9874ae8940b5c510232c7e014f25c3347c9b8a89308d7f788
+  0
+TEXT
+  5
+CD
+330
+17
+100
+AcDbEntity
+  8
+WARNINGS
+100
+AcDbText
+ 10
+14.0
+ 20
+12.0
+ 30
+0.0
+ 40
+3.4
+  1
+DRAFT - FOR REVIEW
+ 11
+14.0
+ 21
+12.0
+ 31
+0.0
+100
+AcDbText
+1001
+ISURVIX
+1070
+146
+1000
+72ee5dc06318dd510224b7e781b0e53fcfc1c0adbeceaac0e3e46743786f3031
+  0
+VIEWPORT
+  5
+CE
+330
+1B
+100
+AcDbEntity
+ 67
+1
+  8
+VIEWPORTS
+100
+AcDbViewport
+ 10
+210.0
+ 20
+148.5
+ 30
+0.0
+ 40
+462.00000000000006
+ 41
+326.70000000000005
+ 68
+1
+ 69
+1
+ 12
+210.0
+ 22
+148.5
+ 13
+0.0
+ 23
+0.0
+ 14
+10.0
+ 24
+10.0
+ 15
+10.0
+ 25
+10.0
+ 16
+0.0
+ 26
+0.0
+ 36
+1.0
+ 17
+0.0
+ 27
+0.0
+ 37
+0.0
+ 42
+50.0
+ 43
+0.0
+ 44
+0.0
+ 45
+326.70000000000005
+ 50
+0.0
+ 51
+0.0
+ 72
+100
+ 90
+557088
+  1
+
+281
+0
+ 71
+0
+ 74
+0
+110
+0.0
+120
+0.0
+130
+0.0
+111
+1.0
+121
+0.0
+131
+0.0
+112
+0.0
+122
+1.0
+132
+0.0
+ 79
+0
+146
+0.0
+282
+0
+  0
+ENDSEC
+  0
+SECTION
+  2
+OBJECTS
+  0
+DICTIONARY
+  5
+A
+330
+0
+100
+AcDbDictionary
+281
+1
+  3
+ACAD_COLOR
+350
+B
+  3
+ACAD_GROUP
+350
+C
+  3
+ACAD_LAYOUT
+350
+D
+  3
+ACAD_MATERIAL
+350
+E
+  3
+ACAD_MLEADERSTYLE
+350
+F
+  3
+ACAD_MLINESTYLE
+350
+10
+  3
+ACAD_PLOTSETTINGS
+350
+11
+  3
+ACAD_PLOTSTYLENAME
+350
+12
+  3
+ACAD_SCALELIST
+350
+14
+  3
+ACAD_TABLESTYLE
+350
+15
+  3
+ACAD_VISUALSTYLE
+350
+16
+  3
+EZDXF_META
+350
+2D
+  3
+ISURVIX_GEOMETRY
+350
+3A
+  0
+DICTIONARY
+  5
+B
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+C
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+D
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Model
+350
+1A
+  3
+Layout1
+350
+1E
+  0
+DICTIONARY
+  5
+E
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+ByBlock
+350
+1F
+  3
+ByLayer
+350
+20
+  3
+Global
+350
+21
+  0
+DICTIONARY
+  5
+F
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Standard
+350
+2C
+  0
+DICTIONARY
+  5
+10
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Standard
+350
+22
+  0
+DICTIONARY
+  5
+11
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+ACDBDICTIONARYWDFLT
+  5
+12
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Normal
+350
+13
+100
+AcDbDictionaryWithDefault
+340
+13
+  0
+ACDBPLACEHOLDER
+  5
+13
+330
+12
+  0
+DICTIONARY
+  5
+14
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+15
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+16
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+LAYOUT
+  5
+1A
+330
+D
+100
+AcDbPlotSettings
+  1
+
+  4
+A3
+  6
+
+ 40
+7.5
+ 41
+20.0
+ 42
+7.5
+ 43
+20.0
+ 44
+420.0
+ 45
+297.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+ 49
+0.0
+140
+0.0
+141
+0.0
+142
+1.0
+143
+1.0
+ 70
+1024
+ 72
+1
+ 73
+0
+ 74
+5
+  7
+
+ 75
+16
+ 76
+0
+ 77
+2
+ 78
+300
+147
+1.0
+148
+0.0
+149
+0.0
+100
+AcDbLayout
+  1
+Model
+ 70
+1
+ 71
+0
+ 10
+0.0
+ 20
+0.0
+ 11
+420.0
+ 21
+297.0
+ 12
+0.0
+ 22
+0.0
+ 32
+0.0
+ 14
+1e+20
+ 24
+1e+20
+ 34
+1e+20
+ 15
+-1e+20
+ 25
+-1e+20
+ 35
+-1e+20
+146
+0.0
+ 13
+0.0
+ 23
+0.0
+ 33
+0.0
+ 16
+1.0
+ 26
+0.0
+ 36
+0.0
+ 17
+0.0
+ 27
+1.0
+ 37
+0.0
+ 76
+1
+330
+17
+  0
+LAYOUT
+  5
+1E
+330
+D
+100
+AcDbPlotSettings
+  1
+
+  2
+DWG to PDF.pc3
+  4
+ezdxf_(420.00_x_297.00_MM)
+  6
+
+ 40
+0.0
+ 41
+0.0
+ 42
+0.0
+ 43
+0.0
+ 44
+420.0
+ 45
+297.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+ 49
+0.0
+140
+0.0
+141
+0.0
+142
+1.0
+143
+1.0
+ 70
+672
+ 72
+1
+ 73
+0
+ 74
+5
+  7
+
+ 75
+16
+ 76
+0
+ 77
+2
+ 78
+300
+147
+1.0
+148
+0.0
+149
+0.0
+100
+AcDbLayout
+  1
+Layout1
+ 70
+1
+ 71
+1
+ 10
+-0.0
+ 20
+-0.0
+ 11
+420.0
+ 21
+297.0
+ 12
+0.0
+ 22
+0.0
+ 32
+0.0
+ 14
+1e+20
+ 24
+1e+20
+ 34
+1e+20
+ 15
+-1e+20
+ 25
+-1e+20
+ 35
+-1e+20
+146
+0.0
+ 13
+0.0
+ 23
+0.0
+ 33
+0.0
+ 16
+1.0
+ 26
+0.0
+ 36
+0.0
+ 17
+0.0
+ 27
+1.0
+ 37
+0.0
+ 76
+1
+330
+1B
+331
+CE
+  0
+MATERIAL
+  5
+1F
+102
+{ACAD_REACTORS
+330
+E
+102
+}
+330
+E
+100
+AcDbMaterial
+  1
+ByBlock
+  2
+
+ 70
+0
+ 40
+1.0
+ 71
+1
+ 41
+1.0
+ 91
+-1023410177
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 44
+0.5
+ 73
+0
+ 45
+1.0
+ 46
+1.0
+ 77
+1
+  4
+
+ 78
+1
+ 79
+1
+170
+1
+ 48
+1.0
+171
+1
+  6
+
+172
+1
+173
+1
+174
+1
+140
+1.0
+141
+1.0
+175
+1
+  7
+
+176
+1
+177
+1
+178
+1
+143
+1.0
+179
+1
+  8
+
+270
+1
+271
+1
+272
+1
+145
+1.0
+146
+1.0
+273
+1
+  9
+
+274
+1
+275
+1
+276
+1
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 94
+63
+  0
+MATERIAL
+  5
+20
+102
+{ACAD_REACTORS
+330
+E
+102
+}
+330
+E
+100
+AcDbMaterial
+  1
+ByLayer
+  2
+
+ 70
+0
+ 40
+1.0
+ 71
+1
+ 41
+1.0
+ 91
+-1023410177
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 44
+0.5
+ 73
+0
+ 45
+1.0
+ 46
+1.0
+ 77
+1
+  4
+
+ 78
+1
+ 79
+1
+170
+1
+ 48
+1.0
+171
+1
+  6
+
+172
+1
+173
+1
+174
+1
+140
+1.0
+141
+1.0
+175
+1
+  7
+
+176
+1
+177
+1
+178
+1
+143
+1.0
+179
+1
+  8
+
+270
+1
+271
+1
+272
+1
+145
+1.0
+146
+1.0
+273
+1
+  9
+
+274
+1
+275
+1
+276
+1
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 94
+63
+  0
+MATERIAL
+  5
+21
+102
+{ACAD_REACTORS
+330
+E
+102
+}
+330
+E
+100
+AcDbMaterial
+  1
+Global
+  2
+
+ 70
+0
+ 40
+1.0
+ 71
+1
+ 41
+1.0
+ 91
+-1023410177
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 44
+0.5
+ 73
+0
+ 45
+1.0
+ 46
+1.0
+ 77
+1
+  4
+
+ 78
+1
+ 79
+1
+170
+1
+ 48
+1.0
+171
+1
+  6
+
+172
+1
+173
+1
+174
+1
+140
+1.0
+141
+1.0
+175
+1
+  7
+
+176
+1
+177
+1
+178
+1
+143
+1.0
+179
+1
+  8
+
+270
+1
+271
+1
+272
+1
+145
+1.0
+146
+1.0
+273
+1
+  9
+
+274
+1
+275
+1
+276
+1
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 94
+63
+  0
+MLINESTYLE
+  5
+22
+102
+{ACAD_REACTORS
+330
+10
+102
+}
+330
+10
+100
+AcDbMlineStyle
+  2
+Standard
+ 70
+0
+  3
+
+ 62
+256
+ 51
+90.0
+ 52
+90.0
+ 71
+2
+ 49
+0.5
+ 62
+256
+  6
+BYLAYER
+ 49
+-0.5
+ 62
+256
+  6
+BYLAYER
+  0
+MLEADERSTYLE
+  5
+2C
+102
+{ACAD_REACTORS
+330
+F
+102
+}
+330
+F
+100
+AcDbMLeaderStyle
+179
+2
+170
+2
+171
+1
+172
+0
+ 90
+2
+ 40
+0.0
+ 41
+0.0
+173
+1
+ 91
+-1056964608
+ 92
+-2
+290
+1
+ 42
+2.0
+291
+1
+ 43
+8.0
+  3
+Standard
+ 44
+4.0
+300
+
+342
+29
+174
+1
+175
+1
+176
+0
+178
+1
+ 93
+-1056964608
+ 45
+4.0
+292
+0
+297
+0
+ 46
+4.0
+ 94
+-1056964608
+ 47
+1.0
+ 49
+1.0
+140
+1.0
+294
+1
+141
+0.0
+177
+0
+142
+1.0
+295
+0
+296
+0
+143
+3.75
+271
+0
+272
+9
+273
+9
+  0
+DICTIONARY
+  5
+2D
+330
+A
+100
+AcDbDictionary
+280
+1
+281
+1
+  3
+CREATED_BY_EZDXF
+350
+2E
+  3
+WRITTEN_BY_EZDXF
+350
+D2
+  0
+DICTIONARYVAR
+  5
+2E
+330
+2D
+100
+DictionaryVariables
+280
+0
+  1
+1.4.5 @ 2026-10-24T11:11:06.626671+00:00
+  0
+XRECORD
+  5
+3A
+330
+A
+100
+AcDbXrecord
+280
+1
+  1
+4a437999154de6cf3af0fc5427be0addd60e86bcf8e54ea3607d93705706bb8a
+  1
+SV-001
+ 90
+147
+  0
+DICTIONARYVAR
+  5
+D2
+330
+2D
+100
+DictionaryVariables
+280
+0
+  1
+1.4.5 @ 2026-10-24T11:11:06.636230+00:00
+  0
+ENDSEC
+  0
+EOF

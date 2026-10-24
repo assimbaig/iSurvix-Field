@@ -53,8 +53,13 @@ if ($aiReady) {
         try {
             $details = Invoke-RestMethod -Uri 'http://127.0.0.1:11434/api/show' -Method Post -ContentType 'application/json' -Body (@{ model = $Model } | ConvertTo-Json) -TimeoutSec 10
             if (@($details.capabilities) -contains 'vision' -and -not $details.remote_host -and -not $details.remote_model) {
-                $existingVisionReady = $true
-                Write-Host 'The installed model reports local vision capability. The worker rechecks before analyzing images.'
+                . (Join-Path $projectRoot 'scripts\Test-LocalAIRuntime.ps1')
+                $existingVisionReady = Test-LocalAIRuntime -Model $Model -ServiceUrl $env:ISURVIX_OLLAMA_URL
+                if ($existingVisionReady) {
+                    Write-Host 'Local vision metadata and a bounded generation request succeeded. The worker rechecks actual image processing.'
+                } else {
+                    Write-Host 'Ollama metadata responds, but local generation failed. Checking the existing project photo AI runtime.'
+                }
             } else { Write-Host 'This model does not report local vision support. Photo analysis will remain blocked.' }
         } catch { Write-Host 'Vision capability could not be verified. The photo worker will require verification before analysis.' }
     }
