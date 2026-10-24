@@ -1,8 +1,15 @@
 /* Actual QA controller unit regressions; integration is verified separately. */
 const assert=require('node:assert/strict');
 const controller=require('./qa-controller-test-harness.cjs');
+const fs=require('node:fs'),path=require('node:path');
 const data={revision_id:2,items:[],photos:[],links:[],unassigned_photo_ids:[],review_digest:'review',source_digest:'source',display_order:{},order_digest:'order'};
 let checks=0;
+{
+  const css=fs.readFileSync(path.resolve(__dirname,'../backend/static/core/css/qa_quick_review.css'),'utf8');
+  assert.match(css,/\.qa-site-information-paired thead th[^{}]*\{[^}]*background:/,'Column headings have a dedicated background color');checks++;
+  assert.match(css,/\.qa-site-information-paired td\[data-site-column=label\][^{}]*\{[^}]*background:/,'Field labels have a distinct background from their values');checks++;
+  assert.match(css,/html\[data-role-appearance=dark\][^{}]*\.qa-site-required\{[^}]*color:/,'Required and missing markers use a high-contrast color in dark appearance');checks++;
+}
 {
   const c=controller(),rows=[
     {key:'general:required_blank',id:'required_blank',field_id:'required_blank',scope:'general',label:'Required blank',value:'',submitted_value:'',required:true,can_edit:true,status:'Missing'},

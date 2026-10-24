@@ -62,3 +62,16 @@ shorter**). The independent saved-data browser run passed15/15 checks, including
 edit failure recovery, persistence, mobile overflow and all72 field identities.
 Screenshots: `output/screenshots/qa-site-compact/site-paired-four-columns-1440.png`,
 `site-paired-inline-comparison-1440.png`, and `site-paired-stacked-390.png`.
+
+## Color separation and contrast
+
+Column headings use the dark application-header color, field labels use the
+theme's pale accent surface, and values use the neutral surface. Dark appearance
+uses a light required/missing marker rather than the low-contrast light-theme
+red. Independent browser verification passed46/46 checks across1440px and390px
+in light and dark appearances; minimum measured text contrast was4.703:1 in
+light mode and6.685:1 in dark mode. The initial dark required/missing marker
+measured1.84:1 and was corrected to7.803:1. Updated renders are in
+`output/screenshots/qa-site-compact/site-paired-colours-light-1440.png`,
+`site-paired-colours-dark-1440.png`, `site-paired-colours-light-390.png`, and
+`site-paired-colours-dark-390.png`.
