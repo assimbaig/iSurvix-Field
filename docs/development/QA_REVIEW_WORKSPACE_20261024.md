@@ -32,7 +32,9 @@ The existing tree, protected viewer, matching dialogs, upload documents and
 explicit answer API are reused. The old full-width inline photo viewer gives
 way to a dominant thumbnail gallery and large modal viewing. The adjacent review
 form uses the existing supported field types and server-side concurrency guards.
-The Site Information step keeps all fields and offers original-source comparison.
+The Site Information step keeps all fields in two desktop Field/Value pairs per
+row with a subtle center divider; at mobile widths the pairs stack. Per-field
+editing and inline submitted-source comparison remain available.
 
 ## Counter definitions
 

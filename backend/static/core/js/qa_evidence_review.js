@@ -97,18 +97,19 @@
     const button=el('qa-site-compare');if(button)button.setAttribute('aria-pressed',String(compareSources));remember();
   }
   function siteInformationTable(){
-    const table=node('table',undefined,'qa-site-information-table');table.id='qa-site-information-table';table.dataset.compareSources=String(compareSources);
-    table.append(node('caption',`${siteRows().length} fields · Required values are marked`));
-    const head=node('thead'),labels=node('tr');for(const [key,label] of [['label','Information'],['source','Submitted source'],['value','Value / QA review'],['actions','Action']]){const cell=node('th',label);cell.scope='col';cell.dataset.siteColumn=key;if(key==='source'){cell.dataset.siteSource='';cell.hidden=!compareSources;}labels.append(cell);}head.append(labels);table.append(head);
-    const body=node('tbody');for(const row of siteRows()){
-      const tr=node('tr');tr.dataset.siteRow=row.key||`${row.scope}:${row.id}`;if(row.field_id)tr.dataset.siteField=row.field_id;
-      tr.dataset.editing=String(siteEditingID===row.field_id&&!!row.field_id);
-      const displayed=row.field_id?row.value:row.submitted_value;tr.dataset.siteRequired=String(!!row.required);tr.dataset.siteMissing=String(!!row.required&&siteValueMissing(displayed));
-      const title=node('td');title.dataset.siteColumn='label';title.append(node('strong',row.label));if(row.required)title.append(node('span',siteValueMissing(displayed)?'Required · Missing':'Required','qa-site-required'));const provenance=node('small',row.group_label||row.scope||'Submitted information');provenance.dataset.siteProvenance='';provenance.hidden=!compareSources;title.append(provenance);
-      const source=node('td',siteValue(row.submitted_value));source.dataset.siteSource='';source.dataset.siteColumn='source';source.hidden=!compareSources;source.append(node('small',row.source_note||String(row.source||'Submitted snapshot').replaceAll('_',' ')));
-      const value=node('td');value.dataset.siteColumn='value';if(row.field_id)value.dataset.siteCell=row.field_id;
-      if(siteEditingID!==row.field_id||!row.field_id){value.append(node('span',siteValue(displayed),'qa-site-value'));if(row.field_id){const status=row.accepted?'Reviewed':row.status||'Not reviewed';if(!(siteValueMissing(displayed)&&status==='Missing'))value.append(node('span',status,'qa-site-status'));if(row.reviewed_by){const reviewer=node('small','Reviewed by: '+row.reviewed_by);reviewer.dataset.siteProvenance='';reviewer.hidden=!compareSources;value.append(reviewer);}}}
-      const actions=node('td'),buttons=node('div',undefined,'qa-site-row-actions');actions.dataset.siteColumn='actions';
+    const table=node('table',undefined,'qa-site-information-table qa-site-information-paired');table.id='qa-site-information-table';table.dataset.compareSources=String(compareSources);
+    const rows=siteRows();table.append(node('caption',`${rows.length} fields \u00b7 Required values are marked`));
+    const head=node('thead'),labels=node('tr');for(const [key,label] of [['label','Information'],['value','Value / QA review'],['label','Information'],['value','Value / QA review']]){const cell=node('th',label);cell.scope='col';cell.dataset.siteColumn=key;labels.append(cell);}head.append(labels);table.append(head);
+    const body=node('tbody');let tr;
+    for(const [index,row] of rows.entries()){
+      if(index%2===0){tr=node('tr');body.append(tr);}
+      const displayed=row.field_id?row.value:row.submitted_value;
+      const title=node('td');title.dataset.siteColumn='label';title.append(node('strong',row.label));if(row.required)title.append(node('span',siteValueMissing(displayed)?'Required \u00b7 Missing':'Required','qa-site-required'));const provenance=node('small',row.group_label||row.scope||'Submitted information');provenance.dataset.siteProvenance='';provenance.hidden=!compareSources;title.append(provenance);
+      const value=node('td');value.dataset.siteColumn='value';value.dataset.siteRow=row.key||`${row.scope}:${row.id}`;if(row.field_id){value.dataset.siteField=row.field_id;value.dataset.siteCell=row.field_id;}
+      value.dataset.editing=String(siteEditingID===row.field_id&&!!row.field_id);value.dataset.siteRequired=String(!!row.required);value.dataset.siteMissing=String(!!row.required&&siteValueMissing(displayed));title.dataset.siteRequired=value.dataset.siteRequired;title.dataset.siteMissing=value.dataset.siteMissing;title.dataset.editing=value.dataset.editing;
+      const review=node('div',undefined,'qa-site-field-review'),content=node('div',undefined,'qa-site-field-value');
+      if(siteEditingID!==row.field_id||!row.field_id){content.append(node('span',siteValue(displayed),'qa-site-value'));if(row.field_id){const status=row.accepted?'Reviewed':row.status||'Not reviewed';if(!(siteValueMissing(displayed)&&status==='Missing'))content.append(node('span',status,'qa-site-status'));if(row.reviewed_by){const reviewer=node('small','Reviewed by: '+row.reviewed_by);reviewer.dataset.siteProvenance='';reviewer.hidden=!compareSources;content.append(reviewer);}}}
+      const buttons=node('div',undefined,'qa-site-row-actions');buttons.dataset.siteColumn='actions';
       if(siteEditingID===row.field_id&&row.field_id){
         const save=node('button','Save');save.type='button';save.dataset.saveSiteField=row.field_id;save.disabled=!siteCellEditable(row);save.addEventListener('click',saveAnswer);
         const cancel=node('button','Cancel');cancel.type='button';cancel.dataset.cancelSiteField=row.field_id;cancel.disabled=busy;cancel.addEventListener('click',cancelSiteCell);buttons.append(save,cancel);
@@ -117,9 +118,12 @@
         if(siteCellConfirmable(row)){const confirm=node('button','Confirm');confirm.type='button';confirm.dataset.confirmSiteField=row.field_id;confirm.setAttribute('aria-label','Confirm QA value: '+row.label);confirm.addEventListener('click',()=>confirmSiteCell(row.field_id));buttons.append(confirm);}
         if(!buttons.children.length){const label=node('small',row.accepted&&row.field_id?'Reviewed':'Read-only');label.title=row.read_only_reason||'This source value is immutable.';buttons.append(label);}
       }
-      actions.append(buttons);tr.append(title,source,value,actions);body.append(tr);
+      review.append(content,buttons);value.append(review);
+      const source=node('div',undefined,'qa-site-submitted-source');source.dataset.siteSource='';source.hidden=!compareSources;source.append(node('strong','Submitted source'),node('div',siteValue(row.submitted_value)),node('small',row.source_note||String(row.source||'Submitted snapshot').replaceAll('_',' ')));value.append(source);
+      tr.append(title,value);
     }
-    if(!siteRows().length){const row=node('tr'),cell=node('td','Site information is unavailable for this revision. Refresh the saved review; no source values were changed.');cell.colSpan=4;row.append(cell);body.append(row);}
+    if(rows.length%2){for(let index=0;index<2;index++){const empty=node('td');empty.dataset.sitePlaceholder='';empty.setAttribute('aria-hidden','true');tr.append(empty);}}
+    if(!rows.length){const row=node('tr'),cell=node('td','Site information is unavailable for this revision. Refresh the saved review; no source values were changed.');cell.colSpan=4;row.append(cell);body.append(row);}
     table.append(body);return table;
   }
   function updateGuided(){if(!guided)return;if(!state){['qa-review-previous','qa-review-next','qa-guided-continue','qa-history-open','qa-reorder-toggle'].forEach(id=>el(id).disabled=true);return;}el('qa-history-open').disabled=busy;el('qa-reorder-toggle').disabled=busy;app.dataset.qaStep=step;el('qa-site-step').hidden=step!=='site';el('qa-evidence-step').hidden=step!=='evidence';el('qa-decision-step').hidden=step!=='decision';app.querySelectorAll('[data-qa-step]').forEach(button=>{button.setAttribute('aria-current',button.dataset.qaStep===step?'step':'false');button.disabled=busy;});
