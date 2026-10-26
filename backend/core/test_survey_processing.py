@@ -410,6 +410,21 @@ class SurveyProcessingTests(TestCase):
         self.assertFalse(item['conflict'])
         self.assertEqual(reconciliation['findings'][0]['value'], 30)
 
+    def test_each_photo_gets_a_stable_qa_name_without_changing_its_original_filename(self):
+        snapshot = service.freeze_data(self.checklist)
+        reconciliation = {'findings': [
+            {'source_id': f'photo:{self.photo.pk}', 'field_hint': 'manufacturer',
+             'candidate_fields': [{'field_id': 'manufacturer', 'rank': 1, 'reason': 'Visible cabinet label.'}],
+             'component': 'cabinet', 'value': 'SyntheticCo', 'unit': '', 'basis': 'recorded',
+             'evidence_quote': 'SyntheticCo', 'confidence': 'high'},
+        ], 'conflicts': [], 'missing': [], 'suggested_items': []}
+        result = service.prepare_checklist(snapshot, reconciliation)
+        names = result['photo_names']
+        self.assertEqual(names[str(self.photo.pk)], 'SYNTHETIC_AI_001_000001_Cabinet_manufacturer_SyntheticCo.png')
+        self.assertEqual(names[str(self.photo2.pk)], 'SYNTHETIC_AI_001_000002_Evidence.png')
+        self.photo.refresh_from_db()
+        self.assertEqual(self.photo.filename, 'synthetic-blue.png')
+
     def test_qa_return_invalidates_older_package_approval(self):
         revision = self.ready()
         self.accept_complete(revision)

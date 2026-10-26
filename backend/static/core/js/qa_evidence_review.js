@@ -11,6 +11,8 @@
   let state=null,category='',section='',selectedID=null,selection=new Set(),expanded=new Set(['']);
   let busy=false,dirty=false,stale=true,timer=null,pollFailures=0,visibleLimit=36,dragging=null,drawerFocus=null;
   let viewerID=null,viewerTriggerID=null,viewerList=[],zoom=1,returnFocus=null,moveLink=null,lastFailure='',recoveryRequest=null;
+  let photoMatchNotice=null,previewTab='matching',candidateSelection={photo:null,field:null},observationSelection={photo:null,index:0};
+  let webReferenceContext=null,webReferenceRequest=null,webReferenceSequence=0;
   let siteEditingID=null,assignmentPoint,progressPolling=false,lastProgressError='',analysisDetailMode=null,compareSources=false,pointFilter='all',photoFilter='all',photoSearch='',gallerySize='medium',galleryOffset=0,collection='unassigned',draftGuard=null,reviewDrawerFocus=null,documentObjectURL=null,documentReturnFocus=null,panX=0,panY=0,panStart=null,galleryScrollBeforeViewer=0,footerHome=null,documentRequest=null,photoToolsMode=null;const collapsedSections=new Set();
   const say=(text,error=false)=>{el('qa-review-message').textContent=text;el('qa-review-message').classList.toggle('qa-evidence-error',error);};
   function renderSiteInformation(){
@@ -190,7 +192,7 @@
           const result=node('div');result.append(node('strong',analysis.reference||analysis.source_id||'Saved document source'));
           const preview=safeURL(analysis.preview_url);if(analysis.preview_url&&preview){const link=node('a','View analysed source');link.href=preview;link.target='_blank';link.rel='noopener';result.append(node('span',' '),link);}
           for(const finding of analysis.findings||[]){
-            const text=typeof finding==='string'?finding:[finding.label||finding.component||finding.category||'Observation',finding.value===undefined?'':typeof finding.value==='object'?JSON.stringify(finding.value):String(finding.value),finding.unit||'',finding.evidence_quote||''].filter(Boolean).join(' - ');
+            const text=typeof finding==='string'?finding:[finding.label||finding.component||finding.category||'Observation',finding.value===undefined?'':typeof finding.value==='object'?Object.entries(finding.value).map(([key,value])=>`${key.replaceAll('_',' ')}: ${typeof value==='object'?JSON.stringify(value):value}`).join(' ? '):String(finding.value),finding.unit||'',finding.evidence_quote||''].filter(Boolean).join(' - ');
             result.append(node('p',text));
           }
           for(const gap of [...(analysis.missing||[]),...(analysis.conflicts||[])])result.append(node('p',typeof gap==='string'?gap:gap.message||JSON.stringify(gap),'qa-evidence-help'));
@@ -236,18 +238,35 @@
     app.querySelectorAll('[data-drag-photo],[data-drag-point]').forEach(n=>n.draggable=editable&&!dirty&&!state?.items.find(item=>item.id===n.dataset.dragPoint)?.locked);if(guided){updateGuided();renderReviewContext();}
   }
   function analysisDetailsLayout(){const details=el('qa-analysis-explanation');if(!guided||!details)return;const mode='compact';if(mode!==analysisDetailMode){details.open=mode!=='compact';analysisDetailMode=mode;}}
+  function renderAIPhases(phases){
+    const host=el('qa-ai-phases');if(!host)return;host.replaceChildren();host.hidden=teamLead||!phases;if(host.hidden)return;
+    const labels={analysis:'Analysis',findings:'Findings',matching:'Checklist tagging'},states={complete:'Complete',running:'Processing',processing:'Processing',waiting:'Pending',pending:'Pending',queued:'Queued',paused:'Paused',pausing:'Pausing',failed:'Failed',with_analysis:'With photo analysis',unavailable:'Unavailable'};
+    for(const [key,label] of Object.entries(labels)){
+      const phase=phases[key]||{state:'unavailable'},status=states[phase.state]||'Unavailable',row=node('div',undefined,'qa-ai-phase');row.dataset.phase=key;
+      row.append(node('strong',key==='analysis'&&phase.state==='complete'?'Analysis complete':label+' · '+status));
+      const known=Number.isInteger(phase.completed)&&phase.completed>=0&&Number.isInteger(phase.total)&&phase.total>=0&&phase.completed<=phase.total;
+      const unit=phase.unit?String(phase.unit).replaceAll('_',' '):'items';
+      if(known)row.append(node('small',`${phase.completed} / ${phase.total} ${unit}`));
+      else if(Number.isInteger(phase.completed)&&phase.completed>=0)row.append(node('small',`${phase.completed} ${unit} · total unknown`));
+      if(phase.note||phase.detail){const note=node('small',String(phase.note||phase.detail),'qa-phase-note');note.title=note.textContent;row.append(note);}
+      if(['running','processing','complete','paused','pausing'].includes(phase.state)&&!phase.shared_with&&(phase.state!=='complete'||known&&phase.total>0)){
+        const progress=node('progress');progress.max=100;progress.setAttribute('aria-label',label+' progress');
+        if(known&&phase.total>0){progress.value=100*phase.completed/phase.total;progress.setAttribute('aria-valuetext',`${phase.completed} of ${phase.total} ${phase.unit||'known items'}`);}else progress.removeAttribute('value');row.append(progress);
+      }host.append(row);
+    }
+  }
   function renderStatus(){
     if(state.workflow_label)el('qa-workflow-status').textContent=`Workflow: ${state.workflow_label}${state.revision_number?' - Submission r'+state.revision_number:''}`;el('qa-workflow-status').title=el('qa-workflow-status').textContent;
     analysisDetailsLayout();if(el('qa-analysis-availability'))el('qa-analysis-availability').textContent=state.can_review?'Manual QA review remains available.':'This review is read-only.';
     const ai=state.ai||{},status=ai.status||'loading',ready=status==='ready_for_review';
-    const labels={loading:'Loading AI status',analysing_evidence:'Analysing evidence',preparing_checklist:'Preparing checklist and matching',preparing_drawings:'Preparing drawings',ready_for_review:'AI Analysis ready for QA review',queued:'AI Analysis queued',running:'AI Analysis in progress',completed:'Evidence analysis finished',ready:'Evidence analysis finished',failed:'AI Analysis failed',pending:'AI Analysis queued',reviewed:'Evidence review completed',pausing:'AI Analysis pause requested',paused:'AI Analysis paused'};
+    const labels={loading:'Loading AI status',analysing_evidence:'Analysing evidence',preparing_checklist:'Matching photos to checklist',preparing_drawings:'Preparing drawings',ready_for_review:'AI Analysis ready for QA review',queued:'AI Analysis queued',running:'AI Analysis in progress',completed:'Evidence analysis finished',ready:'Evidence analysis finished',failed:'AI Analysis failed',pending:'AI Analysis queued',reviewed:'Evidence review completed',pausing:'AI Analysis pause requested',paused:'AI Analysis paused'};
     const count=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0?Math.trunc(Number(value)):null;
-    const completed=count(ai.completed),total=count(ai.total),countText=`${completed??'—'} / ${total??'—'} known sources`;
+    const completed=count(ai.completed),total=count(ai.total),countText=`${completed??'—'} / ${total??'—'} ${status==='preparing_checklist'?'evidence sources analysed':'known sources'}`;
     const preparing=['preparing_checklist','preparing_drawings'].includes(status),knownTotal=total!==null&&total>0&&completed!==null;
     const percent=knownTotal?Math.min(100,100*completed/total):null;
     const progress=el('qa-analysis-progress'),numbers=el('qa-analysis-numbers');
     el('qa-analysis-label').textContent=teamLead?(state.completed?'Reviewed evidence':'Evidence awaiting QA review'):labels[status]||`AI Analysis: ${status.replaceAll('_',' ')}`;
-    const progressGroup=el('qa-analysis-progress-group');if(progressGroup)progressGroup.hidden=teamLead;progress.hidden=teamLead;progress.dataset.stage=status;
+    renderAIPhases(ai.phases);const progressGroup=el('qa-analysis-progress-group');if(progressGroup)progressGroup.hidden=teamLead||!!ai.phases;progress.hidden=teamLead;progress.dataset.stage=status;
     if(preparing||!knownTotal){progress.removeAttribute('value');progress.setAttribute('aria-valuetext',`${countText}. ${labels[status]||status}. A source percentage is not available.`);}
     else{progress.value=percent;progress.setAttribute('aria-valuetext',`${completed} of ${total} known analysis sources processed; ${Math.round(percent*10)/10} percent. ${labels[status]||status}.`);}
     const phase=preparing?'Preparing':ready?'Ready':status==='paused'?'Paused':status==='pausing'?'Pausing':status==='failed'?'Failed':['queued','pending'].includes(status)?'Queued':status==='loading'?'Loading':'Processing';
@@ -259,7 +278,7 @@
       detail=ai.error_code==='model_identity_changed'?'The saved model identity differs from the current configuration. This may reflect configuration metadata; it does not by itself prove changed model weights.':ai.error||'Processing stopped. Saved evidence and completed checkpoints are preserved.';
       const recovery=state.model_recovery||{};if(recovery.available&&recovery.message)detail+=' '+recovery.message;else if(recovery.blocked_reason)detail+=' '+recovery.blocked_reason;
     }else if(!detail&&['queued','pending'].includes(status))detail=Number.isInteger(ai.queue_ahead)&&ai.queue_ahead>0?`Waiting for the local worker; ${ai.queue_ahead} earlier processing job${ai.queue_ahead===1?' is':'s are'} ahead.`:'Queued for the local worker. Waiting for available processing capacity.';
-    else if(!detail&&preparing)detail=status==='preparing_checklist'?'Evidence analysis is finished. Checklist matching is in progress.':'Evidence analysis is finished. Draft drawings are being prepared.';
+    else if(!detail&&preparing)detail=status==='preparing_checklist'?'Evidence analysis is finished. Partial suggestions are available as matching results are saved.':'Evidence analysis is finished. Draft drawings are being prepared.';
     else if(!detail&&ready)detail='Saved AI findings and suggested links are ready for explicit QA review. AI has not approved this task.';
     if(!teamLead&&!ready&&!['failed','paused','pausing'].includes(status))detail+=' '+(ai.note||'AI suggestions appear after evidence analysis and checklist matching.');
     if(!teamLead)detail+=' '+(state.can_review?'Manual QA review remains available.':'This evidence review is read-only.')+' Progress counts known analysis sources; totals may grow as document pages and crops are read.';
@@ -313,7 +332,7 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
     else if(el('qa-photo-view').value==='all')photos=state.photos;
     else if(el('qa-photo-view').value==='available')photos=state.photos.filter(photo=>(photo.group||'')===category);
     else{const ids=new Set(linksForField(selectedID).map(link=>String(link.photo_id)));photos=state.photos.filter(photo=>ids.has(String(photo.id)));}
-    return photos.filter(photo=>{const links=linksForPhoto(photo.id),matches=photoFilter==='all'||photoFilter==='unassigned'&&!links.length||photoFilter==='qa_confirmed'&&links.some(confirmed)||photoFilter==='ai_suggested'&&links.some(link=>!confirmed(link));return matches&&(!photoSearch||`${photo.filename} ${photo.id}`.toLowerCase().includes(photoSearch.toLowerCase()));});
+    return photos.filter(photo=>{const links=linksForPhoto(photo.id),matches=photoFilter==='all'||photoFilter==='unassigned'&&!links.length||photoFilter==='qa_confirmed'&&links.some(confirmed)||photoFilter==='ai_suggested'&&links.some(link=>!confirmed(link));return matches&&(!photoSearch||`${photoDisplayName(photo)} ${photo.original_filename||photo.filename} ${photo.id}`.toLowerCase().includes(photoSearch.toLowerCase()));});
   }
   function chooseCollection(value){if(!dirtyNavigation())return;step='evidence';siteEditingID=null;selectedID=null;collection=value;galleryOffset=0;visibleLimit=36;remember();renderAll();mobilePane('photos');}
   function renderPointHeader(){const item=selected(),links=item?linksForField(item.id):[],suggested=links.filter(l=>!confirmed(l)).length;
@@ -351,18 +370,104 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
     if(photo?.analysis_reused){const reused=photo.analysis_reused,label=Number.isInteger(reused.revision_number)&&reused.revision_number>0?'revision '+reused.revision_number:'revision record #'+reused.revision_id;messages.push(`Reused analysis · ${label}; QA review is still required`);}
     return messages.join(' · ');
   }
+  function setPreviewTab(name){
+    previewTab=teamLead?'links':['matching','details','links'].includes(name)?name:'matching';
+    for(const tab of ['matching','details','links']){const active=tab===previewTab,button=el('qa-preview-tab-'+tab);button.hidden=teamLead&&tab!=='links';button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;el('qa-preview-panel-'+tab).hidden=!active;}
+  }
+  function referenceURL(value){
+    try{
+      if(typeof value!=='string'||value.length>2048||/[\s\u0000-\u001f\u007f\\]/u.test(value))return null;
+      const authority=/^https?:\/\/([^/?#]+)/i.exec(value)?.[1];
+      if(!authority||!/^[\x21-\x7e]+$/.test(authority)||/[%@\[\]]/.test(authority))return null;
+      const url=new URL(value),host=url.hostname.toLowerCase();
+      if(!['https:','http:'].includes(url.protocol)||url.username||url.password||url.port||host.length>253||host.endsWith('.'))return null;
+      const labels=host.split('.');
+      if(labels.length<2||!/^[a-z]{2,63}$/.test(labels.at(-1))||labels.some(label=>!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)))return null;
+      if(['localhost','local','localdomain','internal','lan','home','home.arpa','test','invalid','onion'].some(suffix=>host===suffix||host.endsWith('.'+suffix)))return null;
+      return url.href;
+    }catch{return null;}
+  }
+  function syncWebReferences(photo){
+    const host=el('qa-web-references');if(!host)return;host.hidden=teamLead;
+    const key=`${state?.revision_id}:${state?.source_digest}:${photo?.id}`;if(key===webReferenceContext)return;
+    webReferenceContext=key;webReferenceSequence++;webReferenceRequest?.abort();webReferenceRequest=null;
+    host.open=false;el('qa-web-query').value='';el('qa-web-provider').value='wikipedia';el('qa-web-results').replaceChildren();
+    el('qa-web-status').textContent='Search public equipment terms only. References do not verify this site.';el('qa-web-status').classList.toggle('qa-evidence-error',false);el('qa-web-submit').disabled=false;el('qa-web-submit').textContent='Look up references';
+  }
+  async function searchWebReferences(event){
+    event?.preventDefault();if(teamLead||!state||webReferenceRequest)return;
+    const query=el('qa-web-query').value.trim(),provider=el('qa-web-provider').value,status=el('qa-web-status'),results=el('qa-web-results'),submit=el('qa-web-submit');
+    if(query.length<2||query.length>160){status.textContent='Enter 2–160 characters of public equipment keywords.';status.classList.toggle('qa-evidence-error',true);return;}
+    const url=safeURL(app.dataset.webReferencesUrl);if(!url){status.textContent='Reference lookup is unavailable in this application version.';status.classList.toggle('qa-evidence-error',true);return;}
+    const sequence=++webReferenceSequence,context=webReferenceContext,revision=state.revision_id,source=state.source_digest;
+    const request=new AbortController();webReferenceRequest=request;submit.disabled=true;submit.textContent='Looking up…';results.replaceChildren();status.classList.toggle('qa-evidence-error',false);status.textContent='Looking up public references…';
+    try{
+      const response=await fetch(url,{method:'POST',credentials:'same-origin',signal:request.signal,headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify({revision_id:revision,source_digest:source,query,provider})});
+      const value=await response.json();if(sequence!==webReferenceSequence||context!==webReferenceContext||revision!==state?.revision_id||source!==state?.source_digest)return;
+      if(!response.ok||value.ok!==true)throw new Error(value.error||'Reference lookup failed. Retry when the connection is available.');
+      if(!Array.isArray(value.results)||value.reference_only!==true||value.verified!==false)throw new Error('The reference response could not be validated. Retry the lookup.');
+      status.textContent=`${value.provider_label||'Public references'} · Retrieved ${value.fetched_at||'time unavailable'} · ${value.notice||'External reference only; not verified site evidence.'}`;
+      for(const result of value.results.slice(0,5)){
+        const href=referenceURL(result.url);if(!href)continue;const item=node('li'),link=node('a',String(result.title||'Source reference'));link.href=href;link.target='_blank';link.rel='noopener noreferrer';item.append(link,node('small',String(result.source||new URL(href).hostname)),node('p',String(result.snippet||'No summary available.')));results.append(item);
+      }
+      if(!results.children.length)results.append(node('li','No references found for these keywords. Try a broader public equipment term.'));
+      submit.textContent='Look up references';
+    }catch(error){if(sequence!==webReferenceSequence||context!==webReferenceContext)return;status.textContent=error.name==='AbortError'?'Reference lookup cancelled. Retry the lookup.':error.message||'Reference lookup failed. Retry the lookup.';status.classList.toggle('qa-evidence-error',true);submit.textContent='Retry lookup';}
+    finally{if(sequence===webReferenceSequence){webReferenceRequest=null;submit.disabled=false;}}
+  }
+  function photoDisplayName(photo){const name=!teamLead&&(photo?.display_name||photo?.photo_match?.display_name);return typeof name==='string'&&name.trim()?name:photo?.filename||photo?.original_filename||'Source photo';}
+  function renderPhotoMatch(photo){
+    el('qa-preview-original-filename').textContent='Original file: '+(photo.original_filename||photo.filename||'Filename not recorded');
+    const panel=el('qa-preview-match-panel'),host=el('qa-preview-match-candidates'),summary=el('qa-preview-match-summary'),feedback=el('qa-preview-match-feedback');panel.hidden=teamLead;host.replaceChildren();
+    const notice=photoMatchNotice?.photo_id===photo.id&&photoMatchNotice.revision_id===state?.revision_id?photoMatchNotice:null;feedback.textContent=notice?.text||'';feedback.classList.toggle('qa-evidence-error',!!notice?.error);if(teamLead)return;
+    const match=photo.photo_match||{},candidates=Array.isArray(match.candidates)?match.candidates:[],valid=candidates.filter(candidate=>typeof candidate.field_id==='string'&&state.items.some(item=>item.id===candidate.field_id));
+    summary.textContent=match.status==='pending'?'Matching pending. Manual review is available.':match.status==='failed'?'Matching failed. Manual review is available.':match.status==='unmatched'?'No supported checklist match. Assign manually when supported.':valid.length?'':'No saved ranked suggestions for this checklist revision.';
+    const picker=el('qa-preview-candidate-choice');picker.replaceChildren();valid.forEach((candidate,index)=>picker.append(new Option(`Rank ${candidate.rank||index+1}: ${candidate.label||candidate.field_id}`,candidate.field_id)));picker.parentElement.hidden=valid.length<2;const chosen=candidateSelection.photo===photo.id&&valid.some(candidate=>candidate.field_id===candidateSelection.field)?candidateSelection.field:valid[0]?.field_id;picker.value=chosen||'';
+    for(const candidate of valid){
+      const item=state.items.find(item=>item.id===candidate.field_id),row=node('li',undefined,'qa-photo-candidate');row.dataset.candidateField=candidate.field_id;row.hidden=candidate.field_id!==chosen;if(Number.isInteger(candidate.rank)&&candidate.rank>0)row.value=candidate.rank;
+      const rank=Number.isInteger(candidate.rank)&&candidate.rank>0?String(candidate.rank):'Not recorded';row.append(node('strong',`Rank ${rank} · ${candidate.label||item.label}`),node('small',[candidate.category,candidate.section].filter(Boolean).join(' / ')));
+      if(typeof candidate.score==='number'&&Number.isFinite(candidate.score))row.append(node('small',`Relative support: ${candidate.score.toFixed(3)}${candidate.score_kind?' · '+String(candidate.score_kind).replaceAll('_',' '):''}`));
+      row.append(node('p',candidate.reason||'No matching explanation was recorded.'));
+      const linked=linksForPhoto(photo.id).find(link=>link.field_id===candidate.field_id),isConfirmed=!!linked&&confirmed(linked),button=node('button',isConfirmed?'QA confirmed':linked?'Confirm link':'Add link');button.type='button';button.dataset.confirmCandidate=candidate.field_id;button.disabled=isConfirmed||!canEdit()||dirty||!fieldEditable(candidate.field_id);button.title=item.locked?'This approved checklist point is locked.':isConfirmed?'This source link is already QA-confirmed.':'Confirm this photo link only; checklist acceptance and other evidence links stay unchanged.';
+      button.addEventListener('click',async()=>{
+        if(!canEdit()||dirty||!fieldEditable(candidate.field_id))return;button.disabled=true;photoMatchNotice={photo_id:photo.id,revision_id:state.revision_id,text:'Saving this photo link…',error:false};feedback.textContent=photoMatchNotice.text;
+        await confirmLinks([photo.id],candidate.field_id);const saved=linksForPhoto(photo.id).some(link=>link.field_id===candidate.field_id&&confirmed(link));photoMatchNotice={photo_id:photo.id,revision_id:state.revision_id,text:saved?'Photo link confirmed. Checklist acceptance and workflow approval are unchanged.':lastFailure||'The link was not saved. Refresh the review and retry.',error:!saved};const current=state.photos.find(source=>source.id===photo.id);if(current)renderPhotoMatch(current);
+      });row.append(button);host.append(row);
+    }
+  }
+  function renderPhotoObservations(photo,provided){
+    const analysis=el('qa-preview-analysis');analysis.parentElement.hidden=teamLead;analysis.replaceChildren();if(teamLead)return;
+    const compactTable=(caption,rows,attribute)=>{const table=node('table',undefined,'qa-finding-table');table.dataset[attribute]='true';table.append(node('caption',caption));const body=node('tbody');for(const [label,value] of rows){const row=node('tr'),heading=node('th',label);heading.scope='row';row.append(heading,node('td',value));body.append(row);}table.append(body);return table;};
+    const metadata=photo.metadata||{},gps=metadata.gps,coordinates=gps&&Number.isFinite(gps.latitude)&&Number.isFinite(gps.longitude)?`${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`:'Not recorded';
+    analysis.append(compactTable('Site & photo',[
+      ['Site ID',app.dataset.siteId||state?.site_id||'Not recorded'],['Capture date & time',typeof metadata.captured_at==='string'&&metadata.captured_at?metadata.captured_at:'Not recorded'],['Coordinates',coordinates],['Uploaded category',sourceCategoryLabel(photo.group||'')],['Photo ID',String(photo.id??'Not recorded')]
+    ],'findingContext'));
+    const describe=value=>Array.isArray(value)?value.map(describe).join('; '):value&&typeof value==='object'?Object.entries(value).map(([key,item])=>`${key.replaceAll('_',' ')}: ${describe(item)}`).join('; '):String(value??'');
+    const observation=provided??(photo.observations?.length?photo.observations:photo.observation||photo.ai_observation||photo.analysis||photo.ai_analysis||photo.visual_metadata);
+    if(observation&&(!Array.isArray(observation)||observation.length)){
+      const entries=Array.isArray(observation)?observation:[observation];
+      const chosen=observationSelection.photo===photo.id?Math.min(observationSelection.index,entries.length-1):0;
+      if(entries.length>1){const label=node('label','Saved findings','qa-candidate-picker'),picker=node('select');picker.dataset.observationPicker='true';picker.setAttribute('aria-label','Saved observation');entries.forEach((finding,index)=>picker.append(new Option(`${index+1} / ${entries.length}: ${finding?.label||finding?.component||finding?.category||'Observation'}`,String(index))));picker.value=String(chosen);picker.addEventListener('change',()=>{observationSelection={photo:photo.id,index:Number(picker.value)||0};renderPhotoObservations(photo,entries);analysis.querySelector('[data-observation-picker="true"]')?.focus();});label.append(picker);analysis.append(label);}
+      for(const [index,finding] of entries.entries()){const row=node('article',undefined,'qa-ai-finding');row.dataset.observationIndex=String(index);row.hidden=index!==chosen;if(typeof finding==='string')row.append(node('p',finding));else if(finding&&typeof finding==='object'){
+        const rows=[['Product / type',describe(finding.component||finding.product_type||finding.equipment_type||finding.label||finding.category||'Not recorded')]];
+        for(const [label,value] of [['Manufacturer',finding.manufacturer],['Model',finding.model],['Defect / issue',finding.defects||finding.defect||finding.issues||finding.visible_defects||(finding.category==='defect'?(finding.notes||finding.evidence_quote||finding.value):null)||'Not recorded'],['Extracted value',finding.value!==null&&finding.value!==undefined&&finding.value!==''?describe(finding.value)+(finding.unit?' '+finding.unit:''):null],['Description',finding.notes||finding.description],['Visible source',finding.evidence_quote],['Matching reason',finding.mapping_reason||finding.reason],['Uncertainty',finding.uncertainty],['Source confidence',finding.confidence],['Source reference',finding.reference]])if(value!==null&&value!==undefined&&value!=='')rows.push([label,describe(value)]);
+        row.append(compactTable(finding.label||finding.component||finding.category||'Saved observation',rows,'findingTable'));
+      }analysis.append(row);}
+      const raw=node('details');raw.append(node('summary','Advanced saved source data'),node('pre',typeof observation==='string'?observation:JSON.stringify(observation,null,2)));analysis.append(raw);
+    }else analysis.append(node('p','No saved AI observations are available for this source photo. Manual review remains available.'));
+  }
   function renderPhotos(){
     const host=el('qa-review-photos'),pane=el('qa-photo-pane').querySelector('.qa-photo-pane-scroll'),scroll=pane.scrollTop;host.replaceChildren();host.dataset.thumbnailSize=gallerySize;
     const photos=visiblePhotos();galleryOffset=Math.min(galleryOffset,Math.max(0,Math.floor((photos.length-1)/36)*36));
     const page=photos.slice(galleryOffset,galleryOffset+36);
     for(const photo of page){
       const card=node('article',undefined,'qa-review-photo');card.dataset.photoId=photo.id;card.dataset.dragPhoto=photo.id;card.classList.toggle('is-selected',selection.has(String(photo.id)));
-      const preview=node('button');preview.type='button';preview.dataset.previewPhoto=photo.id;preview.setAttribute('aria-label',`Open photo ${photo.filename}`);preview.title=photo.filename;
+      const preview=node('button');preview.type='button';preview.dataset.previewPhoto=photo.id;preview.setAttribute('aria-label',`Open photo ${photoDisplayName(photo)}`);preview.title=photo.original_filename||photo.filename;
       const image=node('img'),src=safeURL(photo.preview_url),error=node('p','Thumbnail unavailable. Retry or open the permitted original in the viewer.','qa-thumbnail-error'),retry=node('button','Retry thumbnail');error.hidden=true;retry.hidden=true;retry.type='button';retry.dataset.retryThumbnail=photo.id;
       const failed=()=>{image.hidden=true;error.hidden=false;retry.hidden=false;};image.alt=photo.filename;image.loading='lazy';image.decoding='async';image.draggable=false;image.addEventListener('error',failed);if(src)image.src=src;else failed();preview.append(image);preview.addEventListener('click',()=>openPreview(photo.id));
       retry.addEventListener('click',()=>{if(!src){say('No thumbnail URL is available. Use the photo viewer to open the authorised original.',true);return;}error.hidden=retry.hidden=true;image.hidden=false;const url=new URL(src);url.searchParams.set('preview_retry',String(Date.now()));image.src=url.href;});card.append(preview,error,retry);
-      const label=node('label'),checkbox=node('input');checkbox.type='checkbox';checkbox.checked=selection.has(String(photo.id));checkbox.dataset.evidencePhoto=String(photo.id);checkbox.setAttribute('aria-label','Select '+photo.filename);checkbox.addEventListener('change',()=>{if(checkbox.checked)selection.add(String(photo.id));else selection.delete(String(photo.id));card.classList.toggle('is-selected',checkbox.checked);remember();controls();});
-      const text=node('span',photo.filename);text.title=photo.filename;const links=linksForPhoto(photo.id),suggested=links.filter(link=>!confirmed(link)).length,confirmedCount=links.length-suggested;
+      const label=node('label'),checkbox=node('input');checkbox.type='checkbox';checkbox.checked=selection.has(String(photo.id));checkbox.dataset.evidencePhoto=String(photo.id);checkbox.setAttribute('aria-label','Select '+photoDisplayName(photo));checkbox.addEventListener('change',()=>{if(checkbox.checked)selection.add(String(photo.id));else selection.delete(String(photo.id));card.classList.toggle('is-selected',checkbox.checked);remember();controls();});
+      const text=node('span',photoDisplayName(photo));text.title=photo.original_filename||photo.filename;const links=linksForPhoto(photo.id),suggested=links.filter(link=>!confirmed(link)).length,confirmedCount=links.length-suggested;
       text.append(node('small',!links.length?'Unassigned':`${confirmedCount} confirmed links${suggested?' · '+suggested+' AI-suggested links':''}`));const capture=photoMetadataText(photo);if(capture)text.append(node('small',capture));const advisory=photoAdvisory(photo);if(advisory){const notice=node('small',advisory,'qa-photo-advisory');notice.title=photo.duplicate?.reason||advisory;text.append(notice);}label.append(checkbox,text);card.append(label);
       const details=node('details',undefined,'qa-photo-links');details.append(node('summary',`${links.length} checklist links`));for(const link of links){const item=state.items.find(item=>item.id===link.field_id),row=node('div',item?.label||link.field_id);linkControls(row,link,photo);details.append(row);}if(!links.length)details.append(node('small','No checklist links.'));card.append(details);
       card.addEventListener('dragstart',event=>{if(!canEdit()||dirty){event.preventDefault();return;}dragging={kind:'photo',photo_id:photo.id};event.dataTransfer.setData('application/x-isurvix-photo',JSON.stringify(dragging));event.dataTransfer.effectAllowed='copy';});card.addEventListener('dragend',()=>{dragging=null;clearDropTargets();});host.append(card);
@@ -418,7 +523,7 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
     const item=selected();if(!item||!canEdit())return;
     const cellEdit=guided&&step==='site'&&siteEditingID===item.id;
     if(guided&&step==='site'&&!siteCellEditable(siteRows().find(row=>row.field_id===item.id)))return;
-    const reason=el('qa-review-reason').value.trim();if(!reason){el('qa-answer-details').open=true;el('qa-review-reason').focus();say('Record a source-backed review note before accepting this answer or evidence.',true);return;}
+    const reason=el('qa-review-reason').value.trim();
     const ids=linksForField(item.id).filter(confirmed).map(link=>Number(link.photo_id));
     if(item.type==='photo'&&!ids.length){say('Confirm at least one source-photo link before accepting evidence for this point.',true);return;}
     const evidence=cellEdit?{preserve_evidence:true}:{photo_ids:ids};
@@ -432,7 +537,7 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
     const ai=value.ai;if(!ai||typeof ai.status!=='string'||!Number.isInteger(ai.completed)||ai.completed<0||!Number.isInteger(ai.total)||ai.total<0)throw new Error('The saved AI progress response is incomplete. Refresh the review.');
     state.ai={...state.ai,...ai};
     if(value.photo&&Array.isArray(value.photo.observations)){
-      const photo=state.photos.find(photo=>photo.id===value.photo.id);if(photo){photo.observations=value.photo.observations;if(Object.hasOwn(value.photo,'duplicate'))photo.duplicate=value.photo.duplicate;if(Object.hasOwn(value.photo,'analysis_reused'))photo.analysis_reused=value.photo.analysis_reused;}
+      const photo=state.photos.find(photo=>photo.id===value.photo.id);if(photo){photo.observations=value.photo.observations;if(Object.hasOwn(value.photo,'duplicate'))photo.duplicate=value.photo.duplicate;if(Object.hasOwn(value.photo,'analysis_reused'))photo.analysis_reused=value.photo.analysis_reused;for(const key of ['photo_match','display_name','original_filename'])if(Object.hasOwn(value.photo,key))photo[key]=value.photo[key];}
     }
     return true;
   }
@@ -452,12 +557,12 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
     finally{progressPolling=false;schedule();}
   }
   function schedule(){clearTimeout(timer);const active=state&&['queued','pending','running','analysing_evidence','preparing_checklist','preparing_drawings','pausing'].includes(state.ai?.status);if(active&&!document.hidden)timer=setTimeout(()=>{if(busy||dirty){schedule();return;}fetchProgress(true).catch(()=>{});},Math.min(60000,12000*2**Math.min(pollFailures,3)));}
-  function openPreview(id){viewerTriggerID=id;viewerID=id;viewerList=visiblePhotos().map(p=>p.id);if(!viewerList.includes(id))viewerList=state.photos.map(p=>p.id);returnFocus=document.activeElement;galleryScrollBeforeViewer=el('qa-photo-pane').querySelector('.qa-photo-pane-scroll').scrollTop;zoom=1;panX=panY=0;renderPreview();el('qa-photo-preview').showModal();el('qa-preview-close').focus();remember();if(app.dataset.progressUrl&&!teamLead)fetchProgress(true).catch(()=>{});}
+  function openPreview(id){photoMatchNotice=null;viewerTriggerID=id;viewerID=id;viewerList=visiblePhotos().map(p=>p.id);if(!viewerList.includes(id))viewerList=state.photos.map(p=>p.id);returnFocus=document.activeElement;galleryScrollBeforeViewer=el('qa-photo-pane').querySelector('.qa-photo-pane-scroll').scrollTop;zoom=1;panX=panY=0;renderPreview();el('qa-photo-preview').showModal();el('qa-preview-close').focus();remember();if(!teamLead&&state.ai?.status==='preparing_checklist'&&!dirty&&!busy)return load(true).catch(error=>{const text=`${error.message} Saved suggestions could not be refreshed; manual review remains available.`;say(text,true);photoMatchNotice={photo_id:id,revision_id:state.revision_id,text,error:true};const current=state.photos.find(photo=>photo.id===id);if(current&&viewerID===id&&el('qa-photo-preview').open)renderPhotoMatch(current);});if(app.dataset.progressUrl&&!teamLead)return fetchProgress(true).catch(()=>{});}
   function restorePreviewFocus(){el('qa-photo-pane').querySelector('.qa-photo-pane-scroll').scrollTop=galleryScrollBeforeViewer;const target=returnFocus?.isConnected?returnFocus:el('qa-review-photos').querySelector(`[data-preview-photo="${viewerTriggerID}"]`)||el('qa-photo-view');target?.focus({preventScroll:true});}
-  function renderPreview(){const photo=state.photos.find(p=>p.id===viewerID);if(!photo)return;el('qa-preview-title').textContent=photo.filename;el('qa-preview-category').textContent=`Uploaded by Engineer: ${sourceCategoryLabel(photo.group||'')}${photoAdvisory(photo)?' · '+photoAdvisory(photo):''}`;el('qa-preview-error').hidden=true;el('qa-preview-image').hidden=false;const src=safeURL(photo.preview_url)||safeURL(photo.original_url);if(el('qa-preview-image').src!==src)el('qa-preview-image').src=src;el('qa-preview-original').href=safeURL(photo.original_url);el('qa-preview-metadata').textContent=photoMetadataText(photo,true);const index=viewerList.indexOf(viewerID);el('qa-preview-position').textContent=`${index+1} / ${viewerList.length}`;el('qa-preview-previous').disabled=index<=0;el('qa-preview-next').disabled=index<0||index>=viewerList.length-1;setZoom(zoom);
+  function renderPreview(){const photo=state.photos.find(p=>p.id===viewerID);if(!photo)return;syncWebReferences(photo);el('qa-preview-title').textContent=photoDisplayName(photo);el('qa-preview-category').textContent=`Uploaded by Engineer: ${sourceCategoryLabel(photo.group||'')}${photoAdvisory(photo)?' · '+photoAdvisory(photo):''}`;const src=safeURL(photo.preview_url)||safeURL(photo.original_url);if(el('qa-preview-image').src!==src){el('qa-preview-error').hidden=true;el('qa-preview-image').hidden=false;el('qa-preview-image').src=src;}el('qa-preview-original').href=safeURL(photo.original_url);el('qa-preview-metadata').textContent=photoMetadataText(photo,true);const index=viewerList.indexOf(viewerID);el('qa-preview-position').textContent=`${index+1} / ${viewerList.length}`;el('qa-preview-previous').disabled=index<=0;el('qa-preview-next').disabled=index<0||index>=viewerList.length-1;setZoom(zoom);
     const host=el('qa-preview-links');host.replaceChildren();const links=linksForPhoto(photo.id);links.forEach(link=>{const item=state.items.find(i=>i.id===link.field_id),row=node('p',item?.label||link.field_id);row.append(node('span',` · ${categoryLabel(item?.category||'')} · `));linkControls(row,link,photo);if(link.reason)row.append(node('small',` ${link.reason}`));host.append(row);});if(!links.length)host.append(node('p','Not Assigned — no links to any checklist point.'));
-    const analysis=el('qa-preview-analysis');analysis.parentElement.hidden=teamLead;analysis.replaceChildren();const observation=photo.observations?.length?photo.observations:photo.observation||photo.ai_observation||photo.analysis||photo.ai_analysis||photo.visual_metadata;
-    if(observation){analysis.append(node('p','Saved model observations may be incomplete or incorrect. Confirm source content before using a value.'));const entries=Array.isArray(observation)?observation:[observation];for(const finding of entries){const row=node('article',undefined,'qa-ai-finding');if(typeof finding==='string')row.append(node('p',finding));else{const title=finding.label||finding.component||finding.category||'Saved observation';row.append(node('strong',title));if(finding.value!==null&&finding.value!==undefined&&finding.value!=='')row.append(node('p',typeof finding.value==='object'?JSON.stringify(finding.value):String(finding.value)));if(finding.evidence_quote)row.append(node('p','Visible source: '+finding.evidence_quote));if(finding.mapping_reason||finding.reason)row.append(node('p',finding.mapping_reason||finding.reason));if(finding.uncertainty)row.append(node('p','Uncertainty: '+finding.uncertainty));if(finding.confidence)row.append(node('small','Recorded confidence: '+finding.confidence));if(finding.reference)row.append(node('small','Source: '+finding.reference));}analysis.append(row);}const raw=node('details');raw.append(node('summary','Advanced saved details'),node('pre',typeof observation==='string'?observation:JSON.stringify(observation,null,2)));analysis.append(raw);}else analysis.append(node('p','No saved AI observations are available for this source photo. Manual review remains available.'));const proposed=links.filter(l=>!confirmed(l));if(proposed.length){analysis.append(node('p',`${proposed.length} suggested checklist link${proposed.length===1?'':'s'}; confirmation changes links only.`));proposed.forEach(link=>{const item=state.items.find(i=>i.id===link.field_id);analysis.append(node('p',`${item?.label||link.field_id} · ${typeof link.confidence==='number'?Math.round(link.confidence*100)+'% confidence':link.confidence?String(link.confidence)+' confidence':'Confidence unavailable'}${link.source?' · '+link.source:''}${link.reason?' · '+link.reason:''}`));});}}
+    renderPhotoMatch(photo);renderPhotoObservations(photo);setPreviewTab(previewTab);
+  }
   function boundedPan(x,y,scale,canvasWidth,canvasHeight,imageWidth,imageHeight){const maxX=Math.max(0,(imageWidth*scale-canvasWidth)/2),maxY=Math.max(0,(imageHeight*scale-canvasHeight)/2);return{x:scale<=1?0:Math.max(-maxX,Math.min(maxX,x)),y:scale<=1?0:Math.max(-maxY,Math.min(maxY,y))};}
   function panPreview(x,y){const canvas=el('qa-preview-canvas'),image=el('qa-preview-image'),position=boundedPan(x,y,zoom,canvas.clientWidth,canvas.clientHeight,image.clientWidth,image.clientHeight);panX=position.x;panY=position.y;image.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;canvas.classList.toggle('is-zoomed',zoom>1);}
   function setZoom(value){zoom=Math.max(.5,Math.min(4,value));panPreview(panX,panY);el('qa-preview-zoom').textContent=`${Math.round(zoom*100)}%`;}
@@ -490,6 +595,9 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
       else{const detail=`${moved} of ${work.length} links moved; remaining changes were not confirmed. ${lastFailure||'Refresh the saved review before retrying.'}`;el('qa-link-dialog-context').textContent=detail;say(detail,true);}
     }finally{if(moveLink)moveLink.pending=false;el('qa-link-move-confirm').disabled=false;}
   });el('qa-link-cancel').addEventListener('click',()=>el('qa-link-dialog').close());
+  for(const tab of ['matching','details','links']){const button=el('qa-preview-tab-'+tab);button.addEventListener('click',()=>setPreviewTab(tab));button.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();event.stopPropagation();const tabs=teamLead?['links']:['matching','details','links'],index=tabs.indexOf(tab),next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;setPreviewTab(tabs[next]);el('qa-preview-tab-'+tabs[next]).focus();});}
+  el('qa-preview-candidate-choice').addEventListener('change',()=>{const photo=state.photos.find(photo=>photo.id===viewerID);if(!photo)return;candidateSelection={photo:photo.id,field:el('qa-preview-candidate-choice').value};renderPhotoMatch(photo);});
+  el('qa-web-form')?.addEventListener('submit',searchWebReferences);
   el('qa-preview-image').addEventListener('error',()=>{el('qa-preview-image').hidden=true;el('qa-preview-error').hidden=false;});el('qa-preview-close').addEventListener('click',()=>el('qa-photo-preview').close());el('qa-photo-preview').addEventListener('close',restorePreviewFocus);el('qa-preview-previous').addEventListener('click',()=>previewStep(-1));el('qa-preview-next').addEventListener('click',()=>previewStep(1));el('qa-preview-zoom-in').addEventListener('click',()=>setZoom(zoom+.25));el('qa-preview-zoom-out').addEventListener('click',()=>setZoom(zoom-.25));el('qa-preview-fit').addEventListener('click',()=>{panX=panY=0;setZoom(1);});el('qa-photo-preview').addEventListener('keydown',event=>{if(event.target.matches('input,textarea,select'))return;if(event.shiftKey&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();panPreview(panX+(event.key==='ArrowLeft'?40:event.key==='ArrowRight'?-40:0),panY+(event.key==='ArrowUp'?40:event.key==='ArrowDown'?-40:0));return;}if(event.key==='ArrowLeft')previewStep(-1);if(event.key==='ArrowRight')previewStep(1);});
   el('qa-categories-open').addEventListener('click',openDrawer);el('qa-categories-close').addEventListener('click',closeDrawer);el('qa-category-backdrop').addEventListener('click',closeDrawer);el('qa-mobile-checkpoints').addEventListener('click',()=>mobilePane('checkpoints'));el('qa-mobile-photos').addEventListener('click',()=>mobilePane('photos'));navigationPane().addEventListener('keydown',event=>{if(!navigationPane().classList.contains('is-open'))return;if(event.key==='Escape'){event.preventDefault();closeDrawer();}if(event.key==='Tab'){const focus=Array.from(navigationPane().querySelectorAll('button:not(:disabled),a,input')).filter(n=>n.getClientRects().length);if(!focus.length)return;const first=focus[0],last=focus.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
   async function refreshDecision(){if(!guided||busy)return;const form=app.querySelector('[data-qa-decision-form]'),reason=form?.querySelector('[name=reason]')?.value||'';busy=true;controls();el('qa-decision-refresh').disabled=true;try{const url=new URL(location.href);url.searchParams.set('qa_step','decision');const response=await fetch(url,{credentials:'same-origin',headers:{Accept:'text/html'}});if(!response.ok)throw new Error('The current decision could not be loaded. Your note is kept.');const html=new DOMParser().parseFromString(await response.text(),'text/html'),next=html.querySelector('#qa-decision-step .review-route-panel'),current=app.querySelector('#qa-decision-step .review-route-panel');if(!next||!current)throw new Error('Current workflow controls are unavailable. Your note is kept.');current.replaceWith(document.importNode(next,true));const input=app.querySelector('[data-qa-decision-form] [name=reason]');if(input){input.value=reason;decisionDirty=!!reason;}else decisionDirty=false;el('qa-decision-error').textContent='Decision refreshed. Review the current stage before submitting.';}catch(error){el('qa-decision-error').textContent=error.message;}finally{busy=false;controls();el('qa-decision-refresh').disabled=false;}}

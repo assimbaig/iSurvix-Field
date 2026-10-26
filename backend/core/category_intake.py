@@ -440,14 +440,24 @@ def review_state(request, checklist_id):
             Q(status__in=ACTIVE-{'queued'})|Q(status='queued',pk__lt=revision.processing_job.pk)
             ).exclude(pk=revision.processing_job.pk).count() if revision.processing_job.status=='queued' else 0
         result['ai']['error_code']='model_identity_changed' if revision.processing_job.error.startswith('[model_identity_changed]') else ''
-        result['ai']['note']='Photo observations are saved as analysis runs. Checklist suggestions appear after all submitted evidence has been analysed.'
+        result['ai']['note']='Saved checklist suggestions remain available while matching continues. Open a photo to refresh its saved suggestions.'
     if not client:
         from . import qa_matching
         private=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER
         result.update(qa_matching.state(revision,payload,request.user,private=private))
         details=qa_matching.catalog(revision)
         for item in result['items']:item.update(details.get(item['id'],{}))
-        for photo in result['photos']:photo['observations']=result['observations'].get(photo['id'],[])
+        for photo in result['photos']:
+            photo['observations']=result['observations'].get(photo['id'],[])
+            if private:
+                match=result['photo_matches'].get(str(photo['id']))
+                if match:
+                    original=photo.get('filename','')
+                    display=match.get('display_name') or original
+                    photo['original_filename']=original
+                    photo['display_name']=display
+                    photo['filename']=display
+                    photo['photo_match']={key:value for key,value in match.items() if key!='display_name'}
         if not private:
             confirmed={(link['photo_id'],link['field_id']) for link in result['links']}
             for item in result['items']:
@@ -456,6 +466,8 @@ def review_state(request, checklist_id):
                 if not item.get('accepted'):item.update(value=None,proposed_answer=None,status='Missing')
             result['ai']={'status':'reviewed' if completed else 'pending_qa_review','completed':0,'total':0,'error':''}
     if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .qa_review_progress import phases
+        result['ai']['phases']=phases(revision)
         from .qa_site_information import table as site_information_table
         result['site_information_table']=site_information_table(c,result['general_information'],result['items'],
             can_review=result['can_review'] and not result['config_error'])
@@ -521,7 +533,12 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     ident = data.get('field_id'); reason = data.get('reason', '')
     fields = {field['id']:field for section in revision.snapshot['schema'].get('sections',[]) for field in section.get('fields',[])}
     if ident not in fields: raise ValidationError('Choose an actual item from the approved checklist.')
-    if not isinstance(reason,str) or not reason.strip(): raise ValidationError('Record the source-backed QA review reason.')
+    if not isinstance(reason,str) or len(reason)>4000: raise ValidationError('Reviewer remarks must be text of at most 4000 characters.')
+    rules=fields[ident].get('evidence_rules') or {}
+    attestation=any(key not in {'version','min_photos','notes'} and value not in (False,None,[],{},'any')
+                    for key,value in rules.items())
+    if not reason.strip() and (action=='map' or attestation):
+        raise ValidationError('Record the source-backed QA review reason required by this evidence policy.')
     ids = data.get('photo_ids',[])
     if not isinstance(ids,list) or len(ids)>500 or any(type(i) is not int for i in ids) or len(set(ids))!=len(ids): raise ValidationError('Choose valid distinct source photos.')
     allowed = {p['id']:p for p in revision.snapshot['photos']}

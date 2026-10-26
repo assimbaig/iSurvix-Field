@@ -30,6 +30,17 @@ def native(bindings=None, unassigned=None):
 
 
 class MappingBatchTests(SimpleTestCase):
+    def test_complete_small_catalog_keeps_synonymous_zero_overlap_fields_available(self):
+        observations=analysis([{'component':'lattice mast','value':'Visible intact structure',
+            'confidence':'high','notes':'Overall structure shown.'}])
+        template=schema([field('tower','Support integrity'),field('brand','Cabinet manufacturer')])
+        batch=list(mapping.mapping_batches(observations,template))[0]
+        self.assertEqual(batch['ranking_method'],'complete_catalog')
+        self.assertEqual({item['id'] for item in batch['catalog']},{'tower','brand'})
+        self.assertIn('tower',{item['field_id'] for item in batch['finding_candidates']['photo:17:finding:1']})
+        decision=mapping.response_schema(batch)['properties']['decisions']['properties']['photo:17:finding:1']
+        self.assertIn('tower',decision['properties']['field_id']['anyOf'][0]['enum'])
+
     def test_complete_small_catalog_and_stable_keys_do_not_mutate_observations(self):
         observations = analysis()
         original = deepcopy(observations)
@@ -38,7 +49,7 @@ class MappingBatchTests(SimpleTestCase):
         second = list(mapping.mapping_batches(observations, template))
         self.assertEqual(first, second)
         self.assertEqual(observations, original)
-        self.assertEqual(first[0]['key'], 'mapping:0001')
+        self.assertEqual(first[0]['key'], 'mapping:v3:' + first[0]['identity'])
         self.assertEqual(first[0]['findings'][0]['finding_key'], 'photo:17:finding:1')
         self.assertEqual(first[0]['ranking_method'], 'complete_catalog')
         self.assertEqual(len(first[0]['catalog']), 2)
@@ -213,6 +224,7 @@ class NativeBindingTests(SimpleTestCase):
     def test_empty_candidates_and_cloud_alias_do_not_call_model(self, ollama):
         batch = self.batch()
         batch['catalog'] = []
+        batch['finding_candidates']={item['finding_key']:[] for item in batch['findings']}
         result = mapping.bind_batch(batch, 'synthetic-local-model')
         self.assertEqual(result['unassigned'], ['photo:17:finding:1'])
         with self.assertRaises(mapping.MappingError):
@@ -244,6 +256,33 @@ class MappingIntegrationTests(TestCase):
     add_photo = processing_fixtures.SurveyProcessingTests.add_photo
     processing = processing_fixtures.SurveyProcessingTests.processing
     analysed = processing_fixtures.SurveyProcessingTests.analysed
+
+    def test_worker_can_propose_small_catalog_synonyms_with_no_literal_overlap(self):
+        from . import survey_processing as service
+        revision,_=service.submit(self.request(),self.checklist.pk,True)
+        def raw(source,model,**kwargs):
+            return {'source_id':source['source_id'],'reference':source['reference'],'findings':[
+                {'field_hint':'','category':'equipment','component':'maker emblem','value':'SyntheticCo',
+                 'confidence':'high','basis':'recorded','unit':'','evidence_quote':'SyntheticCo',
+                 'source_id':source['source_id'],'reference':source['reference']}]}
+        self.processing(analyse=raw)
+        def native_decisions(path,payload,**kwargs):
+            decisions=payload['format']['properties']['decisions']['properties']
+            for decision in decisions.values():
+                self.assertIn('manufacturer',decision['properties']['field_id']['anyOf'][0]['enum'])
+            return {'message':{'content':json.dumps({'decisions':{key:{'field_id':'manufacturer',
+                'reason':'The maker emblem identifies the recorded manufacturer.'} for key in decisions}})}}
+        with patch.object(mapping.local_ai,'ollama',side_effect=native_decisions) as model:
+            service.process_next()
+            self.assertGreater(model.call_count,0)
+        revision.processing_job.refresh_from_db()
+        self.assertEqual(revision.processing_job.status,'ready_for_review',revision.processing_job.error)
+        result=service.reviewed_payload(revision)
+        item=next(item for item in result['checklist_items'] if item['id']=='manufacturer')
+        self.assertEqual(item['value'],'SyntheticCo')
+        self.assertTrue(item['sources'])
+        self.assertFalse(item['accepted'])
+        self.assertTrue(all(row['state']=='proposed' for row in result['photo_matches']))
 
     def raw_analysis(self, source, model, **kwargs):
         payload = self.analysed(source, model)
@@ -299,3 +338,167 @@ class MappingIntegrationTests(TestCase):
         item = next(item for item in service.reviewed_payload(revision)['checklist_items'] if item['id'] == 'manufacturer')
         self.assertIn(item['value'], (None, ''))
         self.assertEqual(item['sources'], [])
+
+
+class RankedPhotoCandidateContractTests(SimpleTestCase):
+    def test_ranked_candidates_keep_best_and_alternates_with_similarity_not_probability(self):
+        template=schema([field('a_model','Cabinet model number'),field('z_brand','Cabinet manufacturer')])
+        batch=list(mapping.mapping_batches(analysis(),template))[0]
+        candidates=batch['finding_candidates']['photo:17:finding:1']
+        self.assertEqual(candidates[0]['field_id'],'z_brand')
+        self.assertEqual([item['rank'] for item in candidates],list(range(1,len(candidates)+1)))
+        self.assertTrue(all(item['score_kind']=='lexical_similarity' and 'probability' not in item for item in candidates))
+        with patch.object(mapping.local_ai,'ollama',return_value=native([{'finding_key':'photo:17:finding:1','field_id':'z_brand','reason':'Legible manufacturer label.'}])):
+            result=mapping.bind_batch(batch,'synthetic-model')
+        self.assertEqual(result['bindings'][0]['candidates'],candidates)
+        self.assertEqual(result['bindings'][0]['alternates'][0]['field_id'],'a_model')
+        self.assertEqual(result['photo_matches'][0]['state'],'proposed')
+
+    def test_merged_batch_cannot_assign_other_findings_candidate(self):
+        observations=analysis([
+            {'category':'equipment','component':'radio manufacturer','value':'Co','confidence':'high'},
+            {'category':'other','component':'concrete slab','value':'Visible slab','confidence':'high'}])
+        template=schema([field('radio','Radio manufacturer'),field('slab','Concrete slab')]+[field('f'+str(i),'Distant unrelated topic '+str(i)) for i in range(41)])
+        with patch.object(mapping,'_semantic_vectors',side_effect=mapping.MappingError('Unavailable fixture')):
+            batch=list(mapping.mapping_batches(observations,template))[0]
+        self.assertEqual([x['field_id'] for x in batch['finding_candidates']['photo:17:finding:1']],['radio'])
+        with patch.object(mapping.local_ai,'ollama',return_value=native([{'finding_key':'photo:17:finding:1','field_id':'slab','reason':'Cross-finding wrong candidate.'}])):
+            with self.assertRaises(mapping.MappingError):mapping.bind_batch(batch,'synthetic-model')
+        decision=mapping.response_schema(batch)['properties']['decisions']['properties']['photo:17:finding:1']
+        self.assertEqual(decision['properties']['field_id']['anyOf'][0]['enum'],['radio'])
+
+    def test_no_findings_photo_remains_explicitly_unmatched_without_model(self):
+        observations=[{'source_id':'photo:17','model':'synthetic-model','findings':[]}]
+        batches=list(mapping.mapping_batches(observations,schema([field('tower','Tower condition')])))
+        self.assertEqual(len(batches),1)
+        with patch.object(mapping.local_ai,'ollama') as model:
+            result=mapping.bind_batch(batches[0],'synthetic-model')
+        model.assert_not_called()
+        self.assertEqual(result['photo_matches'][0]['source_id'],'photo:17')
+        self.assertEqual(result['photo_matches'][0]['state'],'unmatched')
+        self.assertTrue(result['photo_matches'][0]['reason'])
+
+    def test_unassigned_preserves_ranked_options_and_reason_unknown_candidate_rejected(self):
+        batch=list(mapping.mapping_batches(analysis(),schema([field('brand','Cabinet manufacturer')])))[0]
+        with patch.object(mapping.local_ai,'ollama',return_value={'message':{'content':json.dumps({'decisions':{'photo:17:finding:1':{'field_id':None,'reason':'The manufacturer label is unreadable.'}}})}}):
+            result=mapping.bind_batch(batch,'synthetic-model')
+        self.assertEqual(result['photo_matches'][0]['state'],'unmatched')
+        self.assertIn('unreadable',result['photo_matches'][0]['reason'])
+        self.assertTrue(result['photo_matches'][0]['candidates'])
+        batch['finding_candidates']['photo:17:finding:1'][0]['field_id']='foreign'
+        with patch.object(mapping.local_ai,'ollama') as model:
+            with self.assertRaises(mapping.MappingError):mapping.bind_batch(batch,'synthetic-model')
+            model.assert_not_called()
+
+    def test_low_confidence_binding_keeps_ranked_candidates_but_photo_unmatched(self):
+        observations=analysis();observations[0]['findings'][0]['confidence']='low'
+        batch=list(mapping.mapping_batches(observations,schema([field('brand','Cabinet manufacturer')])))[0]
+        with patch.object(mapping.local_ai,'ollama',return_value=native([{'finding_key':'photo:17:finding:1','field_id':'brand','reason':'Possible manufacturer label; unclear source.'}])):
+            result=mapping.bind_batch(batch,'synthetic-model')
+        self.assertEqual(result['photo_matches'][0]['state'],'unmatched')
+        self.assertIn('uncertain',result['photo_matches'][0]['reason'].lower())
+        self.assertTrue(result['photo_matches'][0]['candidates'])
+
+    def test_complete_photo_outcomes_include_no_findings_even_when_mapping_skipped(self):
+        observations=[{'source_id':'photo:18','findings':[]},*analysis()]
+        result=mapping.photo_candidate_outcomes(observations,[])
+        self.assertEqual([item['source_id'] for item in result],['photo:17','photo:18'])
+        self.assertTrue(all(item['state']=='unmatched' and item['requires_qa'] for item in result))
+
+class MappingResumeRegressionTests(MappingIntegrationTests):
+    def test_worker_persists_photo_candidates_and_unaccepted_values(self):
+        from . import survey_processing as service
+        revision, _ = service.submit(self.request(), self.checklist.pk, True)
+        self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=self.binding):
+            service.process_next()
+        payload = revision.processing_result.payload
+        self.assertEqual({row['source_id'] for row in payload['photo_matches']},
+                         {'photo:' + str(photo['id']) for photo in revision.snapshot['photos']})
+        self.assertTrue(payload['photo_matches'][0]['candidates'])
+        self.assertTrue(payload['findings'][0]['candidates'])
+        self.assertFalse(any(item['accepted'] for item in payload['checklist_items']))
+
+    def test_resubmission_reuses_image_and_mapping_but_not_review_decisions(self):
+        from . import survey_processing as service
+        from .survey_processing_models import SurveyProcessingJob
+        first, _ = service.submit(self.request(), self.checklist.pk, True)
+        setup, image, _ = self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=self.binding) as text:
+            service.process_next()
+            self.assertEqual(image.call_count, 2)
+            self.assertEqual(text.call_count, 1)
+        setup.close()
+        original = {row.pk: row.digest for row in first.source_analyses.all()}
+        self.checklist.answer_data = {'custom': {'contact': 'Returned correction'}}
+        self.checklist.save(update_fields=['answer_data'])
+        second, _ = service.submit(self.request(), self.checklist.pk, True)
+        setup, image, _ = self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=AssertionError('Repeated text inference')) as text:
+            service.process_next()
+        job = SurveyProcessingJob.objects.get(revision=second)
+        self.assertEqual(job.status, 'ready_for_review', job.error)
+        self.assertEqual(image.call_count, 0)
+        self.assertEqual(text.call_count, 0)
+        self.assertEqual({row.pk: row.digest for row in first.source_analyses.all()}, original)
+        self.assertFalse(any(item['accepted'] for item in second.processing_result.payload['checklist_items']))
+
+
+class MappingVersionAndPriorityTests(SimpleTestCase):
+    def test_cache_keys_are_versioned_and_context_bound(self):
+        first = list(mapping.mapping_batches(analysis(), schema([field('brand', 'Cabinet manufacturer')])))[0]
+        changed = list(mapping.mapping_batches(analysis(), schema([field('brand', 'Radio manufacturer')])))[0]
+        self.assertTrue(first['key'].startswith('mapping:v3:'))
+        self.assertNotEqual(first['key'], changed['key'])
+
+    def test_model_selected_candidate_precedes_higher_retrieval_score(self):
+        batch = list(mapping.mapping_batches(analysis(), schema([
+            field('brand', 'Cabinet manufacturer'), field('model', 'Cabinet model number')])))[0]
+        with patch.object(mapping.local_ai, 'ollama', return_value=native([
+            {'finding_key': 'photo:17:finding:1', 'field_id': 'model', 'reason': 'Actual recorded model on label.'}])):
+            result = mapping.bind_batch(batch, 'synthetic-model')
+        outcome = mapping.photo_candidate_outcomes(analysis(), [result])[0]
+        self.assertEqual(outcome['candidates'][0]['field_id'], 'model')
+
+    def test_inspection_location_without_answer_has_proposed_photo_outcome(self):
+        observations = analysis([{'category': 'inspection', 'component': 'Foundation inspection',
+            'value': None, 'basis': 'visible', 'notes': 'Visible foundation footing.', 'confidence': 'high'}])
+        batch = list(mapping.mapping_batches(observations, schema([field('foundation', 'Foundation inspection', type='inspection')])))[0]
+        with patch.object(mapping.local_ai, 'ollama', return_value=native([
+            {'finding_key': 'photo:17:finding:1', 'field_id': 'foundation', 'reason': 'Visible footing is relevant foundation evidence.'}])):
+            result = mapping.bind_batch(batch, 'synthetic-model')
+        self.assertEqual(result['photo_matches'][0]['state'], 'proposed')
+
+class MappingRecoveryEdgeTests(MappingIntegrationTests):
+    def test_legacy_cache_row_is_preserved_while_new_context_finishes(self):
+        from . import survey_processing as service
+        from .survey_processing_models import SurveySourceAnalysis
+        revision, _ = service.submit(self.request(), self.checklist.pk, True)
+        legacy = {'identity': 'old-v2-context', 'bindings': [], 'unassigned': []}
+        old = SurveySourceAnalysis.objects.create(revision=revision, source_id='mapping:0001',
+            payload=legacy, digest=service.digest(legacy))
+        self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=self.binding) as binder:
+            service.process_next()
+        revision.processing_job.refresh_from_db()
+        self.assertEqual(revision.processing_job.status, 'ready_for_review', revision.processing_job.error)
+        self.assertEqual(binder.call_count, 1)
+        old.refresh_from_db()
+        self.assertEqual(old.payload, legacy)
+        self.assertEqual(old.digest, service.digest(legacy))
+        self.assertEqual(revision.source_analyses.filter(source_id__startswith='mapping:v3:').count(), 1)
+
+    def test_zero_observations_all_photos_have_unmatched_outcome_without_text_inference(self):
+        from . import survey_processing as service
+        revision, _ = service.submit(self.request(), self.checklist.pk, True)
+        def empty(source, model, **kwargs):
+            return {**self.analysed(source, model), 'findings': []}
+        self.processing(analyse=empty)
+        with patch.object(mapping.local_ai, 'ollama') as text:
+            service.process_next()
+        text.assert_not_called()
+        revision.processing_job.refresh_from_db()
+        self.assertEqual(revision.processing_job.status, 'ready_for_review', revision.processing_job.error)
+        outcomes = revision.processing_result.payload['photo_matches']
+        self.assertEqual(len(outcomes), len(revision.snapshot['photos']))
+        self.assertTrue(all(item['state']=='unmatched' and not item['candidates'] for item in outcomes))

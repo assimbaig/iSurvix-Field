@@ -4,7 +4,7 @@ Review date: 24 October 2026. Scope: the existing Django survey and inspection a
 
 The permission, routing and workspace checks use isolated Django records and synthetic evidence. The category-upload workflow supersedes the earlier Engineer checklist/AI review steps. Actual local vision was also exercised with synthetic images; this establishes integration, not real-site accuracy, physical-device acceptance or production readiness. Current verification evidence is recorded in docs/development/QA_RESUME_ACCEPTANCE_20261024.json; older stage evidence remains in docs/development/ENGINEER_CATEGORY_QA_WORKFLOW.json.
 
-Latest verification: 1,030 isolated backend tests passed, seven frontend scripts
+Previous checkpoint verification (24 October): 1,030 isolated backend tests passed, seven frontend scripts
 passed (71 unit assertions), and independent desktop/mobile saved-data journeys
 were checked. QA now uses one Site information table and two review panes.
 Engineer sketch/report uploads and authorized AI Pause/Resume are available.
@@ -14,7 +14,20 @@ verified existing project runtime on loopback11435. Known security findings
 (one Medium, four Low plus hardening/policy observations) remain open pending
 owner approval; see both docs/development/SECURITY_REVIEW_QA_*_20261024 reports.
 
+26 October candidate: Engineer home has three scoped task counts. QA photo previews show source images beside extracted observations and ranked suggested locations; generated QA names retain original upload names/bytes. Ordinary QA point remarks are optional; explicit policy attestations and final rejection reasons remain required. Compatible resubmissions reuse image and mapping analysis without inheriting approvals. Current evidence and the Low M1 finding are in the [resumed-work report](../development/RESUME_QA_AI_20261026.md).
+
 ## How access is decided
+
+26 October follow-up: **Completed AI study** uses one compact, read-only photo
+and findings format for the assigned Engineer, QA, Team Lead and company Admin.
+Viewing does not confirm a photo match, accept a checklist answer or approve
+work. Clients retain the existing release restrictions and see accepted, linked
+information only after QA completion and a matching released output; private AI
+proposals remain internal. Super Admin remains administrative. QA alone uses
+the public-keyword reference lookup in the review viewer; references are not
+site evidence. Source analysis, shared finding extraction and checklist tagging
+have distinct labels; unknown batch totals are not presented as percentages.
+See the [current follow-up guide](../development/WEB_REFERENCES_AND_STUDY_20261026.md).
 
 An active, unlocked operational account needs an effective project grant. A grant can expire or be revoked; an old primary-project value does not restore a revoked grant. Company boundaries apply to project staff. Admin access is additionally limited to the owning Admin's projects and assigned industry. Multiple project access requires explicit permission. Super Admin has separate platform-administration authority; even global administrative visibility does not grant operational engineering access.
 
@@ -31,6 +44,7 @@ Being able to see a project does not permit every operation on its tasks. Engine
 | Submit category photos to QA | No | No | Own task, completed uploads | No | No | No |
 | Record General Info site data | No | Task setup within scope | Own editable task | Review frozen source and record QA corrections | Review only | Shared accepted information only |
 | Match photos and review AI suggestions | No | No | No | Named QA at current editable stage | Read completed QA package | No |
+| View completed photo AI study without editing | No | Managed project | Own assigned task | Assigned site | Assigned site | Released accepted information only |
 | Record derived checklist answers | No | No | No matching or AI acceptance | Named QA; original Engineer source stays frozen | Review only | Shared approved results only |
 | Sign QA review | No | No | No | Named QA at current stage | No | No |
 | Sign Team Lead review | No | No | No | No | Named Team Lead at current stage | No |
@@ -49,6 +63,7 @@ Historical version-one independent workflows can retain their original named Tea
 
 ### Purpose and permitted work
 
+- Start with Total assigned scope, Pending for submission and Rejected pending for response; select a count to open its project-filtered task list.
 - Find assigned tasks and distinguish pending preparation, submitted/review work, returned or rejected corrections, and completed work. The workflow stage and AI processing status are separate.
 - Open the assigned site's General Info form. Available task, account, project and company facts prefill without replacing saved values or deliberate blanks. Add the permitted information collected on site.
 - Save site information explicitly, or use Submit to QA to save current valid entries before handoff. Assigned identity remains protected; this form does not approve engineering work or require full checklist matching.
@@ -110,6 +125,7 @@ QA cannot create projects or tasks, invite staff/Clients, upload or replace the 
 | Type | Status | Existing-feature follow-up |
 | --- | --- | --- |
 | Current-stage and named-reviewer protection | Verified in isolated workflow checks | Keep denials for wrong reviewer, revoked access, stale decisions and changed inputs. |
+| Empty AI observation creates suggested links, M1 Low | Reproduced; owner approval required before fix | An empty high-confidence finding can produce a suggested link while its candidate is unmatched. It grants no answer acceptance or approval. See the26October security report. |
 | QA matching workspace | Current change; see final workflow evidence | Category navigation, scoped per-photo links, Not Assigned, display ordering and responsive saved-data browser checks are tracked against the owner's original acceptance list. |
 | Clarification offered before reopened QA review was complete | Reproduced and repaired | After a Team Lead return, the workflow shows Review and complete QA evidence and withholds premature Approve/Clarify. Recomplete the reviewed package before clarifying or approving. Return/reject controls remain available. |
 | Raw image context omitted by native model | Structured decoding improved; native retest passed | Native output now includes observed subject and source quotation with a closed set of approved field hints. Unknown remains allowed; this is not a guarantee of whole-site matching accuracy. |

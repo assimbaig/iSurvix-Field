@@ -1,5 +1,128 @@
 # iSurvix Field: local Codex development brief
 
+## Compact QA, retained matches and source sketch drafts - 26 October 2026
+
+Latest work continues on `feat/qa-photo-candidate-ranking-20261024` in
+`.local/worktrees/qa-photo-candidate-ranking-20261024`; preserve the main
+`review/qa-resume-20261026` checkout and its running operational workers.
+Draft PR20 remains the delivery target; no merge/deployment is authorized.
+
+Compact Matching / AI details / Links photo support, retained and in-progress
+matching previews, bounded small-catalog matching, and source-backed sketch
+tracing PDF/DXF are implemented. See
+`docs/development/QA_COMPACT_TAGGING_SKETCH_20261026.md`. Final checks before
+the subsequent web-reference addition: 1,085 backend tests passed in361.302s,
+all eight frontend scripts and required Django/dependency/migration/build
+checks passed. Independent QA:52 browser,47 focused backend,6 projection and9
+artifact checks. Test counts do not certify later edits automatically.
+
+The six-page operational sketch was rendered privately from retained verified
+sources, with zero database writes/model calls/approvals. Sketch geometry is
+draft source tracing, not semantic engineering reconstruction. Missing or
+unreadable measurements remain flagged; full original imagery is preserved.
+
+Separate AppSec: **C1 Low** retained in-progress candidate advice can have an
+obsolete model/batch context. No approval bypass was established. C1 and prior
+M1/W1/S1/S2/S3/R1/R2 remain **pending owner approval; do not fix them**. See
+`SECURITY_REVIEW_QA_COMPACT_SKETCH_20261026.md`.
+
+Recovery checkpoint: `.local/backups/project-checkpoint-20261026-135127`.
+Actual-data feature preview: `http://127.0.0.1:8001/login/` (separate session/
+CSRF cookies, shared existing local records and media). Original8000 and
+operational workers are deliberately untouched while analysis continues.
+The 8001 bootstrap is private under the feature checkout's
+`.local/qa-followup-20261026/live-preview`. No duplicate worker is started.
+
+Owner subsequently requested internet keyword responses, compact finding
+tables with site/photo context, separate processing stages, and one read-only
+completed-study format across roles. These are implemented; see
+`docs/development/WEB_REFERENCES_AND_STUDY_20261026.md`. Native Wikipedia
+references worked through the actual authorized saved-data browser endpoint.
+Full Brave web search remains blocked by a missing owner-provided provider key;
+no paid plan/account/model was introduced. Client raw proposals remain private:
+the common study view exposes only accepted information after existing release
+requirements. Super Admin retains administrative-only access.
+
+Separate AppSec found **WS1 Low**, obfuscated local-address links in optional
+web results. The owner explicitly approved fixing this finding on26 October.
+Backend/frontend repaired it with executed RED/GREEN tests, rejected old cached
+results, and independent security re-attack verified the demonstrated bypasses
+blocked. **WS1 approval does not authorize older C1/M1/W1/S1/S2/S3/R1/R2 fixes.**
+Read `SECURITY_REVIEW_WEB_STUDY_20261026.md` for original evidence and remediation.
+Final implementation `b1e49a1` passed **1,110 backend tests in396.350s**, no
+failures/errors/skips, zero external attempts and33 in-process fixture calls.
+All ten frontend scripts and required Django/migration/dependency/syntax checks
+passed;215-file static build passed. Final source was unchanged throughout:
+`6cf48c3883c704aaea316604cbc4ccc74d5e22c886a6e80aa054f76079eae58c`.
+Independent new-feature QA:155 browser checks,9 HTTP guards,29 focused backend
+tests; separate final security13 private probes passed after WS1 remediation.
+Receipts: `docs/development/QA_FOLLOWUP_ACCEPTANCE_20261026.json`,
+`FOLLOWUP_REQUIREMENTS_20261026.md`, and the two independent reports.
+Final recovery checkpoint is `.local/backups/project-checkpoint-20261026-145256`;
+its final Git bundle supplements the earlier source snapshot. Current preview
+is8001; original8000/11435 and operational jobs remain untouched. No production
+merge/deployment is authorized. See the private delivery receipt for the final
+documentation commit and remote SHA, rather than assuming the old main checkout
+has been switched to this feature branch.
+
+## Resumed Engineer / QA candidate - 26 October 2026
+
+Owner explicitly resumed development. Feature branch:
+`feat/qa-photo-candidate-ranking-20261024`, retaining paused checkpoints
+`6cef00c` and `206733b` (integrated as `db1803a`). Origin base `042e8de` is the
+owner's merged PR19 and has the same product tree as `42cf64b`; no newer remote
+application changes were overwritten.
+
+Implementation `cd796fd` is pushed in **draft PR20**:
+https://github.com/assimbaig/iSurvix-Field/pull/20. No merge or production
+deployment occurred. Acceptance ledger:14 Verified/15, with M1 Failed pending
+owner-approved remediation.
+
+Implemented the three-count Engineer landing, optional ordinary QA remarks,
+compatible raw-image and text-mapping reuse on resubmission, persisted ranked
+photo candidates, source-backed answer proposals, and photo preview details
+beside the image. Generated QA display names preserve original upload/download
+names and all source bytes; physical originals are not renamed. GPS alone does
+not establish equipment azimuth or height. See
+`docs/development/RESUME_QA_AI_20261026.md` and its acceptance JSON.
+
+Final full suite: **1,063 passed in324.758s**, no failures/errors/skips, zero
+external attempts and33 in-process fixture connections. Product-source
+fingerprint `57da3d20b8254aa285288f3278e6808051f172f00d9d1e203c4a99478a409b03`.
+Eight frontend scripts, Django/migration/dependency/syntax checks and214-file
+static build passed. Independent QA:63 browser checks across desktop/mobile
+with166 points/460 photos;56 focused backend checks passed. One full-suite
+regression (missing Engineer assistant link) was repaired under Help and the
+entire suite rerun. Reports/screenshots are under `docs/development`.
+
+Actual native application image extraction succeeded on the existing signed
+project runtime11435 with `qwen3.5:4b`: synthetic label41.162s; saved native
+Engineer-to-QA workflow95.768s. Unchanged returned/resubmitted evidence completed
+in0.998s with zero image and zero text-mapping calls, retained old analyses and
+no inherited human acceptance. Standard11434 still fails native generation
+withHTTP500. No model was downloaded or Ollama exposed publicly.
+
+Separate AppSec reproduced **M1 Low**: empty high-confidence observations can
+gain a suggested link through generated mapping text while candidates say
+unmatched. No acceptance/approval bypass occurred. **Do not fix M1 or earlier
+W1/S1/S2/S3/R1/R2 without owner approval.** Review and test evidence:
+`SECURITY_REVIEW_QA_MATCHING_20261026.md`;9 of10 new probes passed, one retained
+failure is M1;44 existing guard tests and4 assistant tests passed. This is a
+review candidate with a known issue, not complete security clearance.
+
+Recovery: `.local/backups/project-checkpoint-20261026-124422` contains the
+verified archive, consistent SQLite backup and Git history bundle. All69
+operational tables matched the backup after tests;2793 operational media paths
+and sizes matched its archive. Operational media bytes were not all rehashed;
+the460 disposable fixture originals and native synthetic originals were.
+Final branch/commit/PR/local-preview state is recorded in the private delivery
+receipt `.local/resume-20261026/delivery.json` in the candidate worktree.
+
+No production merge or deployment is authorized. Use existing Windows startup
+scripts and separate durable worker; native/destructive checks use isolated
+data. Account allowance was unavailable to the agent; remaining Codex usage is
+shown in the user's usage dashboard or CLI `/status`.
+
 ## Latest local candidate - reference QA workspace, 24 October 2026
 
 Implementation `32d49dfd8d150c9f5ebc9fd93b83e51907051bab` is pushed in

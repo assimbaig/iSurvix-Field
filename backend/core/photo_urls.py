@@ -1,7 +1,10 @@
 from django.urls import path
 from . import photo_views as v
 from . import category_intake_views as capture
+from . import web_references
+from . import completed_ai_study
 urlpatterns=[
+ path('<int:checklist_id>/completed-ai-study/',completed_ai_study.workspace,name='photo_completed_ai_study'),
  path('<int:checklist_id>/capture/',capture.state,name='photo_capture_state'),
  path('<int:checklist_id>/capture/general-information/',capture.general_information,name='photo_capture_general_information'),
  path('<int:checklist_id>/capture/submit/',capture.submit,name='photo_capture_submit'),
@@ -13,6 +16,7 @@ urlpatterns=[
  path('<int:checklist_id>/capture/review/',capture.review_state,name='photo_capture_review_state'),
  path('<int:checklist_id>/capture/review/progress/',capture.review_progress,name='photo_capture_review_progress'),
  path('<int:checklist_id>/capture/review/action/',capture.review_action,name='photo_capture_review_action'),
+ path('<int:checklist_id>/capture/review/web-references/',web_references.lookup,name='photo_capture_web_references'),
  path('<int:checklist_id>/upload-session/',v.processing_upload_session,name='photo_processing_upload_session'),
  path('<int:checklist_id>/fast-state/',v.fast_state,name='photo_fast_state'),
  path('<int:checklist_id>/mapping/',v.mapping,name='photo_mapping'),

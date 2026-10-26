@@ -4,12 +4,51 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 from django.db import connection
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 
 from . import test_qa_matching_backend as fixtures
 from .survey_processing_models import SurveySourceAnalysis, SurveyProcessingJob, SurveyProcessingEvent
 from . import survey_processing as pipeline
+
+
+class PhaseProjectionTests(SimpleTestCase):
+    def phases(self,status,completed=3,total=3,saved=0,result=False):
+        from .qa_review_progress import phase_projection
+        return phase_projection(status,completed,total,saved,result)
+
+    def test_equal_analysis_counter_is_not_a_completed_stage_boundary(self):
+        phases=self.phases('analysing_evidence')
+        self.assertEqual(phases['analysis']['state'],'running')
+        self.assertEqual(phases['findings']['state'],'running')
+        self.assertEqual(phases['matching']['state'],'waiting')
+        self.assertIsNone(phases['findings']['completed'])
+        self.assertIsNone(phases['findings']['total'])
+
+    def test_preparing_checklist_is_completed_analysis_and_running_tagging_with_unknown_total(self):
+        phases=self.phases('preparing_checklist',saved=5)
+        self.assertEqual(phases['analysis']['state'],'complete')
+        self.assertEqual(phases['findings']['state'],'complete')
+        self.assertEqual(phases['matching']['state'],'running')
+        self.assertEqual(phases['matching']['completed'],5)
+        self.assertIsNone(phases['matching']['total'])
+
+    def test_pause_failure_and_resume_preserve_durable_completed_analysis(self):
+        for status,matching in [('paused','paused'),('pausing','pausing'),('failed','failed'),('queued','queued')]:
+            with self.subTest(status=status):
+                phases=self.phases(status,saved=2)
+                self.assertEqual(phases['analysis']['state'],'complete')
+                self.assertEqual(phases['matching']['state'],matching)
+                self.assertEqual(phases['matching']['completed'],2)
+        phases=self.phases('paused',completed=1,total=3)
+        self.assertEqual(phases['analysis']['state'],'paused')
+        self.assertEqual(phases['matching']['state'],'waiting')
+
+    def test_saved_result_completes_matching_even_if_drawing_work_pauses_or_fails(self):
+        for status in ['paused','failed','preparing_drawings','ready_for_review']:
+            with self.subTest(status=status):
+                phases=self.phases(status,result=True)
+                self.assertEqual([phases[key]['state'] for key in ['analysis','findings','matching']],['complete']*3)
 
 
 @override_settings(SECRET_KEY='qa-light-progress-test', ROOT_URLCONF='checklist.urls_local',
@@ -29,6 +68,31 @@ class QAReviewProgressTests(TestCase):
     def progress(self, actor=None, **params):
         from .qa_review_progress import progress
         return progress(SimpleNamespace(user=actor or self.quality, GET=params), self.checklist.pk)
+
+    def test_phases_separate_completed_analysis_from_running_tagging_without_loading_payloads(self):
+        from django.urls import reverse
+        SurveyProcessingJob.objects.filter(revision=self.revision).update(status='preparing_checklist',completed=3,total=3)
+        saved={'synthetic':'not read by progress'}
+        SurveySourceAnalysis.objects.create(revision=self.revision,source_id='mapping:synthetic-phase-batch',
+            payload=saved,digest=pipeline.digest(saved))
+        with CaptureQueriesContext(connection) as queries:
+            result=self.progress()
+        phases=result['ai']['phases']
+        self.assertEqual(phases['analysis']['state'],'complete')
+        self.assertEqual((phases['analysis']['completed'],phases['analysis']['total']),(3,3))
+        self.assertEqual(phases['findings']['state'],'complete')
+        self.assertEqual(phases['findings']['shared_with'],'analysis')
+        self.assertIsNone(phases['findings']['completed'])
+        self.assertEqual(phases['matching']['state'],'running')
+        self.assertEqual(phases['matching']['completed'],1)
+        self.assertIsNone(phases['matching']['total'])
+        sql='\n'.join(row['sql'] for row in queries)
+        self.assertNotIn('"payload"',sql)
+        self.assertNotIn('"snapshot"',sql)
+        self.client.force_login(self.quality)
+        full=self.client.get(reverse('photo_capture_review_state',args=[self.checklist.pk]))
+        self.assertEqual(full.status_code,200,full.content)
+        self.assertEqual(full.json()['ai']['phases'],phases)
 
     def test_count_ticks_do_not_load_frozen_snapshots_or_all_source_payloads(self):
         payload = {'findings': [], 'large': 'x' * 100000}

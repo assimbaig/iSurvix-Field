@@ -2,7 +2,7 @@
 from copy import deepcopy
 from types import SimpleNamespace
 
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from . import qa_matching, survey_processing as pipeline
@@ -10,6 +10,19 @@ from .models import ChecklistTemplate, WorkflowTemplateQualification
 from .roadmap_service import definition_digest
 from .survey_processing_models import SurveyProcessingResult, SurveySourceAnalysis
 from . import test_engineer_category_submission_acceptance as capture_fixtures
+
+
+class LegacyPhotoProjectionTests(SimpleTestCase):
+    def test_legacy_projection_uses_only_existing_ai_links_for_the_requested_photo(self):
+        links=[{'photo_id':17,'field_id':'manufacturer','state':'ai_suggested','reason':'Legible label.'},
+            {'photo_id':17,'field_id':'model','state':'qa_confirmed'},
+            {'photo_id':18,'field_id':'foreign_photo','state':'ai_suggested'}]
+        original=deepcopy(links)
+        match=qa_matching.legacy_photo_match(17,links)
+        self.assertEqual(match['state'],'proposed')
+        self.assertEqual(match['candidates'],[{'field_id':'manufacturer','rank':1,'reason':'Legible label.'}])
+        self.assertEqual(links,original)
+        self.assertIsNone(qa_matching.legacy_photo_match(19,links))
 
 
 @override_settings(SECRET_KEY='isolated-qa-matching-regressions',ROOT_URLCONF='checklist.urls_local',
@@ -210,6 +223,162 @@ class QAMatchingBackendTests(TestCase):
         item['id']='manufacturer';item['value']='SyntheticCo'
         self.assertEqual(len(qa_matching.valid_ai_sources(item,findings)),1)
 
+    def test_high_confidence_photo_location_can_be_suggested_for_unanswered_inspection(self):
+        from .survey_processing_models import SurveyProcessingResult
+        field_id = 'civil_photo'
+        source_id = 'photo:' + str(self.ids[0])
+        for section in self.revision.snapshot['schema']['sections']:
+            for field in section['fields']:
+                if field['id'] == field_id:
+                    field['type'] = 'inspection'
+        self.checklist.schema_snapshot = deepcopy(self.revision.snapshot['schema'])
+        self.checklist.save(update_fields=['schema_snapshot'])
+        finding = {'source_id': source_id, 'reference': 'synthetic-inspection.png',
+            'finding_key': source_id + ':finding:1', 'field_hint': field_id,
+            'component': 'foundation inspection evidence', 'value': None,
+            'notes': 'Visible foundation and footing evidence.', 'confidence': 'high',
+            'basis': 'visible', 'unit': '', 'verification_status': 'needs_review'}
+        payload = pipeline.prepare_checklist(self.revision.snapshot,
+            {'findings': [finding], 'missing': [], 'conflicts': []})
+        SurveyProcessingResult.objects.create(revision=self.revision, payload=payload,
+            digest=pipeline.digest(payload))
+        SurveySourceAnalysis.objects.create(revision=self.revision, source_id=source_id,
+            payload={'source_id': source_id, 'reference': 'synthetic-inspection.png',
+                     'findings': [finding]}, digest=pipeline.digest(
+                         {'source_id': source_id, 'reference': 'synthetic-inspection.png',
+                          'findings': [finding]}))
+
+        state = self.qa_state()
+        self.assertIn((self.ids[0], field_id),
+            {(link['photo_id'], link['field_id']) for link in state['links']})
+        suggested = next(link for link in state['links']
+            if link['photo_id'] == self.ids[0] and link['field_id'] == field_id)
+        self.assertEqual(suggested['state'], 'ai_suggested')
+        point = next(item for item in state['items'] if item['id'] == field_id)
+        self.assertFalse(point['accepted'])
+        self.assertIsNone(point['value'])
+
+    def test_photo_preview_projects_ranked_matches_and_generated_name_without_losing_source_name(self):
+        source_id = 'photo:' + str(self.ids[0])
+        payload = pipeline.prepare_checklist(self.revision.snapshot, {'findings': [
+            {'source_id': source_id, 'reference': 'original-radio.jpg', 'field_hint': 'manufacturer',
+             'candidate_fields': [{'field_id': 'manufacturer', 'rank': 1, 'score': 0.82,
+                 'score_kind': 'lexical_similarity', 'reason': 'The label observation fits this field.'}],
+             'value': 'SyntheticCo', 'unit': '', 'basis': 'recorded', 'evidence_quote': 'SyntheticCo',
+             'confidence': 'high'}], 'missing': [], 'conflicts': []})
+        payload['photo_matches'] = [{'source_id': source_id, 'state': 'proposed',
+            'reason': 'AI suggested this source link; QA confirmation is required.',
+            'requires_qa': True, 'candidates': [{'field_id': 'manufacturer', 'rank': 1,
+                'score': 0.82, 'score_kind': 'lexical_similarity',
+                'reason': 'The label observation fits this field.'}]}]
+        payload['photo_names'] = {str(self.ids[0]): 'SYNTHETIC_000001_Cabinet_SyntheticCo.png'}
+        SurveyProcessingResult.objects.create(revision=self.revision, payload=payload,
+            digest=pipeline.digest(payload))
+        source = next(photo for photo in self.revision.snapshot['photos'] if photo['id'] == self.ids[0])
+        SurveySourceAnalysis.objects.create(revision=self.revision, source_id=source_id,
+            payload={'source_id': source_id, 'reference': source['filename'],
+                'findings': payload['findings']}, digest=pipeline.digest({'source_id': source_id,
+                'reference': source['filename'], 'findings': payload['findings']}))
+
+        state = self.qa_state()
+        preview = next(photo for photo in state['photos'] if photo['id'] == self.ids[0])
+        self.assertEqual(preview['display_name'], 'SYNTHETIC_000001_Cabinet_SyntheticCo.png')
+        self.assertEqual(preview['original_filename'], source['filename'])
+        self.assertEqual(preview['photo_match']['status'], 'proposed')
+        self.assertEqual(preview['photo_match']['candidates'][0]['field_id'], 'manufacturer')
+        self.assertEqual(preview['photo_match']['candidates'][0]['label'], 'Cabinet manufacturer')
+
+    def test_legacy_ready_photo_preview_reuses_supported_links_without_mutating_saved_analysis(self):
+        source_id = 'photo:' + str(self.ids[0])
+        payload = pipeline.prepare_checklist(self.revision.snapshot, {'findings': [
+            {'source_id': source_id, 'reference': 'legacy-label.png', 'field_hint': 'manufacturer',
+             'value': 'SyntheticCo', 'confidence': 'high', 'mapping_reason': 'Legible manufacturer label.'}],
+            'missing': [], 'conflicts': []})
+        saved = SurveyProcessingResult.objects.create(revision=self.revision,
+            payload=payload, digest=pipeline.digest(payload))
+        job = self.revision.processing_job
+        job.status = 'ready_for_review'
+        job.save(update_fields=['status'])
+
+        state = self.qa_state()
+        preview = next(photo for photo in state['photos'] if photo['id'] == self.ids[0])
+        self.assertEqual(preview['photo_match']['status'], 'proposed')
+        self.assertEqual([item['field_id'] for item in preview['photo_match']['candidates']], ['manufacturer'])
+        self.assertIsNone(preview['photo_match']['candidates'][0]['score'])
+        self.assertEqual(state['counts']['confirmed'], 0)
+        self.assertFalse(next(item for item in state['items'] if item['id'] == 'manufacturer')['accepted'])
+        saved.refresh_from_db()
+        self.assertEqual(saved.payload, payload)
+        self.assertEqual(saved.digest, pipeline.digest(payload))
+
+        response = self.mutate('unlink', field_id='manufacturer', photo_id=self.ids[0],
+            reason='QA found this source irrelevant.')
+        self.assertEqual(response.status_code, 200, response.content)
+        state = self.qa_state()
+        preview = next(photo for photo in state['photos'] if photo['id'] == self.ids[0])
+        self.assertEqual(preview['photo_match']['status'], 'unmatched')
+        self.assertEqual(preview['photo_match']['candidates'], [])
+
+    def test_active_mapping_exposes_durable_photo_candidates_before_whole_revision_result(self):
+        from . import survey_checklist_mapping as mapping
+        source_id='photo:'+str(self.ids[0])
+        raw={'source_id':source_id,'reference':'synthetic-active-label.png','findings':[
+            {'component':'cabinet manufacturer','value':'SyntheticCo','confidence':'high'}]}
+        batch=list(mapping.mapping_batches([raw],self.revision.snapshot['schema']))[0]
+        mapped=mapping._with_candidates(batch,{'bindings':[{'finding_key':batch['findings'][0]['finding_key'],
+            'field_id':'manufacturer','reason':'Legible manufacturer label.'}],'unassigned':[]})
+        for source,payload in [(source_id,raw),(batch['key'],mapped)]:
+            SurveySourceAnalysis.objects.create(revision=self.revision,source_id=source,
+                payload=payload,digest=pipeline.digest(payload))
+        before=list(self.revision.source_analyses.values_list('source_id','digest'))
+        job=self.revision.processing_job
+        job.status='preparing_checklist'
+        job.save(update_fields=['status'])
+
+        state=self.qa_state()
+        preview=next(photo for photo in state['photos'] if photo['id']==self.ids[0])
+        self.assertEqual(preview['photo_match']['status'],'proposed')
+        self.assertEqual(preview['photo_match']['candidates'][0]['field_id'],'manufacturer')
+        self.assertEqual(preview['photo_match']['candidates'][0]['reason'],'Legible manufacturer label.')
+        self.assertEqual(next(photo for photo in state['photos'] if photo['id']==self.ids[1])['photo_match']['status'],'pending')
+        self.assertFalse(any(item['accepted'] for item in state['items']))
+        self.assertEqual(state['counts']['confirmed'],0)
+        self.assertEqual(state['links'],[])
+        self.assertFalse(SurveyProcessingResult.objects.filter(revision=self.revision).exists())
+        self.assertEqual(list(self.revision.source_analyses.values_list('source_id','digest')),before)
+
+        response=self.mutate('confirm_link',field_id='manufacturer',photo_id=self.ids[0],
+            reason='QA checked this original label.')
+        self.assertEqual(response.status_code,200,response.content)
+        state=self.qa_state()
+        self.assertEqual(state['counts']['confirmed'],1)
+        self.assertEqual(state['links'][0]['state'],'qa_confirmed')
+        self.assertEqual(state['links'][0]['reason'],'QA checked this original label.')
+        self.assertFalse(next(item for item in state['items'] if item['id']=='manufacturer')['accepted'])
+        self.assertEqual(list(self.revision.source_analyses.values_list('source_id','digest')),before)
+
+    def test_legacy_preview_does_not_promote_uncertain_conflicting_or_explicitly_unmatched_sources(self):
+        source_id = 'photo:' + str(self.ids[0])
+        job = self.revision.processing_job
+        job.status = 'ready_for_review'
+        job.save(update_fields=['status'])
+        for changes, explicit_unmatched in [({'confidence': 'low'}, False),
+                ({'mapping_unassigned': True}, False), ({'conflict': True}, False), ({}, True)]:
+            with self.subTest(changes=changes, explicit_unmatched=explicit_unmatched):
+                finding = {'source_id': source_id, 'field_hint': 'manufacturer',
+                    'value': 'SyntheticCo', 'confidence': 'high', **changes}
+                payload = pipeline.prepare_checklist(self.revision.snapshot,
+                    {'findings': [finding], 'missing': [], 'conflicts': []})
+                if changes.get('conflict'):
+                    next(item for item in payload['checklist_items'] if item['id']=='manufacturer')['conflict']=True
+                if explicit_unmatched:
+                    payload['photo_matches']=[{'source_id':source_id,'state':'unmatched',
+                        'reason':'Recorded mapping was explicitly unassigned.','candidates':[]}]
+                payload = qa_matching.replay(self.revision, payload)
+                result = qa_matching.state(self.revision, payload, self.quality)
+                self.assertEqual(result['photo_matches'][str(self.ids[0])]['status'], 'unmatched')
+                self.assertEqual(result['photo_matches'][str(self.ids[0])]['candidates'], [])
+
     def test_original_and_crops_count_as_one_link_and_one_required_photo(self):
         from .category_intake import missing_for_review
         source='photo:'+str(self.ids[0])
@@ -274,3 +443,11 @@ class QAMatchingBackendTests(TestCase):
         self.assertEqual(self.checklist.review_route_record.stage,'closed')
         self.assertEqual(state['ai']['status'],'queued')
         self.assertFalse(state['can_review'])
+
+    def test_ordinary_answer_save_allows_blank_reviewer_remarks(self):
+        response = self.mutate('answer', field_id='manufacturer', value='SyntheticCo',
+                               photo_ids=[], reason='', preserve_evidence=True)
+        self.assertEqual(response.status_code, 200, response.content)
+        event = self.revision.processing_events.filter(action='qa_answer').last()
+        self.assertEqual(event.reason, '')
+        self.assertEqual(event.payload['items']['manufacturer']['value'], 'SyntheticCo')

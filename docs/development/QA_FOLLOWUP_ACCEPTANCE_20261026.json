@@ -1,0 +1,215 @@
+{
+  "implementation_commit": "b1e49a1b33698c278f47659a640ca03a5485c615",
+  "branch": "feat/qa-photo-candidate-ranking-20261024",
+  "draft_pr": "https://github.com/assimbaig/iSurvix-Field/pull/20",
+  "backend": {
+    "passed": 1110,
+    "seconds": 396.35,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "ordinary_tests_isolated": true,
+    "external_network_attempts": 0,
+    "in_process_fixture_connections": 33
+  },
+  "checks": [
+    {
+      "check": "backend-full",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "scripts/run_backend_tests.py",
+        "--verbosity",
+        "1"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 405.125
+    },
+    {
+      "check": "frontend-check-engineer-documents",
+      "command": [
+        "node",
+        "check-engineer-documents.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.094
+    },
+    {
+      "check": "frontend-check-engineer",
+      "command": [
+        "node",
+        "check-engineer.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.594
+    },
+    {
+      "check": "frontend-check-preview",
+      "command": [
+        "node",
+        "check-preview.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.593
+    },
+    {
+      "check": "frontend-check-qa-finding-table",
+      "command": [
+        "node",
+        "check-qa-finding-table.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "frontend-check-qa-guided-state",
+      "command": [
+        "node",
+        "check-qa-guided-state.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.094
+    },
+    {
+      "check": "frontend-check-qa-workspace",
+      "command": [
+        "node",
+        "check-qa-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.125
+    },
+    {
+      "check": "frontend-check-site-routing",
+      "command": [
+        "node",
+        "check-site-routing.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.578
+    },
+    {
+      "check": "frontend-check-survey-pause",
+      "command": [
+        "node",
+        "check-survey-pause.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.062
+    },
+    {
+      "check": "frontend-check-web-references",
+      "command": [
+        "node",
+        "check-web-references.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "frontend-check-workspace",
+      "command": [
+        "node",
+        "check-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.594
+    },
+    {
+      "check": "django-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+      "exit_code": 0,
+      "seconds": 1.937
+    },
+    {
+      "check": "migration-drift",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+      "exit_code": 0,
+      "seconds": 2.016
+    },
+    {
+      "check": "dependencies",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 0.859
+    },
+    {
+      "check": "syntax",
+      "command": [
+        "node",
+        "--check",
+        "backend/static/core/js/qa_evidence_review.js"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 0.063
+    }
+  ],
+  "source_unchanged_during_checks": true,
+  "source_fingerprint": "6cf48c3883c704aaea316604cbc4ccc74d5e22c886a6e80aa054f76079eae58c",
+  "independent_followup_qa": {
+    "browser_assertions": 155,
+    "http_guards": 9,
+    "focused_backend_tests": 29,
+    "prior_compact_sketch_browser_assertions": 52,
+    "original_fixture_photos_preserved": 460
+  },
+  "native_public_references": {
+    "wikipedia_authorized_browser_request": "HTTP200; real citations and retrieved date",
+    "brave": "Blocked: no owner-provided API key; no signup or paid requests"
+  },
+  "separate_security": {
+    "WS1": "Owner-approved repair independently reattacked: demonstrated bypasses resolved",
+    "private_security_probes_passed": 13,
+    "earlier_findings_not_authorized": [
+      "C1",
+      "M1",
+      "W1",
+      "S1",
+      "S2",
+      "S3",
+      "R1",
+      "R2"
+    ]
+  },
+  "limitations": [
+    "Findings are extracted during analysis, not a separate background job.",
+    "Planned checklist-mapping batch denominator is not persisted; no invented percentage.",
+    "Clients retain accepted/released-only visibility; no private proposal disclosure.",
+    "Sketch outputs are draft source tracing, not verified semantic/manufacturer CAD.",
+    "No fresh Ollama inference or operational approval performed in this follow-up."
+  ],
+  "preview": "http://127.0.0.1:8001/login/",
+  "original_8000_and_worker_preserved": true,
+  "recovery_checkpoint": "F:/iSurvix/iSurvix-Field/.local/backups/project-checkpoint-20261026-145256",
+  "static_build_files": 215,
+  "production_merge_or_deploy": false
+}

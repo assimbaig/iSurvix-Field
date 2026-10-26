@@ -36,6 +36,7 @@ LAYERS = {
     'BORDER': (8, 25), 'TITLE': (7, 35), 'TEXT': (7, 18),
     'EQUIPMENT': (7, 35), 'MEASURED': (5, 25), 'DIMENSIONS': (7, 18),
     'WARNINGS': (1, 25), 'LOGOS': (7, 18), 'ROUTES': (3, 25),
+    'SKETCH_TRACE': (8, 8), 'SKETCH_REFERENCE': (7, 18),
 }
 SHEETS = (
     ('site_layout', 'Site layout', '002'),
@@ -390,6 +391,44 @@ def build_geometry(snapshot: dict, findings: list) -> dict:
     return geometry
 
 
+def refresh_drawing_register(geometry):
+    """Rebuild the register after adding source sheets, before either exporter.
+
+    Actual drawing numbers lead the register; absent standard categories remain
+    explicit. Additional register pages are themselves indexed and bounded.
+    """
+    drawings=[s for s in geometry['sheets'] if s['key']!='register' and not s['key'].startswith('register_continued_')]
+    actual=[(f"{s['number']} | {s['title']}",f"Generated | {s['scale']}",
+             _source_label([s['source']]) if s.get('source') else f"{len(s.get('findings',[]))} recorded findings; see geometry.json") for s in drawings]
+    missing=[(f'SV-{number} | {title}','Not generated - supporting information missing','No geometry or connections assumed')
+             for key,title,number in SHEETS if not any(s['key']==key for s in drawings)]
+    count=1
+    while True:
+        continuation=[(f'SV-001-{i:02d} | Drawing register continued','Register index continuation','See corresponding register page') for i in range(2,count+1)]
+        rows=actual+continuation+missing
+        needed=max(1,math.ceil(len(rows)/12))
+        if needed==count:break
+        count=needed
+    if len(drawings)+count>MAX_SHEETS:
+        raise ValueError('Drawing register continuation exceeds the supported sheet limit; split the submission.')
+    notes=[('Design basis','No structural/electrical design performed. No governing design code or load combinations claimed.','A design basis and separate calculations are needed for engineering design.'),
+        ('Survey origin',f"Survey {geometry['survey_id']} | {geometry['date']}",f"{len(geometry['sources'])} linked evidence references"),
+        ('Drawing symbols',geometry['blocks_version'],'Generic measured envelopes; Typical - verify against site.'),
+        ('Verification',f"{len(geometry['missing_information'])} missing sheet categories; {len(geometry['warnings'])} warnings",'Review missing information and conflicts before release.')]
+    registers=[]
+    for part in range(count):
+        sheet={'key':'register' if part==0 else f'register_continued_{part+1}',
+               'title':'Drawing register and verification notes' if part==0 else 'Drawing register continued',
+               'number':'SV-001' if part==0 else f'SV-001-{part+1:02d}',
+               'scale':'Not to Scale','findings':[],'entities':[]}
+        sheet['entities']=_frame(sheet,geometry['site_id'])
+        sheet['entities'].append(_label('Survey documentation. Each drawing is evidence-bound and requires authorised technical review.',14,263,2.5,'WARNINGS'))
+        sheet['entities'].extend(_table(rows[part*12:(part+1)*12],row_height=11))
+        sheet['entities'].extend(_table(notes,y=104,row_height=8,columns=(105,180,107)))
+        registers.append(sheet)
+    geometry['sheets']=registers+drawings
+
+
 def validate_geometry(geometry):
     """Reject nonfinite, out-of-sheet or unsupported plotted entities before exports."""
     if not 1 <= len(geometry['sheets']) <= MAX_SHEETS:
@@ -613,6 +652,21 @@ def _dxf(geometry, sheet, target):
 def _write_outputs(geometry, folder, revision, branding, prepared_by, checked_by, approved_by, released):
     """Author to an unpublished revision directory; only the wrapper publishes it."""
     drawing=copy.deepcopy(geometry);drawing.pop('digest',None)
+    sketch_assets=drawing.pop('_sketch_assets', {})
+    if not isinstance(sketch_assets, dict) or len(sketch_assets)>160:
+        raise ValueError('Invalid sketch asset collection.')
+    import base64
+    total_asset_bytes=0
+    for path, encoded in sketch_assets.items():
+        if not isinstance(path,str) or not re.fullmatch(r'assets/sketch-[0-9a-f]{16}-(clean|reference)\.png',path):
+            raise ValueError('Invalid sketch asset reference.')
+        if not isinstance(encoded,str) or len(encoded)>128*1024*1024:
+            raise ValueError('Sketch asset exceeds drawing limits.')
+        raw=base64.b64decode(encoded,validate=True)
+        total_asset_bytes+=len(raw)
+        if total_asset_bytes>96*1024*1024:raise ValueError('Sketch assets exceed drawing limits.')
+        target=folder/path;target.parent.mkdir(exist_ok=True)
+        target.write_bytes(raw)
     drawing.update({'revision':revision,'released':bool(released),'prepared_by':_text(prepared_by),'checked_by':_text(checked_by),'approved_by':_text(approved_by)})
     logos=_prepare_logos(branding,drawing,folder)
     for index,sheet in enumerate(drawing['sheets'],1):
@@ -631,7 +685,7 @@ def _write_outputs(geometry, folder, revision, branding, prepared_by, checked_by
             preview=folder/f'{filename}.png'
             rendered[index].get_pixmap(matrix=pymupdf.Matrix(1.2,1.2),alpha=False).save(preview)
             pages.append({'key':sheet['key'],'number':sheet['number'],'title':sheet['title'],'scale':sheet['scale'],'sheet_no':index+1,'dxf':dxf.name,'preview':preview.name,'entity_count':len(sheet['entities'])})
-    manifest={'version':VERSION,'revision':revision,'released':bool(released),'geometry_digest':drawing['digest'],'output_dir':'.','geometry':'geometry.json','pdf':pdf.name,'bundle':'survey-drawings.zip','sheets':pages,'warnings':drawing['warnings'],'missing_information':drawing['missing_information'],'assets':[logo['path'] for logo in logos]}
+    manifest={'version':VERSION,'revision':revision,'released':bool(released),'geometry_digest':drawing['digest'],'output_dir':'.','geometry':'geometry.json','pdf':pdf.name,'bundle':'survey-drawings.zip','sheets':pages,'warnings':drawing['warnings'],'missing_information':drawing['missing_information'],'assets':[logo['path'] for logo in logos]+list(sketch_assets)}
     (folder/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     bundle=folder/manifest['bundle']
     with zipfile.ZipFile(bundle,'w',compression=zipfile.ZIP_DEFLATED) as archive:
