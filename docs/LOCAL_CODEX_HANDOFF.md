@@ -1,5 +1,60 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: sticky controls, unlink and single preview - 27 October 2026
+
+Final feature preview remains http://127.0.0.1:8002/login/ in `.local/wip`.
+Owner requested closing earlier app ports8000/8001; both are now closed. Existing
+loopback model and worker IDs remain running. Main checkout data/branch untouched.
+QA/Team Lead tools are fixed above scrolling evidence, with a softer blue bar
+and linking actions immediately beneath. Multi-unlink is explicit and scoped;
+duplicate photo/checkpoint pairs show Already linked. Other valid links survive.
+Real mobile selected-state overlap was found and repaired before acceptance.
+Final41 focused backend tests,19 frontend scripts,26 unlink/50 sticky browser
+checks and20 separate AppSec assertions passed. Wider full-suite Windows fixture
+blocker and unapproved unrelated security findings remain. No native AI run.
+See `docs/development/QA_REVIEW_TOOLS_20261027.md` and acceptance JSON for commands,
+sources, screenshots, limitations and recovery. Keep draft PR23 open for review.
+
+## Latest: evidence filter toolbar follow-up - 26 October 2026
+
+On the PR23 feature branch/candidate8002, the evidence filter toolbar now sits
+above category headings and uses the interface navy header palette. QA/Team Lead
+share the fix. Other roles retain their existing permitted gallery/upload screens.
+No backend/controller/approval change.35 focused backend tests,18 frontend scripts,
+Django/migration checks and92 browser assertions passed; separate9-assertion
+AppSec review found no new exploitable finding in scope. Previous full-suite
+Windows symlink fixture blocker and unrelated unapproved audit findings remain.
+Read `docs/development/QA_FILTER_TOOLBAR_20261026.md` and acceptance JSON.
+Recovery checkpoint233722 is CRC verified. Keep draft PR23 for review.
+
+## Latest: QA batch matching and returned-site links - 26 October 2026
+
+Feature branch `feat/qa-batch-decisions-20261026`, based on merged PR22 `2b05179`.
+The main checkout and original services remain untouched; the reviewed candidate
+is `.local/wip`, http://127.0.0.1:8002/login/ with separate cookies and real local
+data. No new workers start. Keep the original active AI job running.
+
+Implemented bounded compact batch linking/moving, multi-photo drag/click,
+valid-link retention after Engineer resubmission, and an explicit guarded
+**More tools > Restore previous photo links** for already-resubmitted revisions.
+No accepted answers, approvals or source-file changes are inherited. Current
+human corrections and locks win. Lists/history are compact; category labels
+are larger with smaller linkage counts. QA/TL/Client can approve with comments
+through existing policy, with Approve beside Reject and actual QA guards intact.
+
+Final gate:1226 backend tests passed,1 Windows symlink-privilege fixture error
+(WinError1314; security assertion not reached),0 failures,0 skips. All17 frontend
+scripts plus Django/migration/dependency/syntax/static checks passed. Independent
+QA executed165 functional browser assertions and12 final role/viewport visits.
+Separate AppSec found no new exploitable finding in the tested scope. Prior
+D1/D2/L1 and unrelated security findings remain unapproved/unfixed.
+
+Read `docs/development/QA_BATCH_DECISIONS_20261026.md`, the requirement ledger,
+acceptance JSON and independent QA/security reports for exact evidence/limits.
+Recovery backup: `.local/backups/project-checkpoint-20261026-222351`.
+Product commit `67d7cad` is pushed. Draft PR23: https://github.com/assimbaig/iSurvix-Field/pull/23
+No merge or production deployment. Keep the PR for review.
+
 ## Latest: owner-approved PR21 repairs — 26 October 2026
 
 The owner explicitly authorized the listed S1/C1/M1/W1/S2/S3/R1/R2 repairs and a

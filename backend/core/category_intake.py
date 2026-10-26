@@ -259,6 +259,8 @@ def submit(request, checklist_id, data):
     snapshot = source_snapshot(c)
     number = (c.processing_revisions.aggregate(n=Max('number'))['n'] or 0) + 1
     revision = SurveyProcessingRevision.objects.create(checklist=c, number=number, digest=pipeline.digest(snapshot), snapshot=snapshot, submitted_by=request.user)
+    from .qa_matching import retain_submission_links
+    retain_submission_links(existing,revision,request.user)
     config = configuration_error(c)
     SurveyProcessingJob.objects.create(revision=revision, model=__import__('django.conf', fromlist=['settings']).settings.OLLAMA_MODEL,
         total=len(snapshot['photos']), status='failed' if config else 'queued', error=config)
@@ -301,7 +303,7 @@ def reviewed_payload(revision):
     return replay(revision,payload)
 
 
-def missing_for_review(c):
+def missing_for_review(c,payload=None):
     revision = current_revision(c)
     config = configuration_error(c)
     if config: return [config]
@@ -309,7 +311,7 @@ def missing_for_review(c):
     from .template_service import validate_answer
     fields = {field['id']: field for section in c.schema_snapshot.get('sections', []) for field in section.get('fields', [])}
     missing = []
-    for item in reviewed_payload(revision)['checklist_items']:
+    for item in (reviewed_payload(revision) if payload is None else payload)['checklist_items']:
         if item['id'] not in fields:continue
         field = fields[item['id']]
         required = field.get('required')
@@ -409,10 +411,12 @@ def review_state(request, checklist_id):
                 item['sources']=[{key:value for key,value in source.items() if key not in {'mapping_reason','reviewed_by'}}
                     for source in item.get('sources',[])]
     result={'revision_id': revision.pk, 'source_digest': revision.digest, 'review_digest': review_signature,
+        'template_id':revision.snapshot.get('template_id'),
         'revision_number':revision.number,'workflow_label':c.workflow_label,'workflow_stage':c.workflow_stage,
         'workflow_status':c.status,
         'evidence_review_role':role_for(request.user),
         'can_review': flags['can_review'] and not completed, 'completed': completed,
+        'can_restore_previous_links':bool(flags['can_review'] and not completed and revision.number>1 and not configuration_error(c)),
         'config_error': configuration_error(c), 'ai': {'status':'reviewed','completed':0,'total':0,'error':''} if client else state(request, checklist_id)['ai'],
         'photos': photos(revision.snapshot, c), 'items': payload['checklist_items'],
         'can_complete': flags['can_review'] and not completed and not missing_for_review(c),
@@ -515,7 +519,9 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     payload = reviewed_payload(revision)
     if data.get('action') in qa_matching.LINK_ACTIONS|{'reorder'}:
         if configuration_error(c):raise ValidationError(configuration_error(c))
-        qa_matching.action(revision,c,request.user,data,payload)
+        changed=qa_matching.action(revision,c,request.user,data,payload)
+        if data.get('response_mode')=='link_patch' and changed is not None:
+            return qa_matching.link_patch(revision,c,request.user,payload,changed,flags)
         return review_state(request,checklist_id)
     if data.get('expected_review_digest') != pipeline.review_digest(payload): raise ValidationError('The QA review changed. Refresh before saving another decision.')
     action = data.get('action')

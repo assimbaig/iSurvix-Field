@@ -1,0 +1,303 @@
+{
+  "date": "2026-10-26",
+  "branch": "feat/qa-batch-decisions-20261026",
+  "baseline": "2b051791c96bd83aa283f48432187ef66ba0169f",
+  "source_fingerprint": "78527cdd6f4999319acf804d283ae035f4bcd715c86531b8e37420bac9f20180",
+  "source_unchanged_during_final_checks": true,
+  "backend": {
+    "run": 1227,
+    "passed": 1226,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0,
+    "seconds": 394.624,
+    "blocker": "Q1: Windows symlink privilege WinError 1314 prevents fixture setup in core.test_repair_independent_security.RuntimeAdversarialTests.test_diagnostic_directory_symlink_is_rejected_without_touching_target. Test unchanged; security assertion not executed. Re-run with authorized symlink capability or on Linux."
+  },
+  "frontend_scripts": {
+    "passed": 17,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "check": "backend-full",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "scripts/run_backend_tests.py",
+        "--verbosity",
+        "1"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip",
+      "exit_code": 1,
+      "seconds": 402.875
+    },
+    {
+      "check": "frontend-check-engineer-documents",
+      "command": [
+        "node",
+        "check-engineer-documents.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.094
+    },
+    {
+      "check": "frontend-check-engineer",
+      "command": [
+        "node",
+        "check-engineer.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 3.609
+    },
+    {
+      "check": "frontend-check-preview",
+      "command": [
+        "node",
+        "check-preview.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 3.594
+    },
+    {
+      "check": "frontend-check-qa-batch-links",
+      "command": [
+        "node",
+        "check-qa-batch-links.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.156
+    },
+    {
+      "check": "frontend-check-qa-collection-restore",
+      "command": [
+        "node",
+        "check-qa-collection-restore.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-compact-layout",
+      "command": [
+        "node",
+        "check-qa-compact-layout.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.079
+    },
+    {
+      "check": "frontend-check-qa-finding-table",
+      "command": [
+        "node",
+        "check-qa-finding-table.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-guided-state",
+      "command": [
+        "node",
+        "check-qa-guided-state.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.109
+    },
+    {
+      "check": "frontend-check-qa-navigation-gallery",
+      "command": [
+        "node",
+        "check-qa-navigation-gallery.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 1.859
+    },
+    {
+      "check": "frontend-check-qa-restore-links",
+      "command": [
+        "node",
+        "check-qa-restore-links.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "frontend-check-qa-workspace",
+      "command": [
+        "node",
+        "check-qa-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.141
+    },
+    {
+      "check": "frontend-check-shared-navigation",
+      "command": [
+        "node",
+        "check-shared-navigation.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 1.984
+    },
+    {
+      "check": "frontend-check-site-routing",
+      "command": [
+        "node",
+        "check-site-routing.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 3.594
+    },
+    {
+      "check": "frontend-check-survey-pause",
+      "command": [
+        "node",
+        "check-survey-pause.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.062
+    },
+    {
+      "check": "frontend-check-task-list-density",
+      "command": [
+        "node",
+        "check-task-list-density.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 1.156
+    },
+    {
+      "check": "frontend-check-web-references",
+      "command": [
+        "node",
+        "check-web-references.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 0.079
+    },
+    {
+      "check": "frontend-check-workspace",
+      "command": [
+        "node",
+        "check-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+      "exit_code": 0,
+      "seconds": 3.593
+    },
+    {
+      "check": "django-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\backend",
+      "exit_code": 0,
+      "seconds": 1.813
+    },
+    {
+      "check": "migration-drift",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\backend",
+      "exit_code": 0,
+      "seconds": 2.031
+    },
+    {
+      "check": "dependencies",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip",
+      "exit_code": 0,
+      "seconds": 0.844
+    },
+    {
+      "check": "syntax",
+      "command": [
+        "node",
+        "--check",
+        "backend/static/core/js/qa_evidence_review.js"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip",
+      "exit_code": 0,
+      "seconds": 0.062
+    },
+    {
+      "check": "static-build",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        ".local/qa-batch-decision-20261026/build_static.py"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip",
+      "exit_code": 0,
+      "seconds": 1.032
+    }
+  ],
+  "independent_browser": {
+    "functional_assertions": 165,
+    "final_role_viewport_visits": 12,
+    "security_xss_assertions": 3,
+    "scope": "Isolated synthetic Django records and media; 150 original functional assertions plus 15 legacy recovery assertions. No operational approval or recovery performed."
+  },
+  "independent_security": {
+    "initial_backend_tests_passed": 28,
+    "recovery_backend_tests_passed": 23,
+    "overlap": true,
+    "new_exploitable_findings_established": 0,
+    "limitations": "Not exhaustive fuzzing/concurrency or production DAST. Prior D1/D2/L1 audit findings remain unapproved and untouched."
+  },
+  "performance": {
+    "fixture": "100 photos, 50 observations each; controlled local request/ORM comparison, not AI throughput",
+    "before": {
+      "bytes": 10408463,
+      "queries": 77,
+      "ms": 592.76
+    },
+    "after": {
+      "bytes": 2047,
+      "queries": 28,
+      "ms": 162.93
+    }
+  },
+  "candidate": "http://127.0.0.1:8002/login/",
+  "operational_services": "Original 8000/8001/model services and active job preserved. Candidate is web-only; no native inference run.",
+  "checkpoint": ".local/backups/project-checkpoint-20261026-222351",
+  "verification_history": "Superseded v2 full run exposed two obsolete frontend expectations. Test fixture updated to actual guarded compact-batch response and stronger identity/retention assertions; no product edits. Final v3 reran entire gate. Original logs retained privately.",
+  "delivery": {
+    "product_commit": "67d7cadf1be7ed73c05872cd59cda01914ecfbd8",
+    "pull_request": "https://github.com/assimbaig/iSurvix-Field/pull/23",
+    "draft": true,
+    "merged": false,
+    "deployed": false,
+    "requirements_with_scoped_verification": 11,
+    "requirements_total": 11,
+    "wider_suite_blockers": [
+      "Q1 Windows symlink fixture privilege"
+    ]
+  }
+}

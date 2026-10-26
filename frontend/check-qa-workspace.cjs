@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),controller=require('./qa-controller-test-harness.cjs');
 const checks=[];
 function verify(label,assertion){try{assertion();checks.push({label,passed:true});}catch(error){checks.push({label,passed:false,error:error.message});process.exitCode=1;}}
-const data={revision_id:2,items:[{id:'review_point',type:'text',label:'Actual checklist point',reason:'No supported answer was extracted.'}],photos:[],links:[],unassigned_photo_ids:[],review_digest:'review',source_digest:'source',display_order:{},order_digest:'order',can_review:true};
+const data={revision_id:2,template_id:5,items:[{id:'review_point',type:'text',label:'Actual checklist point',reason:'No supported answer was extracted.'}],photos:[],links:[],unassigned_photo_ids:[],review_digest:'review',source_digest:'source',display_order:{},order_digest:'order',can_review:true};
 function selected(){const c=controller();c.storage.set('qa-evidence-view:/local/photos/7/',JSON.stringify({revision_id:2,step:'evidence',category:'Civil',selectedID:'review_point',scroll:{}}));c.qa.applyState(data,true);c.flush();return c;}
 const allText=node=>[node.textContent||'',...(node.children||[]).map(allText)].join(' ');
 const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(child=>findNode(child,predicate)).find(Boolean);
@@ -44,16 +44,17 @@ const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(ch
   verify('Lightweight photo progress refreshes ranked matches and names only for its source revision',()=>{const progress=selected();progress.qa.applyState({...data,progress_token:'token',photos:[livePhoto]});assert.equal(progress.qa.applyProgressTick({revision_id:2,progress_token:'token',ai:{status:'running',completed:1,total:2},photo:{id:91,observations:[],display_name:'Updated.png',original_filename:'retained.png',photo_match:{status:'failed',candidates:[]}}}),true);assert.equal(progress.qa.snapshot().photos[0].display_name,'Updated.png');assert.equal(progress.qa.snapshot().photos[0].photo_match.status,'failed');assert.equal(progress.qa.applyProgressTick({revision_id:3,progress_token:'token',photo:{id:91,display_name:'wrong.png'}}),false);assert.equal(progress.qa.snapshot().photos[0].display_name,'Updated.png');});
   if(typeof matching.qa.renderPhotoMatch==='function'){
     const prior={photo_id:17,field_id:'other_point',state:'qa_confirmed'},reviewData={...data,photos:[rankedPhoto],items:[{...data.items[0],accepted:false},{id:'other_point',type:'photo',accepted:false}],links:[prior]},requests=[];
-    matching.qa.applyState(reviewData);matching.qa.prepareModeTest();matching.context.fetch=async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,json:async()=>({...reviewData,links:[prior,{photo_id:17,field_id:'review_point',state:'qa_confirmed'}]})};};matching.qa.renderPhotoMatch(rankedPhoto);
+    matching.qa.applyState(reviewData);const originalPhotoDTOs=matching.qa.snapshot().photos;matching.qa.prepareModeTest();matching.context.fetch=async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,json:async()=>({response_mode:'link_patch',revision_id:2,source_digest:'source',template_id:5,review_digest:'review2',links_patch:{photo_ids:[17],field_ids:['review_point'],links:[prior,{photo_id:17,field_id:'review_point',state:'qa_confirmed'}]},items:[{...data.items[0],accepted:false}],unassigned_photo_ids:[],order_digest:'order',display_order:{},can_complete:false})};};matching.qa.renderPhotoMatch(rankedPhoto);
     const button=findNode(matching.element('qa-preview-match-candidates'),node=>node.dataset?.confirmCandidate==='review_point');
     if(button?.listeners?.click)try{await button.listeners.click();}catch(error){verify('Candidate confirmation completes without throwing',()=>assert.fail(error.message));}
-    verify('Confirming a candidate uses the existing guarded link action and preserves other links and engineering decisions',()=>{
-      assert.equal(requests.length,1);assert.equal(requests[0].action,'confirm_link');assert.equal(requests[0].photo_id,17);assert.equal(requests[0].field_id,'review_point');assert.equal(requests[0].revision_id,2);assert.equal(requests[0].source_digest,'source');assert.equal(requests[0].expected_review_digest,'review');assert.equal(matching.qa.snapshot().links.length,2);assert.equal(matching.qa.snapshot().items[0].accepted,false);
+    verify('Confirming a candidate uses the guarded batch link action and preserves other links and engineering decisions',()=>{
+      assert.equal(requests.length,1);assert.equal(requests[0].action,'batch_links');assert.equal(requests[0].operation,'link');assert.deepEqual(Array.from(requests[0].photo_ids),[17]);assert.deepEqual(Array.from(requests[0].field_ids),['review_point']);assert.equal(requests[0].template_id,5);assert.equal(requests[0].response_mode,'link_patch');assert.equal(requests[0].revision_id,2);assert.equal(requests[0].source_digest,'source');assert.equal(requests[0].expected_review_digest,'review');assert.equal(matching.qa.snapshot().links.length,2);assert.equal(matching.qa.snapshot().items[0].accepted,false);
+      assert.equal(matching.qa.snapshot().photos,originalPhotoDTOs);
     });
     matching.qa.applyState({...reviewData,items:[{...data.items[0],locked:true}]});matching.qa.renderPhotoMatch(rankedPhoto);
     verify('A candidate cannot confirm against an approved locked point',()=>assert.equal(findNode(matching.element('qa-preview-match-candidates'),node=>node.dataset?.confirmCandidate==='review_point')?.disabled,true));
   }else{
-    verify('Confirming a candidate uses the existing guarded link action and preserves other links and engineering decisions',()=>assert.fail('Candidate matching UI is not implemented.'));
+    verify('Confirming a candidate uses the guarded batch link action and preserves other links and engineering decisions',()=>assert.fail('Candidate matching UI is not implemented.'));
     verify('A candidate cannot confirm against an approved locked point',()=>assert.fail('Candidate matching UI is not implemented.'));
   }
   const locked=selected();locked.qa.prepareModeTest();locked.qa.applyState({...data,items:[{...data.items[0],locked:true},{id:'other',locked:false}],photos:[{id:1}],links:[{photo_id:1,field_id:'review_point',state:'qa_confirmed'}]});locked.element('qa-review-photos').querySelectorAll=()=>[{dataset:{evidencePhoto:'1'},closest:()=>null}];locked.qa.selectVisiblePhotos();locked.element('qa-assignment-target').value='other';
@@ -131,7 +132,7 @@ const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(ch
   });
   verify('Selection summary distinguishes earlier-page selections from the currently rendered page',()=>{
     assert.equal(typeof gallery.qa.photoSelectionSummary,'function');gallery.element('qa-review-photos').querySelectorAll=()=>[37,38,39].map(id=>({dataset:{evidencePhoto:String(id)}}));
-    assert.match(gallery.qa.photoSelectionSummary(),/3 selected total.*0 loaded in this view/);
+    assert.match(gallery.qa.photoSelectionSummary(),/3 selected total.*0 selected in this view/);
   });
   const stale=selected();stale.qa.prepareModeTest();stale.element('qa-review-reason').value='Unsaved human correction for revision two.';stale.qa.changed();
   stale.qa.applyState({...data,revision_id:3,source_digest:'new-source',review_digest:'new-review'});

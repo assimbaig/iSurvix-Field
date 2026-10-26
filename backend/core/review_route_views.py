@@ -18,8 +18,13 @@ def review_route_action(request,checklist_id):
     checklist=survey_access(request,checklist_id)['checklist']
     from .access import role_for
     from .category_intake import enabled,qa_id
+    from .review_route_service import route_for
     target=reverse('photo_workspace',args=[checklist.pk])+'?qa_step=decision'
-    quick_return=role_for(request.user)=='QUALITY_ENGINEER' and enabled(checklist) and qa_id(checklist)==request.user.pk and request.POST.get('return_to')==target
+    role=role_for(request.user)
+    route=route_for(checklist)
+    assigned_guided_reviewer=(role=='QUALITY_ENGINEER' and qa_id(checklist)==request.user.pk or
+        role=='TEAM_LEAD' and route is not None and route.reviewers.get('team_lead')==request.user.pk)
+    quick_return=assigned_guided_reviewer and enabled(checklist) and request.POST.get('return_to')==target
     wants_json=quick_return and any(part.split(';',1)[0].strip()=='application/json'
         for part in request.headers.get('Accept','').split(','))
     def json_result(data,status=200):
@@ -44,7 +49,8 @@ def review_route_action(request,checklist_id):
         return response
     if quick_return:
         next_stage={'engineer':'Engineer for correction','team_lead':'Team Lead','client':'Client','closed':'the closed activity'}.get(event.to_stage,'the next assigned reviewer')
-        message='QA decision saved and sent to '+next_stage+'. Original evidence and review history are preserved.'
+        reviewer_label='Team Lead' if role=='TEAM_LEAD' else 'QA'
+        message=reviewer_label+' decision saved and sent to '+next_stage+'. Original evidence and review history are preserved.'
         messages.success(request,message)
         if wants_json:return json_result({'ok':True,'message':message,'redirect_url':target})
         return redirect(target)
