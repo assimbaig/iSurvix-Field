@@ -1,5 +1,47 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: General Info, category gallery and unified header - 26 October 2026
+
+Feature remains `feat/qa-photo-candidate-ranking-20261024` under
+`.local/worktrees/qa-photo-candidate-ranking-20261024`; completed prior UI
+checkpoints `feb0649`/`2d4590f` preserve the compact continuous-table work.
+Actual-data preview:8001, Ctrl+F5. Original8000/main checkout and model11435
+remain unchanged; no operational worker restart or engineering approval.
+
+General Info now opens a centre read-only table, distinct from Site information
+editing. The left pane is a collapsed-by-default checklist tree with unique
+photo-link badges, no bottom collections. Category galleries show all approved
+points, linked/cross-category sources and a final globally-unlinked pool, with
+bounded lazy thumbnail loading and no gallery Next button. Point review is an
+optional drawer; approval conditions are not relaxed. Existing whole-task reject
+was verified to work before photo review/AI completion and to preserve Engineer
+originals/resubmission analysis. Shared role header styling is unified on all
+pages; QA has the same5 direct links and correct active state on each page.
+
+Owner explicitly approved new **G1 Low** remediation: legacy photo mapping actor
+metadata could falsely label an unaccepted AI value as a saved human correction.
+Only actual answer-edit/accepted-value provenance now selects that value. G1's
+failure and owner-approved independent closure are in
+`SECURITY_REVIEW_QA_GENERAL_GALLERY_20261026.md`;10 private re-tests passed.
+Older C1/M1/W1/S1/S2/S3/R1/R2 remain held; WS1 stays resolved.
+
+Final backend:1,124 passed in411.511s, no failures/errors/skips, zero external
+attempts and33 in-process fixture connections. All13 frontend scripts and
+required Django/migration/dependency/syntax/215-file build checks passed.
+Independent gallery70 browser checks plus6 rejection tests; final authenticated
+header60 assertions/10 visits after tablet overlap repair; synthetic CSS76 cases.
+The broad fingerprint gate recorded the tablet CSS/test/cache-token fix while
+server tests ran; explicit component proof verifies server logic unchanged and
+final UI scripts run afterward, rather than claiming all-file immutability.
+Final fingerprint:
+`3c65563adf2f5140ac3235f3604285650639216e0e6b092e1941de12c2b195ca`.
+See `QA_GENERAL_GALLERY_NAV_ACCEPTANCE_20261026.json` and the requirement ledger.
+
+Recovery checkpoint `.local/backups/project-checkpoint-20261026-153841` is
+supplemented by the final verified Git bundle and final SQLite backup. Final
+commit/remote/draft PR20 receipt is private under the feature checkout at
+`.local/qa-general-info-tree-20261026/delivery.json`. No merge/deployment.
+
 ## Latest QA density and continuous findings - 26 October 2026
 
 Continue in `.local/worktrees/qa-photo-candidate-ranking-20261024`, branch

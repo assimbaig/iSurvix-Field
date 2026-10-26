@@ -131,7 +131,7 @@ const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(ch
   });
   verify('Selection summary distinguishes earlier-page selections from the currently rendered page',()=>{
     assert.equal(typeof gallery.qa.photoSelectionSummary,'function');gallery.element('qa-review-photos').querySelectorAll=()=>[37,38,39].map(id=>({dataset:{evidencePhoto:String(id)}}));
-    assert.match(gallery.qa.photoSelectionSummary(),/3 selected total.*0 on this page/);
+    assert.match(gallery.qa.photoSelectionSummary(),/3 selected total.*0 loaded in this view/);
   });
   const stale=selected();stale.qa.prepareModeTest();stale.element('qa-review-reason').value='Unsaved human correction for revision two.';stale.qa.changed();
   stale.qa.applyState({...data,revision_id:3,source_digest:'new-source',review_digest:'new-review'});

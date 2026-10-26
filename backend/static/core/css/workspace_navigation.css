@@ -19,3 +19,27 @@ body.workspace-header-navigation.super-console .role-page-content{flex:1;min-hei
 
 /* Header tiles are the single industry/admin section navigator. */
 .workspace-header-navigation .sa-desk-section-tabs{display:none}
+
+/* One compact header contract for every authenticated screen and role. */
+.workspace-header-navigation .enterprise-breadcrumb{font-size:11px;line-height:15px;padding:2px 12px;margin:0;gap:5px}
+@media(min-width:981px){
+body.role-layout.workspace-header-navigation .app-header.enterprise-header{min-height:44px;padding:4px 10px!important;gap:8px;flex-wrap:nowrap}
+.role-layout.workspace-header-navigation .enterprise-header .enterprise-brand img{width:104px!important;height:34px!important}
+.workspace-header-navigation .header-select{min-width:0;flex:0 1 auto}
+.workspace-header-navigation .header-select select{width:100%;box-sizing:border-box;min-width:0;max-width:180px;min-height:29px;font-size:12px!important;padding:3px 6px}
+.workspace-header-navigation .workspace-navigation-row{flex:0 1 auto;width:auto;min-width:0;border:0;padding:0;margin-left:3px}
+.workspace-header-navigation .workspace-nav-tiles{gap:5px;overflow:visible}
+.workspace-header-navigation .workspace-nav-tiles>a{min-height:26px;padding:4px 8px!important;font-size:11px!important}
+.workspace-header-navigation .enterprise-header-actions{gap:10px;flex-shrink:0}
+.workspace-header-navigation .enterprise-header-actions summary{font-size:12px}
+}
+/* Preserve readable project controls when the complete role menu cannot share one row. */
+@media(min-width:981px) and (max-width:1240px){
+body.role-layout.workspace-header-navigation.workspace-header-navigation .app-header.enterprise-header{flex-wrap:wrap}
+body.role-layout.workspace-header-navigation.workspace-header-navigation .workspace-navigation-row{flex:0 0 100%;width:100%;margin-left:0}
+}
+@media(max-width:980px){
+.workspace-header-navigation .workspace-navigation-row{order:3}
+.workspace-header-navigation .workspace-nav-tiles{flex-wrap:wrap;overflow:visible}
+.workspace-header-navigation .enterprise-breadcrumb{padding:2px 12px}
+}
