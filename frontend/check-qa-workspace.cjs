@@ -6,6 +6,12 @@ function selected(){const c=controller();c.storage.set('qa-evidence-view:/local/
 const allText=node=>[node.textContent||'',...(node.children||[]).map(allText)].join(' ');
 const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(child=>findNode(child,predicate)).find(Boolean);
 (async()=>{
+  const optional=selected();optional.element('qa-review-reason').value='';const optionalProbe=optional.qa.saveProbe();await optional.qa.saveAnswer(true);
+  verify('Ordinary point save permits empty optional reviewer remarks',()=>assert.equal(optionalProbe.advances(),1));
+  const live=selected(),livePhoto={id:91,filename:'original.png',display_name:'SITE_Breaker.png',original_filename:'camera-original.png',photo_match:{status:'unmatched',candidates:[]},observations:[{value:0,unit:'V'}]};live.qa.applyState({...data,photos:[livePhoto]});live.qa.openPreview(91);
+  verify('Opening the real viewer renders immediate analysis and original-file provenance',()=>{assert.match(allText(live.element('qa-preview-analysis')),/0 V/);assert.match(allText(live.element('qa-preview-original-filename')),/camera-original/);assert.equal(live.element('qa-preview-title').textContent,'SITE_Breaker.png');});
+  live.element('qa-preview-image').hidden=true;live.element('qa-preview-error').hidden=false;live.qa.renderPreview();
+  verify('Refreshing analysis preserves a failed source-image error until its image URL changes',()=>{assert.equal(live.element('qa-preview-image').hidden,true);assert.equal(live.element('qa-preview-error').hidden,false);});
   const matching=selected(),rankedPhoto={id:17,filename:'original-surveyor-017.png',group:'Civil',photo_match:{status:'proposed',display_name:'SITE_000017_Breaker.png',candidates:[{field_id:'review_point',label:'Breaker condition',section:'Distribution board',category:'Electrical',rank:1,reason:'The recorded breaker and its label support this approved point.',score:1.12,score_kind:'relative_support'}]}};
   matching.qa.applyState({...data,photos:[rankedPhoto],items:[{...data.items[0],category:'Electrical'}]});
   verify('A QA display name never hides or changes the uploaded original filename',()=>{
@@ -25,11 +31,13 @@ const findNode=(node,predicate)=>predicate(node)?node:(node.children||[]).map(ch
     assert.equal(typeof matching.qa.renderPhotoMatch,'function');matching.qa.renderPhotoMatch({...rankedPhoto,photo_match:{status:'pending',candidates:[]}});assert.match(allText(matching.element('qa-preview-match-summary')),/pending/i);
     matching.qa.renderPhotoMatch({...rankedPhoto,photo_match:{status:'failed',candidates:[]}});assert.match(allText(matching.element('qa-preview-match-summary')),/did not finish|failed/i);
   });
+  verify('The real viewer keeps QA-only matching and extracted analysis hidden from Team Lead',()=>{const lead=controller({role:'TEAM_LEAD'});lead.qa.applyState({...data,can_review:false,photos:[livePhoto]});lead.qa.openPreview(91);assert.equal(lead.element('qa-preview-match-panel').hidden,true);assert.equal(lead.element('qa-preview-analysis').parentElement.hidden,true);});
+  verify('Lightweight photo progress refreshes ranked matches and names only for its source revision',()=>{const progress=selected();progress.qa.applyState({...data,progress_token:'token',photos:[livePhoto]});assert.equal(progress.qa.applyProgressTick({revision_id:2,progress_token:'token',ai:{status:'running',completed:1,total:2},photo:{id:91,observations:[],display_name:'Updated.png',original_filename:'retained.png',photo_match:{status:'failed',candidates:[]}}}),true);assert.equal(progress.qa.snapshot().photos[0].display_name,'Updated.png');assert.equal(progress.qa.snapshot().photos[0].photo_match.status,'failed');assert.equal(progress.qa.applyProgressTick({revision_id:3,progress_token:'token',photo:{id:91,display_name:'wrong.png'}}),false);assert.equal(progress.qa.snapshot().photos[0].display_name,'Updated.png');});
   if(typeof matching.qa.renderPhotoMatch==='function'){
     const prior={photo_id:17,field_id:'other_point',state:'qa_confirmed'},reviewData={...data,photos:[rankedPhoto],items:[{...data.items[0],accepted:false},{id:'other_point',type:'photo',accepted:false}],links:[prior]},requests=[];
     matching.qa.applyState(reviewData);matching.qa.prepareModeTest();matching.context.fetch=async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,json:async()=>({...reviewData,links:[prior,{photo_id:17,field_id:'review_point',state:'qa_confirmed'}]})};};matching.qa.renderPhotoMatch(rankedPhoto);
     const button=findNode(matching.element('qa-preview-match-candidates'),node=>node.dataset?.confirmCandidate==='review_point');
-    if(button?.listeners?.click)await button.listeners.click();
+    if(button?.listeners?.click)try{await button.listeners.click();}catch(error){verify('Candidate confirmation completes without throwing',()=>assert.fail(error.message));}
     verify('Confirming a candidate uses the existing guarded link action and preserves other links and engineering decisions',()=>{
       assert.equal(requests.length,1);assert.equal(requests[0].action,'confirm_link');assert.equal(requests[0].photo_id,17);assert.equal(requests[0].field_id,'review_point');assert.equal(requests[0].revision_id,2);assert.equal(requests[0].source_digest,'source');assert.equal(requests[0].expected_review_digest,'review');assert.equal(matching.qa.snapshot().links.length,2);assert.equal(matching.qa.snapshot().items[0].accepted,false);
     });

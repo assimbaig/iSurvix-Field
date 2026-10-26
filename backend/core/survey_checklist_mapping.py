@@ -270,6 +270,7 @@ def mapping_batches(analyses, schema):
         if photos:
             result={'key':'mapping:0001','findings':[],'catalog':[],'finding_candidates':{},'photo_sources':photos,'ranking_method':'no_observations','notice':'No supported observations were extracted; photos remain unmatched for QA.','catalog_fields_considered':len(fields)}
             result['identity']=_digest({'version':VERSION,'code':code,'schema':schema,'batch':result})
+            result['key']='mapping:v3:'+result['identity']
             yield result
         return
     direct=len(fields)<=MAX_CANDIDATES and all(prompt_size({'findings':[finding],'catalog':fields})<=MAX_PROMPT_CHARS for finding in findings)
@@ -297,7 +298,9 @@ def mapping_batches(analyses, schema):
         selected={candidate['field_id'] for item in items for candidate in candidates[item['finding_key']]}
         sources=sorted({item['source_id'] for item in items if item['source_id'].startswith('photo:')}|set(no_findings if number==1 else []))
         result={'key':f'mapping:{number:04d}','findings':items,'catalog':[by_id[ident] for ident in sorted(selected)],'finding_candidates':{item['finding_key']:candidates[item['finding_key']] for item in items},'photo_sources':sources,'ranking_method':method,'notice':notice,'catalog_fields_considered':len(fields)}
-        result['identity']=_digest([all_identity,result]);return result
+        result['identity']=_digest([all_identity,result])
+        result['key']='mapping:v3:'+result['identity']
+        return result
     pending=[];number=1
     for finding in findings:
         prospective=batch([*pending,finding],number)
@@ -348,7 +351,10 @@ def _with_candidates(batch,result,reasons=None):
     photos=[]
     for source in batch.get('photo_sources',[]):
         findings=[item for item in batch['findings'] if item['source_id']==source];keys={item['finding_key'] for item in findings}
-        reliable={item['finding_key'] for item in findings if item.get('confidence')=='high' and item.get('value') not in (None,'',[],{}) and not item.get('mapping_unassigned')}
+        reliable={item['finding_key'] for item in findings if item.get('confidence')=='high'
+            and not item.get('mapping_unassigned') and (item.get('value') not in (None,'',[],{}) or
+            any(isinstance(item.get(key),str) and item[key].strip()
+                for key in ('component','notes','evidence_quote')))}
         source_bindings=[item for item in result['bindings'] if item['finding_key'] in keys]
         selected=[item for item in source_bindings if item['finding_key'] in reliable]
         ranked={}
@@ -356,7 +362,11 @@ def _with_candidates(batch,result,reasons=None):
             for item in candidates[key]:
                 previous=ranked.get(item['field_id'])
                 if previous is None or item.get('score',0)>previous.get('score',0):ranked[item['field_id']]=deepcopy(item)
-        ordered=sorted(ranked.values(),key=lambda item:(-item.get('score',0),item['field_id']))
+        selected_fields={item['field_id']:item['reason'] for item in selected}
+        for ident,item in ranked.items():
+            item['model_selected']=ident in selected_fields
+            if ident in selected_fields:item['reason']=selected_fields[ident]
+        ordered=sorted(ranked.values(),key=lambda item:(not item.get('model_selected',False),-item.get('score',0),item['field_id']))
         for rank,item in enumerate(ordered,1):item['rank']=rank
         reason='; '.join(item['reason'] for item in selected) if selected else '; '.join(result['unassigned_reasons'].get(key,'The suggested location is uncertain; QA must review the source.') for key in sorted(keys)) if keys else 'No supported observations were extracted; this photo remains unmatched for QA.'
         if source_bindings and not selected:reason='Source observations are uncertain or incomplete; ranked alternatives remain unmatched for QA. '+reason
@@ -431,8 +441,8 @@ def photo_candidate_outcomes(analyses, mapping_results):
         for row in rows:
             for candidate in row.get('candidates',[]):
                 old=candidates.get(candidate['field_id'])
-                if old is None or candidate.get('score',0)>old.get('score',0):candidates[candidate['field_id']]=deepcopy(candidate)
-        ranked=sorted(candidates.values(),key=lambda candidate:(-candidate.get('score',0),candidate['field_id']))
+                if old is None or (bool(candidate.get('model_selected')),candidate.get('score',0))>(bool(old.get('model_selected')),old.get('score',0)):candidates[candidate['field_id']]=deepcopy(candidate)
+        ranked=sorted(candidates.values(),key=lambda candidate:(not candidate.get('model_selected',False),-candidate.get('score',0),candidate['field_id']))
         for rank,candidate in enumerate(ranked,1):candidate['rank']=rank
         proposed=any(row.get('state')=='proposed' for row in rows)
         reason='; '.join(dict.fromkeys(row['reason'] for row in rows if row.get('reason'))) or 'No supported checklist candidate was established; this photo remains unmatched for QA.'

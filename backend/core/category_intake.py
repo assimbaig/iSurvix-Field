@@ -531,7 +531,12 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     ident = data.get('field_id'); reason = data.get('reason', '')
     fields = {field['id']:field for section in revision.snapshot['schema'].get('sections',[]) for field in section.get('fields',[])}
     if ident not in fields: raise ValidationError('Choose an actual item from the approved checklist.')
-    if not isinstance(reason,str) or not reason.strip(): raise ValidationError('Record the source-backed QA review reason.')
+    if not isinstance(reason,str) or len(reason)>4000: raise ValidationError('Reviewer remarks must be text of at most 4000 characters.')
+    rules=fields[ident].get('evidence_rules') or {}
+    attestation=any(key not in {'version','min_photos','notes'} and value not in (False,None,[],{},'any')
+                    for key,value in rules.items())
+    if not reason.strip() and (action=='map' or attestation):
+        raise ValidationError('Record the source-backed QA review reason required by this evidence policy.')
     ids = data.get('photo_ids',[])
     if not isinstance(ids,list) or len(ids)>500 or any(type(i) is not int for i in ids) or len(set(ids))!=len(ids): raise ValidationError('Choose valid distinct source photos.')
     allowed = {p['id']:p for p in revision.snapshot['photos']}

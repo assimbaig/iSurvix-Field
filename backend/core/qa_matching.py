@@ -61,7 +61,10 @@ def valid_ai_sources(item,findings):
     result=[]
     for source in item.get('sources',[]):
         matching=[f for f in findings if f.get('source_id')==source.get('source_id') and f.get('field_hint')==item['id'] and
-            f.get('confidence')=='high' and not f.get('mapping_unassigned')]
+            f.get('confidence')=='high' and not f.get('mapping_unassigned') and
+            (f.get('value') not in (None,'',[],{}) or any(
+                isinstance(f.get(key),str) and f[key].strip()
+                for key in ('component','notes','evidence_quote','mapping_reason')))]
         if matching:result.append(deepcopy(source))
     return result
 

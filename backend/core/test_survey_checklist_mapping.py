@@ -38,7 +38,7 @@ class MappingBatchTests(SimpleTestCase):
         second = list(mapping.mapping_batches(observations, template))
         self.assertEqual(first, second)
         self.assertEqual(observations, original)
-        self.assertEqual(first[0]['key'], 'mapping:0001')
+        self.assertEqual(first[0]['key'], 'mapping:v3:' + first[0]['identity'])
         self.assertEqual(first[0]['findings'][0]['finding_key'], 'photo:17:finding:1')
         self.assertEqual(first[0]['ranking_method'], 'complete_catalog')
         self.assertEqual(len(first[0]['catalog']), 2)
@@ -366,3 +366,101 @@ class RankedPhotoCandidateContractTests(SimpleTestCase):
         result=mapping.photo_candidate_outcomes(observations,[])
         self.assertEqual([item['source_id'] for item in result],['photo:17','photo:18'])
         self.assertTrue(all(item['state']=='unmatched' and item['requires_qa'] for item in result))
+
+class MappingResumeRegressionTests(MappingIntegrationTests):
+    def test_worker_persists_photo_candidates_and_unaccepted_values(self):
+        from . import survey_processing as service
+        revision, _ = service.submit(self.request(), self.checklist.pk, True)
+        self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=self.binding):
+            service.process_next()
+        payload = revision.processing_result.payload
+        self.assertEqual({row['source_id'] for row in payload['photo_matches']},
+                         {'photo:' + str(photo['id']) for photo in revision.snapshot['photos']})
+        self.assertTrue(payload['photo_matches'][0]['candidates'])
+        self.assertTrue(payload['findings'][0]['candidates'])
+        self.assertFalse(any(item['accepted'] for item in payload['checklist_items']))
+
+    def test_resubmission_reuses_image_and_mapping_but_not_review_decisions(self):
+        from . import survey_processing as service
+        from .survey_processing_models import SurveyProcessingJob
+        first, _ = service.submit(self.request(), self.checklist.pk, True)
+        setup, image, _ = self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=self.binding) as text:
+            service.process_next()
+            self.assertEqual(image.call_count, 2)
+            self.assertEqual(text.call_count, 1)
+        setup.close()
+        original = {row.pk: row.digest for row in first.source_analyses.all()}
+        self.checklist.answer_data = {'custom': {'contact': 'Returned correction'}}
+        self.checklist.save(update_fields=['answer_data'])
+        second, _ = service.submit(self.request(), self.checklist.pk, True)
+        setup, image, _ = self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=AssertionError('Repeated text inference')) as text:
+            service.process_next()
+        job = SurveyProcessingJob.objects.get(revision=second)
+        self.assertEqual(job.status, 'ready_for_review', job.error)
+        self.assertEqual(image.call_count, 0)
+        self.assertEqual(text.call_count, 0)
+        self.assertEqual({row.pk: row.digest for row in first.source_analyses.all()}, original)
+        self.assertFalse(any(item['accepted'] for item in second.processing_result.payload['checklist_items']))
+
+
+class MappingVersionAndPriorityTests(SimpleTestCase):
+    def test_cache_keys_are_versioned_and_context_bound(self):
+        first = list(mapping.mapping_batches(analysis(), schema([field('brand', 'Cabinet manufacturer')])))[0]
+        changed = list(mapping.mapping_batches(analysis(), schema([field('brand', 'Radio manufacturer')])))[0]
+        self.assertTrue(first['key'].startswith('mapping:v3:'))
+        self.assertNotEqual(first['key'], changed['key'])
+
+    def test_model_selected_candidate_precedes_higher_retrieval_score(self):
+        batch = list(mapping.mapping_batches(analysis(), schema([
+            field('brand', 'Cabinet manufacturer'), field('model', 'Cabinet model number')])))[0]
+        with patch.object(mapping.local_ai, 'ollama', return_value=native([
+            {'finding_key': 'photo:17:finding:1', 'field_id': 'model', 'reason': 'Actual recorded model on label.'}])):
+            result = mapping.bind_batch(batch, 'synthetic-model')
+        outcome = mapping.photo_candidate_outcomes(analysis(), [result])[0]
+        self.assertEqual(outcome['candidates'][0]['field_id'], 'model')
+
+    def test_inspection_location_without_answer_has_proposed_photo_outcome(self):
+        observations = analysis([{'category': 'inspection', 'component': 'Foundation inspection',
+            'value': None, 'basis': 'visible', 'notes': 'Visible foundation footing.', 'confidence': 'high'}])
+        batch = list(mapping.mapping_batches(observations, schema([field('foundation', 'Foundation inspection', type='inspection')])))[0]
+        with patch.object(mapping.local_ai, 'ollama', return_value=native([
+            {'finding_key': 'photo:17:finding:1', 'field_id': 'foundation', 'reason': 'Visible footing is relevant foundation evidence.'}])):
+            result = mapping.bind_batch(batch, 'synthetic-model')
+        self.assertEqual(result['photo_matches'][0]['state'], 'proposed')
+
+class MappingRecoveryEdgeTests(MappingIntegrationTests):
+    def test_legacy_cache_row_is_preserved_while_new_context_finishes(self):
+        from . import survey_processing as service
+        from .survey_processing_models import SurveySourceAnalysis
+        revision, _ = service.submit(self.request(), self.checklist.pk, True)
+        legacy = {'identity': 'old-v2-context', 'bindings': [], 'unassigned': []}
+        old = SurveySourceAnalysis.objects.create(revision=revision, source_id='mapping:0001',
+            payload=legacy, digest=service.digest(legacy))
+        self.processing(analyse=self.raw_analysis)
+        with patch.object(mapping, 'bind_batch', side_effect=self.binding) as binder:
+            service.process_next()
+        revision.processing_job.refresh_from_db()
+        self.assertEqual(revision.processing_job.status, 'ready_for_review', revision.processing_job.error)
+        self.assertEqual(binder.call_count, 1)
+        old.refresh_from_db()
+        self.assertEqual(old.payload, legacy)
+        self.assertEqual(old.digest, service.digest(legacy))
+        self.assertEqual(revision.source_analyses.filter(source_id__startswith='mapping:v3:').count(), 1)
+
+    def test_zero_observations_all_photos_have_unmatched_outcome_without_text_inference(self):
+        from . import survey_processing as service
+        revision, _ = service.submit(self.request(), self.checklist.pk, True)
+        def empty(source, model, **kwargs):
+            return {**self.analysed(source, model), 'findings': []}
+        self.processing(analyse=empty)
+        with patch.object(mapping.local_ai, 'ollama') as text:
+            service.process_next()
+        text.assert_not_called()
+        revision.processing_job.refresh_from_db()
+        self.assertEqual(revision.processing_job.status, 'ready_for_review', revision.processing_job.error)
+        outcomes = revision.processing_result.payload['photo_matches']
+        self.assertEqual(len(outcomes), len(revision.snapshot['photos']))
+        self.assertTrue(all(item['state']=='unmatched' and not item['candidates'] for item in outcomes))

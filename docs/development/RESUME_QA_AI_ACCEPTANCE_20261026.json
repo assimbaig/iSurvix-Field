@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-26",
+  "scope": "Resumed Engineer landing, QA matching/reuse/remarks and photo preview naming",
+  "requirements": [
+    {
+      "id": "R01",
+      "expected_behavior": "Recoverable checkpoint and preserved local data",
+      "implementation_location": "Git branches and .local/backups/project-checkpoint-20261026-124422",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "SQLite backup/archive CRC and Git history bundle; all460 disposable evidence originals independently unchanged.",
+      "status": "Verified"
+    },
+    {
+      "id": "R02",
+      "expected_behavior": "Engineer landing has exactly three scoped actionable counts",
+      "implementation_location": "governance_views.py, governance_workspace.html, governance.css",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Two Engineer-home integration tests and18 independent browser assertions; linked tasks counted once, foreign owners excluded.",
+      "status": "Verified"
+    },
+    {
+      "id": "R03",
+      "expected_behavior": "Ordinary QA reviewer remarks are optional",
+      "implementation_location": "category_intake.py, qa_evidence_review.js/html",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "HTTP regression and real saved-data blank-note save; required explicit policy attestations and final-rejection reasons retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R04",
+      "expected_behavior": "Unchanged resubmission reuses completed photo analysis",
+      "implementation_location": "survey_processing.py, survey_acceleration.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Actual native Engineer->QA->return->resubmit:0 image calls,0 matching calls,0.998s reused pass; new revision, old hashes retained.",
+      "status": "Verified"
+    },
+    {
+      "id": "R05",
+      "expected_behavior": "Compatible checklist mapping reuse and immutable versioned batch cache",
+      "implementation_location": "survey_processing.py, survey_checklist_mapping.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Regression preserves legacy mapping row, compatible image/text reuse, exact model/schema/source guards, retry idempotency.",
+      "status": "Verified"
+    },
+    {
+      "id": "R06",
+      "expected_behavior": "Every analyzed photo has ranked approved IDs or explicit unmatched outcome",
+      "implementation_location": "survey_checklist_mapping.py, qa_matching.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Bounded per-finding ranked candidates persist; chosen binding precedes alternatives; zero-findings remains explicit unmatched.",
+      "status": "Verified"
+    },
+    {
+      "id": "R07",
+      "expected_behavior": "Unsupported empty observations never create suggested links",
+      "implementation_location": "qa_matching.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Separate AppSec M1 Low: generated mapping_reason can validate empty high-confidence finding. No engineering acceptance bypass. Owner approval required before fix.",
+      "status": "Failed"
+    },
+    {
+      "id": "R08",
+      "expected_behavior": "Image-derived answers remain supported proposals with sources and units",
+      "implementation_location": "survey_evidence.py, survey_processing.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Real native label extracted TestCo,RRU-X100,48VDC; unit/conflict/unsupported-dimension regressions; no AI acceptance.",
+      "status": "Verified"
+    },
+    {
+      "id": "R09",
+      "expected_behavior": "Photo preview shows details beside large photo with responsive saved controls",
+      "implementation_location": "qa_evidence_review.js/html/css",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Independent166-point460-photo browser at1920x1080,1366x768,390x844: candidates,details,zoom,persistence,failures,locks.",
+      "status": "Verified"
+    },
+    {
+      "id": "R10",
+      "expected_behavior": "Generated QA photo names preserve source identity and bytes",
+      "implementation_location": "survey_processing.py, category_intake.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "SITEID_000001_title aliases persisted in result; original names/hashes/bytes retained. QA display naming does not rename physical originals or original downloads.",
+      "status": "Verified"
+    },
+    {
+      "id": "R11",
+      "expected_behavior": "Matching confirmations do not accept work or overwrite QA corrections",
+      "implementation_location": "qa_matching.py, category_intake.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Backend late-AI/unlink/stale/lock/role guards and actual browser additive confirmations without answer acceptance.",
+      "status": "Verified"
+    },
+    {
+      "id": "R12",
+      "expected_behavior": "Actual local vision request through configured existing integration",
+      "implementation_location": "survey_evidence.py + isolated native_flow.py",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "qwen3.5:4b reports vision; actual11435 image41.162s; native saved workflow95.768s and cache-only resubmission0.998s. Standard11434 stillHTTP500.",
+      "status": "Verified"
+    },
+    {
+      "id": "R13",
+      "expected_behavior": "Full regression, frontend checks and static build",
+      "implementation_location": "scripts/run_backend_tests.py, frontend/check-*.cjs",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Final1063tests passed324.758s,0failures/errors/skips,0externalattempts;33in-processfixtureconnections. All8frontendchecks,214staticbuild,Django,migration,pip,syntax pass.",
+      "status": "Verified"
+    },
+    {
+      "id": "R14",
+      "expected_behavior": "Separate independent security review and approval-controlled findings",
+      "implementation_location": "SECURITY_REVIEW_QA_MATCHING_20261026.md",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "10new adversarial probes:9pass,1M1 reproduced;44existing guards and4assistant tests pass;16Help combinations pass. No security findings fixed.",
+      "status": "Verified"
+    },
+    {
+      "id": "R15",
+      "expected_behavior": "Saved feature branch and draft pull request for review",
+      "implementation_location": "feat/qa-photo-candidate-ranking-20261024",
+      "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
+      "actual_result": "Local checkpoint6cef00c plus integrated Engineer checkpointdb1803a. No merge or deployment.",
+      "status": "In progress"
+    }
+  ]
+}

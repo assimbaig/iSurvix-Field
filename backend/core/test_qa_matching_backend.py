@@ -273,7 +273,7 @@ class QAMatchingBackendTests(TestCase):
         self.assertEqual(preview['original_filename'], source['filename'])
         self.assertEqual(preview['photo_match']['status'], 'proposed')
         self.assertEqual(preview['photo_match']['candidates'][0]['field_id'], 'manufacturer')
-        self.assertEqual(preview['photo_match']['candidates'][0]['label'], 'Manufacturer')
+        self.assertEqual(preview['photo_match']['candidates'][0]['label'], 'Cabinet manufacturer')
 
     def test_original_and_crops_count_as_one_link_and_one_required_photo(self):
         from .category_intake import missing_for_review
@@ -339,3 +339,11 @@ class QAMatchingBackendTests(TestCase):
         self.assertEqual(self.checklist.review_route_record.stage,'closed')
         self.assertEqual(state['ai']['status'],'queued')
         self.assertFalse(state['can_review'])
+
+    def test_ordinary_answer_save_allows_blank_reviewer_remarks(self):
+        response = self.mutate('answer', field_id='manufacturer', value='SyntheticCo',
+                               photo_ids=[], reason='', preserve_evidence=True)
+        self.assertEqual(response.status_code, 200, response.content)
+        event = self.revision.processing_events.filter(action='qa_answer').last()
+        self.assertEqual(event.reason, '')
+        self.assertEqual(event.payload['items']['manufacturer']['value'], 'SyntheticCo')

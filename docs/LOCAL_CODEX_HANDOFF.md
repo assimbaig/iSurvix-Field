@@ -1,5 +1,58 @@
 # iSurvix Field: local Codex development brief
 
+## Resumed Engineer / QA candidate - 26 October 2026
+
+Owner explicitly resumed development. Feature branch:
+`feat/qa-photo-candidate-ranking-20261024`, retaining paused checkpoints
+`6cef00c` and `206733b` (integrated as `db1803a`). Origin base `042e8de` is the
+owner's merged PR19 and has the same product tree as `42cf64b`; no newer remote
+application changes were overwritten.
+
+Implemented the three-count Engineer landing, optional ordinary QA remarks,
+compatible raw-image and text-mapping reuse on resubmission, persisted ranked
+photo candidates, source-backed answer proposals, and photo preview details
+beside the image. Generated QA display names preserve original upload/download
+names and all source bytes; physical originals are not renamed. GPS alone does
+not establish equipment azimuth or height. See
+`docs/development/RESUME_QA_AI_20261026.md` and its acceptance JSON.
+
+Final full suite: **1,063 passed in324.758s**, no failures/errors/skips, zero
+external attempts and33 in-process fixture connections. Product-source
+fingerprint `57da3d20b8254aa285288f3278e6808051f172f00d9d1e203c4a99478a409b03`.
+Eight frontend scripts, Django/migration/dependency/syntax checks and214-file
+static build passed. Independent QA:63 browser checks across desktop/mobile
+with166 points/460 photos;56 focused backend checks passed. One full-suite
+regression (missing Engineer assistant link) was repaired under Help and the
+entire suite rerun. Reports/screenshots are under `docs/development`.
+
+Actual native application image extraction succeeded on the existing signed
+project runtime11435 with `qwen3.5:4b`: synthetic label41.162s; saved native
+Engineer-to-QA workflow95.768s. Unchanged returned/resubmitted evidence completed
+in0.998s with zero image and zero text-mapping calls, retained old analyses and
+no inherited human acceptance. Standard11434 still fails native generation
+withHTTP500. No model was downloaded or Ollama exposed publicly.
+
+Separate AppSec reproduced **M1 Low**: empty high-confidence observations can
+gain a suggested link through generated mapping text while candidates say
+unmatched. No acceptance/approval bypass occurred. **Do not fix M1 or earlier
+W1/S1/S2/S3/R1/R2 without owner approval.** Review and test evidence:
+`SECURITY_REVIEW_QA_MATCHING_20261026.md`;9 of10 new probes passed, one retained
+failure is M1;44 existing guard tests and4 assistant tests passed. This is a
+review candidate with a known issue, not complete security clearance.
+
+Recovery: `.local/backups/project-checkpoint-20261026-124422` contains the
+verified archive, consistent SQLite backup and Git history bundle. All69
+operational tables matched the backup after tests;2793 operational media paths
+and sizes matched its archive. Operational media bytes were not all rehashed;
+the460 disposable fixture originals and native synthetic originals were.
+Final branch/commit/PR/local-preview state is recorded in the private delivery
+receipt `.local/resume-20261026/delivery.json` in the candidate worktree.
+
+No production merge or deployment is authorized. Use existing Windows startup
+scripts and separate durable worker; native/destructive checks use isolated
+data. Account allowance was unavailable to the agent; remaining Codex usage is
+shown in the user's usage dashboard or CLI `/status`.
+
 ## Latest local candidate - reference QA workspace, 24 October 2026
 
 Implementation `32d49dfd8d150c9f5ebc9fd93b83e51907051bab` is pushed in

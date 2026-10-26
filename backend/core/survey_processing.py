@@ -338,7 +338,7 @@ def generated_photo_names(snapshot, findings):
         ranked = [candidate for candidate in candidates if isinstance(candidate, dict)
                   and isinstance(candidate.get('field_id'), str)] if isinstance(candidates, list) else []
         ranked.sort(key=lambda candidate: (candidate.get('rank', 10**9), candidate['field_id']))
-        field_id = ranked[0]['field_id'] if ranked else finding.get('field_hint')
+        field_id = finding.get('field_hint') if not finding.get('mapping_unassigned') else None
         field = fields.get(field_id) if isinstance(field_id, str) else None
         title = field.get('label') if field else finding.get('component')
         confidence = finding.get('confidence')
@@ -639,26 +639,58 @@ def process_next():
                 if digest(saved.payload) != saved.digest:
                     raise ValidationError('Saved evidence analysis failed integrity verification.')
                 analyses.append(saved.payload)
-            if any(not f.get('field_hint') for a in analyses for f in a.get('findings', [])):
-                from .survey_checklist_mapping import mapping_batches, bind_batch, binding_identity
+            from .survey_checklist_mapping import (mapping_batches, bind_batch, binding_identity,
+                _findings, _with_candidates, photo_candidate_outcomes)
+            # Stable finding keys also cover retained raw analyses predating the
+            # structured extraction contract, without changing immutable rows.
+            analyses = deepcopy(analyses)
+            for analysed in analyses:
+                analysed['findings'] = _findings([analysed])
+            mapping_results = []
+            needs_mapping = any(not f.get('field_hint') for a in analyses for f in a.get('findings', []))
+            if analyses:
                 bindings = {}
                 unassigned = set()
                 for batch in mapping_batches(analyses, snapshot['schema']):
                     boundary(job)
-                    cached = job.revision.source_analyses.filter(source_id=batch['key']).first()
+                    cached = job.revision.source_analyses.filter(source_id=batch['key']).first() if needs_mapping else None
                     if cached:
                         if digest(cached.payload) != cached.digest or cached.payload.get('batch_identity') != batch['identity'] or cached.payload.get('identity') != binding_identity(batch, job.model):
                             raise ValidationError('The saved checklist mapping context changed; preserve this revision and submit a new one.')
                         mapped = cached.payload
+                    elif not needs_mapping:
+                        # The image model already chose a published field. Keep
+                        # that proposal only within the same ranked closed set;
+                        # no second model request is necessary.
+                        direct = [{'finding_key': f['finding_key'], 'field_id': f['field_hint'],
+                            'reason': 'The image analysis proposed this supported checklist location.',
+                            'status': 'proposed', 'verification_status': 'needs_review'}
+                            for f in batch['findings'] if f.get('field_hint') in
+                            {c['field_id'] for c in batch['finding_candidates'][f['finding_key']]}]
+                        selected = {entry['finding_key'] for entry in direct}
+                        mapped = _with_candidates(batch, {'bindings': direct,
+                            'unassigned': [f['finding_key'] for f in batch['findings'] if f['finding_key'] not in selected]})
                     else:
                         progress(job)
-                        with photo_inference_lease() as check:
-                            mapped = bind_batch(batch, job.model,
-                                base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
-                            check()
+                        previous = (SurveySourceAnalysis.objects.filter(
+                            revision__checklist_id=job.revision.checklist_id,
+                            revision__processing_job__model_digest=identity['fingerprint'],
+                            source_id=batch['key']).exclude(revision=job.revision).order_by('-pk').first())
+                        if previous:
+                            if digest(previous.payload) != previous.digest or previous.payload.get('batch_identity') != batch['identity'] or previous.payload.get('identity') != binding_identity(batch, job.model):
+                                raise ValidationError('Saved reusable checklist mapping failed integrity verification.')
+                            mapped = deepcopy(previous.payload)
+                        else:
+                            with photo_inference_lease() as check:
+                                mapped = bind_batch(batch, job.model,
+                                    base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
+                                check()
                         with transaction.atomic():
                             progress(job)
                             SurveySourceAnalysis.objects.create(revision=job.revision, source_id=batch['key'], payload=mapped, digest=digest(mapped))
+                    # Older compatible binding contracts omit ranked metadata.
+                    mapped = _with_candidates(batch, deepcopy(mapped), mapped.get('unassigned_reasons'))
+                    mapping_results.append(mapped)
                     boundary(job)
                     for binding in mapped['bindings']:
                         bindings[binding['finding_key']] = binding
@@ -670,9 +702,11 @@ def process_next():
                         if binding:
                             finding['field_hint'] = binding['field_id']
                             finding['mapping_reason'] = binding['reason']
+                            finding['candidates'] = deepcopy(binding.get('candidates', []))
                         elif finding.get('finding_key') in unassigned:
                             finding['mapping_unassigned'] = True
             payload = prepare_checklist(snapshot, evidence.reconcile_results(analyses))
+            payload['photo_matches'] = photo_candidate_outcomes(analyses, mapping_results)
             with transaction.atomic():
                 progress(job)
                 result, _ = SurveyProcessingResult.objects.get_or_create(revision=job.revision,

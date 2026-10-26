@@ -8,7 +8,7 @@ function controller(options={}){
   const elements=new Map(),storage=new Map(),frames=[];
   const element=id=>{if(!elements.has(id))elements.set(id,{dataset:{},attributes:{},children:[],scrollTop:0,value:id==='qa-photo-view'?'linked':'',open:false,
     listeners:{},getAttribute(name){return name==='href'?'/checklist/1/':this.attributes[name]??null;},querySelector(){return element(id+':child');},querySelectorAll(){return [];},addEventListener(name,callback){this.listeners[name]=callback;},click(event={}){this.listeners.click?.({target:this,preventDefault(){},...event});},removeAttribute(){},setAttribute(name,value){this.attributes[name]=String(value);},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;},scrollIntoView(){},showModal(){this.open=true;},focus(){this.focused=true;},
-    classList:{toggle(){}},textContent:''});return elements.get(id);};
+    parentElement:{},style:{},clientWidth:800,clientHeight:600,classList:{toggle(){}},textContent:''});return elements.get(id);};
   const app=element('qa-evidence-review');app.dataset={quickReview:'true',reviewUser:'42',reviewRole:options.role||'QUALITY_ENGINEER'};
   const script=fs.readFileSync(filename,'utf8').replace('  function controls(){',`
     renderAll=()=>{el('qa-review-items').scrollTop=0;el('qa-photo-pane').querySelector('.qa-photo-pane-scroll').scrollTop=0;};
