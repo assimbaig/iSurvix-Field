@@ -193,7 +193,10 @@ html[data-role-appearance=dark] #qa-evidence-review .qa-site-information-paired 
 #qa-evidence-review.qa-reference-review .qa-category-row .qa-category-toggle{min-width:32px;min-height:36px;font-size:19px}
 @media(max-width:650px){#qa-evidence-review.qa-reference-review .qa-category-row .qa-category-toggle{min-width:44px;min-height:44px}#qa-evidence-review.qa-reference-review .qa-category-select{min-height:64px}#qa-evidence-review.qa-reference-review .qa-category-select .qa-category-photo-count{font-size:12px}}
 /* Shared evidence filters stay at the top of the viewing pane, separate from link actions. */
-#qa-evidence-review .qa-evidence-filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;position:sticky;top:0;z-index:4;min-width:0;padding:5px 8px 6px;margin:0 0 6px;border-bottom:1px solid var(--rl-line,#d5dfe9);background:var(--app-header-bg,#183c5b);color:var(--app-header-ink,#fff);border-radius:3px}
+#qa-evidence-review .qa-view-tools{position:sticky;top:0;z-index:5;min-width:0;padding-bottom:5px;background:var(--rl-surface,#fff);border-bottom:1px solid var(--rl-line,#d5dfe9);isolation:isolate}
+#qa-evidence-review .qa-view-tools>.qa-point-heading{padding:5px 0}
+#qa-evidence-review .qa-view-tools>.qa-evidence-help{margin:3px 0;font-size:11px;line-height:1.35}
+#qa-evidence-review .qa-evidence-filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;position:static;min-width:0;padding:5px 8px 6px;margin:0 0 4px;border-bottom:1px solid var(--rl-line,#d5dfe9);background:var(--rl-soft,#e8f1fa);color:var(--rl-ink,#23384e);border-radius:3px}
 #qa-evidence-review .qa-evidence-filterbar label{display:flex;align-items:center;gap:4px;min-width:0;margin:0;font-size:11px;line-height:1.3;white-space:nowrap;color:inherit}
 #qa-evidence-review .qa-evidence-filterbar>label{flex:0 1 205px}
 #qa-evidence-review .qa-evidence-filterbar input,#qa-evidence-review .qa-evidence-filterbar select{width:auto;min-width:0;max-width:100%;min-height:28px;padding:3px 5px;font-size:11px;line-height:1.3;background:var(--rl-surface,#fff);color:var(--rl-ink,#23384e)}
@@ -212,10 +215,14 @@ html[data-role-appearance=dark] #qa-evidence-review .qa-site-information-paired 
  #qa-evidence-review .qa-evidence-filterbar>label{flex:1 1 190px;font-size:12px}
  #qa-evidence-review .qa-evidence-filterbar input,#qa-evidence-review .qa-evidence-filterbar select{min-height:36px;font-size:12px}
  #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools{display:block;flex:0 1 auto;min-width:0;font-size:12px}
- #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools>summary{display:list-item;min-height:36px;padding:8px;border:1px solid #ffffff70;border-radius:3px;cursor:pointer;color:inherit}
+ #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools>summary{display:list-item;min-height:36px;padding:8px;border:1px solid var(--rl-line,#bccbdb);border-radius:3px;cursor:pointer;color:inherit}
  #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools[open]{flex:1 1 100%}
  #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:6px 0 0}
  #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools label{display:grid;gap:3px;font-size:12px;white-space:normal}
  #qa-evidence-review .qa-evidence-filterbar label[for=qa-photo-search]{grid-column:1/-1;grid-row:1}
  #qa-evidence-review .qa-evidence-filterbar .qa-photo-tools input,#qa-evidence-review .qa-evidence-filterbar .qa-photo-tools select{width:100%;min-width:0}
+ #qa-evidence-review.qa-reference-review #qa-workspace{min-height:620px}
+ #qa-evidence-review.qa-reference-review .qa-view-tools>.qa-photo-toolbar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding-bottom:3px;scrollbar-width:thin;overscroll-behavior-x:contain}
+ #qa-evidence-review.qa-reference-review .qa-view-tools>.qa-photo-toolbar>button,#qa-evidence-review.qa-reference-review .qa-view-tools>.qa-photo-toolbar>span{flex:0 0 auto}
+ #qa-evidence-review.qa-reference-review .qa-view-tools>.qa-photo-toolbar>label[for=qa-assignment-target]{flex:0 0 250px;min-width:250px}
 }

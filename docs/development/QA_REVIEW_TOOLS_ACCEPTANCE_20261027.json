@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-27",
+  "branch": "feat/qa-batch-decisions-20261026",
+  "checks": {
+    "results": [
+      {
+        "check": "backend-focused",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "scripts/run_backend_tests.py",
+          "core.test_qa_unlink_safety",
+          "core.test_qa_filter_toolbar",
+          "core.test_qa_batch_links",
+          "core.test_qa_quick_review",
+          "core.test_qa_restore_previous_links",
+          "core.tests_review_decision_ui",
+          "--verbosity",
+          "1"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip",
+        "exit_code": 0,
+        "seconds": 24.515
+      },
+      {
+        "check": "frontend-all",
+        "command": [
+          "node",
+          "run-checks.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+        "exit_code": 0,
+        "seconds": 22.313
+      },
+      {
+        "check": "django-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\backend",
+        "exit_code": 0,
+        "seconds": 1.828
+      },
+      {
+        "check": "migration-drift",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\backend",
+        "exit_code": 0,
+        "seconds": 1.969
+      }
+    ],
+    "source_unchanged": true
+  },
+  "changed_source_hashes": {
+    "backend/static/core/css/qa_quick_review.css": "116ce897e6fd6d894112d83914557f39eb2c3b9eabe818ae7c2ff7ecf2601e2e",
+    "backend/static/core/js/qa_evidence_review.js": "9ad70880247bd6d7c27f522457cb992f60f843990fd1e34d776865a54da2bb99",
+    "backend/templates/dashboards/qa_evidence_review.html": "a2aa78875f39686a2522555f3461a3eeaacd36eef381f71331c7cdd48a1cd096",
+    "frontend/check-qa-filter-toolbar.cjs": "d3c57851a786d2f59d5dcb7a6663c88f50ef0952e607689ef195db9ded55ee39",
+    "frontend/qa-controller-test-harness.cjs": "68f7b5b42888e324eee78670b8a570bd2eaabe238499b4810101c566de6871a7",
+    "backend/core/test_qa_filter_toolbar.py": "b9ff91229d2d1d206e99758b9cda99ce06bbcbabed116cd8be9521159adccbb4",
+    "frontend/check-qa-bulk-unlink.cjs": "38e0a40fd5b79c0eb686ace1e42775492d2292f66a4e03ab499c274dd6d29b81",
+    "frontend/check-qa-batch-links.cjs": "2c6afb9e812892c1eb5df4d81aa3c15131358e55765493a335532b09767b7c31",
+    "backend/core/test_qa_unlink_safety.py": "3921c7a992ece216e994d64c9dd93773f4052a5615373f0f2cef77b189a25a8a"
+  },
+  "backend_tests": {
+    "run": 41,
+    "passed": 41,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "frontend_scripts_passed": 19,
+  "final_independent_browser": {
+    "unlink_assertions_passed": 26,
+    "sticky_assertions_passed": 50,
+    "overlap": true,
+    "security_assertions_passed": 20
+  },
+  "native_inference_run": false,
+  "operational_records_tested_destructively": false,
+  "new_security_findings_established": 0,
+  "prior_security_findings": "Unrelated unapproved findings remain untouched.",
+  "known_wider_suite_blocker": "Earlier full suite1226passed,1Windows symlink privilege fixture error; full backend suite not rerun for this focused UI repair.",
+  "candidate": "http://127.0.0.1:8002/login/",
+  "closed_old_app_ports": [
+    8000,
+    8001
+  ],
+  "model_worker_preserved": true,
+  "checkpoint": ".local/backups/project-checkpoint-20261026-233722",
+  "pull_request": "https://github.com/assimbaig/iSurvix-Field/pull/23",
+  "merged": false,
+  "production_deployed": false
+}

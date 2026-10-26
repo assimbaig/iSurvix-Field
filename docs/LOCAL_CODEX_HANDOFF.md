@@ -1,5 +1,20 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: sticky controls, unlink and single preview - 27 October 2026
+
+Final feature preview remains http://127.0.0.1:8002/login/ in `.local/wip`.
+Owner requested closing earlier app ports8000/8001; both are now closed. Existing
+loopback model and worker IDs remain running. Main checkout data/branch untouched.
+QA/Team Lead tools are fixed above scrolling evidence, with a softer blue bar
+and linking actions immediately beneath. Multi-unlink is explicit and scoped;
+duplicate photo/checkpoint pairs show Already linked. Other valid links survive.
+Real mobile selected-state overlap was found and repaired before acceptance.
+Final41 focused backend tests,19 frontend scripts,26 unlink/50 sticky browser
+checks and20 separate AppSec assertions passed. Wider full-suite Windows fixture
+blocker and unapproved unrelated security findings remain. No native AI run.
+See `docs/development/QA_REVIEW_TOOLS_20261027.md` and acceptance JSON for commands,
+sources, screenshots, limitations and recovery. Keep draft PR23 open for review.
+
 ## Latest: evidence filter toolbar follow-up - 26 October 2026
 
 On the PR23 feature branch/candidate8002, the evidence filter toolbar now sits

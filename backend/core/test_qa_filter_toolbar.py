@@ -52,10 +52,19 @@ class EvidenceFilterToolbarUnitTests(SimpleTestCase):
     def assert_top_filters(self, html, quick=True):
         tree = ToolbarMarkup(html)
         bar = tree.filterbar()
-        self.assertEqual(bar['ancestors'][-1]['attrs'].get('id'), 'qa-photo-evidence-view')
+        wrappers = [n for n in tree.nodes if 'qa-view-tools' in n['attrs'].get('class', '').split()]
+        self.assertEqual(len(wrappers), 1, 'One shared fixed review-controls wrapper is required')
+        wrapper = wrappers[0]
+        self.assertEqual(wrapper['ancestors'][-1]['attrs'].get('id'), 'qa-photo-evidence-view')
+        self.assertIs(bar['ancestors'][-1], wrapper)
         self.assertIn('aria-label', bar['attrs'])
         heading = tree.by_id('qa-item-title')
         self.assertLess(tree.nodes.index(bar), tree.nodes.index(heading))
+        action = tree.by_id('qa-assign-selected')
+        self.assertIn(wrapper, action['ancestors'])
+        self.assertIn(wrapper, heading['ancestors'])
+        self.assertLess(tree.nodes.index(bar), tree.nodes.index(action))
+        self.assertLess(tree.nodes.index(action), tree.nodes.index(heading))
         self.assertTrue(any(a['attrs'].get('id') == 'qa-photo-evidence-view' for a in heading['ancestors']))
         controls = ['qa-photo-view'] + (['qa-photo-status', 'qa-photo-search', 'qa-thumbnail-size'] if quick else [])
         for control in controls:
