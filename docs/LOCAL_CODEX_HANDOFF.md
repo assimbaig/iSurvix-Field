@@ -1,5 +1,46 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: viewing-panel availability and shared header - 26 October 2026
+
+Continue on `feat/qa-view-panel-header-20261026`, still in the worktree
+`.local/worktrees/qa-photo-candidate-ranking-20261024`. Owner merged PR20;
+remote merge `409759a` contains `ee082a2`, not `feb0649`/`2d4590f`/`19c011a`.
+Those later commits are preserved on the follow-up branch. `19c011a` was
+successfully pushed after the earlier transient GitHub server errors. Leave
+the follow-up PR open for review; do not merge or deploy it.
+
+Gallery now shows structured group/section headings and checkpoint headings;
+zero-evidence groups say `Not available`. The bounded first thumbnail batch
+reserves space for genuinely unassigned photos instead of starving their pool.
+The viewing-panel Review point option is removed; existing permitted review
+controls remain under More tools / Checklist review controls. No engineering
+approval rule, evidence original, checklist ID or saved answer was removed.
+
+The shared header now wins over themed oversized-link rules and obsolete
+QA-only header overrides. Desktop 1366 QA pages and Admin use the same44px
+header. Mobile retains responsive wrapping and touch controls; role-specific
+permitted link sets are unchanged. Cache tokens: `shared-header-4` and
+`qa-gallery-availability-20261026-1`.
+
+Final checks:1124 backend tests passed in388.865s, no failures/errors/skips,
+zero external attempts. All13 frontend scripts, Django/migration/dependency/
+syntax/static build checks passed. Strict source gate remained unchanged:
+`717d4a2a5f792b1d0319385b5bf4c1140d64e441282e7d3428cb5acfb5429d18`.
+Focused backend73 passed; header CSS103, independent gallery46, hidden-pool5
+and authenticated header287 assertions/56 visits passed. Full evidence:
+`QA_VIEW_PANEL_HEADER_ACCEPTANCE_20261026.json` and the requirement ledger.
+
+Only owned actual-data preview8001 was restarted; login200 and served JS
+matched source. Original8000, native model and operational workers were not
+restarted. No native AI calls were needed for these UI changes. Recovery:
+`.local/backups/project-checkpoint-20261026-174200` has a verified source/media/
+private archive and consistent SQLite backup. Final commit/remote/PR details
+will be in private `.local/qa-view-panel-header-20261026/delivery.json`.
+Older C1/M1/W1/S1/S2/S3/R1/R2 findings remain approval-held; WS1/G1 retain
+their prior approved fixes. Separate post-functional AppSec11/11 passed with no new finding established;
+see `SECURITY_REVIEW_QA_VIEW_PANEL_HEADER_20261026.md`. Older approval holds
+remain unchanged; do not fix them absent specific owner approval.
+
 ## Latest: General Info, category gallery and unified header - 26 October 2026
 
 Feature remains `feat/qa-photo-candidate-ranking-20261024` under

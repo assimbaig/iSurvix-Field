@@ -1,0 +1,252 @@
+{
+  "baseline": "19c011a",
+  "branch": "feat/qa-view-panel-header-20261026",
+  "backend": {
+    "passed": 1124,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 388.865,
+    "isolated": true,
+    "external_network_attempts": 0,
+    "in_process_fixture_connections": 33
+  },
+  "frontend_scripts_passed": 13,
+  "focused_backend_passed": 73,
+  "tdd": {
+    "gallery": "18/21 RED -> 21/21 GREEN",
+    "header_theme": "75/103 RED -> 103/103 GREEN",
+    "long_admin_name": "102/103 RED -> 103/103 GREEN"
+  },
+  "independent_browser": {
+    "gallery": {
+      "passed": 46,
+      "total": 46
+    },
+    "controlled_hidden_pool": {
+      "passed": 5,
+      "total": 5
+    },
+    "authenticated_header": {
+      "passed": 287,
+      "total": 287,
+      "page_visits": 56
+    },
+    "console_errors": 0
+  },
+  "checks": {
+    "results": [
+      {
+        "label": "backend-full",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "scripts/run_backend_tests.py",
+          "--verbosity",
+          "1"
+        ],
+        "exit_code": 0,
+        "seconds": 397.047
+      },
+      {
+        "label": "frontend-check-engineer-documents",
+        "command": [
+          "node",
+          "check-engineer-documents.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.093
+      },
+      {
+        "label": "frontend-check-engineer",
+        "command": [
+          "node",
+          "check-engineer.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 3.594
+      },
+      {
+        "label": "frontend-check-preview",
+        "command": [
+          "node",
+          "check-preview.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 3.594
+      },
+      {
+        "label": "frontend-check-qa-compact-layout",
+        "command": [
+          "node",
+          "check-qa-compact-layout.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.297
+      },
+      {
+        "label": "frontend-check-qa-finding-table",
+        "command": [
+          "node",
+          "check-qa-finding-table.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.062
+      },
+      {
+        "label": "frontend-check-qa-guided-state",
+        "command": [
+          "node",
+          "check-qa-guided-state.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.094
+      },
+      {
+        "label": "frontend-check-qa-navigation-gallery",
+        "command": [
+          "node",
+          "check-qa-navigation-gallery.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 1.922
+      },
+      {
+        "label": "frontend-check-qa-workspace",
+        "command": [
+          "node",
+          "check-qa-workspace.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.125
+      },
+      {
+        "label": "frontend-check-shared-navigation",
+        "command": [
+          "node",
+          "check-shared-navigation.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 1.453
+      },
+      {
+        "label": "frontend-check-site-routing",
+        "command": [
+          "node",
+          "check-site-routing.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 3.578
+      },
+      {
+        "label": "frontend-check-survey-pause",
+        "command": [
+          "node",
+          "check-survey-pause.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "label": "frontend-check-web-references",
+        "command": [
+          "node",
+          "check-web-references.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "label": "frontend-check-workspace",
+        "command": [
+          "node",
+          "check-workspace.cjs"
+        ],
+        "exit_code": 0,
+        "seconds": 3.594
+      },
+      {
+        "label": "django-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.906
+      },
+      {
+        "label": "migration-drift",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run"
+        ],
+        "exit_code": 0,
+        "seconds": 2.047
+      },
+      {
+        "label": "dependencies",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.703
+      },
+      {
+        "label": "syntax",
+        "command": [
+          "node",
+          "--check",
+          "backend/static/core/js/qa_evidence_review.js"
+        ],
+        "exit_code": 0,
+        "seconds": 0.062
+      },
+      {
+        "label": "static-build",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          ".local/qa-followup-20261026/build_static.py"
+        ],
+        "exit_code": 0,
+        "seconds": 1.032
+      }
+    ],
+    "source_unchanged": true,
+    "changed_files": [],
+    "fingerprint": "717d4a2a5f792b1d0319385b5bf4c1140d64e441282e7d3428cb5acfb5429d18"
+  },
+  "local_preview": "http://127.0.0.1:8001/login/",
+  "preview_health": {
+    "http_status": 200,
+    "served_js_matches_source": true
+  },
+  "original8000_and_ai_workers_restarted": false,
+  "native_model_called": false,
+  "schema_changed": false,
+  "pr20": {
+    "merged_by_owner": true,
+    "merge_commit": "409759a4da90673b6a49bdfc39639d497e714e56",
+    "merged_head": "ee082a2d02ebf7103f42edf6967ec8d609f4ad45",
+    "later_retained_commits": [
+      "feb0649",
+      "2d4590f",
+      "19c011a"
+    ],
+    "follow_up_pr_required": true
+  },
+  "recovery_checkpoint": "F:/iSurvix/iSurvix-Field/.local/backups/project-checkpoint-20261026-174200",
+  "security_review": {
+    "report": "SECURITY_REVIEW_QA_VIEW_PANEL_HEADER_20261026.md",
+    "passed": 11,
+    "total": 11,
+    "new_findings": 0,
+    "old_held_findings_unchanged": true,
+    "initial_probe_failure": "Selector matched existing link action row; precise heading probes and actual browser escaping test passed without product changes."
+  }
+}

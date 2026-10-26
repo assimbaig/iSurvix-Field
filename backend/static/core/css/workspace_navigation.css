@@ -13,7 +13,7 @@ html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles a[aria
 .workspace-header-navigation .enterprise-breadcrumb{padding-top:12px;font-size:13px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 .workspace-header-navigation .enterprise-header-actions{gap:14px}
 body.workspace-header-navigation.super-console .role-page-content{flex:1;min-height:0;height:auto!important}
-@media(max-width:980px){body.role-layout.workspace-header-navigation{display:flex;flex-direction:column}.workspace-header-navigation .app-header.enterprise-header{padding:9px 12px 0}.workspace-header-navigation .enterprise-header-actions{margin-left:auto;gap:10px}.workspace-header-navigation .header-select select{max-width:210px}.workspace-navigation-row{padding-top:8px;padding-bottom:8px}.workspace-header-navigation .workspace-nav-tiles a{min-height:36px;padding:8px 11px!important;font-size:12px!important}.workspace-header-navigation .enterprise-breadcrumb{padding:10px 14px 0}.workspace-header-navigation .role-page-content{width:100%}}
+@media(max-width:980px){body.role-layout.workspace-header-navigation{display:flex;flex-direction:column}.workspace-header-navigation .app-header.enterprise-header{padding:9px 12px 0}.workspace-header-navigation .enterprise-header-actions{margin-left:auto;gap:10px}.workspace-header-navigation .header-select select{max-width:210px}.workspace-navigation-row{padding-top:8px;padding-bottom:8px}html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles a,.workspace-header-navigation .workspace-nav-tiles a{min-height:36px;padding:8px 11px!important;font-size:12px!important}.workspace-header-navigation .enterprise-breadcrumb{padding:10px 14px 0}.workspace-header-navigation .role-page-content{width:100%}}
 @media(max-width:480px){.workspace-header-navigation .enterprise-header-actions{flex:1 1 auto;justify-content:flex-end;gap:10px}.workspace-header-navigation .header-select{max-width:calc(50% - 8px);min-width:0}.workspace-header-navigation .header-select select{max-width:100%;width:100%}.workspace-header-navigation .enterprise-brand{margin-right:auto}.workspace-header-navigation .enterprise-header-actions summary{font-size:12px}.workspace-header-navigation .enterprise-header-actions>a{font-size:12px}}
 @media print{.workspace-navigation-row{display:none!important}}
 
@@ -21,15 +21,19 @@ body.workspace-header-navigation.super-console .role-page-content{flex:1;min-hei
 .workspace-header-navigation .sa-desk-section-tabs{display:none}
 
 /* One compact header contract for every authenticated screen and role. */
+.workspace-header-navigation .enterprise-header{font-size:12px;line-height:1.3}
+.workspace-header-navigation .enterprise-header-actions>a,.workspace-header-navigation .enterprise-header-actions summary{font-size:12px;line-height:1.3}
+.workspace-header-navigation .header-select select{font-size:12px!important;line-height:1.3!important}
 .workspace-header-navigation .enterprise-breadcrumb{font-size:11px;line-height:15px;padding:2px 12px;margin:0;gap:5px}
 @media(min-width:981px){
 body.role-layout.workspace-header-navigation .app-header.enterprise-header{min-height:44px;padding:4px 10px!important;gap:8px;flex-wrap:nowrap}
 .role-layout.workspace-header-navigation .enterprise-header .enterprise-brand img{width:104px!important;height:34px!important}
 .workspace-header-navigation .header-select{min-width:0;flex:0 1 auto}
-.workspace-header-navigation .header-select select{width:100%;box-sizing:border-box;min-width:0;max-width:180px;min-height:29px;font-size:12px!important;padding:3px 6px}
+.workspace-header-navigation .header-select select{width:100%;box-sizing:border-box;min-width:0;max-width:160px;min-height:29px;font-size:12px!important;padding:3px 6px}
 .workspace-header-navigation .workspace-navigation-row{flex:0 1 auto;width:auto;min-width:0;border:0;padding:0;margin-left:3px}
 .workspace-header-navigation .workspace-nav-tiles{gap:5px;overflow:visible}
-.workspace-header-navigation .workspace-nav-tiles>a{min-height:26px;padding:4px 8px!important;font-size:11px!important}
+html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles>a,.workspace-header-navigation .workspace-nav-tiles>a{min-height:26px;padding:4px 6px!important;font-size:11px!important;gap:4px}
+.workspace-header-navigation .workspace-nav-icon{width:14px;height:14px;flex-basis:14px}
 .workspace-header-navigation .enterprise-header-actions{gap:10px;flex-shrink:0}
 .workspace-header-navigation .enterprise-header-actions summary{font-size:12px}
 }
