@@ -61,14 +61,18 @@ def progress(request, checklist_id):
     revision = get_object_or_404(c.processing_revisions.only('id', 'digest'), pk=ident)
     job = revision.processing_job
     ai = {'status': job.status, 'completed': job.completed, 'total': job.total, 'error': job.error,
-          **flags(request, c, status=job.status),'phases':phases(revision,job)}
+          **flags(request, c, revision, status=job.status),'phases':phases(revision,job)}
     result = {'revision_id': revision.pk, 'progress_token': token(c, revision), 'ai': ai}
     photo = request.GET.get('photo_id')
     if photo is not None:
         if not isinstance(photo, str) or not photo.isdigit():
             raise ValidationError('Choose a submitted source photo.')
         ident = int(photo)
-        if not c.photo_evidence.filter(pk=ident).exists():
+        # Only selected-photo requests load the frozen snapshot. Ordinary count
+        # polling remains scalar; same-task retained photos are not implicitly
+        # members of this exact submitted revision.
+        submitted = {row['id'] for row in revision.snapshot.get('photos', [])}
+        if ident not in submitted or not c.photo_evidence.filter(pk=ident).exists():
             raise Http404()
         rows = revision.source_analyses.filter(source_id='photo:' + str(ident))
         findings = []

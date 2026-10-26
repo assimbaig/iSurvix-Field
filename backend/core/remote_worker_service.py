@@ -365,7 +365,8 @@ def _validate_source(task, raw, model):
 
 
 def _validate_mapping(task, raw, model):
-    from .survey_checklist_mapping import MappingResponse, binding_identity
+    from .survey_checklist_mapping import (MappingResponse, binding_identity, _with_candidates,
+        partial_mapping_context, with_partial_mapping_context)
     try:
         parsed = MappingResponse.model_validate({'bindings': [{key: value for key, value in entry.items() if key in {'finding_key', 'field_id', 'reason'}}
             for entry in raw.get('bindings', [])], 'unassigned': raw.get('unassigned', [])})
@@ -377,10 +378,15 @@ def _validate_mapping(task, raw, model):
     if (len(bound) != len(set(bound)) or any(entry.finding_key not in keys or entry.field_id not in fields for entry in parsed.bindings)
             or len(parsed.unassigned) != len(set(parsed.unassigned)) or set(parsed.unassigned) & set(bound) or not set(parsed.unassigned) <= keys):
         raise ValidationError('A returned checklist binding is unknown, repeated or contradictory.')
-    return {'bindings': [{**entry.model_dump(), 'verification_status': 'needs_review', 'status': 'proposed'} for entry in parsed.bindings],
+    result = {'bindings': [{**entry.model_dump(), 'verification_status': 'needs_review', 'status': 'proposed'} for entry in parsed.bindings],
             'unassigned': sorted(keys - set(bound)), 'identity': binding_identity(task.payload, model),
             'batch_identity': task.payload['identity'], 'status': 'proposed',
             'ranking_method': task.payload.get('ranking_method'), 'notice': task.payload.get('notice', '')}
+    # The remote client cannot supply a trusted read-projection receipt. Derive
+    # it here from the immutable server task, saved sources and actual job pin.
+    job = task.job
+    context = partial_mapping_context(_analyses(job), job.revision.snapshot['schema'], model, job.model_digest)
+    return with_partial_mapping_context(task.payload, _with_candidates(task.payload, result), context)
 
 
 def complete_task(credential, job_id, token, task_id, payload):

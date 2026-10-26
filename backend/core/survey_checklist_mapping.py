@@ -351,6 +351,19 @@ def _validated_candidates(batch):
     return candidates
 
 
+def has_source_observation(finding):
+    """Original extracted content can support a location; generated advice cannot.
+
+    Zero and False are recorded values. A real inspection subject can support
+    an unanswered point, without treating a mapping explanation as evidence.
+    """
+    value = finding.get('value')
+    if value not in (None, '', [], {}) and (not isinstance(value, str) or value.strip()):
+        return True
+    return any(isinstance(finding.get(key), str) and finding[key].strip()
+        for key in ('component', 'notes', 'evidence_quote'))
+
+
 def _with_candidates(batch,result,reasons=None):
     candidates=_validated_candidates(batch);reasons=reasons or {}
     result['finding_candidates']=deepcopy(candidates)
@@ -361,9 +374,7 @@ def _with_candidates(batch,result,reasons=None):
     for source in batch.get('photo_sources',[]):
         findings=[item for item in batch['findings'] if item['source_id']==source];keys={item['finding_key'] for item in findings}
         reliable={item['finding_key'] for item in findings if item.get('confidence')=='high'
-            and not item.get('mapping_unassigned') and (item.get('value') not in (None,'',[],{}) or
-            any(isinstance(item.get(key),str) and item[key].strip()
-                for key in ('component','notes','evidence_quote')))}
+            and not item.get('mapping_unassigned') and has_source_observation(item)}
         source_bindings=[item for item in result['bindings'] if item['finding_key'] in keys]
         selected=[item for item in source_bindings if item['finding_key'] in reliable]
         ranked={}
@@ -387,6 +398,57 @@ def _with_candidates(batch,result,reasons=None):
 def binding_identity(batch, model):
     """Identity checked by the durable caller before reusing a saved binding."""
     return _digest({'batch': batch.get('identity', ''), 'model': model})
+
+
+def partial_mapping_context(analyses, schema, model, model_digest):
+    """Cheap source context for a read projection, without retrieval/inference.
+
+    Normalizing keys matches the durable worker's retained-analysis handling.
+    Universal newlines keep the reviewed-code identity stable across Windows
+    and Linux. The caller supplies the actual pinned job model identity.
+    """
+    normalized = []
+    for analysis in sorted(analyses, key=lambda item: str(item.get('source_id', ''))):
+        normalized.append({**deepcopy(analysis), 'findings': _findings([analysis])})
+    return {'version': 'partial-mapping-context-v1', 'mapping_version': VERSION,
+        'mapping_code': hashlib.sha256(Path(__file__).read_text(encoding='utf-8').encode()).hexdigest(),
+        'sources_digest': _digest(normalized), 'schema_digest': _digest(schema),
+        'model': model, 'model_digest': model_digest}
+
+
+def with_partial_mapping_context(batch, result, context):
+    """Attach a server/worker-derived receipt only to a compatible new result."""
+    if (batch.get('key') != 'mapping:v3:' + batch.get('identity', '')
+            or result.get('batch_identity') != batch.get('identity')
+            or result.get('identity') != binding_identity(batch, context['model'])
+            or not isinstance(context.get('model_digest'), str)
+            or not re.fullmatch(r'[a-f0-9]{64}', context['model_digest'])):
+        raise MappingError('The saved checklist mapping context does not match this pinned job.')
+    result = deepcopy(result)
+    result.pop('projection_context', None)
+    result['projection_context'] = {**deepcopy(context), 'batch_key': batch['key'],
+        'batch_identity': batch['identity'], 'binding_identity': result['identity'],
+        'mapping_digest': _digest(result)}
+    return result
+
+
+def verified_partial_mapping(source_id, result, context):
+    """An immutable legacy/stale row stays retained, but cannot become advice."""
+    receipt = result.get('projection_context')
+    batch_identity = result.get('batch_identity')
+    if (not isinstance(receipt, dict) or not isinstance(batch_identity, str)
+            or not re.fullmatch(r'[a-f0-9]{64}', batch_identity)
+            or not isinstance(context.get('model_digest'), str)
+            or not re.fullmatch(r'[a-f0-9]{64}', context['model_digest'])
+            or any(receipt.get(key) != value for key, value in context.items())
+            or source_id != 'mapping:v3:' + batch_identity
+            or receipt.get('batch_key') != source_id
+            or receipt.get('batch_identity') != batch_identity
+            or receipt.get('binding_identity') != result.get('identity')
+            or result.get('identity') != binding_identity({'identity': batch_identity}, context['model'])):
+        return False
+    body = {key: value for key, value in result.items() if key != 'projection_context'}
+    return receipt.get('mapping_digest') == _digest(body)
 
 
 def bind_batch(batch, model, base_url=None):

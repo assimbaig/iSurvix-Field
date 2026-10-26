@@ -15,7 +15,6 @@ from . import survey_processing as pipeline
 from . import test_survey_pause as fixture
 from . import test_remote_survey_worker as remote
 from .survey_processing_models import SurveyDrawingSet, SurveyProcessingJob
-from .survey_pause import control
 
 
 @override_settings(SECRET_KEY='isolated-independent-pause-review',ROOT_URLCONF='checklist.urls_local',
@@ -86,8 +85,10 @@ class IndependentLocalPauseReviewTests(TestCase):
 
 @override_settings(**remote.SETTINGS)
 class IndependentRemotePauseReviewTests(remote.Fixtures,TestCase):
+    control=fixture.SurveyPauseTests.control
+
     def pause(self):
-        control(self.request(self.quality),self.checklist.pk,self.revision.pk,'pause_ai',self.revision.digest)
+        self.control('pause_ai')
 
     def test_duplicate_delivery_while_pausing_is_idempotent_and_old_lease_cannot_mutate_resumed_job(self):
         claimed=self.claim();task=remote.bridge.next_task(self.credential,claimed['job_id'],claimed['lease'])
@@ -97,7 +98,7 @@ class IndependentRemotePauseReviewTests(remote.Fixtures,TestCase):
         self.assertEqual(self.revision.source_analyses.count(),1)
         result=remote.bridge.next_task(self.credential,claimed['job_id'],claimed['lease'])
         self.assertEqual(result['status'],'paused')
-        control(self.request(self.quality),self.checklist.pk,self.revision.pk,'resume_ai',self.revision.digest)
+        self.control('resume_ai')
         resumed=self.claim();self.assertNotEqual(resumed['lease'],claimed['lease'])
         with self.assertRaises(PermissionDenied):self.complete(claimed,task)
         job=SurveyProcessingJob.objects.get(revision=self.revision)
@@ -108,7 +109,7 @@ class IndependentRemotePauseReviewTests(remote.Fixtures,TestCase):
     def test_expired_remote_pause_can_be_explicitly_resumed_without_a_new_snapshot(self):
         claimed=self.claim();self.pause()
         SurveyProcessingJob.objects.filter(pk=claimed['job_id']).update(lease_until=timezone.now()-timedelta(seconds=1))
-        control(self.request(self.quality),self.checklist.pk,self.revision.pk,'resume_ai',self.revision.digest)
+        self.control('resume_ai')
         job=SurveyProcessingJob.objects.get(revision=self.revision)
         self.assertEqual(job.status,'queued')
         self.assertEqual(self.revision.checklist.processing_revisions.count(),1)

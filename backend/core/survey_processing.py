@@ -657,13 +657,16 @@ def process_next():
                     raise ValidationError('Saved evidence analysis failed integrity verification.')
                 analyses.append(saved.payload)
             from .survey_checklist_mapping import (mapping_batches, bind_batch, binding_identity,
-                _findings, _with_candidates, photo_candidate_outcomes)
+                _findings, _with_candidates, photo_candidate_outcomes,
+                partial_mapping_context, with_partial_mapping_context)
             # Stable finding keys also cover retained raw analyses predating the
             # structured extraction contract, without changing immutable rows.
             analyses = deepcopy(analyses)
             for analysed in analyses:
                 analysed['findings'] = _findings([analysed])
             mapping_results = []
+            projection_context = partial_mapping_context(analyses, snapshot['schema'],
+                job.model, identity['fingerprint'])
             needs_mapping = any(not f.get('field_hint') for a in analyses for f in a.get('findings', []))
             if analyses:
                 bindings = {}
@@ -702,6 +705,7 @@ def process_next():
                                 mapped = bind_batch(batch, job.model,
                                     base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
                                 check()
+                        mapped = with_partial_mapping_context(batch, mapped, projection_context)
                         with transaction.atomic():
                             progress(job)
                             SurveySourceAnalysis.objects.create(revision=job.revision, source_id=batch['key'], payload=mapped, digest=digest(mapped))

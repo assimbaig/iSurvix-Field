@@ -325,16 +325,18 @@ class QAMatchingBackendTests(TestCase):
         raw={'source_id':source_id,'reference':'synthetic-active-label.png','findings':[
             {'component':'cabinet manufacturer','value':'SyntheticCo','confidence':'high'}]}
         batch=list(mapping.mapping_batches([raw],self.revision.snapshot['schema']))[0]
+        job=self.revision.processing_job
+        job.status='preparing_checklist';job.model_digest='a'*64
+        job.save(update_fields=['status','model_digest'])
         mapped=mapping._with_candidates(batch,{'bindings':[{'finding_key':batch['findings'][0]['finding_key'],
-            'field_id':'manufacturer','reason':'Legible manufacturer label.'}],'unassigned':[]})
+            'field_id':'manufacturer','reason':'Legible manufacturer label.'}],'unassigned':[],
+            'identity':mapping.binding_identity(batch,job.model),'batch_identity':batch['identity']})
+        mapped=mapping.with_partial_mapping_context(batch,mapped,
+            mapping.partial_mapping_context([raw],self.revision.snapshot['schema'],job.model,job.model_digest))
         for source,payload in [(source_id,raw),(batch['key'],mapped)]:
             SurveySourceAnalysis.objects.create(revision=self.revision,source_id=source,
                 payload=payload,digest=pipeline.digest(payload))
         before=list(self.revision.source_analyses.values_list('source_id','digest'))
-        job=self.revision.processing_job
-        job.status='preparing_checklist'
-        job.save(update_fields=['status'])
-
         state=self.qa_state()
         preview=next(photo for photo in state['photos'] if photo['id']==self.ids[0])
         self.assertEqual(preview['photo_match']['status'],'proposed')

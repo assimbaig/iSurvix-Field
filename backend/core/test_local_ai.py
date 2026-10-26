@@ -3,10 +3,12 @@ import ast
 from io import BytesIO
 from pathlib import Path
 import subprocess
+import shutil
 import tempfile
 from types import SimpleNamespace
 from urllib.error import HTTPError
 from unittest.mock import patch
+from unittest import skipUnless
 from django.contrib.auth.models import User
 from django.test import TestCase, Client, override_settings
 from .models import Checklist, ChecklistTemplate, Profile, Project
@@ -164,6 +166,7 @@ class LocalAITests(TestCase):
                 exec(code,namespace)
                 self.assertEqual(tuple(namespace[name] for name in ('OLLAMA_BASE_URL','PHOTO_OLLAMA_BASE_URL')),expected)
 
+    @skipUnless(shutil.which('powershell.exe'), 'Windows PowerShell launcher validation requires powershell.exe.')
     def test_windows_launcher_aligns_text_after_verified_photo_startup(self):
         root=Path(__file__).resolve().parents[2]
         temporary_root=root/'.local'/'test-runs';temporary_root.mkdir(exist_ok=True)

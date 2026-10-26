@@ -1,13 +1,44 @@
 """Audited processing controls. Pause intent survives worker and browser restarts."""
+from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Subquery
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from .access import role_for
 from .models import Checklist, Profile
 from .survey_processing_models import SurveyProcessingJob, SurveyProcessingEvent
+
+
+CONTROL_EVENTS = {'pause_ai': 'pause_requested', 'resume_ai': 'resumed'}
+CONTROL_SALT = 'isurvix.processing-control-generation.v1'
+
+
+def _token(request, revision, generation):
+    return signing.Signer(salt=CONTROL_SALT).sign_object({
+        'revision': revision.pk, 'source': revision.digest,
+        'actor': request.user.pk, 'generation': generation}, compress=True)
+
+
+def _generation(request, revision, action, token, latest):
+    """Accept one observed intent, or the exact latest successful retry only."""
+    try:
+        observed = signing.Signer(salt=CONTROL_SALT).unsign_object(token)
+    except (signing.BadSignature, TypeError, ValueError):
+        raise ValidationError('Processing controls changed. Refresh before pausing or resuming AI Analysis.')
+    if (not isinstance(observed, dict) or
+            observed.get('revision') != revision.pk or observed.get('source') != revision.digest or
+            observed.get('actor') != request.user.pk or type(observed.get('generation')) is not int):
+        raise ValidationError('Choose the current processing control for this submission.')
+    generation = latest['pk'] if latest else 0
+    if observed['generation'] == generation:
+        return generation, False
+    if (latest and latest['actor_id'] == request.user.pk and
+            latest['action'] == CONTROL_EVENTS.get(action) and
+            latest['payload'].get('observed_control_generation') == observed['generation']):
+        return observed['generation'], True
+    raise ValidationError('A newer Pause or Resume changed this job. Refresh before controlling AI Analysis.')
 
 
 class ProcessingPaused(Exception):
@@ -31,12 +62,25 @@ def flags(request, c, revision=None, *, status=None):
     from .survey_processing import ACTIVE
     status = status if status is not None else revision.processing_job.status if revision else None
     allowed = _allowed(request, c)
+    control_token = None
+    if allowed and revision:
+        # Read status and its control generation in the same SQL snapshot. A
+        # polling response cannot combine old Resume permissions with a token
+        # issued after another browser's newer Pause. No source JSON is loaded.
+        latest = SurveyProcessingEvent.objects.filter(revision_id=revision.pk,
+            action__in=CONTROL_EVENTS.values()).order_by('-pk').values('pk')[:1]
+        saved = SurveyProcessingJob.objects.filter(revision_id=revision.pk).annotate(
+            control_generation=Subquery(latest)).values('status', 'control_generation').first()
+        if saved:
+            status = saved['status']
+            control_token = _token(request, revision, saved['control_generation'] or 0)
     message = ('Pause requested. The current evidence task will finish and save before processing stops.'
                if status == 'pausing' else
                'AI Analysis is paused. Saved analyses and original evidence are retained. Resume to continue.'
                if status == 'paused' else '')
     return {'can_pause': bool(allowed and status in ACTIVE),
-            'can_resume': bool(allowed and status == 'paused'), 'pause_message': message}
+            'can_resume': bool(allowed and status == 'paused'), 'pause_message': message,
+            'control_token': control_token}
 
 
 def _paused(job):
@@ -82,7 +126,7 @@ def yield_job(job, *, error='', failed=False):
 
 
 @transaction.atomic
-def control(request, checklist_id, revision_id, action, expected_digest):
+def control(request, checklist_id, revision_id, action, expected_digest, expected_control_token=None):
     from . import survey_processing as pipeline
     from .category_intake import enabled, access as capture_access, current_revision
     Checklist.objects.select_for_update().get(pk=checklist_id)
@@ -97,6 +141,13 @@ def control(request, checklist_id, revision_id, action, expected_digest):
     if (expected_digest != revision.digest or not pipeline.current(revision)
             or (enabled(c) and getattr(current_revision(c), 'pk', None) != revision.pk)):
         raise ValidationError('These inputs or the selected revision changed. Refresh before controlling AI Analysis.')
+    if action not in CONTROL_EVENTS:
+        raise ValidationError('Choose Pause AI or Resume AI.')
+    latest = revision.processing_events.filter(action__in=CONTROL_EVENTS.values()).order_by('-pk').values(
+        'pk', 'actor_id', 'action', 'payload').first()
+    generation, replay = _generation(request, revision, action, expected_control_token, latest)
+    if replay:
+        return revision
     if action == 'pause_ai':
         if job.status in {'paused', 'pausing'}:
             return revision
@@ -108,11 +159,12 @@ def control(request, checklist_id, revision_id, action, expected_digest):
             job.lease_owner, job.lease_until = '', None
         job.save(update_fields=['status', 'lease_owner', 'lease_until', 'updated_at'])
         SurveyProcessingEvent.objects.create(revision=revision, actor=request.user,
-            action='pause_requested', payload={'status': job.status, 'completed': job.completed})
+            action='pause_requested', payload={'status': job.status, 'completed': job.completed,
+                'observed_control_generation': generation})
     elif action == 'resume_ai':
         if job.status == 'queued':
             return revision
-        if job.status in pipeline.ACTIVE and revision.processing_events.filter(action='resumed').exists():
+        if job.status in pipeline.ACTIVE and latest and latest['action'] == 'resumed':
             # A successful reply can be lost while the worker already claims
             # the resumed job. Retrying must not reset its live lease or audit.
             return revision
@@ -123,7 +175,8 @@ def control(request, checklist_id, revision_id, action, expected_digest):
         job.status, job.error, job.lease_owner, job.lease_until = 'queued', '', '', None
         job.save(update_fields=['status', 'error', 'lease_owner', 'lease_until', 'updated_at'])
         SurveyProcessingEvent.objects.create(revision=revision, actor=request.user,
-            action='resumed', payload={'completed': job.completed})
+            action='resumed', payload={'completed': job.completed,
+                'observed_control_generation': generation})
     else:
         raise ValidationError('Choose Pause AI or Resume AI.')
     return revision
