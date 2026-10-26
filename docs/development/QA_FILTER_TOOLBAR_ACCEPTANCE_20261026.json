@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-26",
+  "scope": "Shared QA/Team Lead evidence filter toolbar, above category heading with existing header colors. Other roles checked in their existing interfaces.",
+  "checks": {
+    "results": [
+      {
+        "check": "backend-focused",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "scripts/run_backend_tests.py",
+          "core.test_qa_filter_toolbar",
+          "core.test_qa_batch_links",
+          "core.test_qa_quick_review",
+          "core.test_qa_restore_previous_links",
+          "core.tests_review_decision_ui",
+          "--verbosity",
+          "1"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip",
+        "exit_code": 0,
+        "seconds": 24.531
+      },
+      {
+        "check": "frontend-all",
+        "command": [
+          "node",
+          "run-checks.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\frontend",
+        "exit_code": 0,
+        "seconds": 21.391
+      },
+      {
+        "check": "django-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\backend",
+        "exit_code": 0,
+        "seconds": 2.109
+      },
+      {
+        "check": "migration-drift",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\wip\\backend",
+        "exit_code": 0,
+        "seconds": 3.297
+      }
+    ],
+    "source_unchanged": true,
+    "hashes": {
+      "backend/templates/dashboards/qa_evidence_review.html": "30d137df02fdcca9d5d1968ef7835459207e2041ff631c29b2224d6050227dae",
+      "backend/static/core/css/qa_quick_review.css": "69ad002e9b7464a74b9f48b4851bdbe0966ca1a7f5a0e684de30cb4976e5a874",
+      "backend/core/test_qa_filter_toolbar.py": "b0d6d601551e97d95229b44274f8cd48e13b3bd55d291767489d7b6ee83e4651",
+      "frontend/check-qa-filter-toolbar.cjs": "0cd5f12cbbff4f89c9477dd484d8a67b5ab6f646cc0d942eb1dddc4e6b9645c1"
+    }
+  },
+  "browser_functional_assertions_passed": 92,
+  "role_viewport_visits": 15,
+  "separate_security_assertions_passed": 9,
+  "new_exploitable_findings_established": 0,
+  "limitations": [
+    "Focused layout/input/role-boundary checks only; no production DAST, new dependency audit or exhaustive concurrency campaign. Prior unrelated security findings remain unapproved."
+  ],
+  "prior_full_suite": "Previous product commit:1226passed,1Windows symlink privilege error. This template/CSS-only follow-up runs affected tests, not another full backend suite.",
+  "checkpoint": ".local/backups/project-checkpoint-20261026-233722",
+  "candidate": "http://127.0.0.1:8002/login/",
+  "native_ai_requested": false,
+  "operational_approval_tests": false,
+  "merged": false,
+  "deployed": false,
+  "final_palette_geometry_assertions_passed": 65,
+  "checks_overlap": true
+}

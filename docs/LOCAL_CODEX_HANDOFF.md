@@ -1,5 +1,17 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: evidence filter toolbar follow-up - 26 October 2026
+
+On the PR23 feature branch/candidate8002, the evidence filter toolbar now sits
+above category headings and uses the interface navy header palette. QA/Team Lead
+share the fix. Other roles retain their existing permitted gallery/upload screens.
+No backend/controller/approval change.35 focused backend tests,18 frontend scripts,
+Django/migration checks and92 browser assertions passed; separate9-assertion
+AppSec review found no new exploitable finding in scope. Previous full-suite
+Windows symlink fixture blocker and unrelated unapproved audit findings remain.
+Read `docs/development/QA_FILTER_TOOLBAR_20261026.md` and acceptance JSON.
+Recovery checkpoint233722 is CRC verified. Keep draft PR23 for review.
+
 ## Latest: QA batch matching and returned-site links - 26 October 2026
 
 Feature branch `feat/qa-batch-decisions-20261026`, based on merged PR22 `2b05179`.
