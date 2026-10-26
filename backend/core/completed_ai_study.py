@@ -31,10 +31,13 @@ def observation_rows(finding):
     return [('Product / type',text(first('component','product_type','equipment_type','label','category'))),
         ('Manufacturer',text(first('manufacturer'))),('Model',text(first('model'))),
         ('Defect / issue',text(defect)),
-        ('Extracted value',measured),('Description',text(first('notes','description'))),
+        ('Extracted value',measured),
+        *([('Recorded unit',text(finding['unit']))] if value is None and finding.get('unit') else []),
+        ('Description',text(first('notes','description'))),
         ('Visible source',text(first('evidence_quote'))),
         ('Matching reason',text(first('mapping_reason','reason'))),
-        ('Uncertainty',text(first('uncertainty'))),('Source confidence',text(first('confidence')))]
+        ('Uncertainty',text(first('uncertainty'))),('Source confidence',text(first('confidence'))),
+        ('Evidence basis',text(first('basis'))),('Checklist hint',text(first('field_hint')))]
 
 
 def context_rows(checklist,photo):
@@ -88,12 +91,14 @@ def workspace(request,checklist_id):
                 if pipeline.digest(record.payload)!=record.digest:
                     raise ValidationError('Saved source analysis failed integrity verification.')
                 findings=[f for f in record.payload.get('findings',[]) if isinstance(f,dict)]
-    finding_page=Paginator(findings,1).get_page(request.GET.get('finding',1))
-    finding=next(iter(finding_page.object_list),None)
+    sections=[{'title':text(finding.get('component') or finding.get('product_type') or
+        finding.get('equipment_type') or 'Observation'),
+        'category':text(finding.get('category')) if finding.get('category') else '',
+        'rows':observation_rows(finding)} for finding in findings]
     response=render(request,'dashboards/completed_ai_study.html',{'checklist':c,'revision':revision,
-        'study_ready':ready,'photo':photo,'photo_page':page,'finding_page':finding_page,
+        'study_ready':ready,'photo':photo,'photo_page':page,'study_sections':sections,
         'study_context':context_rows(c,photo) if photo else [],
-        'study_rows':observation_rows(finding) if finding else [],'study_client':client})
+        'study_client':client})
     response['Cache-Control']='private, no-store'
     response['X-Content-Type-Options']='nosniff'
     response['X-Robots-Tag']='noindex, nofollow'

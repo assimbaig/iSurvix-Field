@@ -1,5 +1,124 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: viewing-panel availability and shared header - 26 October 2026
+
+Continue on `feat/qa-view-panel-header-20261026`, still in the worktree
+`.local/worktrees/qa-photo-candidate-ranking-20261024`. Owner merged PR20;
+remote merge `409759a` contains `ee082a2`, not `feb0649`/`2d4590f`/`19c011a`.
+Those later commits and implementation `0b1a873` are preserved in open
+**draft PR21**: https://github.com/assimbaig/iSurvix-Field/pull/21. `19c011a` was
+successfully pushed after the earlier transient GitHub server errors. Leave
+the follow-up PR open for review; do not merge or deploy it.
+
+Gallery now shows structured group/section headings and checkpoint headings;
+zero-evidence groups say `Not available`. The bounded first thumbnail batch
+reserves space for genuinely unassigned photos instead of starving their pool.
+The viewing-panel Review point option is removed; existing permitted review
+controls remain under More tools / Checklist review controls. No engineering
+approval rule, evidence original, checklist ID or saved answer was removed.
+
+The shared header now wins over themed oversized-link rules and obsolete
+QA-only header overrides. Desktop 1366 QA pages and Admin use the same44px
+header. Mobile retains responsive wrapping and touch controls; role-specific
+permitted link sets are unchanged. Cache tokens: `shared-header-4` and
+`qa-gallery-availability-20261026-1`.
+
+Final checks:1124 backend tests passed in388.865s, no failures/errors/skips,
+zero external attempts. All13 frontend scripts, Django/migration/dependency/
+syntax/static build checks passed. Strict source gate remained unchanged:
+`717d4a2a5f792b1d0319385b5bf4c1140d64e441282e7d3428cb5acfb5429d18`.
+Focused backend73 passed; header CSS103, independent gallery46, hidden-pool5
+and authenticated header287 assertions/56 visits passed. Full evidence:
+`QA_VIEW_PANEL_HEADER_ACCEPTANCE_20261026.json` and the requirement ledger.
+
+Only owned actual-data preview8001 was restarted; login200 and served JS
+matched source. Original8000, native model and operational workers were not
+restarted. No native AI calls were needed for these UI changes. Recovery:
+`.local/backups/project-checkpoint-20261026-174200` has a verified source/media/
+private archive and consistent SQLite backup. Final commit/remote/PR details
+will be in private `.local/qa-view-panel-header-20261026/delivery.json`.
+Older C1/M1/W1/S1/S2/S3/R1/R2 findings remain approval-held; WS1/G1 retain
+their prior approved fixes. Separate post-functional AppSec11/11 passed with no new finding established;
+see `SECURITY_REVIEW_QA_VIEW_PANEL_HEADER_20261026.md`. Older approval holds
+remain unchanged; do not fix them absent specific owner approval.
+
+## Latest: General Info, category gallery and unified header - 26 October 2026
+
+Feature remains `feat/qa-photo-candidate-ranking-20261024` under
+`.local/worktrees/qa-photo-candidate-ranking-20261024`; completed prior UI
+checkpoints `feb0649`/`2d4590f` preserve the compact continuous-table work.
+Actual-data preview:8001, Ctrl+F5. Original8000/main checkout and model11435
+remain unchanged; no operational worker restart or engineering approval.
+
+General Info now opens a centre read-only table, distinct from Site information
+editing. The left pane is a collapsed-by-default checklist tree with unique
+photo-link badges, no bottom collections. Category galleries show all approved
+points, linked/cross-category sources and a final globally-unlinked pool, with
+bounded lazy thumbnail loading and no gallery Next button. Point review is an
+optional drawer; approval conditions are not relaxed. Existing whole-task reject
+was verified to work before photo review/AI completion and to preserve Engineer
+originals/resubmission analysis. Shared role header styling is unified on all
+pages; QA has the same5 direct links and correct active state on each page.
+
+Owner explicitly approved new **G1 Low** remediation: legacy photo mapping actor
+metadata could falsely label an unaccepted AI value as a saved human correction.
+Only actual answer-edit/accepted-value provenance now selects that value. G1's
+failure and owner-approved independent closure are in
+`SECURITY_REVIEW_QA_GENERAL_GALLERY_20261026.md`;10 private re-tests passed.
+Older C1/M1/W1/S1/S2/S3/R1/R2 remain held; WS1 stays resolved.
+
+Final backend:1,124 passed in411.511s, no failures/errors/skips, zero external
+attempts and33 in-process fixture connections. All13 frontend scripts and
+required Django/migration/dependency/syntax/215-file build checks passed.
+Independent gallery70 browser checks plus6 rejection tests; final authenticated
+header60 assertions/10 visits after tablet overlap repair; synthetic CSS76 cases.
+The broad fingerprint gate recorded the tablet CSS/test/cache-token fix while
+server tests ran; explicit component proof verifies server logic unchanged and
+final UI scripts run afterward, rather than claiming all-file immutability.
+Final fingerprint:
+`3c65563adf2f5140ac3235f3604285650639216e0e6b092e1941de12c2b195ca`.
+See `QA_GENERAL_GALLERY_NAV_ACCEPTANCE_20261026.json` and the requirement ledger.
+
+Recovery checkpoint `.local/backups/project-checkpoint-20261026-153841` is
+supplemented by the final verified Git bundle and final SQLite backup. Final
+commit/remote/draft PR20 receipt is private under the feature checkout at
+`.local/qa-general-info-tree-20261026/delivery.json`. No merge/deployment.
+
+## Latest QA density and continuous findings - 26 October 2026
+
+Continue in `.local/worktrees/qa-photo-candidate-ranking-20261024`, branch
+`feat/qa-photo-candidate-ranking-20261024`. Actual-data preview is8001; original
+8000/main checkout and model11435 workers remain intact. Reload with Ctrl+F5.
+The root checkout intentionally remains on its older branch, not the new UI.
+
+Existing QA navigation is promoted into the compact header. Three phase groups
+take14px within a28px status strip, <=25% of their former height. Checklist pane
+height grows30.8%/52.8% at1920/1366; evidence area grows31.2%/53.6%. Requested
+desktop text reduction is25%, while mobile labels/touch controls remain larger.
+Independent spacing67-check report: `INDEPENDENT_QA_SPACE_20261026.md`.
+
+The owner's subsequent AI-details request replaces the finding selector/pager
+with one continuous thin table, context first and all findings under headings.
+Rows measure19px desktop/20px mobile versus34.55px previously. Completed study
+uses the same format with original client accepted/released-only restrictions.
+See `QA_CONTINUOUS_FINDINGS_20261026.md` and its acceptance JSON.
+
+Final backend:1,112 passed in412.492s; zero failures/errors/skips, zero external
+attempts and33 in-process fixture calls. All11 frontend scripts, Django,
+migration/dependency/syntax and215-file build checks passed. A caption/test edit
+during the server run triggered the conservative broad fingerprint gate; explicit
+component proof verifies server sources unchanged and all final UI checks run
+afterward. Final fingerprint:
+`b681339088ae1df384e6b568234f1ed37db7405b0997bf4d2b6246387c34267c`.
+Independent continuous browser48 checks include actual delayed-progress scroll/
+draft preservation. No new AppSec finding in either narrow follow-up; older
+C1/M1/W1/S1/S2/S3/R1/R2 approval holds remain. WS1 stays resolved.
+
+Recovery checkpoint:`.local/backups/project-checkpoint-20261026-153841` plus the
+final Git bundle. Final committed/pushed SHA and draft PR20 receipt are private
+under the feature checkout `.local/qa-continuous-findings-20261026/delivery.json`.
+No production merge/deployment or new native inference was performed.
+
 ## Compact QA, retained matches and source sketch drafts - 26 October 2026
 
 Latest work continues on `feat/qa-photo-candidate-ranking-20261024` in

@@ -1,0 +1,248 @@
+{
+  "baseline": "2d4590f",
+  "branch": "feat/qa-photo-candidate-ranking-20261024",
+  "backend": {
+    "passed": 1124,
+    "seconds": 411.511,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "isolated": true,
+    "external_network_attempts": 0,
+    "in_process_fixture_connections": 33
+  },
+  "checks": [
+    {
+      "check": "backend-full",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "scripts/run_backend_tests.py",
+        "--verbosity",
+        "1"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 420.062
+    },
+    {
+      "check": "frontend-check-engineer-documents",
+      "command": [
+        "node",
+        "check-engineer-documents.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.109
+    },
+    {
+      "check": "frontend-check-engineer",
+      "command": [
+        "node",
+        "check-engineer.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.625
+    },
+    {
+      "check": "frontend-check-preview",
+      "command": [
+        "node",
+        "check-preview.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.61
+    },
+    {
+      "check": "frontend-check-qa-compact-layout",
+      "command": [
+        "node",
+        "check-qa-compact-layout.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.062
+    },
+    {
+      "check": "frontend-check-qa-finding-table",
+      "command": [
+        "node",
+        "check-qa-finding-table.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-guided-state",
+      "command": [
+        "node",
+        "check-qa-guided-state.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.11
+    },
+    {
+      "check": "frontend-check-qa-navigation-gallery",
+      "command": [
+        "node",
+        "check-qa-navigation-gallery.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 1.515
+    },
+    {
+      "check": "frontend-check-qa-workspace",
+      "command": [
+        "node",
+        "check-qa-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.141
+    },
+    {
+      "check": "frontend-check-shared-navigation",
+      "command": [
+        "node",
+        "check-shared-navigation.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 2.797
+    },
+    {
+      "check": "frontend-check-site-routing",
+      "command": [
+        "node",
+        "check-site-routing.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.625
+    },
+    {
+      "check": "frontend-check-survey-pause",
+      "command": [
+        "node",
+        "check-survey-pause.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-web-references",
+      "command": [
+        "node",
+        "check-web-references.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-workspace",
+      "command": [
+        "node",
+        "check-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.61
+    },
+    {
+      "check": "django-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+      "exit_code": 0,
+      "seconds": 2.671
+    },
+    {
+      "check": "migration-drift",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+      "exit_code": 0,
+      "seconds": 2.641
+    },
+    {
+      "check": "dependencies",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 1.0
+    },
+    {
+      "check": "syntax",
+      "command": [
+        "node",
+        "--check",
+        "backend/static/core/js/qa_evidence_review.js"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 0.063
+    }
+  ],
+  "final_source_fingerprint": "3c65563adf2f5140ac3235f3604285650639216e0e6b092e1941de12c2b195ca",
+  "broad_fingerprint_guard": {
+    "unchanged": false,
+    "recorded_changes": [
+      "frontend/check-shared-navigation.cjs",
+      "backend/templates/base.html",
+      "backend/static/core/css/workspace_navigation.css"
+    ],
+    "status": "Resolved by component proof",
+    "reason": "Tablet CSS/collision-test/cache-token repair during server tests; Python and server template logic unchanged. All final UI checks ran after those edits."
+  },
+  "server_python_and_template_logic_stable": true,
+  "final_frontend_checks_match_current_source": true,
+  "independent_gallery_browser": 70,
+  "independent_task_rejection_backend": 6,
+  "shared_header_actual_final_browser": {
+    "checks": 60,
+    "authenticated_visits": 10,
+    "initial_matrix": "144 automated checks over36 visits; manual visual collision found, repaired and retested"
+  },
+  "shared_header_synthetic_css_checks": 76,
+  "security": {
+    "G1": "Owner-approved repair independently verified10/10; original failure retained",
+    "shared_header_template_guards": 9,
+    "older_findings_unchanged": [
+      "C1",
+      "M1",
+      "W1",
+      "S1",
+      "S2",
+      "S3",
+      "R1",
+      "R2"
+    ]
+  },
+  "original_fixture_photos_preserved": 460,
+  "new_backend_service_changes": false,
+  "schema_changes": false,
+  "fresh_model_or_provider_calls": 0,
+  "preview": "http://127.0.0.1:8001/login/",
+  "whole_task_rejection_already_supported": true,
+  "engineering_approval_requirements_retained": true,
+  "merged_or_production_deployed": false
+}

@@ -1,0 +1,222 @@
+{
+  "baseline": "ee082a2",
+  "branch": "feat/qa-photo-candidate-ranking-20261024",
+  "backend": {
+    "passed": 1112,
+    "seconds": 412.492,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "external_network_attempts": 0,
+    "fixture_connections": 33
+  },
+  "checks": [
+    {
+      "check": "backend-full",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "scripts/run_backend_tests.py",
+        "--verbosity",
+        "1"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 422.531
+    },
+    {
+      "check": "frontend-check-engineer-documents",
+      "command": [
+        "node",
+        "check-engineer-documents.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.094
+    },
+    {
+      "check": "frontend-check-engineer",
+      "command": [
+        "node",
+        "check-engineer.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.609
+    },
+    {
+      "check": "frontend-check-preview",
+      "command": [
+        "node",
+        "check-preview.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 4.25
+    },
+    {
+      "check": "frontend-check-qa-compact-layout",
+      "command": [
+        "node",
+        "check-qa-compact-layout.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-finding-table",
+      "command": [
+        "node",
+        "check-qa-finding-table.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-guided-state",
+      "command": [
+        "node",
+        "check-qa-guided-state.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.141
+    },
+    {
+      "check": "frontend-check-qa-workspace",
+      "command": [
+        "node",
+        "check-qa-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.156
+    },
+    {
+      "check": "frontend-check-site-routing",
+      "command": [
+        "node",
+        "check-site-routing.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.61
+    },
+    {
+      "check": "frontend-check-survey-pause",
+      "command": [
+        "node",
+        "check-survey-pause.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-web-references",
+      "command": [
+        "node",
+        "check-web-references.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 0.109
+    },
+    {
+      "check": "frontend-check-workspace",
+      "command": [
+        "node",
+        "check-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+      "exit_code": 0,
+      "seconds": 3.625
+    },
+    {
+      "check": "django-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+      "exit_code": 0,
+      "seconds": 2.375
+    },
+    {
+      "check": "migration-drift",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+      "exit_code": 0,
+      "seconds": 2.563
+    },
+    {
+      "check": "dependencies",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 1.0
+    },
+    {
+      "check": "syntax",
+      "command": [
+        "node",
+        "--check",
+        "backend/static/core/js/qa_evidence_review.js"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+      "exit_code": 0,
+      "seconds": 0.078
+    }
+  ],
+  "final_source_fingerprint": "b681339088ae1df384e6b568234f1ed37db7405b0997bf4d2b6246387c34267c",
+  "broad_all_file_gate": {
+    "unchanged": false,
+    "recorded_changes": [
+      "backend/static/core/js/qa_evidence_review.js",
+      "frontend/check-qa-finding-table.cjs"
+    ],
+    "status": "Resolved by component verification",
+    "reason": "Caption and its frontend assertion changed during server tests. Server/Python/template sources remained identical; all eleven final frontend scripts and syntax ran afterward against the current UI."
+  },
+  "server_source_stable": true,
+  "final_ui_tests_match_current_source": true,
+  "finding_assertions": 16,
+  "browser_checks": [
+    {
+      "receipt": "continuous-checks.json",
+      "passed": 42
+    },
+    {
+      "receipt": "scroll-progress.json",
+      "passed": 6
+    }
+  ],
+  "spacing_checks": 67,
+  "row_height_px": {
+    "desktop": 19,
+    "mobile": 20,
+    "before": 34.546875
+  },
+  "photo_pagination_retained": true,
+  "finding_selector_removed": true,
+  "all_current_photo_findings_visible": true,
+  "client_release_and_accepted_only_gates_retained": true,
+  "no_new_security_finding": true,
+  "earlier_security_holds_unchanged": true,
+  "fresh_ollama_requests": 0,
+  "preview": "http://127.0.0.1:8001/login/",
+  "production_merged_or_deployed": false
+}

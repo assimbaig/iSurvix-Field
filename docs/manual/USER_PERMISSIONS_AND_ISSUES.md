@@ -18,10 +18,24 @@ owner approval; see both docs/development/SECURITY_REVIEW_QA_*_20261024 reports.
 
 ## How access is decided
 
+Latest QA workspace: **General Info** in the checklist tree opens a read-only
+data table in the centre. **Site information** remains the place for guarded
+cell editing. Categories and nested headings start collapsed; expand the ones
+you need. Counts show distinct linked photos rather than a reviewed-photo total.
+Selecting a category opens one scrolling gallery with empty checkpoints visible
+and genuinely unlinked photos at the bottom. There are no gallery paging buttons;
+thumbnails load progressively. Point-review tools open in an optional drawer.
+QA can reject a whole task, with a reason, without completing photo review or AI;
+the Engineer retains the original uploads. Existing engineering approval
+requirements still apply before approval. Every role keeps the same shared
+header layout across pages, with its existing permitted links.
+
 26 October follow-up: **Completed AI study** uses one compact, read-only photo
 and findings format for the assigned Engineer, QA, Team Lead and company Admin.
 Viewing does not confirm a photo match, accept a checklist answer or approve
-work. Clients retain the existing release restrictions and see accepted, linked
+work. AI details and the completed-study view list all findings for the current
+photo together under headings in a compact table; photo navigation remains
+separate. Clients retain the existing release restrictions and see accepted, linked
 information only after QA completion and a matching released output; private AI
 proposals remain internal. Super Admin remains administrative. QA alone uses
 the public-keyword reference lookup in the review viewer; references are not

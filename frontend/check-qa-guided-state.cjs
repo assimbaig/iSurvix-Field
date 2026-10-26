@@ -75,7 +75,7 @@ let checks=0;
   c.storage.set(key,JSON.stringify({revision_id:2,step:'evidence',category:'Civil',selectedID:'civil',scroll:{}}));
   c.qa.applyState({...data,items:[{id:'civil'}],photos:[{id:1,group:'Civil',filename:'one.jpg',preview_url:'/one.jpg'},{id:2,group:'Civil',filename:'two.jpg',preview_url:'/two.jpg'}],links:[{field_id:'civil',photo_id:1}]},true);c.flush();
   c.qa.prepareModeTest();c.qa.renderInline();
-  assert.equal(c.element('qa-inline-position').textContent,'1 / 1','Linked mode starts with the linked photo only');checks++;
+  assert.equal(c.element('qa-inline-position').textContent,'1 / 2','Point evidence retains its linked photo and the true unlinked category pool');checks++;
   c.element('qa-photo-view').value='available';
   assert.equal(typeof c.qa.photoModeChanged,'function','Photo-mode handler supports the primary viewer');
   c.qa.photoModeChanged();
@@ -93,7 +93,7 @@ let checks=0;
   assert.ok(buttons.some(button=>button.dataset.reviewField==='civil_item'),'The category tree includes its checklist points within the same left pane');checks++;
   assert.equal(buttons.find(button=>button.dataset.dragPoint==='civil_item').children[1].hidden,true,'Rebuilding an expanded group keeps reorder controls secondary until explicitly enabled');checks++;
   c.qa.setStep('site');c.flush();c.qa.renderGuidedCategories();buttons=descendants(c.element('qa-review-categories'));
-  assert.equal(buttons.find(button=>button.dataset.category==='__site__').getAttribute('aria-current'),'true','General Info becomes the current navigation choice in the site-information step');checks++;
+  assert.equal(buttons.find(button=>button.dataset.category==='__site__').getAttribute('aria-current'),'false','The explicit Site information editing step is separate from the General Info evidence summary');checks++;
   assert.equal(buttons.find(button=>button.dataset.category==='Civil').getAttribute('aria-current'),'false','The prior evidence category clears its current state when leaving evidence');checks++;
 }
 {
