@@ -2,6 +2,8 @@
 
 Feature branch: `feat/qa-photo-candidate-ranking-20261024`. Saved checkpoints `6cef00c` and `206733b` remain retained; Engineer changes were integrated as `db1803a`. GitHub base `042e8de` is the owner's PR19 merge and has the same application tree as `42cf64b`. Fetching did not overwrite local files. No schema or dependency change is required.
 
+Implementation commit: `cd796fd7fe622b23a62db2b19dc90847c2def8e9`. [Draft PR20](https://github.com/assimbaig/iSurvix-Field/pull/20) is pushed and unmerged. The acceptance ledger has **14 Verified /15 requirements**; the remaining Failed requirement is M1, held for owner approval.
+
 ## Behavior
 
 - Engineer home shows Total assigned scope, Pending for submission and Rejected pending for response. Linked assignment/checklist pairs count once. Each card opens the existing project-filtered tasks. The local assistant remains under Help when available.

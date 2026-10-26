@@ -8,6 +8,11 @@ Owner explicitly resumed development. Feature branch:
 owner's merged PR19 and has the same product tree as `42cf64b`; no newer remote
 application changes were overwritten.
 
+Implementation `cd796fd` is pushed in **draft PR20**:
+https://github.com/assimbaig/iSurvix-Field/pull/20. No merge or production
+deployment occurred. Acceptance ledger:14 Verified/15, with M1 Failed pending
+owner-approved remediation.
+
 Implemented the three-count Engineer landing, optional ordinary QA remarks,
 compatible raw-image and text-mapping reuse on resubmission, persisted ranked
 photo candidates, source-backed answer proposals, and photo preview details

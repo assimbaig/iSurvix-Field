@@ -119,8 +119,15 @@
       "expected_behavior": "Saved feature branch and draft pull request for review",
       "implementation_location": "feat/qa-photo-candidate-ranking-20261024",
       "verification_method": "Executed tests/browser/native receipts as recorded in RESUME_QA_AI_20261026.md",
-      "actual_result": "Local checkpoint6cef00c plus integrated Engineer checkpointdb1803a. No merge or deployment.",
-      "status": "In progress"
+      "actual_result": "Implementationcd796fd pushed; draft PR20 https://github.com/assimbaig/iSurvix-Field/pull/20 unmerged; knownM1 explicitly retained for owner approval.",
+      "status": "Verified"
     }
-  ]
+  ],
+  "summary": {
+    "verified": 14,
+    "total": 15,
+    "failed": [
+      "R07/M1: owner approval required before security remediation"
+    ]
+  }
 }
