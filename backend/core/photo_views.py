@@ -196,10 +196,10 @@ def workspace(request, checklist_id):
         access=survey_access(request,checklist_id)
         checklist=access['checklist']
     qa_context={}
-    if role_for(request.user)=='QUALITY_ENGINEER':
+    if role_for(request.user) in {'QUALITY_ENGINEER','TEAM_LEAD'}:
         from .review_route_service import route_context
         routed=route_context(request.user,checklist)
-        qa_context={'is_quality_engineer':True,'review_route':routed,
+        qa_context={'is_quality_engineer':role_for(request.user)=='QUALITY_ENGINEER','review_route':routed,
             'qa_quick_review':capture.enabled(checklist),
             'qa_decision_return_to':reverse('photo_workspace',args=[checklist.pk])+'?qa_step=decision',
             'qa_legacy_fallback':not capture.enabled(checklist) or not routed,

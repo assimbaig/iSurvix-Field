@@ -1,5 +1,32 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: QA batch matching and returned-site links - 26 October 2026
+
+Feature branch `feat/qa-batch-decisions-20261026`, based on merged PR22 `2b05179`.
+The main checkout and original services remain untouched; the reviewed candidate
+is `.local/wip`, http://127.0.0.1:8002/login/ with separate cookies and real local
+data. No new workers start. Keep the original active AI job running.
+
+Implemented bounded compact batch linking/moving, multi-photo drag/click,
+valid-link retention after Engineer resubmission, and an explicit guarded
+**More tools > Restore previous photo links** for already-resubmitted revisions.
+No accepted answers, approvals or source-file changes are inherited. Current
+human corrections and locks win. Lists/history are compact; category labels
+are larger with smaller linkage counts. QA/TL/Client can approve with comments
+through existing policy, with Approve beside Reject and actual QA guards intact.
+
+Final gate:1226 backend tests passed,1 Windows symlink-privilege fixture error
+(WinError1314; security assertion not reached),0 failures,0 skips. All17 frontend
+scripts plus Django/migration/dependency/syntax/static checks passed. Independent
+QA executed165 functional browser assertions and12 final role/viewport visits.
+Separate AppSec found no new exploitable finding in the tested scope. Prior
+D1/D2/L1 and unrelated security findings remain unapproved/unfixed.
+
+Read `docs/development/QA_BATCH_DECISIONS_20261026.md`, the requirement ledger,
+acceptance JSON and independent QA/security reports for exact evidence/limits.
+Recovery backup: `.local/backups/project-checkpoint-20261026-222351`.
+No merge or production deployment. Follow the feature PR for review.
+
 ## Latest: owner-approved PR21 repairs — 26 October 2026
 
 The owner explicitly authorized the listed S1/C1/M1/W1/S2/S3/R1/R2 repairs and a

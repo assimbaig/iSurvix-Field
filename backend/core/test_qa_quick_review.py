@@ -166,7 +166,9 @@ class QAQuickReviewTests(TestCase):
         self.assertEqual(self.checklist.review_route_record.events.count(),before)
 
     def test_json_header_does_not_enable_new_contract_for_wrong_role_or_invalid_target(self):
-        self.submitted();self.client.force_login(self.lead)
+        # Named Team Leads now share the guided response contract. Engineers
+        # remain outside it and cannot gain reviewer authority via Accept.
+        self.submitted();self.client.force_login(self.engineer)
         wrong=self.decision('reject',HTTP_ACCEPT='application/json')
         self.assertEqual(wrong.status_code,403)
         self.assertNotIn('application/json',wrong['Content-Type'])

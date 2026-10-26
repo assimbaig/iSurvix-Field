@@ -42,7 +42,9 @@ def route_context(actor,checklist):
             except ValidationError:
                 qa_review_required=True
                 qa_review_message='Review and complete the current QA evidence package before approving or responding to this clarification.'
-    return {'layers':route.layer_count,'stage':route.stage,'label':LABELS[route.stage],'mode':route.mode,'token':token_for(route,checklist),'can_act':can_review,'can_approve':can_review and route.mode=='review' and not qa_review_required,'can_reject':can_review and route.mode=='review','can_clarify':can_review and route.mode=='clarification' and following is not None and not qa_review_required,'can_return':can_review and route.mode=='clarification' and previous is not None,'qa_review_required':qa_review_required,'qa_review_message':qa_review_message,'previous_label':LABELS.get(previous,''),'next_label':LABELS.get(following,''),'events':route.events.select_related('actor').order_by('sequence')}
+    can_attempt_approve=can_review and route.mode=='review'
+    can_approve=can_attempt_approve and not qa_review_required
+    return {'layers':route.layer_count,'stage':route.stage,'label':LABELS[route.stage],'mode':route.mode,'token':token_for(route,checklist),'can_act':can_review,'can_attempt_approve':can_attempt_approve,'can_approve':can_approve,'can_approve_with_comments':can_approve,'approval_block_reason':qa_review_message if qa_review_required else '', 'can_reject':can_review and route.mode=='review','can_clarify':can_review and route.mode=='clarification' and following is not None and not qa_review_required,'can_return':can_review and route.mode=='clarification' and previous is not None,'qa_review_required':qa_review_required,'qa_review_message':qa_review_message,'previous_label':LABELS.get(previous,''),'next_label':LABELS.get(following,''),'events':route.events.select_related('actor').order_by('sequence')}
 
 def _event(actor,checklist,route,from_stage,action,reason=''):
     route.generation+=1
@@ -121,6 +123,12 @@ def act_on_route(actor,checklist,action,reason='',expected_token=None):
     route=ReviewRoute.objects.select_for_update().select_related('revision').get(checklist=checklist)
     if not _actor_allowed(actor,checklist,route) or route.stage=='engineer':raise PermissionDenied('Only the currently assigned named reviewer may act at this stage.')
     if not expected_token or expected_token!=token_for(route,checklist):raise ValidationError('The route changed. Reload before recording a decision.')
+    if action=='approve_with_comments':
+        # A presentation choice for the existing approval, not a conditional
+        # acceptance state or a waiver of evidence/reviewer requirements.
+        if not isinstance(reason,str) or not reason.strip() or len(reason)>4000:
+            raise ValidationError('Approval comments must contain between 1 and 4000 characters.')
+        action='approve'
     if action not in {'approve','reject','clarify','return'}:raise ValidationError('Choose a supported route action.')
     if not isinstance(reason,str) or len(reason)>4000 or action in {'reject','clarify','return'} and not reason.strip():raise ValidationError('This action requires a reason of at most 4000 characters.')
     if not route.revision:raise ValidationError('Submit a frozen revision before review.')

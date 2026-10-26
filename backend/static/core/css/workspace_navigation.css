@@ -54,3 +54,6 @@ body.role-layout.workspace-header-navigation.workspace-header-navigation .worksp
 .workspace-header-navigation .workspace-nav-tiles{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding-inline:3px;overscroll-behavior-inline:contain}
 html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles>a,.workspace-header-navigation .workspace-nav-tiles>a{min-height:44px;flex:0 0 auto;scroll-snap-align:start}
 }
+/* Existing administrative member tables use the same compact table rhythm. */
+.super-console .sa-shell .people-table th,.super-console .sa-shell .people-table td{padding:4px 7px!important;line-height:1.35}.super-console .sa-shell .people-table-scroll{max-width:100%;max-height:55dvh}.super-console .sa-shell .people-table{font-size:12px}.super-console .sa-shell .people-table thead th{font-size:11px}
+@media(max-width:650px){.super-console .sa-shell .people-table th,.super-console .sa-shell .people-table td{padding:6px 7px!important}.super-console .sa-shell .people-table select,.super-console .sa-shell .people-table button{min-height:44px!important}}
