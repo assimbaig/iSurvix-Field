@@ -82,3 +82,89 @@
 html[data-role-appearance=dark] #qa-evidence-review .qa-site-information-paired td[data-site-missing=true] .qa-site-required{color:#ffbdad}
 .qa-site-information-paired .qa-site-field-review{display:flex;align-items:flex-start;gap:7px;min-width:0}.qa-site-information-paired .qa-site-field-value{flex:1;min-width:0}.qa-site-information-paired .qa-site-row-actions{flex:0 0 auto}.qa-site-information-paired .qa-site-submitted-source{margin-top:6px;padding-top:5px;border-top:1px dashed var(--rl-line,#d5dfe9);font-size:11px;line-height:1.35;overflow-wrap:anywhere}.qa-site-information-paired .qa-site-submitted-source>strong{display:block;font-size:10px;margin-bottom:2px}.qa-site-information-paired td[data-editing=true]{background:var(--rl-soft,#edf4fb)}.qa-site-information-paired td[data-site-missing=true] .qa-site-required{color:#a1372b;font-weight:600}
 @media(max-width:850px){#qa-evidence-review .qa-site-information-paired thead{display:none}#qa-evidence-review .qa-site-information-paired tbody{display:block}#qa-evidence-review .qa-site-information-paired tbody tr{display:grid;grid-template-columns:minmax(0,36%) minmax(0,64%)}#qa-evidence-review .qa-site-information-paired td{display:block;min-width:0;position:static;z-index:auto;box-shadow:none}#qa-evidence-review .qa-site-information-paired td:nth-child(2){border-right:0}#qa-evidence-review .qa-site-information-paired td:nth-child(3){padding-left:7px}#qa-evidence-review .qa-site-information-paired td[data-site-placeholder]{display:none}.qa-site-information-paired .qa-site-field-review{display:block}.qa-site-information-paired .qa-site-row-actions{margin-top:4px}}
+/* Compact QA review shell: scope navigation and density to this workspace. */
+@media(min-width:981px){
+body.role-layout.qa-review-compact-shell.workspace-header-navigation .app-header.enterprise-header{min-height:44px;padding:4px 10px!important;gap:8px;flex-wrap:nowrap}
+body.qa-review-compact-shell .enterprise-brand img{width:104px!important;height:34px!important}
+body.qa-review-compact-shell .header-select select{max-width:180px;min-height:29px;font-size:12px!important;padding:3px 6px}
+body.role-layout.qa-review-compact-shell.workspace-header-navigation .workspace-navigation-row{flex:0 1 auto;width:auto;min-width:0;border:0;padding:0;margin-left:3px}
+body.role-layout.qa-review-compact-shell.workspace-header-navigation .workspace-nav-tiles{gap:5px;overflow:visible}
+body.role-layout.qa-review-compact-shell.workspace-header-navigation .workspace-nav-tiles>a{min-height:26px;padding:4px 8px!important;font-size:11px!important}
+body.qa-review-compact-shell .qa-primary-more{margin-left:3px}
+body.qa-review-compact-shell .qa-primary-more>summary{font-size:11px;padding:4px 7px}
+body.role-layout.qa-review-compact-shell.workspace-header-navigation .enterprise-header-actions{gap:10px;flex-shrink:0}
+body.qa-review-compact-shell .enterprise-header-actions summary{font-size:12px}
+}
+body.role-layout.qa-review-compact-shell.workspace-header-navigation .enterprise-breadcrumb{font-size:11px;line-height:15px;padding:2px 12px;margin:0;gap:5px}
+#qa-evidence-review.qa-reference-review{padding:3px 10px 8px}
+#qa-evidence-review.qa-reference-review .qa-evidence-header{margin:0 0 3px;gap:7px;min-height:21px}
+#qa-evidence-review.qa-reference-review .qa-evidence-header>div:first-child{gap:7px}
+#qa-evidence-review.qa-reference-review .qa-evidence-header h1{font-size:13px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-evidence-header h1 span{font-size:12px;margin-left:5px}
+#qa-evidence-review.qa-reference-review .qa-evidence-header p,#qa-evidence-review.qa-reference-review .qa-evidence-header a{font-size:11px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-review-tools>summary{font-size:11px;padding:3px 7px}
+#qa-evidence-review.qa-reference-review .qa-subheading-tabs{margin:3px 0}
+#qa-evidence-review.qa-reference-review .qa-subheading-tabs>button{min-height:25px;padding:3px 8px;font-size:11px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-evidence-status{padding:1px 6px;gap:6px;align-items:center}
+#qa-evidence-review.qa-reference-review .qa-analysis-copy{flex-wrap:nowrap;gap:7px;align-items:center}
+#qa-evidence-review.qa-reference-review .qa-evidence-status:has(.qa-ai-phases:not([hidden])) .qa-analysis-heading{display:none}
+#qa-evidence-review.qa-reference-review .qa-ai-phases{display:flex;align-items:center;flex:1 1 auto;gap:12px;margin:0;min-width:0;height:14px}
+#qa-evidence-review.qa-reference-review .qa-ai-phase{display:flex;align-items:center;gap:5px;border:0;padding:0;min-width:0;white-space:nowrap;height:14px;line-height:13px}
+#qa-evidence-review.qa-reference-review .qa-ai-phase strong{display:inline;font-size:11px;line-height:13px;font-weight:600;white-space:nowrap}
+#qa-evidence-review.qa-reference-review .qa-ai-phase small{display:inline;font-size:10px;line-height:13px;margin:0;white-space:nowrap}
+#qa-evidence-review.qa-reference-review .qa-ai-phase progress{display:inline-block;flex:0 1 36px;width:36px;min-width:20px;height:4px;min-height:4px;margin:0}
+#qa-evidence-review.qa-reference-review .qa-status-actions button{min-height:24px;height:24px;padding:2px 6px;font-size:11px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-analysis-explanation{flex:0 0 auto;font-size:11px;margin:0}
+#qa-evidence-review.qa-reference-review .qa-analysis-explanation>summary{padding:3px 0;line-height:18px;white-space:nowrap}
+#qa-evidence-review.qa-reference-review .qa-analysis-explanation[open]{flex:1 1 100%;order:2;white-space:normal}
+#qa-evidence-review.qa-reference-review .qa-analysis-copy:has(.qa-analysis-explanation[open]){flex-wrap:wrap}
+#qa-analysis-phase-details{padding-left:17px;margin:5px 0;font-size:11px;line-height:1.4}
+#qa-evidence-review.qa-reference-review #qa-workspace{margin-top:4px;height:calc(100dvh - var(--qa-workspace-top,220px) - 54px)}
+#qa-evidence-review.qa-reference-review .qa-pane-heading{padding:4px 7px;min-height:28px}
+#qa-evidence-review.qa-reference-review .qa-pane-heading h2,#qa-evidence-review.qa-reference-review .qa-point-heading h2{font-size:12px;line-height:1.35}
+#qa-evidence-review.qa-reference-review .qa-point-heading{padding:4px 7px}
+#qa-evidence-review.qa-reference-review .qa-point-heading p{margin-top:2px}
+#qa-evidence-review.qa-reference-review .qa-tree-identity{padding:4px 7px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-category-row{padding:2px 3px}
+#qa-evidence-review.qa-reference-review .qa-point-row>button{font-size:12px;padding:3px 4px;line-height:1.3;min-height:28px}
+#qa-evidence-review.qa-reference-review .qa-category-select{padding:4px;min-height:28px}
+#qa-evidence-review.qa-reference-review .qa-category-select strong{font-size:12px}
+#qa-evidence-review.qa-reference-review .qa-point-row small{margin-top:1px}
+#qa-evidence-review.qa-reference-review .qa-tree-section>summary,#qa-evidence-review.qa-reference-review .qa-tree-group>summary{padding:3px 4px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-search-label{padding:3px 6px}
+#qa-evidence-review.qa-reference-review .qa-search-label input{min-height:26px;margin-top:2px;padding:3px 5px}
+#qa-evidence-review.qa-reference-review .qa-point-filter-label{padding:3px 6px 0}
+#qa-evidence-review.qa-reference-review .qa-point-filter-label select{min-height:26px}
+#qa-evidence-review.qa-reference-review .qa-photo-pane-scroll{padding:5px 7px}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar{margin:3px 0 5px;gap:5px}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar button{min-height:27px;padding:3px 6px}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar input,#qa-evidence-review.qa-reference-review .qa-photo-toolbar select{min-height:27px;padding:3px 5px}
+#qa-evidence-review.qa-reference-review .qa-review-photo>label{font-size:11px;padding:5px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-guided-actions{padding:5px 9px;min-height:44px;margin-top:5px}
+#qa-evidence-review.qa-reference-review .qa-guided-actions button{min-height:30px;padding:4px 7px;font-size:11px}
+@media(max-width:1150px){#qa-evidence-review.qa-reference-review .qa-ai-phases{gap:7px}#qa-evidence-review.qa-reference-review .qa-ai-phase progress{width:24px;flex-basis:24px}}
+@media(max-width:980px){#qa-evidence-review.qa-reference-review .qa-evidence-status{align-items:flex-start;flex-wrap:wrap}#qa-evidence-review.qa-reference-review .qa-analysis-copy{flex-wrap:wrap}#qa-evidence-review.qa-reference-review .qa-ai-phases{height:auto;min-height:14px;flex:1 1 100%;flex-wrap:wrap;gap:7px 12px}#qa-evidence-review.qa-reference-review .qa-ai-phase{height:auto;min-height:18px}#qa-evidence-review.qa-reference-review .qa-ai-phase strong{font-size:11px}#qa-evidence-review.qa-reference-review .qa-ai-phase small{font-size:11px}}
+@media(max-width:650px){body.role-layout.qa-review-compact-shell.workspace-header-navigation .enterprise-breadcrumb{font-size:12px;padding:4px 9px}#qa-evidence-review.qa-reference-review .qa-evidence-header h1{font-size:14px}#qa-evidence-review.qa-reference-review .qa-evidence-header>div:first-child{display:flex;gap:4px}#qa-evidence-review.qa-reference-review .qa-evidence-header h1 span{display:inline;white-space:normal}#qa-evidence-review.qa-reference-review .qa-evidence-header p{font-size:11px}#qa-evidence-review.qa-reference-review .qa-subheading-tabs>button{min-height:40px;font-size:12px}#qa-evidence-review.qa-reference-review .qa-status-actions button{min-height:36px;height:auto;font-size:12px;padding:5px 8px}#qa-evidence-review.qa-reference-review .qa-analysis-explanation>summary{min-height:36px;padding:7px 0}#qa-evidence-review.qa-reference-review .qa-photo-toolbar button{min-height:38px;font-size:12px}#qa-evidence-review.qa-reference-review .qa-photo-toolbar input,#qa-evidence-review.qa-reference-review .qa-photo-toolbar select{min-height:36px;font-size:12px}#qa-evidence-review.qa-reference-review .qa-point-row>button{font-size:13px;min-height:36px;padding:5px 4px}#qa-evidence-review.qa-reference-review .qa-pane-heading{min-height:36px}#qa-evidence-review.qa-reference-review .qa-review-photo>label{font-size:12px;line-height:1.4}#qa-evidence-review.qa-reference-review .qa-guided-actions button{min-height:36px;font-size:11px}}
+/* Owner-requested 25% desktop density; touch layouts keep readable larger text. */
+@media(min-width:1100px){
+#qa-evidence-review.qa-reference-review .qa-point-row>button{font-size:9px;line-height:1.35}
+#qa-evidence-review.qa-reference-review .qa-point-row small{font-size:8px;line-height:1.35}
+#qa-evidence-review.qa-reference-review .qa-category-select strong{font-size:9px}
+#qa-evidence-review.qa-reference-review .qa-category-select small{font-size:8px}
+#qa-evidence-review.qa-reference-review .qa-tree-section>summary,#qa-evidence-review.qa-reference-review .qa-tree-group>summary{font-size:9px}
+#qa-evidence-review.qa-reference-review .qa-review-photo>label{font-size:8.25px;line-height:1.4}
+#qa-evidence-review.qa-reference-review .qa-review-photo small{font-size:8px;line-height:1.35}
+#qa-evidence-review.qa-reference-review .qa-photo-links{font-size:8px}
+}
+/* Nested controls inside Photo tools participate in the same compact toolbar. */
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar label{display:flex;align-items:center;gap:4px;min-width:0;margin:0;font-size:12px;line-height:1.3}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools label[for=qa-photo-search]{flex:1 1 200px;max-width:360px}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools label[for=qa-photo-status]{flex:0 1 auto}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools label[for=qa-thumbnail-size]{flex:0 1 auto}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools select{width:145px;min-width:0}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools #qa-thumbnail-size{width:85px}
+#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools #qa-photo-search{flex:1;min-width:80px;width:100%}
+#qa-evidence-review.qa-reference-review .qa-point-filter-label{font-size:12px;line-height:1.3}
+@media(max-width:650px){#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools label{flex:1 1 100%;max-width:none}#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools select{flex:1;width:auto;max-width:100%}#qa-evidence-review.qa-reference-review .qa-photo-toolbar .qa-photo-tools #qa-thumbnail-size{width:auto}}
+/* Essential touch navigation retains its hit area in the compact mobile view. */
+@media(max-width:650px){#qa-evidence-review.qa-reference-review .qa-mobile-navigation button,#qa-evidence-review.qa-reference-review #qa-categories-close{min-height:36px;padding:6px 9px;line-height:1.3}}

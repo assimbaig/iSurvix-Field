@@ -11,7 +11,7 @@
   let state=null,category='',section='',selectedID=null,selection=new Set(),expanded=new Set(['']);
   let busy=false,dirty=false,stale=true,timer=null,pollFailures=0,visibleLimit=36,dragging=null,drawerFocus=null;
   let viewerID=null,viewerTriggerID=null,viewerList=[],zoom=1,returnFocus=null,moveLink=null,lastFailure='',recoveryRequest=null;
-  let photoMatchNotice=null,previewTab='matching',candidateSelection={photo:null,field:null},observationSelection={photo:null,index:0};
+  let photoMatchNotice=null,previewTab='matching',candidateSelection={photo:null,field:null};
   let webReferenceContext=null,webReferenceRequest=null,webReferenceSequence=0;
   let siteEditingID=null,assignmentPoint,progressPolling=false,lastProgressError='',analysisDetailMode=null,compareSources=false,pointFilter='all',photoFilter='all',photoSearch='',gallerySize='medium',galleryOffset=0,collection='unassigned',draftGuard=null,reviewDrawerFocus=null,documentObjectURL=null,documentReturnFocus=null,panX=0,panY=0,panStart=null,galleryScrollBeforeViewer=0,footerHome=null,documentRequest=null,photoToolsMode=null;const collapsedSections=new Set();
   const say=(text,error=false)=>{el('qa-review-message').textContent=text;el('qa-review-message').classList.toggle('qa-evidence-error',error);};
@@ -239,7 +239,7 @@
   }
   function analysisDetailsLayout(){const details=el('qa-analysis-explanation');if(!guided||!details)return;const mode='compact';if(mode!==analysisDetailMode){details.open=mode!=='compact';analysisDetailMode=mode;}}
   function renderAIPhases(phases){
-    const host=el('qa-ai-phases');if(!host)return;host.replaceChildren();host.hidden=teamLead||!phases;if(host.hidden)return;
+    const host=el('qa-ai-phases'),details=el('qa-analysis-phase-details');if(!host)return;host.replaceChildren();details?.replaceChildren();host.hidden=teamLead||!phases;if(host.hidden)return;
     const labels={analysis:'Analysis',findings:'Findings',matching:'Checklist tagging'},states={complete:'Complete',running:'Processing',processing:'Processing',waiting:'Pending',pending:'Pending',queued:'Queued',paused:'Paused',pausing:'Pausing',failed:'Failed',with_analysis:'With photo analysis',unavailable:'Unavailable'};
     for(const [key,label] of Object.entries(labels)){
       const phase=phases[key]||{state:'unavailable'},status=states[phase.state]||'Unavailable',row=node('div',undefined,'qa-ai-phase');row.dataset.phase=key;
@@ -248,7 +248,7 @@
       const unit=phase.unit?String(phase.unit).replaceAll('_',' '):'items';
       if(known)row.append(node('small',`${phase.completed} / ${phase.total} ${unit}`));
       else if(Number.isInteger(phase.completed)&&phase.completed>=0)row.append(node('small',`${phase.completed} ${unit} · total unknown`));
-      if(phase.note||phase.detail){const note=node('small',String(phase.note||phase.detail),'qa-phase-note');note.title=note.textContent;row.append(note);}
+      if(phase.note||phase.detail){const note=node('li',label+': '+String(phase.note||phase.detail));details?.append(note);row.title=note.textContent;}
       if(['running','processing','complete','paused','pausing'].includes(phase.state)&&!phase.shared_with&&(phase.state!=='complete'||known&&phase.total>0)){
         const progress=node('progress');progress.max=100;progress.setAttribute('aria-label',label+' progress');
         if(known&&phase.total>0){progress.value=100*phase.completed/phase.total;progress.setAttribute('aria-valuetext',`${phase.completed} of ${phase.total} ${phase.unit||'known items'}`);}else progress.removeAttribute('value');row.append(progress);
@@ -437,24 +437,23 @@ if(!visible.length)host.append(node('p',search?'No matching checklist points.':'
   }
   function renderPhotoObservations(photo,provided){
     const analysis=el('qa-preview-analysis');analysis.parentElement.hidden=teamLead;analysis.replaceChildren();if(teamLead)return;
-    const compactTable=(caption,rows,attribute)=>{const table=node('table',undefined,'qa-finding-table');table.dataset[attribute]='true';table.append(node('caption',caption));const body=node('tbody');for(const [label,value] of rows){const row=node('tr'),heading=node('th',label);heading.scope='row';row.append(heading,node('td',value));body.append(row);}table.append(body);return table;};
-    const metadata=photo.metadata||{},gps=metadata.gps,coordinates=gps&&Number.isFinite(gps.latitude)&&Number.isFinite(gps.longitude)?`${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`:'Not recorded';
-    analysis.append(compactTable('Site & photo',[
-      ['Site ID',app.dataset.siteId||state?.site_id||'Not recorded'],['Capture date & time',typeof metadata.captured_at==='string'&&metadata.captured_at?metadata.captured_at:'Not recorded'],['Coordinates',coordinates],['Uploaded category',sourceCategoryLabel(photo.group||'')],['Photo ID',String(photo.id??'Not recorded')]
-    ],'findingContext'));
     const describe=value=>Array.isArray(value)?value.map(describe).join('; '):value&&typeof value==='object'?Object.entries(value).map(([key,item])=>`${key.replaceAll('_',' ')}: ${describe(item)}`).join('; '):String(value??'');
-    const observation=provided??(photo.observations?.length?photo.observations:photo.observation||photo.ai_observation||photo.analysis||photo.ai_analysis||photo.visual_metadata);
-    if(observation&&(!Array.isArray(observation)||observation.length)){
-      const entries=Array.isArray(observation)?observation:[observation];
-      const chosen=observationSelection.photo===photo.id?Math.min(observationSelection.index,entries.length-1):0;
-      if(entries.length>1){const label=node('label','Saved findings','qa-candidate-picker'),picker=node('select');picker.dataset.observationPicker='true';picker.setAttribute('aria-label','Saved observation');entries.forEach((finding,index)=>picker.append(new Option(`${index+1} / ${entries.length}: ${finding?.label||finding?.component||finding?.category||'Observation'}`,String(index))));picker.value=String(chosen);picker.addEventListener('change',()=>{observationSelection={photo:photo.id,index:Number(picker.value)||0};renderPhotoObservations(photo,entries);analysis.querySelector('[data-observation-picker="true"]')?.focus();});label.append(picker);analysis.append(label);}
-      for(const [index,finding] of entries.entries()){const row=node('article',undefined,'qa-ai-finding');row.dataset.observationIndex=String(index);row.hidden=index!==chosen;if(typeof finding==='string')row.append(node('p',finding));else if(finding&&typeof finding==='object'){
-        const rows=[['Product / type',describe(finding.component||finding.product_type||finding.equipment_type||finding.label||finding.category||'Not recorded')]];
-        for(const [label,value] of [['Manufacturer',finding.manufacturer],['Model',finding.model],['Defect / issue',finding.defects||finding.defect||finding.issues||finding.visible_defects||(finding.category==='defect'?(finding.notes||finding.evidence_quote||finding.value):null)||'Not recorded'],['Extracted value',finding.value!==null&&finding.value!==undefined&&finding.value!==''?describe(finding.value)+(finding.unit?' '+finding.unit:''):null],['Description',finding.notes||finding.description],['Visible source',finding.evidence_quote],['Matching reason',finding.mapping_reason||finding.reason],['Uncertainty',finding.uncertainty],['Source confidence',finding.confidence],['Source reference',finding.reference]])if(value!==null&&value!==undefined&&value!=='')rows.push([label,describe(value)]);
-        row.append(compactTable(finding.label||finding.component||finding.category||'Saved observation',rows,'findingTable'));
-      }analysis.append(row);}
-      const raw=node('details');raw.append(node('summary','Advanced saved source data'),node('pre',typeof observation==='string'?observation:JSON.stringify(observation,null,2)));analysis.append(raw);
-    }else analysis.append(node('p','No saved AI observations are available for this source photo. Manual review remains available.'));
+    const observation=provided??(photo.observations?.length?photo.observations:photo.observation||photo.ai_observation||photo.analysis||photo.ai_analysis||photo.visual_metadata),entries=observation?(Array.isArray(observation)?observation:[observation]):[];
+    const table=node('table',undefined,'qa-finding-table qa-findings-continuous');table.dataset.findingContext='true';table.dataset.findingTable='true';table.append(node('caption',entries.length?`Site, photo & AI findings - ${entries.length} finding${entries.length===1?'':'s'}`:'Site & photo'));
+    const group=(title,index)=>{const body=node('tbody');if(index!==undefined){body.dataset.observationIndex=String(index);body.dataset.findingGroup='true';}else body.dataset.findingContextGroup='true';const heading=node('tr',undefined,'qa-finding-group-heading'),label=node('th',title);label.colSpan=2;label.scope='rowgroup';heading.append(label);body.append(heading);table.append(body);return body;};
+    const addRows=(body,rows)=>{for(const [label,value] of rows){if(value===null||value===undefined||value==='')continue;const row=node('tr'),heading=node('th',label);heading.scope='row';row.append(heading,node('td',describe(value)));body.append(row);}};
+    const metadata=photo.metadata||{},gps=metadata.gps,coordinates=gps&&Number.isFinite(gps.latitude)&&Number.isFinite(gps.longitude)?`${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`:'Not recorded';
+    addRows(group('Site & photo'),[['Site ID',app.dataset.siteId||state?.site_id||'Not recorded'],['Capture date & time',typeof metadata.captured_at==='string'&&metadata.captured_at?metadata.captured_at:'Not recorded'],['Coordinates',coordinates],['Uploaded category',sourceCategoryLabel(photo.group||'')],['Photo ID',String(photo.id??'Not recorded')]]);
+    for(const [index,finding] of entries.entries()){
+      const title=finding&&typeof finding==='object'?[finding.category?String(finding.category).replaceAll('_',' '):'',finding.label||finding.component||'Saved observation'].filter(Boolean).join(' / '):'Saved observation',body=group(`${index+1}. ${title}`,index);
+      if(typeof finding==='string'){addRows(body,[['Observation',finding]]);continue;}
+      if(!finding||typeof finding!=='object'){addRows(body,[['Observation','Not recorded']]);continue;}
+      const hasValue=finding.value!==null&&finding.value!==undefined&&finding.value!=='',source=finding._source&&typeof finding._source==='object'?finding._source:{};
+      addRows(body,[['Product / type',finding.component||finding.product_type||finding.equipment_type||finding.label||finding.category||'Not recorded'],['Manufacturer',finding.manufacturer],['Model',finding.model],['Defect / issue',finding.defects||finding.defect||finding.issues||finding.visible_defects||(finding.category==='defect'?(finding.notes||finding.evidence_quote||finding.value):null)||'Not recorded'],['Extracted value',hasValue?describe(finding.value)+(finding.unit?' '+finding.unit:''):null],['Recorded unit',!hasValue?finding.unit:null],['Recorded basis',finding.basis],['Description',finding.notes||finding.description],['Additional description',finding.notes&&finding.description&&finding.description!==finding.notes?finding.description:null],['Visible source',finding.evidence_quote],['Checklist hint',finding.field_hint],['Matching reason',finding.mapping_reason||finding.reason],['Uncertainty',finding.uncertainty],['Source confidence',finding.confidence],['Source reference',finding.reference||source.reference||source.source_id]]);
+    }
+    analysis.append(table);
+    if(entries.length){const raw=node('details');raw.append(node('summary','Advanced saved source data'),node('pre',typeof observation==='string'?observation:JSON.stringify(observation,null,2)));analysis.append(raw);}
+    else analysis.append(node('p','No saved AI observations are available for this source photo. Manual review remains available.'));
   }
   function renderPhotos(){
     const host=el('qa-review-photos'),pane=el('qa-photo-pane').querySelector('.qa-photo-pane-scroll'),scroll=pane.scrollTop;host.replaceChildren();host.dataset.thumbnailSize=gallerySize;

@@ -1,0 +1,451 @@
+{
+  "baseline_commit": "ee082a2",
+  "branch": "feat/qa-photo-candidate-ranking-20261024",
+  "preview": "http://127.0.0.1:8001/login/",
+  "product_changes": [
+    "backend/static/core/css/qa_quick_review.css",
+    "backend/static/core/js/qa_evidence_review.js",
+    "backend/templates/dashboards/_primary_navigation.html",
+    "backend/templates/dashboards/qa_evidence_review.html",
+    "frontend/check-qa-compact-layout.cjs",
+    "frontend/check-qa-finding-table.cjs"
+  ],
+  "backend_focused": {
+    "passed": 47,
+    "seconds": 15.018,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "isolated": true,
+    "external_network_attempts": 0
+  },
+  "checks": {
+    "results": [
+      {
+        "check": "backend-focused",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "scripts/run_backend_tests.py",
+          "core.test_qa_matching_workspace",
+          "core.test_qa_review_progress_routes",
+          "core.test_qa_review_progress",
+          "core.test_pause_functional_review",
+          "core.test_completed_ai_study",
+          "--verbosity",
+          "1"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+        "exit_code": 0,
+        "seconds": 22.11
+      },
+      {
+        "check": "check-engineer-documents",
+        "command": [
+          "node",
+          "check-engineer-documents.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.109
+      },
+      {
+        "check": "check-engineer",
+        "command": [
+          "node",
+          "check-engineer.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 3.609
+      },
+      {
+        "check": "check-preview",
+        "command": [
+          "node",
+          "check-preview.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 3.61
+      },
+      {
+        "check": "check-qa-compact-layout",
+        "command": [
+          "node",
+          "check-qa-compact-layout.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "check-qa-finding-table",
+        "command": [
+          "node",
+          "check-qa-finding-table.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.094
+      },
+      {
+        "check": "check-qa-guided-state",
+        "command": [
+          "node",
+          "check-qa-guided-state.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.125
+      },
+      {
+        "check": "check-qa-workspace",
+        "command": [
+          "node",
+          "check-qa-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.14
+      },
+      {
+        "check": "check-site-routing",
+        "command": [
+          "node",
+          "check-site-routing.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 3.641
+      },
+      {
+        "check": "check-survey-pause",
+        "command": [
+          "node",
+          "check-survey-pause.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "check-web-references",
+        "command": [
+          "node",
+          "check-web-references.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 0.094
+      },
+      {
+        "check": "check-workspace",
+        "command": [
+          "node",
+          "check-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\frontend",
+        "exit_code": 0,
+        "seconds": 3.656
+      },
+      {
+        "check": "django-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+        "exit_code": 0,
+        "seconds": 3.406
+      },
+      {
+        "check": "migration-drift",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024\\backend",
+        "exit_code": 0,
+        "seconds": 3.563
+      },
+      {
+        "check": "dependencies",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+        "exit_code": 0,
+        "seconds": 1.484
+      },
+      {
+        "check": "syntax",
+        "command": [
+          "node",
+          "--check",
+          "backend/static/core/js/qa_evidence_review.js"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+        "exit_code": 0,
+        "seconds": 0.094
+      },
+      {
+        "check": "static-build",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          ".local/qa-followup-20261026/build_static.py"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\worktrees\\qa-photo-candidate-ranking-20261024",
+        "exit_code": 0,
+        "seconds": 1.797
+      }
+    ],
+    "source_unchanged": true,
+    "changed_files": [],
+    "fingerprint": "7afb262feb39757347fcf5c5eda7089338b676c1b476d4d8f654bf773e90e890"
+  },
+  "independent_geometry": {
+    "phase": "after",
+    "baseline_commit": "ee082a2",
+    "rounding_tolerance_px": 1,
+    "font_ratio_tolerance": [
+      0.7,
+      0.8
+    ],
+    "checks": [
+      {
+        "name": "Progress group <=25percent original height 1920",
+        "passed": true,
+        "values": {
+          "before": 59.9375,
+          "after": 14,
+          "maximum": 14.984375
+        }
+      },
+      {
+        "name": "Evidence usable height increases at least25percent 1920",
+        "passed": true,
+        "values": {
+          "before": 659,
+          "after": 862,
+          "minimum": 823.75
+        }
+      },
+      {
+        "name": "Checklist usable height increases at least25percent 1920",
+        "passed": true,
+        "values": {
+          "before": 659,
+          "after": 862,
+          "minimum": 823.75
+        }
+      },
+      {
+        "name": "Checklist and evidence start higher 1920",
+        "passed": true,
+        "values": {
+          "before": 354.671875,
+          "after": 163.9375
+        }
+      },
+      {
+        "name": "Checklist font reduced about25percent 1920",
+        "passed": true,
+        "values": {
+          "before": 12,
+          "after": 9,
+          "ratio": 0.75
+        }
+      },
+      {
+        "name": "Evidence font reduced about25percent 1920",
+        "passed": true,
+        "values": {
+          "before": 11,
+          "after": 8.25,
+          "ratio": 0.75
+        }
+      },
+      {
+        "name": "Progress group <=25percent original height 1366",
+        "passed": true,
+        "values": {
+          "before": 65.4375,
+          "after": 14,
+          "maximum": 16.359375
+        }
+      },
+      {
+        "name": "Evidence usable height increases at least25percent 1366",
+        "passed": true,
+        "values": {
+          "before": 360,
+          "after": 550,
+          "minimum": 450
+        }
+      },
+      {
+        "name": "Checklist usable height increases at least25percent 1366",
+        "passed": true,
+        "values": {
+          "before": 360,
+          "after": 550,
+          "minimum": 450
+        }
+      },
+      {
+        "name": "Checklist and evidence start higher 1366",
+        "passed": true,
+        "values": {
+          "before": 387.5625,
+          "after": 163.9375
+        }
+      },
+      {
+        "name": "Checklist font reduced about25percent 1366",
+        "passed": true,
+        "values": {
+          "before": 12,
+          "after": 9,
+          "ratio": 0.75
+        }
+      },
+      {
+        "name": "Evidence font reduced about25percent 1366",
+        "passed": true,
+        "values": {
+          "before": 11,
+          "after": 8.25,
+          "ratio": 0.75
+        }
+      },
+      {
+        "name": "No horizontal overflow 1920",
+        "passed": true
+      },
+      {
+        "name": "No horizontal overflow 1366",
+        "passed": true
+      },
+      {
+        "name": "No horizontal overflow 390",
+        "passed": true
+      }
+    ]
+  },
+  "independent_toolbar": {
+    "phase": "after",
+    "checks": [
+      {
+        "name": "Desktop gallery toolbar label <=12px 1920",
+        "passed": true,
+        "actual": [
+          {
+            "text": "Photos\nLinked to this point\nAvailable in category\nAll submission photos",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Evidence state\nAll evidence states\nQA-confirmed links\nAI suggestions\nUnassigned photos",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Find photo",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Thumbnails\nSmall\nMedium\nLarge",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Assign toChoose a checklist pointAssigned site IDRecorded site contactReported equipment countAssigned reference noteRequired site detail 01Required site detail 02Required site detail 03Required site detail 04Required site detail 05Required site detail 06Required site detail 07Required site detail 08Required site detail 09Required site detail 10Required site detail 11Required site detail 12Required site detail 13Required site detail 14Required site detail 15Required site detail 16Required site detail 17Required site detail 18Required site detail 19Required site detail 20Required site detail 21Required site detail 22Required site detail 23Required site detail 24Required site detail 25Required site detail 26Required site detail 27Required site detail 28Required site detail 29Required site detail 30Required site detail 31Required site detail 32Required site detail 33Required site detail 34Required site detail 35Required site detail 36Required site detail 37Required site detail 38Required site detail 39Required site detail 40Required site detail 41Required site detail 42Required site detail 43Required site detail 44Required site detail 45Required site detail 46Required site detail 47Required site detail 48Required site detail 49Required site detail 50Required site detail 51Required site detail 52Required site detail 53Required site detail 54Required site detail 55Required site detail 56Civil approved checkpoint 001Civil approved checkpoint 002Civil approved checkpoint 003Civil approved checkpoint 004Civil approved checkpoint 005Civil approved checkpoint 006Civil approved checkpoint 007Civil approved checkpoint 008Civil approved checkpoint 009 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 010Civil approved checkpoint 011Civil approved checkpoint 012Civil approved checkpoint 013Civil approved checkpoint 014Civil approved checkpoint 015Civil approved checkpoint 016Civil approved checkpoint 017Civil approved checkpoint 018 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 019Civil approved checkpoint 020Civil approved checkpoint 021Civil approved checkpoint 022Civil approved checkpoint 023Civil approved checkpoint 024Civil approved checkpoint 025Civil approved checkpoint 026Civil approved checkpoint 027 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 028Civil approved checkpoint 029Civil approved checkpoint 030Civil approved checkpoint 031Civil approved checkpoint 032Civil approved checkpoint 033Civil approved checkpoint 034Civil approved checkpoint 035Civil approved checkpoint 036 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 037Civil approved checkpoint 038Civil approved checkpoint 039Civil report only \u00e2\u20ac\u201d recorded inspection referenceElectrical approved checkpoint 001Electrical approved checkpoint 002Electrical approved checkpoint 003Electrical approved checkpoint 004Electrical approved checkpoint 005Electrical approved checkpoint 006Electrical approved checkpoint 007Electrical approved checkpoint 008Electrical approved checkpoint 009 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationElectrical approved checkpoint 010Electrical approved checkpoint 011Electrical approved checkpoint 012Electrical approved checkpoint 013Electrical approved checkpoint 014Electrical approved checkpoint 015Electrical approved checkpoint 016Electrical approved checkpoint 017Electrical approved checkpoint 018 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationElectrical approved checkpoint 019Electrical approved checkpoint 020Electrical approved checkpoint 021Electrical approved checkpoint 022Electrical approved checkpoint 023Electrical approved checkpoint 024Electrical approved checkpoint 025Electrical approved checkpoint 026Electrical approved checkpoint 027 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationElectrical approved checkpoint 028Electrical approved checkpoint 029Electrical approved checkpoint 030Electrical approved checkpoint 031Electrical approved checkpoint 032Electrical approved checkpoint 033Electrical approved checkpoint 034Tower approved checkpoint 001Tower approved checkpoint 002Tower approved checkpoint 003Tower approved checkpoint 004Tower approved checkpoint 005Tower approved checkpoint 006Tower approved checkpoint 007Tower approved checkpoint 008Tower approved checkpoint 009 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationTower approved checkpoint 010Tower approved checkpoint 011Tower approved checkpoint 012Tower approved checkpoint 013Tower approved checkpoint 014Tower approved checkpoint 015Tower approved checkpoint 016Tower approved checkpoint 017Tower approved checkpoint 018 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationTower approved checkpoint 019Tower approved checkpoint 020Tower approved checkpoint 021Tower approved checkpoint 022Tower approved checkpoint 023Tower approved checkpoint 024Tower approved checkpoint 025Tower approved checkpoint 026Tower approved checkpoint 027 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationTower approved checkpoint 028Tower approved checkpoint 029Tower approved checkpoint 030Tower approved checkpoint 031Tower approved checkpoint 032",
+            "fontSize": "12px",
+            "visible": false
+          }
+        ]
+      },
+      {
+        "name": "Desktop gallery toolbar label <=12px 1366",
+        "passed": true,
+        "actual": [
+          {
+            "text": "Photos\nLinked to this point\nAvailable in category\nAll submission photos",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Evidence state\nAll evidence states\nQA-confirmed links\nAI suggestions\nUnassigned photos",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Find photo",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Thumbnails\nSmall\nMedium\nLarge",
+            "fontSize": "12px",
+            "visible": true
+          },
+          {
+            "text": "Assign toChoose a checklist pointAssigned site IDRecorded site contactReported equipment countAssigned reference noteRequired site detail 01Required site detail 02Required site detail 03Required site detail 04Required site detail 05Required site detail 06Required site detail 07Required site detail 08Required site detail 09Required site detail 10Required site detail 11Required site detail 12Required site detail 13Required site detail 14Required site detail 15Required site detail 16Required site detail 17Required site detail 18Required site detail 19Required site detail 20Required site detail 21Required site detail 22Required site detail 23Required site detail 24Required site detail 25Required site detail 26Required site detail 27Required site detail 28Required site detail 29Required site detail 30Required site detail 31Required site detail 32Required site detail 33Required site detail 34Required site detail 35Required site detail 36Required site detail 37Required site detail 38Required site detail 39Required site detail 40Required site detail 41Required site detail 42Required site detail 43Required site detail 44Required site detail 45Required site detail 46Required site detail 47Required site detail 48Required site detail 49Required site detail 50Required site detail 51Required site detail 52Required site detail 53Required site detail 54Required site detail 55Required site detail 56Civil approved checkpoint 001Civil approved checkpoint 002Civil approved checkpoint 003Civil approved checkpoint 004Civil approved checkpoint 005Civil approved checkpoint 006Civil approved checkpoint 007Civil approved checkpoint 008Civil approved checkpoint 009 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 010Civil approved checkpoint 011Civil approved checkpoint 012Civil approved checkpoint 013Civil approved checkpoint 014Civil approved checkpoint 015Civil approved checkpoint 016Civil approved checkpoint 017Civil approved checkpoint 018 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 019Civil approved checkpoint 020Civil approved checkpoint 021Civil approved checkpoint 022Civil approved checkpoint 023Civil approved checkpoint 024Civil approved checkpoint 025Civil approved checkpoint 026Civil approved checkpoint 027 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 028Civil approved checkpoint 029Civil approved checkpoint 030Civil approved checkpoint 031Civil approved checkpoint 032Civil approved checkpoint 033Civil approved checkpoint 034Civil approved checkpoint 035Civil approved checkpoint 036 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationCivil approved checkpoint 037Civil approved checkpoint 038Civil approved checkpoint 039Civil report only \u00e2\u20ac\u201d recorded inspection referenceElectrical approved checkpoint 001Electrical approved checkpoint 002Electrical approved checkpoint 003Electrical approved checkpoint 004Electrical approved checkpoint 005Electrical approved checkpoint 006Electrical approved checkpoint 007Electrical approved checkpoint 008Electrical approved checkpoint 009 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationElectrical approved checkpoint 010Electrical approved checkpoint 011Electrical approved checkpoint 012Electrical approved checkpoint 013Electrical approved checkpoint 014Electrical approved checkpoint 015Electrical approved checkpoint 016Electrical approved checkpoint 017Electrical approved checkpoint 018 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationElectrical approved checkpoint 019Electrical approved checkpoint 020Electrical approved checkpoint 021Electrical approved checkpoint 022Electrical approved checkpoint 023Electrical approved checkpoint 024Electrical approved checkpoint 025Electrical approved checkpoint 026Electrical approved checkpoint 027 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationElectrical approved checkpoint 028Electrical approved checkpoint 029Electrical approved checkpoint 030Electrical approved checkpoint 031Electrical approved checkpoint 032Electrical approved checkpoint 033Electrical approved checkpoint 034Tower approved checkpoint 001Tower approved checkpoint 002Tower approved checkpoint 003Tower approved checkpoint 004Tower approved checkpoint 005Tower approved checkpoint 006Tower approved checkpoint 007Tower approved checkpoint 008Tower approved checkpoint 009 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationTower approved checkpoint 010Tower approved checkpoint 011Tower approved checkpoint 012Tower approved checkpoint 013Tower approved checkpoint 014Tower approved checkpoint 015Tower approved checkpoint 016Tower approved checkpoint 017Tower approved checkpoint 018 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationTower approved checkpoint 019Tower approved checkpoint 020Tower approved checkpoint 021Tower approved checkpoint 022Tower approved checkpoint 023Tower approved checkpoint 024Tower approved checkpoint 025Tower approved checkpoint 026Tower approved checkpoint 027 \u00e2\u20ac\u201d long technical title to verify readable full text and category tree navigationTower approved checkpoint 028Tower approved checkpoint 029Tower approved checkpoint 030Tower approved checkpoint 031Tower approved checkpoint 032",
+            "fontSize": "12px",
+            "visible": false
+          }
+        ]
+      },
+      {
+        "name": "1366 gallery toolbar occupies <=100px",
+        "passed": true,
+        "actual": 81
+      }
+    ]
+  },
+  "independent_browser_count": 47,
+  "browser_errors": [],
+  "geometry": [
+    {
+      "viewport": "1920x1080",
+      "phase_height_px": 14,
+      "status_height_px": 28,
+      "pane_height_before": 659,
+      "pane_height_after": 862,
+      "height_gain_percent": 30.8
+    },
+    {
+      "viewport": "1366x768",
+      "phase_height_px": 14,
+      "status_height_px": 28,
+      "pane_height_before": 360,
+      "pane_height_after": 550,
+      "height_gain_percent": 52.8
+    }
+  ],
+  "font_change_desktop": {
+    "point_label": "12px to9px",
+    "photo_caption": "11px to8.25px",
+    "reduction_percent": 25
+  },
+  "mobile": {
+    "point_label_px": 13,
+    "photo_caption_px": 12,
+    "essential_navigation_min_height_px": 36,
+    "layout": "drawer and stacked evidence; vertical scrolling retained"
+  },
+  "separate_security": "No new finding; final mobile CSS and promoted links reviewed separately.",
+  "earlier_security_holds_unchanged": true,
+  "ollama_requests": 0,
+  "schema_changes": false,
+  "production_merge_or_deploy": false,
+  "full_backend_suite": "Earlier1110-pass baseline not rerun for this UI-only change."
+}

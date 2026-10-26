@@ -26,7 +26,7 @@ class CompletedStudyTests(TestCase):
         self.revision=self.assert_submitted()
         self.url=reverse('photo_completed_ai_study',args=[self.checklist.pk])
 
-    def completed(self,note='SOURCE_ONLY_STUDY',digest=None):
+    def completed(self,note='SOURCE_ONLY_STUDY',digest=None,extra_findings=None):
         job=self.revision.processing_job
         job.status='ready_for_review'
         job.save(update_fields=['status'])
@@ -34,6 +34,7 @@ class CompletedStudyTests(TestCase):
         payload={'reference':photo['filename'],'findings':[{'component':'Synthetic breaker',
             'value':0,'unit':'A','notes':note,'evidence_quote':'0 A',
             'confidence':'high','defects':['Visible synthetic crack']}]}
+        payload['findings'].extend(extra_findings or [])
         SurveySourceAnalysis.objects.create(revision=self.revision,source_id='photo:'+str(photo['id']),
             payload=payload,digest=digest or pipeline.digest(payload))
 
@@ -91,7 +92,11 @@ class CompletedStudyTests(TestCase):
         pid=self.revision.snapshot['photos'][0]['id']
         package={'checklist_items':[{'id':'manufacturer','label':'Equipment manufacturer',
             'value':'RELEASED_SYNTHETIC_VALUE','accepted':True,
-            'sources':[{'source_id':'photo:'+str(pid)}]}],'findings':[]}
+            'sources':[{'source_id':'photo:'+str(pid)}]},
+            {'id':'tower_height','label':'Recorded height','value':0,'unit':'m','accepted':True,
+                'sources':[{'source_id':'photo:'+str(pid)}]},
+            {'id':'private_proposal','label':'UNACCEPTED_PRIVATE_ROW','value':'PRIVATE_GUESS',
+                'accepted':False,'sources':[{'source_id':'photo:'+str(pid)}]}],'findings':[]}
         SurveyProcessingEvent.objects.create(revision=self.revision,actor=self.quality,
             action='qa_complete',payload={'package':package})
         SurveyDrawingSet.objects.create(revision=self.revision,edition=1,released=True,
@@ -101,6 +106,10 @@ class CompletedStudyTests(TestCase):
         self.assertEqual(result.status_code,200,result.content)
         self.assertContains(result,'qa-finding-table')
         self.assertContains(result,'RELEASED_SYNTHETIC_VALUE')
+        self.assertContains(result,'Recorded height')
+        self.assertContains(result,'0 m')
+        self.assertNotContains(result,'UNACCEPTED_PRIVATE_ROW')
+        self.assertNotContains(result,'PRIVATE_GUESS')
         self.assertNotContains(result,'SOURCE_ONLY_STUDY')
         self.assertContains(result,'Only released QA-reviewed information')
 
@@ -130,3 +139,25 @@ class CompletedStudyTests(TestCase):
         self.assertIn(('Defect / issue','Visible panel crack'),observation_rows(finding))
         finding['category']='equipment'
         self.assertIn(('Defect / issue','Not recorded'),observation_rows(finding))
+
+    def test_all_current_photo_findings_share_one_continuous_table_without_finding_pager(self):
+        self.completed(extra_findings=[{'category':'measurement','component':'Second source finding',
+            'value':17,'unit':'m','notes':'SECOND_RECORDED_NOTE',
+            'evidence_quote':'MEASURED_QUOTE_17','confidence':'medium'}])
+        self.client.force_login(self.quality)
+        result=self.client.get(self.url)
+        self.assertContains(result,'SOURCE_ONLY_STUDY')
+        self.assertContains(result,'SECOND_RECORDED_NOTE')
+        self.assertContains(result,'MEASURED_QUOTE_17')
+        self.assertContains(result,'17 m')
+        self.assertContains(result,'qa-findings-continuous')
+        self.assertNotContains(result,'aria-label="Photo findings"')
+        self.assertNotContains(result,'Next finding')
+        self.assertContains(result,'aria-label="Study photos"')
+
+    def test_recorded_unit_without_value_is_kept_without_inventing_a_measurement(self):
+        from .completed_ai_study import observation_rows
+        rows=observation_rows({'category':'measurement','component':'Platform','value':None,
+            'unit':'mm','basis':'recorded','notes':'Dimension not legible'})
+        self.assertIn(('Recorded unit','mm'),rows)
+        self.assertIn(('Extracted value','Not recorded'),rows)

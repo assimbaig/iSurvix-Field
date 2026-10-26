@@ -21,7 +21,9 @@ owner approval; see both docs/development/SECURITY_REVIEW_QA_*_20261024 reports.
 26 October follow-up: **Completed AI study** uses one compact, read-only photo
 and findings format for the assigned Engineer, QA, Team Lead and company Admin.
 Viewing does not confirm a photo match, accept a checklist answer or approve
-work. Clients retain the existing release restrictions and see accepted, linked
+work. AI details and the completed-study view list all findings for the current
+photo together under headings in a compact table; photo navigation remains
+separate. Clients retain the existing release restrictions and see accepted, linked
 information only after QA completion and a matching released output; private AI
 proposals remain internal. Super Admin remains administrative. QA alone uses
 the public-keyword reference lookup in the review viewer; references are not
