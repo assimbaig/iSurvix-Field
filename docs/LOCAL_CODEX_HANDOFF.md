@@ -5,7 +5,8 @@
 Continue on `feat/qa-view-panel-header-20261026`, still in the worktree
 `.local/worktrees/qa-photo-candidate-ranking-20261024`. Owner merged PR20;
 remote merge `409759a` contains `ee082a2`, not `feb0649`/`2d4590f`/`19c011a`.
-Those later commits are preserved on the follow-up branch. `19c011a` was
+Those later commits and implementation `0b1a873` are preserved in open
+**draft PR21**: https://github.com/assimbaig/iSurvix-Field/pull/21. `19c011a` was
 successfully pushed after the earlier transient GitHub server errors. Leave
 the follow-up PR open for review; do not merge or deploy it.
 

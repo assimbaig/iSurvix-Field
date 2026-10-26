@@ -248,5 +248,13 @@
     "new_findings": 0,
     "old_held_findings_unchanged": true,
     "initial_probe_failure": "Selector matched existing link action row; precise heading probes and actual browser escaping test passed without product changes."
+  },
+  "review_delivery": {
+    "implementation_commit": "0b1a873c965b151793e0ab64b91c8598e8fa4b91",
+    "implementation_pushed": true,
+    "pull_request": "https://github.com/assimbaig/iSurvix-Field/pull/21",
+    "draft": true,
+    "merged_by_agent": false,
+    "production_deployed": false
   }
 }
