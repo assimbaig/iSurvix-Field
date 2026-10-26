@@ -84,8 +84,31 @@ Django endpoint in a browser: `microwave antenna`, HTTP200,1776 bytes,946ms,
 real source citations and no operational mutation. Brave live verification is
 blocked by the missing key. No Ollama call was made in this follow-up.
 
-Final full-suite, browser and separate security-review receipts are recorded
-below when complete. Earlier1085-pass results do not certify these additions.
+Final checks after the last functional and approved security repair:
+**1,110 backend tests passed in396.350s**, no failures/errors/skips; isolated
+database/media/model cache, zero external attempts and33 in-process HTTP-fixture
+connections. All ten frontend scripts, Django check, migration-drift check,
+dependency check and JS syntax passed. The static build copied215 files.
+Product source stayed unchanged throughout the final checks; fingerprint:
+`6cf48c3883c704aaea316604cbc4ccc74d5e22c886a6e80aa054f76079eae58c`.
+Exact commands/results: `QA_FOLLOWUP_ACCEPTANCE_20261026.json` and private
+`.local/qa-followup-20261026/final-acceptance/` logs.
+
+Independent new-feature QA passed155 browser assertions,9 HTTP guards and29
+focused backend tests. This is additional to the earlier52 compact/sketch
+browser checks. Cases include actual native Wikipedia, deliberately controlled
+provider failures, saved-data role/refresh/pagination, desktop/mobile, WS1
+service/rendered-anchor/click retests and actual-schema defect observations.
+All460 fixture originals, source rows and immutable revision remained unchanged.
+See `INDEPENDENT_QA_WEB_STUDY_20261026.md` for evidence and limits. Both earlier
+full runs are retained privately; one intentionally overlapped new RED tests and
+another preceded the last schema-display fix, so neither is labelled final.
+
+Implementation commit: `b1e49a1`. The final documentation receipt is committed
+separately. Recovery archive and consistent SQLite backup are under
+`F:\iSurvix\iSurvix-Field\.local\backups\project-checkpoint-20261026-145256`;
+the final Git bundle supplements its pre-remediation source archive. Local
+review8001 serves the verified source; original8000 and workers are untouched.
 
 Functional schema review additionally reproduced a display defect: current
 validated AI observations identify defects with `category: defect` and recorded
