@@ -129,7 +129,9 @@ class WorkerRuntimeToolTests(SimpleTestCase):
         result = self.tools.collect_diagnostics(project_root=self.directory, model=MODEL,
             photo_url=self.url, text_url=self.url, powershell_version='7.6.9')
         path = Path(result)
-        self.assertEqual(path.parent, local / 'diagnostics')
+        # Windows TEMP can use an 8.3 alias (RUNNER~1) while the collector
+        # correctly returns its resolved long name. Assert physical identity.
+        self.assertTrue(path.parent.samefile(local / 'diagnostics'))
         raw = path.read_text()
         self.assertNotIn(self.secret, raw)
         self.assertNotIn('PRIVATE-SITE-NAME', raw)
@@ -175,7 +177,7 @@ class WorkerRuntimeToolTests(SimpleTestCase):
             '-PythonPath', sys.executable], capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         path = Path(result.stdout.strip().splitlines()[-1])
-        self.assertEqual(path.parent, self.directory / '.local' / 'diagnostics')
+        self.assertTrue(path.parent.samefile(self.directory / '.local' / 'diagnostics'))
         data = json.loads(path.read_text())
         self.assertFalse(data['credentials_collected'])
         self.assertIn('Open:', data['a12_status'])
