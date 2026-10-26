@@ -287,5 +287,17 @@
   "candidate": "http://127.0.0.1:8002/login/",
   "operational_services": "Original 8000/8001/model services and active job preserved. Candidate is web-only; no native inference run.",
   "checkpoint": ".local/backups/project-checkpoint-20261026-222351",
-  "verification_history": "Superseded v2 full run exposed two obsolete frontend expectations. Test fixture updated to actual guarded compact-batch response and stronger identity/retention assertions; no product edits. Final v3 reran entire gate. Original logs retained privately."
+  "verification_history": "Superseded v2 full run exposed two obsolete frontend expectations. Test fixture updated to actual guarded compact-batch response and stronger identity/retention assertions; no product edits. Final v3 reran entire gate. Original logs retained privately.",
+  "delivery": {
+    "product_commit": "67d7cadf1be7ed73c05872cd59cda01914ecfbd8",
+    "pull_request": "https://github.com/assimbaig/iSurvix-Field/pull/23",
+    "draft": true,
+    "merged": false,
+    "deployed": false,
+    "requirements_with_scoped_verification": 11,
+    "requirements_total": 11,
+    "wider_suite_blockers": [
+      "Q1 Windows symlink fixture privilege"
+    ]
+  }
 }

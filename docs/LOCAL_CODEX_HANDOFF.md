@@ -25,7 +25,8 @@ D1/D2/L1 and unrelated security findings remain unapproved/unfixed.
 Read `docs/development/QA_BATCH_DECISIONS_20261026.md`, the requirement ledger,
 acceptance JSON and independent QA/security reports for exact evidence/limits.
 Recovery backup: `.local/backups/project-checkpoint-20261026-222351`.
-No merge or production deployment. Follow the feature PR for review.
+Product commit `67d7cad` is pushed. Draft PR23: https://github.com/assimbaig/iSurvix-Field/pull/23
+No merge or production deployment. Keep the PR for review.
 
 ## Latest: owner-approved PR21 repairs — 26 October 2026
 
