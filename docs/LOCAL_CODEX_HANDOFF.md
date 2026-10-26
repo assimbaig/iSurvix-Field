@@ -1,5 +1,58 @@
 # iSurvix Field: local Codex development brief
 
+## Compact QA, retained matches and source sketch drafts - 26 October 2026
+
+Latest work continues on `feat/qa-photo-candidate-ranking-20261024` in
+`.local/worktrees/qa-photo-candidate-ranking-20261024`; preserve the main
+`review/qa-resume-20261026` checkout and its running operational workers.
+Draft PR20 remains the delivery target; no merge/deployment is authorized.
+
+Compact Matching / AI details / Links photo support, retained and in-progress
+matching previews, bounded small-catalog matching, and source-backed sketch
+tracing PDF/DXF are implemented. See
+`docs/development/QA_COMPACT_TAGGING_SKETCH_20261026.md`. Final checks before
+the subsequent web-reference addition: 1,085 backend tests passed in361.302s,
+all eight frontend scripts and required Django/dependency/migration/build
+checks passed. Independent QA:52 browser,47 focused backend,6 projection and9
+artifact checks. Test counts do not certify later edits automatically.
+
+The six-page operational sketch was rendered privately from retained verified
+sources, with zero database writes/model calls/approvals. Sketch geometry is
+draft source tracing, not semantic engineering reconstruction. Missing or
+unreadable measurements remain flagged; full original imagery is preserved.
+
+Separate AppSec: **C1 Low** retained in-progress candidate advice can have an
+obsolete model/batch context. No approval bypass was established. C1 and prior
+M1/W1/S1/S2/S3/R1/R2 remain **pending owner approval; do not fix them**. See
+`SECURITY_REVIEW_QA_COMPACT_SKETCH_20261026.md`.
+
+Recovery checkpoint: `.local/backups/project-checkpoint-20261026-135127`.
+Actual-data feature preview: `http://127.0.0.1:8001/login/` (separate session/
+CSRF cookies, shared existing local records and media). Original8000 and
+operational workers are deliberately untouched while analysis continues.
+The 8001 bootstrap is private under the feature checkout's
+`.local/qa-followup-20261026/live-preview`. No duplicate worker is started.
+
+Owner subsequently requested internet keyword responses, compact finding
+tables with site/photo context, separate processing stages, and one read-only
+completed-study format across roles. These are implemented; see
+`docs/development/WEB_REFERENCES_AND_STUDY_20261026.md`. Native Wikipedia
+references worked through the actual authorized saved-data browser endpoint.
+Full Brave web search remains blocked by a missing owner-provided provider key;
+no paid plan/account/model was introduced. Client raw proposals remain private:
+the common study view exposes only accepted information after existing release
+requirements. Super Admin retains administrative-only access.
+
+Separate AppSec found **WS1 Low**, obfuscated local-address links in optional
+web results. The owner explicitly approved fixing this finding on26 October.
+Backend/frontend repaired it with executed RED/GREEN tests, rejected old cached
+results, and independent security re-attack verified the demonstrated bypasses
+blocked. **WS1 approval does not authorize older C1/M1/W1/S1/S2/S3/R1/R2 fixes.**
+Read `SECURITY_REVIEW_WEB_STUDY_20261026.md` for original evidence and remediation.
+The complete suite is being rerun after the final valid-schema defect display
+repair; use the final delivery receipt rather than earlier passing counts as
+evidence for the final tree. No production merge/deployment is authorized.
+
 ## Resumed Engineer / QA candidate - 26 October 2026
 
 Owner explicitly resumed development. Feature branch:

@@ -18,6 +18,17 @@ owner approval; see both docs/development/SECURITY_REVIEW_QA_*_20261024 reports.
 
 ## How access is decided
 
+26 October follow-up: **Completed AI study** uses one compact, read-only photo
+and findings format for the assigned Engineer, QA, Team Lead and company Admin.
+Viewing does not confirm a photo match, accept a checklist answer or approve
+work. Clients retain the existing release restrictions and see accepted, linked
+information only after QA completion and a matching released output; private AI
+proposals remain internal. Super Admin remains administrative. QA alone uses
+the public-keyword reference lookup in the review viewer; references are not
+site evidence. Source analysis, shared finding extraction and checklist tagging
+have distinct labels; unknown batch totals are not presented as percentages.
+See the [current follow-up guide](../development/WEB_REFERENCES_AND_STUDY_20261026.md).
+
 An active, unlocked operational account needs an effective project grant. A grant can expire or be revoked; an old primary-project value does not restore a revoked grant. Company boundaries apply to project staff. Admin access is additionally limited to the owning Admin's projects and assigned industry. Multiple project access requires explicit permission. Super Admin has separate platform-administration authority; even global administrative visibility does not grant operational engineering access.
 
 Being able to see a project does not permit every operation on its tasks. Engineer ownership, named QA/Team Lead/Client reviewers, current workflow stage, frozen revision, approved sections and stale-request checks are evaluated again by the server. Hiding a button is not the permission boundary.
@@ -33,6 +44,7 @@ Being able to see a project does not permit every operation on its tasks. Engine
 | Submit category photos to QA | No | No | Own task, completed uploads | No | No | No |
 | Record General Info site data | No | Task setup within scope | Own editable task | Review frozen source and record QA corrections | Review only | Shared accepted information only |
 | Match photos and review AI suggestions | No | No | No | Named QA at current editable stage | Read completed QA package | No |
+| View completed photo AI study without editing | No | Managed project | Own assigned task | Assigned site | Assigned site | Released accepted information only |
 | Record derived checklist answers | No | No | No matching or AI acceptance | Named QA; original Engineer source stays frozen | Review only | Shared approved results only |
 | Sign QA review | No | No | No | Named QA at current stage | No | No |
 | Sign Team Lead review | No | No | No | No | Named Team Lead at current stage | No |

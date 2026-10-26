@@ -234,7 +234,7 @@ def _source(record, source_id, source_type, reference, *, image=None, text='', m
             'visual_fingerprint': fingerprint,
             'filename': str(record.get('filename', ''))[:240], 'sha256': record['sha256'],
             'text': text, 'image_b64': base64.b64encode(image).decode('ascii') if image else '',
-            'metadata': {**(record.get('metadata') or {}), **(metadata or {})},
+            'metadata': {**(record.get('metadata') or {}), **({'kind': record['kind']} if record.get('kind') else {}), **(metadata or {})},
             'extraction_version': EXTRACTION_VERSION}
 
 
@@ -520,6 +520,13 @@ def analyse_source(source, model, base_url=None, *, compact=False):
     endpoint = base_url if base_url is not None else getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
     schema = observation_response_schema(catalog, compact=compact)
     prompt = SYSTEM_PROMPT
+    if (source.get('metadata') or {}).get('kind') == 'hand_sketch':
+        prompt += ('\nThis is an Engineer hand sketch. Preserve every visible detail as evidence. '
+                   'Transcribe all legible dimension labels with their explicit units and exact evidence quote. '
+                   'Name the visible feature/span in component. Put absent, ambiguous or unreadable dimensions '
+                   'in missing and name their feature/location in words. Never guess a missing value, '
+                   'straighten an uncertain shape, infer concealed details or infer scale from pixels. '
+                   'Source tracing remains Not to Scale and Draft For Review.')
     if compact:
         prompt += '\nUse the compact schema: f within each finding is field_hint. Keep notes concise without omitting observations, units, quotes or uncertainty.'
     messages = [{'role': 'system', 'content': prompt}, user]

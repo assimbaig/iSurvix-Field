@@ -273,7 +273,14 @@ def mapping_batches(analyses, schema):
             result['key']='mapping:v3:'+result['identity']
             yield result
         return
-    direct=len(fields)<=MAX_CANDIDATES and all(prompt_size({'findings':[finding],'catalog':fields})<=MAX_PROMPT_CHARS for finding in findings)
+    # A complete catalog must also fit its per-finding ranked metadata and closed
+    # output schema. Otherwise use the bounded shortlist path below.
+    lexical_reason='Ranked by literal topic overlap; not a probability or approval.'
+    direct_candidates=[{'field_id':field['id'],'rank':rank,'score':0.123456,
+        'score_kind':'lexical_similarity','reason':lexical_reason}
+        for rank,field in enumerate(fields,1)]
+    direct=len(fields)<=MAX_CANDIDATES and all(prompt_size({'findings':[finding],'catalog':fields,
+        'finding_candidates':{finding['finding_key']:direct_candidates}})<=MAX_PROMPT_CHARS for finding in findings)
     method,notice,embedding_identity='complete_catalog','','not_required'
     field_vectors=query_vectors=None
     if not direct:
@@ -292,8 +299,9 @@ def mapping_batches(analyses, schema):
             score=semantic+.15*overlap if field_vectors is not None else overlap
             subject_words=_tokens(' '.join(_text(finding.get(key),bound) for key,bound in [('component',160),('value',1600),('evidence_quote',800),('notes',1200)]))
             label_overlap=bool(subject_words&_tokens(field['label']))
-            if score>0 and (field_vectors is not None or label_overlap or finding.get('field_hint')==field['id']):ranked.append((score,field['id']))
-        candidates[finding['finding_key']]=[{'field_id':ident,'rank':rank,'score':round(score,6),'score_kind':'semantic_lexical_similarity' if field_vectors is not None else 'lexical_similarity','reason':'Ranked by local semantic similarity and literal topic overlap; not a probability or approval.' if field_vectors is not None else 'Ranked by literal topic overlap; not a probability or approval.'} for rank,(score,ident) in enumerate(sorted(ranked,key=lambda entry:(-entry[0],entry[1]))[:TOP_CANDIDATES],1)]
+            if direct or score>0 and (field_vectors is not None or label_overlap or finding.get('field_hint')==field['id']):ranked.append((score,field['id']))
+        limit=MAX_CANDIDATES if direct else TOP_CANDIDATES
+        candidates[finding['finding_key']]=[{'field_id':ident,'rank':rank,'score':round(score,6),'score_kind':'semantic_lexical_similarity' if field_vectors is not None else 'lexical_similarity','reason':'Ranked by local semantic similarity and literal topic overlap; not a probability or approval.' if field_vectors is not None else lexical_reason} for rank,(score,ident) in enumerate(sorted(ranked,key=lambda entry:(-entry[0],entry[1]))[:limit],1)]
     def batch(items,number):
         selected={candidate['field_id'] for item in items for candidate in candidates[item['finding_key']]}
         sources=sorted({item['source_id'] for item in items if item['source_id'].startswith('photo:')}|set(no_findings if number==1 else []))
@@ -324,7 +332,8 @@ def _validated_candidates(batch):
     expected={'field_id','rank','score','score_kind','reason'}
     score_kinds={'lexical_similarity','semantic_lexical_similarity'}
     for key,items in candidates.items():
-        if not isinstance(items,list) or len(items)>TOP_CANDIDATES:
+        limit=MAX_CANDIDATES if batch.get('ranking_method')=='complete_catalog' else TOP_CANDIDATES
+        if not isinstance(items,list) or len(items)>limit:
             raise MappingError('Invalid candidate shortlist.')
         seen=set()
         for rank,item in enumerate(items,1):

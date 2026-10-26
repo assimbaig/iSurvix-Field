@@ -529,8 +529,12 @@ def drawing_branding(revision):
 def render_drawing_set(revision, payload, released=False, actor=None):
     from .survey_drawings import build_geometry, render_outputs
     signature = review_digest(payload)
-    existing = revision.drawing_sets.filter(review_digest=signature, released=released).first()
-    if existing:
+    sketches = [document for document in revision.snapshot.get('documents', [])
+                if document.get('kind') == 'hand_sketch']
+    existing = revision.drawing_sets.filter(review_digest=signature, released=released).order_by('-edition').first()
+    rendered_sketches = {sheet.get('source', {}).get('id') for sheet in existing.geometry.get('sheets', [])
+                        if sheet.get('key', '').startswith('hand_sketch_')} if existing else set()
+    if existing and (released or not sketches or {document['id'] for document in sketches}.issubset(rendered_sketches)):
         return existing
     edition = (revision.drawing_sets.aggregate(n=Max('edition'))['n'] or 0) + 1
     snapshot = {**revision.snapshot, 'date': revision.created_at.date().isoformat(), 'drawing_records': payload.get('drawing_records', [])}
@@ -546,6 +550,19 @@ def render_drawing_set(revision, payload, released=False, actor=None):
                 'status': item['status'], 'verification_status': 'confirmed' if item['status'] == 'Confirmed from evidence' else 'needs_review',
                 'confidence': item['confidence'], 'sources': item['sources'], 'notes': item.get('reason', '')})
     geometry = build_geometry(snapshot, findings)
+    if sketches:
+        from .survey_sketches import add_hand_sketches
+        allowed = {document['id'] for document in sketches}
+        analyses = {}
+        for saved in revision.source_analyses.filter(source_id__startswith='document:'):
+            parts = saved.source_id.split(':')
+            if len(parts) < 2 or not parts[1].isdigit() or int(parts[1]) not in allowed:
+                continue
+            if digest(saved.payload) != saved.digest:
+                raise ValidationError('Saved sketch analysis failed integrity verification.')
+            analyses[saved.source_id] = saved.payload
+        geometry = add_hand_sketches(geometry,
+            [{**document, 'path': default_storage.path(document['original'])} for document in sketches], analyses)
     output_dir = Path(settings.MEDIA_ROOT) / 'survey_processing' / str(revision.checklist_id) / str(revision.pk) / uuid.uuid4().hex
     checker = revision.processing_events.filter(action='technical_approve', payload__review_digest=signature).last()
     manifest = render_outputs(geometry, output_dir, revision=revision.number, branding=drawing_branding(revision),

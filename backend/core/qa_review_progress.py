@@ -6,7 +6,37 @@ from django.shortcuts import get_object_or_404
 
 from .access import role_for
 from .models import Profile
-from .survey_processing_models import SurveyProcessingRevision
+from .survey_processing_models import SurveyProcessingRevision,SurveyProcessingResult
+
+
+def phase_projection(status,completed,total,saved_batches,has_result):
+    """Describe observed stages; equal counters alone do not prove a boundary.
+
+    Observation extraction is part of source analysis, not another queued job.
+    Mapping totals are not persisted, so saved batches never imply a percentage.
+    """
+    analysis_done=has_result or saved_batches>0 or status in {'preparing_checklist','preparing_drawings','ready_for_review'}
+    matching_done=has_result or status in {'preparing_drawings','ready_for_review'}
+    active_states={'queued':'queued','analysing_evidence':'running','preparing_checklist':'running',
+        'paused':'paused','pausing':'pausing','failed':'failed'}
+    analysis_state='complete' if analysis_done else active_states.get(status,'unavailable')
+    matching_state='complete' if matching_done else active_states.get(status,'unavailable') if analysis_done else 'waiting'
+    if status=='analysing_evidence' and analysis_done and not matching_done:matching_state='waiting'
+    return {
+        'analysis':{'label':'Analysis','state':analysis_state,'completed':completed,'total':total,'unit':'sources',
+            'note':'Submitted photos and document pages are analysed; saved results are retained.'},
+        'findings':{'label':'Findings','state':analysis_state,'completed':None,'total':None,'unit':'observations',
+            'shared_with':'analysis','note':'Findings are extracted during source analysis; no separate extraction job.'},
+        'matching':{'label':'Checklist tagging','state':matching_state,'completed':saved_batches,'total':None,
+            'unit':'saved_batches','note':'Saved mapping batches are durable checkpoints, not photo totals. The planned batch total is unknown.'}}
+
+
+def phases(revision,job=None):
+    """Only scalar counts/exists checks; never load source JSON or snapshots."""
+    job=job if job is not None else revision.processing_job
+    saved=revision.source_analyses.filter(source_id__startswith='mapping:').count()
+    result=SurveyProcessingResult.objects.filter(revision_id=revision.pk).exists()
+    return phase_projection(job.status,job.completed,job.total,saved,result)
 
 
 def token(c, revision):
@@ -31,7 +61,7 @@ def progress(request, checklist_id):
     revision = get_object_or_404(c.processing_revisions.only('id', 'digest'), pk=ident)
     job = revision.processing_job
     ai = {'status': job.status, 'completed': job.completed, 'total': job.total, 'error': job.error,
-          **flags(request, c, status=job.status)}
+          **flags(request, c, status=job.status),'phases':phases(revision,job)}
     result = {'revision_id': revision.pk, 'progress_token': token(c, revision), 'ai': ai}
     photo = request.GET.get('photo_id')
     if photo is not None:

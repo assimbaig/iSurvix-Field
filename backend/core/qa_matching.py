@@ -129,6 +129,20 @@ def order_state(revision,actor_id):
     return defaults,digest({'revision_id':revision.pk,'actor_id':actor_id,'order':defaults})
 
 
+def legacy_photo_match(pid,links):
+    """Project retained AI links, without inventing rankings or changing history.
+
+    Only the already validated, replayed links are authoritative here. Reading raw
+    field hints would resurrect QA removals or unassigned/uncertain observations.
+    """
+    candidates=[{'field_id':link['field_id'],'rank':rank,'reason':link.get('reason') or
+        'This retained AI source link requires QA confirmation.'}
+        for rank,link in enumerate((link for link in links
+            if link['photo_id']==pid and link['state']=='ai_suggested'),1)]
+    return {'state':'proposed','reason':'Retained AI source links; QA confirmation is required.',
+        'candidates':candidates} if candidates else None
+
+
 def state(revision,payload,actor,private=True):
     links=link_state(revision,payload)
     if not private:links=[link for link in links if link['state']=='qa_confirmed']
@@ -138,11 +152,17 @@ def state(revision,payload,actor,private=True):
     observations={pid:[] for pid in ids}
     final_findings={finding.get('finding_key'):finding for finding in payload.get('findings',[])
         if isinstance(finding,dict) and isinstance(finding.get('finding_key'),str)}
+    durable_mappings=[]
+    analysed_sources=set()
     for record in revision.source_analyses.all() if private else []:
         from .survey_processing import digest
         if digest(record.payload)!=record.digest:raise ValidationError('Saved source analysis integrity verification failed.')
+        if record.source_id.startswith('mapping:'):
+            durable_mappings.append(record.payload)
+            continue
         pid=photo_id({'source_id':record.source_id})
         if pid not in observations:continue
+        analysed_sources.add(record.source_id)
         for finding in record.payload.get('findings',[]):
             enriched=deepcopy(finding)
             final=final_findings.get(finding.get('finding_key'))
@@ -155,6 +175,13 @@ def state(revision,payload,actor,private=True):
         saved_matches={str(row.get('source_id','')):row for row in payload.get('photo_matches',[])
             if isinstance(row,dict) and isinstance(row.get('source_id'),str)}
         job_status=getattr(getattr(revision,'processing_job',None),'status','')
+        partial_matches={}
+        if job_status=='preparing_checklist' and durable_mappings:
+            from .survey_checklist_mapping import photo_candidate_outcomes
+            mapped_sources={row.get('source_id') for mapped in durable_mappings
+                for row in mapped.get('photo_matches',[]) if isinstance(row,dict)}
+            partial_matches={row['source_id']:row for row in photo_candidate_outcomes(
+                [{'source_id':source} for source in analysed_sources & mapped_sources],durable_mappings)}
         display_names=payload.get('photo_names') if isinstance(payload.get('photo_names'),dict) else {}
         if not display_names:
             from .survey_processing import generated_photo_names
@@ -163,6 +190,10 @@ def state(revision,payload,actor,private=True):
             pid=photo.get('id')
             source_id='photo:'+str(pid)
             saved=saved_matches.get(source_id)
+            if saved is None:
+                saved=partial_matches.get(source_id)
+            if saved is None and job_status=='ready_for_review':
+                saved=legacy_photo_match(pid,links)
             if saved:
                 status=saved.get('state') if saved.get('state') in {'proposed','unmatched'} else 'unmatched'
                 reason=str(saved.get('reason') or '')[:4000]

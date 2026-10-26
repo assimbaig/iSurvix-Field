@@ -440,7 +440,7 @@ def review_state(request, checklist_id):
             Q(status__in=ACTIVE-{'queued'})|Q(status='queued',pk__lt=revision.processing_job.pk)
             ).exclude(pk=revision.processing_job.pk).count() if revision.processing_job.status=='queued' else 0
         result['ai']['error_code']='model_identity_changed' if revision.processing_job.error.startswith('[model_identity_changed]') else ''
-        result['ai']['note']='Photo observations are saved as analysis runs. Checklist suggestions appear after all submitted evidence has been analysed.'
+        result['ai']['note']='Saved checklist suggestions remain available while matching continues. Open a photo to refresh its saved suggestions.'
     if not client:
         from . import qa_matching
         private=role_for(request.user)==Profile.Roles.QUALITY_ENGINEER
@@ -466,6 +466,8 @@ def review_state(request, checklist_id):
                 if not item.get('accepted'):item.update(value=None,proposed_answer=None,status='Missing')
             result['ai']={'status':'reviewed' if completed else 'pending_qa_review','completed':0,'total':0,'error':''}
     if role_for(request.user)==Profile.Roles.QUALITY_ENGINEER:
+        from .qa_review_progress import phases
+        result['ai']['phases']=phases(revision)
         from .qa_site_information import table as site_information_table
         result['site_information_table']=site_information_table(c,result['general_information'],result['items'],
             can_review=result['can_review'] and not result['config_error'])

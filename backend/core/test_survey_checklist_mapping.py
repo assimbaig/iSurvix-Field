@@ -30,6 +30,17 @@ def native(bindings=None, unassigned=None):
 
 
 class MappingBatchTests(SimpleTestCase):
+    def test_complete_small_catalog_keeps_synonymous_zero_overlap_fields_available(self):
+        observations=analysis([{'component':'lattice mast','value':'Visible intact structure',
+            'confidence':'high','notes':'Overall structure shown.'}])
+        template=schema([field('tower','Support integrity'),field('brand','Cabinet manufacturer')])
+        batch=list(mapping.mapping_batches(observations,template))[0]
+        self.assertEqual(batch['ranking_method'],'complete_catalog')
+        self.assertEqual({item['id'] for item in batch['catalog']},{'tower','brand'})
+        self.assertIn('tower',{item['field_id'] for item in batch['finding_candidates']['photo:17:finding:1']})
+        decision=mapping.response_schema(batch)['properties']['decisions']['properties']['photo:17:finding:1']
+        self.assertIn('tower',decision['properties']['field_id']['anyOf'][0]['enum'])
+
     def test_complete_small_catalog_and_stable_keys_do_not_mutate_observations(self):
         observations = analysis()
         original = deepcopy(observations)
@@ -245,6 +256,33 @@ class MappingIntegrationTests(TestCase):
     add_photo = processing_fixtures.SurveyProcessingTests.add_photo
     processing = processing_fixtures.SurveyProcessingTests.processing
     analysed = processing_fixtures.SurveyProcessingTests.analysed
+
+    def test_worker_can_propose_small_catalog_synonyms_with_no_literal_overlap(self):
+        from . import survey_processing as service
+        revision,_=service.submit(self.request(),self.checklist.pk,True)
+        def raw(source,model,**kwargs):
+            return {'source_id':source['source_id'],'reference':source['reference'],'findings':[
+                {'field_hint':'','category':'equipment','component':'maker emblem','value':'SyntheticCo',
+                 'confidence':'high','basis':'recorded','unit':'','evidence_quote':'SyntheticCo',
+                 'source_id':source['source_id'],'reference':source['reference']}]}
+        self.processing(analyse=raw)
+        def native_decisions(path,payload,**kwargs):
+            decisions=payload['format']['properties']['decisions']['properties']
+            for decision in decisions.values():
+                self.assertIn('manufacturer',decision['properties']['field_id']['anyOf'][0]['enum'])
+            return {'message':{'content':json.dumps({'decisions':{key:{'field_id':'manufacturer',
+                'reason':'The maker emblem identifies the recorded manufacturer.'} for key in decisions}})}}
+        with patch.object(mapping.local_ai,'ollama',side_effect=native_decisions) as model:
+            service.process_next()
+            self.assertGreater(model.call_count,0)
+        revision.processing_job.refresh_from_db()
+        self.assertEqual(revision.processing_job.status,'ready_for_review',revision.processing_job.error)
+        result=service.reviewed_payload(revision)
+        item=next(item for item in result['checklist_items'] if item['id']=='manufacturer')
+        self.assertEqual(item['value'],'SyntheticCo')
+        self.assertTrue(item['sources'])
+        self.assertFalse(item['accepted'])
+        self.assertTrue(all(row['state']=='proposed' for row in result['photo_matches']))
 
     def raw_analysis(self, source, model, **kwargs):
         payload = self.analysed(source, model)
