@@ -1,5 +1,41 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: owner-approved PR21 repairs — 26 October 2026
+
+The owner explicitly authorized the listed S1/C1/M1/W1/S2/S3/R1/R2 repairs and a
+new review PR. Work is on `fix/pr21-readiness-20261026`, based on merged PR21
+`37acc72`. GitHub confirmed PR21 merged into `feat/secure-outbound-survey-workers`;
+older entries below calling PR21 open/draft are historical, not current instructions.
+The default `main` preview is not the repair base. Do not merge or deploy automatically.
+
+All eight approved code repairs passed their focused checks. Control requests now
+carry signed actor/revision/control-generation tokens. Unsupported empty AI links
+are suppressed; partial mapping advice requires current source/schema/code/model/
+batch/result context. Progress photos must belong to the frozen submission.
+Document routes share active-or-explicit-historical membership for Admin too;
+missing removal tasks return404. PDF derivatives use signed context/hash receipts,
+atomic publication and verified in-memory responses. Worker startup acquires and
+cleans only owned handles, including partial failures.
+
+QA collection mode survives refresh. Phone navigation uses a single scrollable
+44px-touch row; 109 responsive geometry assertions passed. Test browser selection
+is portable; `frontend/package-lock.json` records the Playwright dependency, and
+GitHub Actions verifies Linux/Windows backend and Chromium frontend checks.
+Configured CI is not itself evidence of a successful hosted run.
+
+Explicit endpoint preflight and private diagnostics are available through
+`scripts/Start-RemoteSurveyWorker.ps1` and `scripts/Collect-iSurvixDiagnostics.ps1`.
+They neither download/restart models nor perform readiness inference. A12's native
+crash root cause remains open. Actual Windows trees/ACLs, real-site GPU accuracy/
+throughput, real phones, CAD acceptance and VPS restore/connectivity remain target
+environment gates. Keep `.local`, original evidence, worker credentials and cache.
+
+Read `PR21_REPAIR_PROGRESS_20261026.md`, `PR21_REPAIR_VERIFICATION_20261026.md`
+and `PR21_LOCAL_ACCEPTANCE_20261026.md` under `docs/development` for the exact
+verification scope and local acceptance steps. New findings from a later separate
+security review still require their own owner approval; old approval holds below
+do not undo the owner's explicit authorization of this repair batch.
+
 ## Latest: viewing-panel availability and shared header - 26 October 2026
 
 Continue on `feat/qa-view-panel-header-20261026`, still in the worktree

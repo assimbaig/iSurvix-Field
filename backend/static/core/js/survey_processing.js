@@ -512,7 +512,7 @@
     if (!response.ok) throw new Error(errorMessage(payload));
     return payload.state || payload;
   }
-  const progressKeys = ['status', 'label', 'completed', 'total', 'error', 'ready_for_review', 'message','source_digest','can_pause','can_resume','pause_message'];
+  const progressKeys = ['status', 'label', 'completed', 'total', 'error', 'ready_for_review', 'message','source_digest','can_pause','can_resume','pause_message','control_token'];
   function mergeSummary(revision, summary) {
     const next = {...revision};
     for (const key of progressKeys) if (Object.prototype.hasOwnProperty.call(summary, key)) next[key] = summary[key];
@@ -634,7 +634,7 @@
     byId('sp-sidebar').classList.toggle('is-open', open);
   });
   byId('sp-retry').addEventListener('click', () => action('retry', {revision_id: state.active?.id || selectedRevisionId}, 'Processing retry queued.'));
-  byId('sp-pause')?.addEventListener('click',()=>{const revision=state.active;if(!revision||byId('sp-pause').disabled)return;const resume=!!revision.can_resume;action(resume?'resume':'pause',{revision_id:revision.id,expected_digest:revision.source_digest},resume?'AI Analysis queued to continue from saved checkpoints.':'Pause requested. The current evidence item can finish before processing stops.');});
+  byId('sp-pause')?.addEventListener('click',()=>{const revision=state.active;if(!revision||byId('sp-pause').disabled)return;const resume=!!revision.can_resume;action(resume?'resume':'pause',{revision_id:revision.id,expected_digest:revision.source_digest,expected_control_token:revision.control_token},resume?'AI Analysis queued to continue from saved checkpoints.':'Pause requested. The current evidence item can finish before processing stops.');});
   byId('sp-revision').addEventListener('change', async event => {
     if (busy) { event.target.value = selectedRevisionId; return; }
     if (geometryDirty && !window.confirm('Discard unsaved measured drawing edits and open another saved revision?')) { event.target.value = selectedRevisionId; return; }

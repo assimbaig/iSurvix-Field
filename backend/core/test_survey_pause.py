@@ -28,10 +28,13 @@ class SurveyPauseTests(TestCase):
         self.revision, _ = pipeline.submit(self.request(), self.checklist.pk, True)
         return self.revision
 
-    def control(self, action, actor=None, signature=None):
-        from .survey_pause import control
-        return control(self.request(actor or self.quality), self.checklist.pk, self.revision.pk,
-                       action, signature if signature is not None else self.revision.digest)
+    def control(self, action, actor=None, signature=None, command_token=None):
+        from .survey_pause import control, flags
+        request = self.request(actor or self.quality)
+        token = command_token if command_token is not None else flags(
+            request, self.checklist, self.revision)['control_token']
+        return control(request, self.checklist.pk, self.revision.pk,
+                       action, signature if signature is not None else self.revision.digest, token)
 
     def test_queued_pause_survives_worker_restart_and_resume_is_idempotent(self):
         self.submitted()
@@ -108,11 +111,14 @@ class SurveyPauseTests(TestCase):
         self.submitted(); self.client.force_login(self.quality)
         url = reverse('survey_processing_action', args=[self.checklist.pk])
         payload = {'revision_id': self.revision.pk, 'expected_digest': self.revision.digest}
+        progress_url = reverse('survey_processing_progress', args=[self.checklist.pk])
+        payload['expected_control_token'] = self.client.get(progress_url).json()['active']['control_token']
         response = self.client.post(url, {'action':'pause', **payload})
         self.assertEqual(response.status_code, 200, response.content)
         state = self.client.get(reverse('survey_processing_progress', args=[self.checklist.pk])).json()
         self.assertEqual(state['active']['status'], 'paused')
         self.assertTrue(state['active']['can_resume'])
+        payload['expected_control_token'] = state['active']['control_token']
         response = self.client.post(url, {'action':'resume', **payload})
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(SurveyProcessingJob.objects.get(revision=self.revision).status, 'queued')
@@ -159,10 +165,10 @@ class SurveyPauseTests(TestCase):
 
 @override_settings(**remote_fixture.SETTINGS)
 class RemotePauseTests(remote_fixture.Fixtures, TestCase):
+    control = SurveyPauseTests.control
+
     def pause(self):
-        from .survey_pause import control
-        control(self.request(self.quality), self.checklist.pk, self.revision.pk,
-                'pause_ai', self.revision.digest)
+        self.control('pause_ai')
 
     def test_remote_inflight_source_is_retained_and_next_task_acknowledges_pause(self):
         bridge = remote_fixture.bridge
@@ -176,9 +182,7 @@ class RemotePauseTests(remote_fixture.Fixtures, TestCase):
         stop = bridge.next_task(self.credential, claimed['job_id'], claimed['lease'])
         self.assertEqual(stop, {'complete': True, 'status': 'paused'})
         self.assertIsNone(self.claim())
-        from .survey_pause import control
-        control(self.request(self.quality), self.checklist.pk, self.revision.pk,
-                'resume_ai', self.revision.digest)
+        self.control('resume_ai')
         resumed = self.claim()
         next_task = bridge.next_task(self.credential, resumed['job_id'], resumed['lease'])
         self.assertNotEqual(next_task['task_id'], task['task_id'])

@@ -492,7 +492,8 @@ def review_action(request, checklist_id, data, *, verified_model_identity=None):
     qa_matching.require_revision(revision,data)
     if data.get('action') in {'pause_ai','resume_ai'}:
         from .survey_pause import control
-        control(request,checklist_id,revision.pk,data['action'],data.get('expected_digest') or data.get('source_digest'))
+        control(request,checklist_id,revision.pk,data['action'],
+            data.get('expected_digest') or data.get('source_digest'), data.get('expected_control_token'))
         return review_state(request,checklist_id)
     if data.get('action')=='retry_current_model':
         if configuration_error(c):raise ValidationError(configuration_error(c))

@@ -1,0 +1,13 @@
+{
+  "name": "isurvix-field-verification",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unit and responsive browser checks for the existing Django/static interfaces",
+  "scripts": {
+    "test": "node run-checks.cjs",
+    "install:browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

@@ -58,13 +58,12 @@ def valid_ai_sources(item,findings):
     answer confidence are separate decisions; conflicts still suppress AI links.
     """
     if item.get('conflict'):return []
+    from .survey_checklist_mapping import has_source_observation
     result=[]
     for source in item.get('sources',[]):
         matching=[f for f in findings if f.get('source_id')==source.get('source_id') and f.get('field_hint')==item['id'] and
             f.get('confidence')=='high' and not f.get('mapping_unassigned') and
-            (f.get('value') not in (None,'',[],{}) or any(
-                isinstance(f.get(key),str) and f[key].strip()
-                for key in ('component','notes','evidence_quote','mapping_reason')))]
+            has_source_observation(f)]
         if matching:result.append(deepcopy(source))
     return result
 
@@ -153,13 +152,15 @@ def state(revision,payload,actor,private=True):
     final_findings={finding.get('finding_key'):finding for finding in payload.get('findings',[])
         if isinstance(finding,dict) and isinstance(finding.get('finding_key'),str)}
     durable_mappings=[]
+    analysed_payloads=[]
     analysed_sources=set()
     for record in revision.source_analyses.all() if private else []:
         from .survey_processing import digest
         if digest(record.payload)!=record.digest:raise ValidationError('Saved source analysis integrity verification failed.')
         if record.source_id.startswith('mapping:'):
-            durable_mappings.append(record.payload)
+            durable_mappings.append((record.source_id, record.payload))
             continue
+        analysed_payloads.append(record.payload)
         pid=photo_id({'source_id':record.source_id})
         if pid not in observations:continue
         analysed_sources.add(record.source_id)
@@ -177,11 +178,17 @@ def state(revision,payload,actor,private=True):
         job_status=getattr(getattr(revision,'processing_job',None),'status','')
         partial_matches={}
         if job_status=='preparing_checklist' and durable_mappings:
-            from .survey_checklist_mapping import photo_candidate_outcomes
-            mapped_sources={row.get('source_id') for mapped in durable_mappings
+            from .survey_checklist_mapping import (photo_candidate_outcomes,
+                partial_mapping_context, verified_partial_mapping)
+            job=revision.processing_job
+            context=partial_mapping_context(analysed_payloads,revision.snapshot['schema'],
+                job.model,job.model_digest)
+            current_mappings=[mapped for source_id,mapped in durable_mappings
+                if verified_partial_mapping(source_id,mapped,context)]
+            mapped_sources={row.get('source_id') for mapped in current_mappings
                 for row in mapped.get('photo_matches',[]) if isinstance(row,dict)}
             partial_matches={row['source_id']:row for row in photo_candidate_outcomes(
-                [{'source_id':source} for source in analysed_sources & mapped_sources],durable_mappings)}
+                [{'source_id':source} for source in analysed_sources & mapped_sources],current_mappings)}
         display_names=payload.get('photo_names') if isinstance(payload.get('photo_names'),dict) else {}
         if not display_names:
             from .survey_processing import generated_photo_names

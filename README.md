@@ -1,5 +1,14 @@
 # iSurvix Field
 
+Current repair candidate: `fix/pr21-readiness-20261026`, based on merged PR21 in
+`feat/secure-outbound-survey-workers`. The owner-approved repair register is
+[here](docs/development/PR21_REPAIR_PROGRESS_20261026.md); use the
+[local acceptance steps](docs/development/PR21_LOCAL_ACCEPTANCE_20261026.md) before
+replacing an operational checkout. Preserve `.local`, original evidence and private
+worker configuration. These repairs do not deploy to a VPS, resolve the unexplained
+native crash, or establish real-site AI capacity. Older preview notes below remain
+historical context; deploy the reviewed Django release rather than the static preview.
+
 The opt-in saved-survey **AI Checklist & Drawings** workflow is documented in the
 [team guide](docs/manual/AI_SURVEY_TEAM_GUIDE.md), with
 [implementation and worker instructions](docs/development/AI_SURVEY_DRAWING_PIPELINE.md)

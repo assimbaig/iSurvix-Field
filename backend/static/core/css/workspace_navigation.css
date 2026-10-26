@@ -47,3 +47,10 @@ body.role-layout.workspace-header-navigation.workspace-header-navigation .worksp
 .workspace-header-navigation .workspace-nav-tiles{flex-wrap:wrap;overflow:visible}
 .workspace-header-navigation .enterprise-breadcrumb{padding:2px 12px}
 }
+/* Phone navigation stays one touch-sized row instead of consuming several rows
+   above the evidence. Every permitted link remains keyboard/touch reachable. */
+@media(max-width:480px){
+.workspace-header-navigation .workspace-navigation-row{padding:2px 0}
+.workspace-header-navigation .workspace-nav-tiles{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-padding-inline:3px;overscroll-behavior-inline:contain}
+html[data-color-scheme] .workspace-header-navigation .workspace-nav-tiles>a,.workspace-header-navigation .workspace-nav-tiles>a{min-height:44px;flex:0 0 auto;scroll-snap-align:start}
+}

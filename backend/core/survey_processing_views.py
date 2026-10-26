@@ -137,7 +137,7 @@ def serialize(request, checklist_id, compact=False):
             'missing': [], 'conflicts': [], 'drawings': [], 'events': [], 'sources': [], 'drawing_records': [],
             'can_release': False, 'release_blocker': 'Processing must finish first.', 'detailed': True}
         from .survey_pause import flags as pause_flags
-        data.update(pause_flags(request, c, status=job.status))
+        data.update(pause_flags(request, c, revision, status=job.status))
         if not is_current:
             data.update(can_pause=False, can_resume=False)
         from .category_intake import revision_enabled
@@ -222,7 +222,8 @@ def progress(request, checklist_id):
     active = rows[0] if rows else None
     if active:
         from .survey_pause import flags as pause_flags
-        active.update(pause_flags(request, c, status=active['status']))
+        active.update(pause_flags(request, c,
+            SimpleNamespace(pk=active['id'], digest=active['source_digest']), status=active['status']))
         from .category_intake import enabled as capture_enabled
         # A paused legacy survey remains editable. Recheck only this stopped
         # source, not every revision on every ordinary progress tick. Paused
@@ -339,7 +340,7 @@ def action(request, checklist_id):
     elif name in {'pause', 'resume'}:
         from .survey_pause import control
         control(request, checklist_id, request.POST.get('revision_id'),
-                name + '_ai', request.POST.get('expected_digest'))
+                name + '_ai', request.POST.get('expected_digest'), request.POST.get('expected_control_token'))
     elif name in {'review', 'release'}:
         pipeline.review(request, checklist_id, request.POST.get('revision_id'),
             'release' if name == 'release' else request.POST.get('decision'),
@@ -360,7 +361,7 @@ def document(request, checklist_id, document_id):
     from .access import role_for
     # Category capture has its own submission and source-membership rules; the
     # original document route must use those same rules as the new workspace.
-    if role_for(request.user) in {'ENGINEER', 'QUALITY_ENGINEER', 'TEAM_LEAD'}:
+    if role_for(request.user) in {'ENGINEER', 'QUALITY_ENGINEER', 'TEAM_LEAD', 'ADMIN'}:
         candidate, _ = capture_access(request, checklist_id)
         if configuration(candidate) is not None or capture_enabled(candidate):
             return delivery(request, checklist_id, document_id)

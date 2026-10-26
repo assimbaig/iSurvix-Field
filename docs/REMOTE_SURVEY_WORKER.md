@@ -86,13 +86,23 @@ transferred configuration as `.local\private\remote-worker.json`. Start the
 already-installed Ollama with `qwen3.5:4b` and keep it bound to loopback. Do not
 download another model or expose port 11434/11435 publicly.
 
-From the project folder, run:
+From the project folder, select the actual working local endpoint explicitly.
+The most recent PC evidence used port 11435; verify your own installed runtime.
+The following preflight checks installed model metadata only. It does not run
+inference, download a model, restart a service or claim a server job:
 
 ```powershell
-.local\venv\Scripts\python.exe backend\manage.py remote_survey_worker --settings=checklist.settings_local --config .local\private\remote-worker.json
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-RemoteSurveyWorker.ps1 -PhotoOllamaUrl http://127.0.0.1:11435 -TextOllamaUrl http://127.0.0.1:11435 -CheckOnly
 ```
 
-For a single queued job, append `--once`. The command validates installed local
+Remove `-CheckOnly` to start the existing outbound worker; add `-Once` for one job.
+Use a different text endpoint only after verifying it independently. The wrapper
+sets endpoints for its child process and restores the caller environment afterward.
+The underlying bare Django command remains available, but requires explicit
+`ISURVIX_PHOTO_OLLAMA_URL` / `ISURVIX_OLLAMA_URL` configuration; its default 11434
+is not evidence that the dedicated 11435 service is being used.
+
+The command validates installed local
 vision capability before claiming work. Normalized images are downloaded in
 bounded, hash-checked requests; the actual image content reaches the existing
 vision function. Checklist mapping uses bounded text batches after analysis.
@@ -122,15 +132,16 @@ flags are discarded; source findings remain `needs_review`, not accepted answers
 Each source and mapping checkpoint has a unique job/key binding. Identical result
 delivery is idempotent; a changed result cannot overwrite an immutable checkpoint.
 A stopped PC's expired lease can be reclaimed and completed checkpoints are reused.
-Malformed model output creates an explicit failed job; the assigned Engineer can
-use the existing retry action. Busy local inference requeues automatically. Network
+Malformed model output creates an explicit failed job; the assigned QA Engineer can
+use the permitted retry action at the current review stage. Busy local inference requeues automatically. Network
 failures back off up to sixty seconds, with no cloud fallback. A revoked account,
 project assignment, credential or expired lease cannot continue downloading inputs
 or returning results. An outdated PC/server release is rejected before inference.
 
 After analysis and mapping, Django generates the existing draft PDF/DXF drawing
-set. The Engineer corrects/accepts proposed records in the normal survey workspace;
-ordinary technical review and authorised release remain mandatory. AI cannot
+set. The QA Engineer reviews derived checklist proposals in the QA workspace;
+the Engineer corrects original uploads/site data only after an authorised return.
+Ordinary technical review and authorised release remain mandatory. AI cannot
 submit those human decisions. Clients only receive outputs permitted by the normal
 released-output gate. Unsupported geometry and missing dimensions remain visible.
 
@@ -144,7 +155,7 @@ released-output gate. Unsupported geometry and missing dimensions remain visible
 4. Review and run server migrations, Django deployment checks and focused bridge
    tests; collect static assets. Reload the web application using the established
    server release procedure only after approval.
-5. Start the PC command above and verify one labelled test survey through its
+5. Start the PC wrapper above and verify one labelled test survey through its
    existing Engineer/QA/release workflow. Check the governance audit and logs.
 
 If versions differ, keep jobs queued and align the releases; do not weaken the

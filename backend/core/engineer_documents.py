@@ -170,7 +170,10 @@ def upload(request,checklist_id):
 def remove(request,checklist_id,data):
     from . import category_intake as capture
     from .governance_views import audit
-    Checklist.objects.select_for_update().get(pk=checklist_id)
+    # Scope and deny before acquiring the lock; missing and foreign tasks both
+    # use the ordinary not-found boundary instead of leaking an ORM exception.
+    capture.access(request,checklist_id,edit=True)
+    get_object_or_404(Checklist.objects.select_for_update(),pk=checklist_id)
     c,_=capture.access(request,checklist_id,edit=True)
     doc=get_object_or_404(c.survey_documents,pk=_id(data.get('document_id')))
     config=configuration(c) or {'kinds':{},'excluded':[]}
@@ -183,11 +186,61 @@ def remove(request,checklist_id,data):
     return capture.state(request,checklist_id)
 
 
+PREVIEW_CACHE_VERSION=2
+PREVIEW_CACHE_SALT='isurvix.document-preview.v2'
+MAX_PREVIEW_BYTES=16*1024*1024
+
+
+def _atomic_preview_cache_write(name,content):
+    """Publish complete private cache files, or serve uncached on other storage.
+
+    Cache loss is harmless. Originals are never rewritten. Object stores without
+    filesystem paths deliberately use freshly rendered in-memory previews.
+    """
+    import os
+    import tempfile
+    temporary=None
+    try:
+        target=Path(default_storage.path(name))
+        target.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+        fd,temporary=tempfile.mkstemp(prefix='.preview-',dir=target.parent)
+        with os.fdopen(fd,'wb') as stream:
+            stream.write(content);stream.flush();os.fsync(stream.fileno())
+        os.replace(temporary,target)
+        return True
+    except (NotImplementedError,OSError):
+        return False
+    finally:
+        if temporary:
+            try:Path(temporary).unlink(missing_ok=True)
+            except OSError:pass
+
+
+def _cached_preview(name,identity,base):
+    import hashlib
+    from django.core import signing
+    try:
+        with default_storage.open(name,'rb') as manifest:
+            receipt=signing.loads(manifest.read(8193).decode('utf-8'),salt=PREVIEW_CACHE_SALT)
+        if not isinstance(receipt,dict) or receipt.get('identity')!=identity:return None
+        sha=receipt.get('sha256')
+        if not isinstance(sha,str) or len(sha)!=64 or any(c not in '0123456789abcdef' for c in sha):return None
+        # Never open a storage path supplied by cached metadata.
+        with default_storage.open(base+'-'+sha+'.png','rb') as stream:
+            image=stream.read(MAX_PREVIEW_BYTES+1)
+        if len(image)>MAX_PREVIEW_BYTES or hashlib.sha256(image).hexdigest()!=sha:return None
+        return image
+    except (OSError,ValueError,TypeError,UnicodeError,signing.BadSignature):
+        return None
+
+
 def _pdf_raster(doc,page):
     """Bounded image derivative; never rewrite or browser-execute the original."""
     import hashlib
     import math
     import pymupdf
+    from io import BytesIO
+    from django.core import signing
     with doc.original.open('rb') as original:
         raw=original.read(MAX_DOCUMENT_BYTES+1)
     if len(raw)>MAX_DOCUMENT_BYTES or hashlib.sha256(raw).hexdigest()!=doc.sha256:
@@ -197,18 +250,29 @@ def _pdf_raster(doc,page):
             if pdf.needs_pass:raise ValueError('Encrypted PDF')
             count=len(pdf)
             if not 1<=page<=count:raise Http404()
-            name=f'survey_processing/document_previews/{doc.pk}/{doc.sha256}-page{page}-v1.png'
-            if not default_storage.exists(name):
+            base=f'survey_processing/document_previews/{doc.pk}/{doc.sha256}-page{page}-v{PREVIEW_CACHE_VERSION}'
+            name=base+'.json'
+            identity={'document':doc.pk,'source':doc.sha256,'page':page,
+                'renderer':pymupdf.VersionBind,'version':PREVIEW_CACHE_VERSION,
+                'max_edge':1598,'max_scale':2}
+            image=_cached_preview(name,identity,base)
+            if image is None:
                 selected=pdf[page-1];extent=max(selected.rect.width,selected.rect.height)
                 if not math.isfinite(extent) or extent<=0:raise ValueError('Invalid page dimensions')
                 scale=min(2.0,1598/extent)
                 image=selected.get_pixmap(matrix=pymupdf.Matrix(scale,scale),alpha=False).tobytes('png')
-                default_storage.save(name,ContentFile(image))
+                if len(image)>MAX_PREVIEW_BYTES:raise ValueError('Preview exceeds bounded size')
+                sha=hashlib.sha256(image).hexdigest()
+                receipt=signing.dumps({'identity':identity,'sha256':sha},salt=PREVIEW_CACHE_SALT).encode('utf-8')
+                if _atomic_preview_cache_write(base+'-'+sha+'.png',image):
+                    _atomic_preview_cache_write(name,receipt)
     except Http404:
         raise
     except Exception as exc:
         raise ValidationError('The PDF preview could not be rendered. Its original is retained for authorized download.') from exc
-    return default_storage.open(name,'rb'),count
+    # Serve the exact bytes that were verified, not a mutable path reopened
+    # after verification. Concurrent cache writes cannot change this response.
+    return BytesIO(image),count
 
 
 def delivery(request,checklist_id,document_id):
@@ -219,7 +283,7 @@ def delivery(request,checklist_id,document_id):
         raise Http404()
     selected=request.GET.get('revision_id')
     if selected is not None:
-        if not selected.isdigit():raise Http404()
+        if not selected.isascii() or not selected.isdigit() or len(selected)>19:raise Http404()
         revision=get_object_or_404(c.processing_revisions,pk=int(selected))
         source=revision.snapshot
     else:
