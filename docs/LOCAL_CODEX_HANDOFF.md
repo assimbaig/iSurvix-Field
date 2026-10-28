@@ -1,5 +1,32 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: task04 company-boundary implementation - 28 October 2026
+
+Company implementation is isolated in `.local/b1`, branch
+`feat/company-boundaries-20261028`, parent89b55b1/productfd365f1. PR24 merged while
+work ran; upstream98350ba has the identical parent tree. No operational deployment
+or migration has occurred. Main source/data and old worktrees remain preserved.
+
+Fresh identity guards, retained-project-company transfer protection, and immutable
+worker issuing-company pins are implemented. Migration0054 backfills only explicit
+coherent issue proof; unknown legacy credentials are denied pending Admin reissue.
+Current local live credentials0. All rows/jobs/history retained. No native AI call.
+
+Full1287tests:1286passed,oneunchanged Windows symlink fixture privilege error,
+zero failures/skips;19frontend/other checks passed on unchanged source. Independent
+15HTTP/unit,64browser/3Client/20reverse overlapping controls and separate5AppSec
+tests passed with no new exploitable finding established in that tested scope.
+All3595 protected files/70 operational tables and2old untracked reports unchanged.
+0054 actual-copy rehearsal kept all68 business tables identical; only expected
+migration metadata advanced. The live DB is still pre0054.
+
+Read `docs/development/COMPANY_BOUNDARIES_IMPLEMENTATION_20261028.md`, acceptance
+JSON, definition, migration guide and independent QA/security reports. Keep prior
+A12/native acceptance and BR1/D1/D2/L1 approval holds; do not fix those by inference.
+Task04 ledger is Verified;3/4 tasks accepted, A12 still Blocked. Implementation
+`defc27d` is pushed; draft PR25: https://github.com/assimbaig/iSurvix-Field/pull/25
+No merge or production deployment is authorized by this implementation.
+
 ## Latest: baseline, real restore and A12 investigation - 28 October 2026
 
 Merged PR23 baseline is `fd365f1`. After verified recovery, main local source now
@@ -88,7 +115,7 @@ Recovery backup: `.local/backups/project-checkpoint-20261026-222351`.
 Product commit `67d7cad` is pushed. Draft PR23: https://github.com/assimbaig/iSurvix-Field/pull/23
 No merge or production deployment. Keep the PR for review.
 
-## Latest: owner-approved PR21 repairs — 26 October 2026
+## Latest: owner-approved PR21 repairs â€” 26 October 2026
 
 The owner explicitly authorized the listed S1/C1/M1/W1/S2/S3/R1/R2 repairs and a
 new review PR. Work is on `fix/pr21-readiness-20261026`, based on merged PR21
@@ -850,7 +877,7 @@ and the deployment are unchanged. Operational data is preserved and migrations
 0048-0050 have not been applied to the local operational database by this update.
 Use the checkpoint and migration procedure before a normal operational upgrade.
 
-## Release hardening verification — 21 October 2026
+## Release hardening verification â€” 21 October 2026
 
 The current feature branch is `feat/secure-outbound-survey-workers`, based on the
 reviewed `79d9772`. Read `docs/RELEASE_HARDENING.md` and the requirement/evidence
@@ -866,7 +893,7 @@ PDF/DXF outputs after strict per-source mapping decisions fixed duplicate bindin
 Operational records, uploads, approval state and the original port8000 process were
 preserved. Verification used isolated databases/media and loopback services. Before
 normal local startup after updating, preserve a checkpoint and review/apply additive
-migrations0048–0050. The operational database was not migrated during this task.
+migrations0048â€“0050. The operational database was not migrated during this task.
 
 Remaining external dependencies are actual VPS access/TLS setup, verified
 manufacturer CAD/approved measurements, and a field-reviewed full-site Z93004
@@ -1731,12 +1758,12 @@ Stopped verified launcher14576 tree and saved verified recovery checkpoint .loca
 
 Live: one project Two-checkpoint workflow test, one TEST-SITE-001 DRAFT/PENDING task, exact two required inspection fields (Site identification sign condition; Tower structure and ladder condition), each requiring confirmed evidence, and exact two original photo copies from archived sign/tower sources. No answers, mappings, jobs or approval decisions seeded. Main accounts demo_eng01 / demo_lead01 / demo_client01 / demo_admin01. Created demo_qa01 through the normal Admin invitation/acceptance flow and assigned explicitly to the task. Existing accounts retain passwords and role authority; primary project grants were reset for the small trial. Client review is required after QE and Team Lead; Client draft access remains hidden. Private credentials and click-by-click testing instructions: .local/TWO_CHECKPOINT_TEST_GUIDE.md and .local/two-checkpoint-test-accounts.json. Do not copy passwords into source documentation.
 
-Full328core tests passed26.350s. Eight actual disposable-browser workflow cases passed upload→submit→QE return→Engineer edit/resubmit→QE approve→TL approve→Client complete, including visible required-field errors and rejection reasons. Seven additional HTTP acceptance checks against an exact private copy of the fresh seed passed with CSRF enforced, including photo_required evidence gating and final closure; zero native inference calls and no live operational writes. Ten live credential HTTP checks and four actual desktop/mobile browser cases passed. Post-QA live state remainsDRAFT with2photos/0placements/0jobs/19accounts. Hidden launcher36376 runs app/independent worker127.0.0.1:8000; native Ollama unchanged, vision gate retained. No schema or GitHub push. Receipt docs/development/TWO_CHECKPOINT_RESET_RECEIPT.json. Earlier preservation assertions against the previous dataset are now historical and must not be rerun unchanged after this explicitly authorized reset.
+Full328core tests passed26.350s. Eight actual disposable-browser workflow cases passed uploadâ†’submitâ†’QE returnâ†’Engineer edit/resubmitâ†’QE approveâ†’TL approveâ†’Client complete, including visible required-field errors and rejection reasons. Seven additional HTTP acceptance checks against an exact private copy of the fresh seed passed with CSRF enforced, including photo_required evidence gating and final closure; zero native inference calls and no live operational writes. Ten live credential HTTP checks and four actual desktop/mobile browser cases passed. Post-QA live state remainsDRAFT with2photos/0placements/0jobs/19accounts. Hidden launcher36376 runs app/independent worker127.0.0.1:8000; native Ollama unchanged, vision gate retained. No schema or GitHub push. Receipt docs/development/TWO_CHECKPOINT_RESET_RECEIPT.json. Earlier preservation assertions against the previous dataset are now historical and must not be rerun unchanged after this explicitly authorized reset.
 
 
 ## 19 October 2026 Explicitly requested two-photo checkpoint linking
 
-After the user completed AI Analysis and saved two inspection answers, live coverage had an unassigned sign photo and an unconfirmed tower suggestion. User explicitly requested linking using saved observations or other solid evidence. Both current hash-bound AI observations and the actual previews were inspected. Photo1 clearly shows the site identification sign/label; photo2 shows tower structure and access ladder. Backed up the current database privately before linking. Through normal Engineer credential sign-in, CSRF and schema-checked mapping API, manually linked photo1→site_identification and confirmed the existing photo2→tower_structure proposal. No original, saved inspection answer, workflow status or approval was changed; no new inference or submission. Live task remainsDRAFT with2/2 required evidence slots covered and missing_required=[] as verified after the requests. This explicitly authorized action supersedes the earlier zero-placement test-state description. Receipt docs/development/TWO_PHOTO_LINKING_RECEIPT.json and .local/photo-links-confirmed.json.
+After the user completed AI Analysis and saved two inspection answers, live coverage had an unassigned sign photo and an unconfirmed tower suggestion. User explicitly requested linking using saved observations or other solid evidence. Both current hash-bound AI observations and the actual previews were inspected. Photo1 clearly shows the site identification sign/label; photo2 shows tower structure and access ladder. Backed up the current database privately before linking. Through normal Engineer credential sign-in, CSRF and schema-checked mapping API, manually linked photo1â†’site_identification and confirmed the existing photo2â†’tower_structure proposal. No original, saved inspection answer, workflow status or approval was changed; no new inference or submission. Live task remainsDRAFT with2/2 required evidence slots covered and missing_required=[] as verified after the requests. This explicitly authorized action supersedes the earlier zero-placement test-state description. Receipt docs/development/TWO_PHOTO_LINKING_RECEIPT.json and .local/photo-links-confirmed.json.
 
 
 ## 19 October 2026 Preserve findings and investigate stronger photo/checkpoint validation
@@ -1904,7 +1931,7 @@ Normal Engineer credential/CSRF enqueue explicitly adopted the final tools for a
 survive, and historical human decisions/answers/approvals remain unchanged.
 Early Job6 full-photo average12.721seconds versus128.682seconds previously;
 these are early mixed cache/fresh measurements, not a completed400photo benchmark.
-Warm image-only probes remain4.2–4.4seconds. The400/30minute target is still NOT
+Warm image-only probes remain4.2â€“4.4seconds. The400/30minute target is still NOT
 verified. Do not claim the analysis or submission/approval cycle has completed.
 
 Final full core suite490tests passed in54.234seconds. Django check, migration drift

@@ -4,41 +4,54 @@ from .models import Profile, Project
 from django.utils import timezone
 
 
-def is_super_admin(user):
-    if not user or not user.is_authenticated or not user.is_active or not user.is_superuser:
-        return False
-    profile=getattr(user,'profile',None)
-    return bool(profile and not profile.is_locked)
+def _principal(user):
+    """Read a current authority snapshot, not a previously cached reverse relation.
+
+    Keep affiliation available for inactive grant targets: inactivity must not
+    make a foreign-company account look like an unclassified new account.
+    """
+    if not user or not user.is_authenticated or not getattr(user,'pk',None):
+        return None
+    return Profile.objects.select_related('user','project','admin_industry').filter(user_id=user.pk).first()
 
 
-def role_for(user):
-    if is_super_admin(user):
+def _role(profile):
+    if not profile or not profile.user.is_active or profile.is_locked:
+        return None
+    if profile.user.is_superuser:
         return Profile.Roles.SUPER_ADMIN
-    if not user or not user.is_authenticated or not user.is_active:
-        return None
-    profile = getattr(user,'profile',None)
-    if not profile or profile.is_locked or profile.role==Profile.Roles.SUPER_ADMIN:
-        return None
-    return profile.role
+    return profile.role if profile.role!=Profile.Roles.SUPER_ADMIN else None
 
 
-def company_id_for(user):
-    profile=getattr(user,'profile',None)
+def _company(profile):
     if not profile:
         return None
     return profile.company_id or (profile.project.company_id if profile.project_id else None)
 
 
+def is_super_admin(user):
+    return _role(_principal(user))==Profile.Roles.SUPER_ADMIN
+
+
+def role_for(user):
+    return _role(_principal(user))
+
+
+def company_id_for(user):
+    return _company(_principal(user))
+
+
 def accessible_projects(user):
     from django.db.models import Q
     from .models import ProjectMembership
-    if is_super_admin(user):
+    # Reuse one persisted principal snapshot throughout this scope construction.
+    profile=_principal(user)
+    role=_role(profile)
+    if role==Profile.Roles.SUPER_ADMIN:
         return Project.objects.all()
-    role=role_for(user)
     if role not in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD,Profile.Roles.QUALITY_ENGINEER,Profile.Roles.ENGINEER,Profile.Roles.CLIENT,Profile.Roles.PROJECT_MANAGER}:
         return Project.objects.none()
-    profile=user.profile
-    if role==Profile.Roles.ADMIN and Profile.objects.filter(user=user,admin_industry_pending=True).exists():
+    if role==Profile.Roles.ADMIN and profile.admin_industry_pending:
         return Project.objects.none()
     memberships=ProjectMembership.objects.filter(user=user)
     active=memberships.filter(is_active=True).filter(Q(expires_at__isnull=True)|Q(expires_at__gt=timezone.now())).values_list('project_id',flat=True)
@@ -47,11 +60,11 @@ def accessible_projects(user):
     # explicit membership always wins and may never regain access through this path.
     if profile.project_id and not memberships.filter(project_id=profile.project_id).exists():
         condition|=Q(pk=profile.project_id)
-    projects=Project.objects.filter(condition,company_id=company_id_for(user))
+    projects=Project.objects.filter(condition,company_id=_company(profile))
     if role==Profile.Roles.ADMIN:
         delegated=active.filter(legacy_admin_access=True).values_list('project_id',flat=True)
         projects=projects.filter(Q(administrator_id=user.pk)|Q(pk__in=delegated))
-        industry=Profile.objects.filter(user=user).values_list('admin_industry__code',flat=True).first()
+        industry=profile.admin_industry.code if profile.admin_industry_id else None
         if industry:projects=projects.filter(industry=industry)
     return projects.distinct()
 
