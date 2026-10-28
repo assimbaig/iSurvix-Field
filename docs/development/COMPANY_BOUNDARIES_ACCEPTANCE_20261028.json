@@ -3,7 +3,7 @@
   "phase": "1 Company access",
   "owner": "Dot",
   "acceptance": "Prove company A cannot access company B records, files or jobs.",
-  "implementation_acceptance": "Verified in the tested Django/API/browser scope; delivery metadata pending.",
+  "implementation_acceptance": "Verified in the tested Django/API/browser scope.",
   "branch": "feat/company-boundaries-20261028",
   "source_parent": "89b55b19448d24b1fdd256cfc4a90dfab08e75ef",
   "upstream_review_commit": "98350baefdba37e380be40003339c7cffff1e326",
@@ -354,5 +354,13 @@
     "No exhaustive concurrency/fuzzing or native AI throughput/engineering acceptance."
   ],
   "merged": false,
-  "production_deployed": false
+  "production_deployed": false,
+  "delivery": {
+    "implementation_commit": "defc27d37f47a80710e93cbe3424b7705a11c5fc",
+    "pull_request": "https://github.com/assimbaig/iSurvix-Field/pull/25",
+    "draft": true,
+    "merged": false,
+    "production_deployed": false,
+    "ledger_task04": "Verified"
+  }
 }

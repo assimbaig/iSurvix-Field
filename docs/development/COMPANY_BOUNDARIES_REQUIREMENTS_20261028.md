@@ -4,7 +4,7 @@ Owner: Dot. Phase1 Company access. Original acceptance:
 **Prove company A cannot access company B records, files or jobs.**
 
 Implementation branch `feat/company-boundaries-20261028`, product baseline
-`fd365f1`, documentation parent `89b55b1` (draft PR24). Main local source/data are
+`fd365f1`, documentation parent `89b55b1` (PR24 merged during work as98350ba; parent tree identical). Main local source/data are
 not modified by this implementation. Prior A12 and approval-held findings retain
 their status; this task introduces no model service, cloud fallback or new module.
 
@@ -20,7 +20,7 @@ their status; this task introduces no model service, cloud fallback or new modul
 | 04.8 Migration compatibility | Preserve all credentials/jobs/history. Backfill only proven issuing company; ambiguous legacy credentials remain unbound/denied until Admin reauthorization. Do not apply migration to live data. | File/job owner, migration0054 | Isolated MigrationExecutor legacy/proven/ambiguous cases | Verified: legacy/proven/ambiguous migration tests, nondefault alias sentinel and actual-copy rehearsal. |
 | 04.9 Existing controls | Keep same-company project restrictions, named reviewers, locks, release decisions, explicit revocations and Super Admin administrative limits. | Both implementers | Existing affected suites and independent positive controls | Verified:82/63 affected suites plus full1287 run retained existing authority/locks; suites overlap. |
 | 04.10 Independent quality | Recheck original acceptance, then separate adversarial security review. Report new findings without fixing them absent owner approval. | Independent Agency Reality Checker/AppSec | Saved-data HTTP/browser checks and attack receipts | Verified: independent15-test/64-browser journey and separate5-test AppSec; no new finding established. |
-| 04.11 Delivery/preservation | Full repository checks, frozen-source receipts, ledger status, recoverable source/data and review-only PR. | Lead | Final full suite/checks plus private data/source checkpoint comparisons | In progress: final gate, screenshots and preservation verified; source save/push/review PR pending. |
+| 04.11 Delivery/preservation | Full repository checks, frozen-source receipts, ledger status, recoverable source/data and review-only PR. | Lead | Final full suite/checks plus private data/source checkpoint comparisons | Verified: full gate/screenshots/preservation recorded; implementation defc27d pushed; draft PR25 open. No merge/deployment. |
 
 ## Ownership and recovery
 
@@ -46,3 +46,5 @@ remounting of dormant ModelAdmin classes is not presented as a current exploit.
 ## Final-source receipts
 
 Full gate:1286passed/1unchanged Windows fixture error;19 frontend scripts and other checks passed. Source remained unchanged. See `COMPANY_BOUNDARIES_ACCEPTANCE_20261028.json` and independent reports. All Company-boundary tests passed; this does not describe the wider suite as green.
+
+Delivery: [https://github.com/assimbaig/iSurvix-Field/pull/25](https://github.com/assimbaig/iSurvix-Field/pull/25). Task04 acceptance is Verified on the feature branch. The final ledger records3/4 accepted tasks; A12 remains Blocked.
