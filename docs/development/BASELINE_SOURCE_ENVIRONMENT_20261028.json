@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-28",
+  "product_baseline": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "remote_review_branch": "origin/feat/secure-outbound-survey-workers",
+  "merged_pr": 23,
+  "main_before": {
+    "branch": "review/pr22-local-20261026",
+    "commit": "2b051791c96bd83aa283f48432187ef66ba0169f",
+    "working_status": "?? docs/development/INDEPENDENT_SOFTWARE_AUDIT_20261026.json\n?? docs/development/INDEPENDENT_SOFTWARE_AUDIT_20261026.md"
+  },
+  "main_after": {
+    "branch": "review/pr23-local-20261028",
+    "commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
+    "working_status": "?? docs/development/INDEPENDENT_SOFTWARE_AUDIT_20261026.json\n?? docs/development/INDEPENDENT_SOFTWARE_AUDIT_20261026.md"
+  },
+  "previous_feature": {
+    "branch": "feat/qa-batch-decisions-20261026",
+    "commit": "0656dec907c092c0c98b4d58675f1055ef033293",
+    "working_status": ""
+  },
+  "preserved_main_untracked_reports": 2,
+  "untracked_bytes_unchanged": true,
+  "application_source_fingerprint": "1bc667534b90fdb1aca80b02d5e8a9174bfa9d46463cd62af2ad1fa4c8ea86fb",
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "python_executable": "F:\\iSurvix\\iSurvix-Field\\.local\\venv\\Scripts\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "packages": {
+      "Django": "6.1.2",
+      "Pillow": "10.4.0",
+      "openpyxl": "3.1.5",
+      "PyMuPDF": "2.0",
+      "ezdxf": "1.4.5",
+      "reportlab": "5.0.1",
+      "pydantic": "2.14.1",
+      "requests": "2.34.2",
+      "onnxruntime": "1.31.0",
+      "fastembed": "0.9.0"
+    },
+    "node": {
+      "version": "v22.23.2",
+      "exit_code": 0
+    },
+    "npm": {
+      "version": "10.9.8",
+      "exit_code": 0
+    },
+    "git": {
+      "version": "git version 2.55.0.windows.3",
+      "exit_code": 0
+    },
+    "edge_executable_present": true
+  },
+  "operational_data_unchanged": true,
+  "backup_restore_evidence": "BASELINE_RECOVERY_PROCEDURE_20261028.json",
+  "app_or_workers_started": false,
+  "model_service": "Existing11434 preserved; owned11436 diagnostic stopped.",
+  "changes": "New review branch fast-forwards source only. No database migration, dependency/runtime installation or production deployment."
+}

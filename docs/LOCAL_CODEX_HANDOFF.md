@@ -1,5 +1,38 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: baseline, real restore and A12 investigation - 28 October 2026
+
+Merged PR23 baseline is `fd365f1`. After verified recovery, main local source now
+uses `review/pr23-local-20261028` at that commit; older PR22/PR23 refs and two
+untracked audit reports remain preserved. `.local/wip` stays at `0656dec`.
+Audit docs are on `audit/baseline-recovery-a12-20261028` in `.local/b0`.
+
+Owner tasks01/02 are Verified; task03 is Blocked. Full current suite1237run:
+1236passed,1 unchanged Windows symlink privilege error,0 failures/skips; all19
+frontend and other checks passed on unchanged application source. The incomplete
+daemon-interrupted run was not counted. No application code was changed.
+
+Fresh checkpoint `.local/backups/project-checkpoint-20261028-215901` restored
+into NEW `.local/r0`:4657 file hashes/70tables match, including862originals and
+review history. Source Git bundle/1061files verified. ORM read-only/write-denied/
+zero-network checks passed. Failed long-path restore retained as incomplete.
+
+Separate AppSec **BR1 Low remains UNAPPROVED/UNFIXED**: malformed ZIP prefix or
+Windows-alias conflicts can leave partial files within a fresh disposable target.
+Use only verified self-created archives; never restore over an existing target.
+Do not fix this finding until owner approval. Other older approval holds remain.
+
+A12 is a historical Linux Python exit139, not a proven Ollama crash. Five Windows
+named regressions passed but original core/native backtrace/builds are missing.
+Current standard Ollama0.40.10 on11434 lacks its runner (real-image500). Existing
+project runtime11436 completed3 requests but0/3 labels matched; stopped owned
+diagnostic tree only. Original11434 preserved. No runtime/model repair/download,
+app/worker start, operational mutation, merge or deployment.
+
+Read `docs/development/DELIVERY_LEDGER.md`, `BASELINE_SOURCE_ENVIRONMENT_20261028`,
+`BASELINE_QA_20261028`, `BASELINE_RECOVERY_PROCEDURE_20261028` and
+`A12_NATIVE_INVESTIGATION_20261028` for current receipts/commands/limits.
+
 ## Latest: sticky controls, unlink and single preview - 27 October 2026
 
 Final feature preview remains http://127.0.0.1:8002/login/ in `.local/wip`.

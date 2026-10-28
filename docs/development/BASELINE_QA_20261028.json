@@ -1,0 +1,452 @@
+{
+  "date": "2026-10-28",
+  "independent_reviewer": "Installed Agency Reality Checker, then separate Application Security Engineer review",
+  "branch": "audit/baseline-recovery-a12-20261028",
+  "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "source_unchanged": true,
+  "source_fingerprint": "1bc667534b90fdb1aca80b02d5e8a9174bfa9d46463cd62af2ad1fa4c8ea86fb",
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "python_executable": "F:\\iSurvix\\iSurvix-Field\\.local\\venv\\Scripts\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "packages": {
+      "Django": "6.1.2",
+      "Pillow": "10.4.0",
+      "openpyxl": "3.1.5",
+      "PyMuPDF": "2.0",
+      "ezdxf": "1.4.5",
+      "reportlab": "5.0.1",
+      "pydantic": "2.14.1",
+      "requests": "2.34.2",
+      "onnxruntime": "1.31.0",
+      "fastembed": "0.9.0"
+    },
+    "node": {
+      "version": "v22.23.2",
+      "exit_code": 0
+    },
+    "npm": {
+      "version": "10.9.8",
+      "exit_code": 0
+    },
+    "git": {
+      "version": "git version 2.55.0.windows.3",
+      "exit_code": 0
+    },
+    "edge_executable_present": true
+  },
+  "backend": {
+    "run": 1237,
+    "passed": 1236,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0,
+    "test_seconds": 472.013,
+    "runner_seconds": 481.328,
+    "error_test": "core.test_repair_independent_security.RuntimeAdversarialTests.test_diagnostic_directory_symlink_is_rejected_without_touching_target",
+    "classification": "Windows fixture privilege error WinError1314 before the security assertion; not a native A12 crash or a passing assertion.",
+    "network": "Zero external/model attempts;46 connections to in-process controlled HTTP fixtures."
+  },
+  "frontend": {
+    "scripts": 19,
+    "passed": 19,
+    "browser": "Installed Edge selected through PLAYWRIGHT_BROWSER_CHANNEL=msedge; no download"
+  },
+  "checks": [
+    {
+      "check": "backend-full",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "scripts/run_backend_tests.py",
+        "--verbosity",
+        "1"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0",
+      "exit_code": 1,
+      "seconds": 481.328
+    },
+    {
+      "check": "frontend-check-engineer-documents",
+      "command": [
+        "node",
+        "check-engineer-documents.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.203
+    },
+    {
+      "check": "frontend-check-engineer",
+      "command": [
+        "node",
+        "check-engineer.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 3.75
+    },
+    {
+      "check": "frontend-check-preview",
+      "command": [
+        "node",
+        "check-preview.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 3.609
+    },
+    {
+      "check": "frontend-check-qa-batch-links",
+      "command": [
+        "node",
+        "check-qa-batch-links.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.391
+    },
+    {
+      "check": "frontend-check-qa-bulk-unlink",
+      "command": [
+        "node",
+        "check-qa-bulk-unlink.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.125
+    },
+    {
+      "check": "frontend-check-qa-collection-restore",
+      "command": [
+        "node",
+        "check-qa-collection-restore.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.187
+    },
+    {
+      "check": "frontend-check-qa-compact-layout",
+      "command": [
+        "node",
+        "check-qa-compact-layout.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.344
+    },
+    {
+      "check": "frontend-check-qa-filter-toolbar",
+      "command": [
+        "node",
+        "check-qa-filter-toolbar.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 3.0
+    },
+    {
+      "check": "frontend-check-qa-finding-table",
+      "command": [
+        "node",
+        "check-qa-finding-table.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.125
+    },
+    {
+      "check": "frontend-check-qa-guided-state",
+      "command": [
+        "node",
+        "check-qa-guided-state.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.109
+    },
+    {
+      "check": "frontend-check-qa-navigation-gallery",
+      "command": [
+        "node",
+        "check-qa-navigation-gallery.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 1.828
+    },
+    {
+      "check": "frontend-check-qa-restore-links",
+      "command": [
+        "node",
+        "check-qa-restore-links.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.079
+    },
+    {
+      "check": "frontend-check-qa-workspace",
+      "command": [
+        "node",
+        "check-qa-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "frontend-check-shared-navigation",
+      "command": [
+        "node",
+        "check-shared-navigation.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 1.61
+    },
+    {
+      "check": "frontend-check-site-routing",
+      "command": [
+        "node",
+        "check-site-routing.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 3.625
+    },
+    {
+      "check": "frontend-check-survey-pause",
+      "command": [
+        "node",
+        "check-survey-pause.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.25
+    },
+    {
+      "check": "frontend-check-task-list-density",
+      "command": [
+        "node",
+        "check-task-list-density.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 1.218
+    },
+    {
+      "check": "frontend-check-web-references",
+      "command": [
+        "node",
+        "check-web-references.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-workspace",
+      "command": [
+        "node",
+        "check-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\frontend",
+      "exit_code": 0,
+      "seconds": 3.578
+    },
+    {
+      "check": "django-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\backend",
+      "exit_code": 0,
+      "seconds": 6.985
+    },
+    {
+      "check": "migration-drift",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\backend",
+      "exit_code": 0,
+      "seconds": 3.359
+    },
+    {
+      "check": "dependency-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0",
+      "exit_code": 0,
+      "seconds": 3.375
+    },
+    {
+      "check": "qa-javascript-syntax",
+      "command": [
+        "node",
+        "--check",
+        "backend/static/core/js/qa_evidence_review.js"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0",
+      "exit_code": 0,
+      "seconds": 0.047
+    },
+    {
+      "check": "static-build",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "F:\\iSurvix\\iSurvix-Field\\.local\\b0\\.local\\baseline-20261028\\qa\\build_static.py"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b0",
+      "exit_code": 0,
+      "seconds": 4.281
+    }
+  ],
+  "interruption": "First unified-exec run was terminated during daemon restart before a result. It is archived as interrupted, never counted passed. Final gate used detached hidden Python with PYTHONFAULTHANDLER=1.",
+  "independent_restore_review": {
+    "independent_review": true,
+    "source_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
+    "restored_path_is_disposable": true,
+    "archive_hash_matches": true,
+    "restored_database_hash_matches": true,
+    "sqlite_quick_check": "ok",
+    "original_media_sampled": 21,
+    "original_media_total": 3537,
+    "all_review_history_tables_rows_equal": {
+      "core_checklistaireview": 0,
+      "core_checklistreviewpolicy": 2,
+      "core_checklistsection": 0,
+      "core_evidencecorrectiondecision": 0,
+      "core_evidencereviewbinding": 0,
+      "core_governanceaudit": 272,
+      "core_reviewroute": 2,
+      "core_reviewrouteevent": 10,
+      "core_revisiondecision": 5,
+      "core_submissionrevision": 5,
+      "core_surveyprocessingevent": 376,
+      "core_surveyprocessingrevision": 5
+    },
+    "limitations": [
+      "Original-file independent sampling supplements the recovery owner full-file hash comparison; it is not another all-file independent check.",
+      "No live application, native model or engineering approval operation was performed."
+    ]
+  },
+  "independent_git_bundle_review": {
+    "bundle_verified": true,
+    "baseline_and_previous_source_refs_present": true
+  },
+  "final_delivery_ledger_review": {
+    "all_three_rows_match_original_tasks_and_acceptance": true,
+    "md_csv_json_consistent": true,
+    "verified": 2,
+    "total": 3,
+    "blocked_task": "03",
+    "owner_and_blank_due_dates_preserved": true,
+    "blocked_completed_date_blank": true,
+    "baseline_main_ref_matches": true,
+    "two_untracked_report_hashes_preserved": true,
+    "previous_feature_ref_preserved": true,
+    "full_suite_not_green_disclosed": true,
+    "BR1_unfixed_disclosed": true,
+    "native_label_failure_disclosed": true
+  },
+  "separate_security_review": {
+    "phase": "Separate AppSec after real restore and independent review",
+    "bounded_path_attacks": [
+      {
+        "case": "parent traversal",
+        "outcome": "rejected",
+        "no_destination_written": true
+      },
+      {
+        "case": "absolute",
+        "outcome": "rejected",
+        "no_destination_written": true
+      },
+      {
+        "case": "drive absolute",
+        "outcome": "rejected",
+        "no_destination_written": true
+      },
+      {
+        "case": "backslash UNC",
+        "outcome": "rejected",
+        "no_destination_written": true
+      },
+      {
+        "case": "ADS",
+        "outcome": "rejected",
+        "no_destination_written": true
+      },
+      {
+        "case": "case collision",
+        "outcome": "rejected",
+        "no_destination_written": true
+      },
+      {
+        "case": "existing destination",
+        "outcome": "rejected",
+        "existing_bytes_preserved": true
+      }
+    ],
+    "preflight_edge_probes": [
+      {
+        "case": "file-directory prefix",
+        "error": "FileExistsError",
+        "fresh_destination_created": true,
+        "files_written_before_failure": 1
+      },
+      {
+        "case": "Windows trailing-dot alias",
+        "error": "FileExistsError",
+        "fresh_destination_created": true,
+        "files_written_before_failure": 1
+      }
+    ],
+    "new_findings": [
+      {
+        "id": "BR1",
+        "severity": "Low",
+        "title": "Restore preflight permits Windows path/prefix aliases that abort after partial writes in the fresh disposable destination",
+        "evidence": [
+          {
+            "case": "file-directory prefix",
+            "error": "FileExistsError",
+            "fresh_destination_created": true,
+            "files_written_before_failure": 1
+          },
+          {
+            "case": "Windows trailing-dot alias",
+            "error": "FileExistsError",
+            "fresh_destination_created": true,
+            "files_written_before_failure": 1
+          }
+        ],
+        "impact": "Restore robustness and misleading all-path preflight claim; original operational data was not overwritten and xb prevented alias overwrites.",
+        "recommendation": "Before extraction, reject file/directory prefix conflicts and Windows trailing-dot/space/reserved aliases. Until owner approves a fix, use only the verified self-created checkpoint and treat a failed destination as incomplete.",
+        "approval_status": "Not approved; report only, helper unchanged."
+      }
+    ],
+    "limitations": [
+      "Synthetic tiny archives only; no resource exhaustion, process race or operational restore attempted.",
+      "Same-drive private artifacts retain existing Windows credential/ACL acceptance limits; prior held findings unchanged."
+    ]
+  },
+  "limitations": [
+    "Full backend suite is not green until the Windows symlink fixture can execute its assertion with appropriate capability. No test was skipped, removed or weakened.",
+    "Current Windows test success does not identify the historical Linux native A12 exit139 cause. Native image evidence is reported separately.",
+    "Frontend scripts and restore-row reads are not a new production browser/engineering approval acceptance test.",
+    "New BR1Low is reported without remediation; prior unapproved findings remain unchanged."
+  ]
+}

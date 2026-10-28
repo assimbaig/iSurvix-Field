@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-28",
+  "baseline": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "task": "03",
+  "status": "Blocked",
+  "acceptance": "Identify crash cause and pass real image tests on the target PC.",
+  "historical_a12": {
+    "environment": "Linux",
+    "python": "3.12.14",
+    "exit_code": 139,
+    "last_announced_test": "core.test_photo_workflow.PhotoWorkflowTests.test_lost_lease_after_single_vision_call_prevents_metadata_cache",
+    "root_cause_established": false,
+    "recorded_historical_log_sha256": "f31317b5bf97b2ba70ecb3ce22c36f378e1afa446b42d2d2b1c83a8dd3976b4a",
+    "missing_evidence": [
+      "original Linux native core/backtrace",
+      "reproducible failing candidate/native dependency builds"
+    ],
+    "current_regression_fresh_processes_passed": 5,
+    "current_regression_native_ollama_used": false,
+    "source_comparison": {
+      "historical_base": "d2a053b326931fb6627eb65e2a98193197a91a20",
+      "named_function_present_historical": true,
+      "current_named_function_ast_equals_historical_base": true,
+      "note": "Historical failure was on a candidate based on this base, so this comparison alone does not reconstruct the failed candidate/environment."
+    }
+  },
+  "target": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "python": "3.12.10",
+    "package_versions": {
+      "Django": "6.1.2",
+      "Pillow": "10.4.0",
+      "opencv-python": "5.0.0.93",
+      "onnxruntime": "1.31.0",
+      "PyMuPDF": "2.0",
+      "ezdxf": "1.4.5",
+      "reportlab": "5.0.1",
+      "pydantic": "2.14.1"
+    },
+    "gpu_query": "NVIDIA GeForce RTX 3060 Ti, 610.88, 8192 MiB"
+  },
+  "model": {
+    "name": "qwen3.5:4b",
+    "digest": "d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04",
+    "vision_capability_metadata_verified": true,
+    "source_backed_image_acceptance_passed": false
+  },
+  "standard_runtime": {
+    "endpoint": "http://127.0.0.1:11434",
+    "version": "0.40.10",
+    "actual_image_requests": 1,
+    "http_successes": 0,
+    "failure": "HTTP500: llama-server binary not found",
+    "seconds": 0.093,
+    "runner_file_check": {
+      "standard_executable_present": true,
+      "runner_expected_locations": [
+        {
+          "relative_path": "llama-server.exe",
+          "present": false
+        },
+        {
+          "relative_path": "lib\\ollama\\llama-server.exe",
+          "present": false
+        }
+      ],
+      "bundled_runner_present": true
+    },
+    "repair_performed": false
+  },
+  "diagnostic_runtime": {
+    "endpoint": "http://127.0.0.1:11436",
+    "version": "0.40.5",
+    "already_installed_project_runtime": true,
+    "actual_image_requests": 3,
+    "http_successes": 3,
+    "exact_label_checks_passed": 0,
+    "results": [
+      {
+        "index": 1,
+        "expected": "NATIVE 728",
+        "answer": "HAT8",
+        "matches": false,
+        "http_success": true,
+        "seconds": 38.563,
+        "source_sha256": "d278f2c9ba88e5263dd0a52a722ea173957f5a35482d8944ee9fdecd697b9240",
+        "source_bytes": 8248,
+        "actual_image_content_sent": true,
+        "done": true,
+        "done_reason": "stop",
+        "load_duration_ns": 18589660000,
+        "total_duration_ns": 38515836800,
+        "prompt_eval_count": 292,
+        "eval_count": 14
+      },
+      {
+        "index": 2,
+        "expected": "PIXEL 314",
+        "answer": "PXL14",
+        "matches": false,
+        "http_success": true,
+        "seconds": 0.516,
+        "source_sha256": "8819fdde81f4939beb91b3a66b33753283740b63846907cf5debc8a5f581f555",
+        "source_bytes": 6580,
+        "actual_image_content_sent": true,
+        "done": true,
+        "done_reason": "stop",
+        "load_duration_ns": 6658000,
+        "total_duration_ns": 503211600,
+        "prompt_eval_count": 292,
+        "eval_count": 15
+      },
+      {
+        "index": 3,
+        "expected": "VISION 905",
+        "answer": "WUS",
+        "matches": false,
+        "http_success": true,
+        "seconds": 0.469,
+        "source_sha256": "169a1f19d430e7ceda1818fe336242692f9f38c1a206efb366456ec41a24b0fc",
+        "source_bytes": 10340,
+        "actual_image_content_sent": true,
+        "done": true,
+        "done_reason": "stop",
+        "load_duration_ns": 5004300,
+        "total_duration_ns": 459343800,
+        "prompt_eval_count": 292,
+        "eval_count": 13
+      }
+    ],
+    "stopped_after_test": true
+  },
+  "preservation": {
+    "original_listener_pid": 14996,
+    "original_service_unchanged": true,
+    "diagnostic_listener_closed": true,
+    "downloads": 0,
+    "runtime_install_or_repair": false,
+    "operational_jobs_started": false,
+    "operational_approvals_changed": false,
+    "operational_records_modified": false
+  },
+  "limits": [
+    "No historic Linux native fault reproduced or explained.",
+    "Current Windows regression passes do not close A12.",
+    "Three completed image requests all failed exact source-backed label checks.",
+    "No whole-site accuracy, sustained throughput, engineering compliance or production repair claim."
+  ],
+  "private_evidence_sha256": {
+    "vision-results.json": "1aee41597847aeee9d12512b181bca25434e1bcbac12dbbc0dd700789353a9d3",
+    "bundled-11436/vision-results.json": "3b3d7b775536ac39ef59ff4e9eb0ce19da0d61878ebc5b2d2cd141fde8a8ae55",
+    "lease-independent-results.json": "0537f41dbb645328a82a3cb27bc6e77aa36f74ebfbb416f82b9eba99aa5c43a0",
+    "runner-file-check.json": "59db7eb860fefb5e0384006c49e4bb5640d1275e41cb063775aa08151eccefcc",
+    "gpu.json": "2782730e0a2c378deae73e86202d7ced1f2e7337780e76bc823c164af4710bee",
+    "teardown.json": "6185419b32def4dce30f621428fd69071017c3a84ffb6b77d5426479c962e92d",
+    "windows-events-summary.json": "d4f221ecd5f748f331647d0bc9c8938429e77c76457addf299c4301d60685b09"
+  }
+}
