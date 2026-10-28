@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, OperationalError, transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -126,16 +126,13 @@ def workspace_context(request,**extra):
         from .access import client_checklist_visibility
         surveys=surveys.filter(client_checklist_visibility(actor)).distinct()
         assignments=assignments.none()
-        from django.db.models import Q
         surveys=surveys.filter(Q(governance_mode=Checklist.GovernanceMode.LEGACY)|Q(review_policy__customer_reviewer=actor))
     if role==Profile.Roles.PROJECT_MANAGER:
         surveys=surveys.filter(governance_mode=Checklist.GovernanceMode.INDEPENDENT,review_policy__workflow_version=1,review_policy__l3_approver=actor)
         assignments=assignments.none()
     if role==Profile.Roles.TEAM_LEAD:
-        from django.db.models import Q
         surveys=surveys.filter(Q(governance_mode=Checklist.GovernanceMode.LEGACY)|Q(review_policy__workflow_version=1,review_policy__l2_reviewer=actor)|Q(review_policy__workflow_version=2,review_policy__l3_approver=actor))
     if role==Profile.Roles.QUALITY_ENGINEER:
-        from django.db.models import Q
         surveys=surveys.filter(Q(governance_mode=Checklist.GovernanceMode.LEGACY,quality_reviewer=actor)|Q(governance_mode=Checklist.GovernanceMode.INDEPENDENT,review_policy__workflow_version=2,review_policy__l2_reviewer=actor))
         assignments=assignments.filter(checklist__in=surveys)
     admin=is_super_admin(actor) or role==Profile.Roles.ADMIN
@@ -153,7 +150,9 @@ def workspace_context(request,**extra):
         expected_stage={Profile.Roles.QUALITY_ENGINEER:'quality_engineer',Profile.Roles.TEAM_LEAD:'team_lead',Profile.Roles.PROJECT_MANAGER:'project_manager'}[role]
         review_queue=[survey for survey in surveys.filter(status__in=[Checklist.Status.SUBMITTED,Checklist.Status.REVIEW,Checklist.Status.PARTIAL]) if survey.workflow_stage==expected_stage]
     else:review_queue=Checklist.objects.none()
-    invites=(ProjectInvitation.objects.all() if super_admin else ProjectInvitation.objects.filter(project__in=projects)).select_related('project','company','created_by') if admin else ProjectInvitation.objects.none()
+    invites=(ProjectInvitation.objects.all() if super_admin else ProjectInvitation.objects.filter(
+        Q(company_id=company_id_for(actor))|Q(company__isnull=True),project__in=projects
+    )).select_related('project','company','created_by') if admin else ProjectInvitation.objects.none()
     member_ids={user.pk for project in projects for user in users_for_project(project,include_inactive=True)} if admin else set()
     members=User.objects.filter(pk__in=member_ids).select_related('profile','profile__project','profile__company').order_by('username')
     if is_super_admin(actor):
@@ -470,6 +469,8 @@ def revoke_invite(request,invitation_id):
         if is_super_admin(request.user):
             pass
         else:
+            if invitation.company_id is not None and invitation.company_id!=company_id_for(request.user):
+                raise Http404()
             issue_guard(request.user,invitation.project,invitation.role)
         if invitation.accepted_at:
             return HttpResponse('An accepted invitation cannot be revoked; manage the member instead.',status=409)
@@ -639,6 +640,19 @@ def project_company(request,project_id):
             # Reclassification must never silently transfer active user affiliations.
             if project.memberships.filter(is_active=True).exists() or Profile.objects.filter(project=project).exists() or project.administrator_id:
                 return workspace_response(request,status=409,error='Revoke or explicitly reassign existing project memberships before changing its company. Survey history remains preserved.')
+            if project.company_id is not None and (
+                Checklist.objects.filter(project=project).exists() or
+                WorkAssignment.objects.filter(project=project).exists() or
+                ProjectInvitation.objects.filter(project=project).exists() or
+                ProjectMembership.objects.filter(project=project).exists() or
+                GovernanceAudit.objects.filter(project=project).exists() or
+                project.locations.exists() or
+                project.template_qualifications.exists() or
+                project.evidence_rule_releases.exists() or
+                bool(project.checklist_template_id) or
+                bool(project.template_file)
+            ):
+                return workspace_response(request,status=409,error='This project has retained company records or evidence. Its company cannot be changed through classification; preserve the original tenant and review any migration separately.')
             previous=project.company_id
             project.company=organization
             project.save(update_fields=['company'])

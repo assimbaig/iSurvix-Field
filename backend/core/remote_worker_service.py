@@ -25,7 +25,7 @@ from django.utils import timezone
 from pydantic import ValidationError as SchemaError
 
 from . import survey_evidence as evidence, survey_processing as pipeline
-from .access import can_access_project, role_for
+from .access import can_access_project, company_id_for, role_for
 from .models import GovernanceAudit, Profile, Project
 from .remote_worker_models import RemoteWorkerCredential, RemoteWorkerProject, RemoteSurveyLease, RemoteSurveyTask
 from .survey_processing_models import SurveyProcessingJob, SurveyProcessingResult, SurveySourceAnalysis,SurveyProcessingEvent
@@ -59,18 +59,22 @@ def provision(admin, projects, label='Local survey PC', hours=720):
     projects = list(Project.objects.filter(pk__in=requested_ids))
     if requested_ids != {project.pk for project in projects}:
         raise PermissionDenied('Every requested project must exist within the current Admin scope.')
-    if role_for(admin) != Profile.Roles.ADMIN or not projects or any(p.administrator_id != admin.pk or not can_access_project(admin, p.pk) for p in projects):
+    company_id = company_id_for(admin)
+    if (role_for(admin) != Profile.Roles.ADMIN or company_id is None or not projects
+            or any(p.company_id != company_id or p.administrator_id != admin.pk
+                   or not can_access_project(admin, p.pk) for p in projects)):
         raise PermissionDenied('Only the current project Admin may provision that project worker.')
     if not 1 <= hours <= 2160:
         raise ValidationError('Worker credentials must expire within 1 to 2160 hours.')
     secret = secrets.token_urlsafe(48)
     with transaction.atomic():
         credential = RemoteWorkerCredential.objects.create(label=str(label)[:100], created_by=admin,
+            issuing_company_id=company_id,
             secret_hash=hashlib.sha256(secret.encode()).hexdigest(), expires_at=timezone.now() + timedelta(hours=hours))
         credential.projects.set(projects)
         for project in projects:
             RemoteWorkerProject.objects.update_or_create(project=project, defaults={'enabled': True})
-            _audit(credential, 'provisioned', project)
+            _audit(credential, 'provisioned', project, company_id=company_id)
     return credential, credential.pk.hex + '.' + secret
 
 
@@ -95,15 +99,25 @@ def authenticate(token):
         raise PermissionDenied('Worker credentials are invalid or expired.')
     if (not hmac.compare_digest(credential.secret_hash, hashlib.sha256(secret.encode()).hexdigest())
             or credential.revoked_at or credential.expires_at <= timezone.now()
-            or role_for(credential.created_by) != Profile.Roles.ADMIN):
+            or role_for(credential.created_by) != Profile.Roles.ADMIN
+            or credential.issuing_company_id is None
+            or company_id_for(credential.created_by) != credential.issuing_company_id):
         raise PermissionDenied('Worker credentials are invalid or expired.')
     RemoteWorkerCredential.objects.filter(pk=credential.pk).update(last_seen_at=timezone.now())
     return credential
 
 
 def _projects(credential):
-    return [p.pk for p in credential.projects.filter(remote_worker_configuration__enabled=True,
-            administrator_id=credential.created_by_id) if can_access_project(credential.created_by, p.pk)]
+    # Re-read a retained service object as well as browser/machine authentication:
+    # in-flight callers cannot inherit a changed account/company or revoked token.
+    current = RemoteWorkerCredential.objects.select_related('created_by__profile').filter(pk=credential.pk).first()
+    if (current is None or current.revoked_at or current.expires_at <= timezone.now()
+            or current.issuing_company_id is None or role_for(current.created_by) != Profile.Roles.ADMIN
+            or company_id_for(current.created_by) != current.issuing_company_id):
+        raise PermissionDenied('Worker credentials are invalid or expired.')
+    return [p.pk for p in current.projects.filter(remote_worker_configuration__enabled=True,
+            company_id=current.issuing_company_id, administrator_id=current.created_by_id)
+            if can_access_project(current.created_by, p.pk)]
 
 
 def _compatible(payload):

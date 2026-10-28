@@ -1,0 +1,358 @@
+{
+  "task_id": "04",
+  "phase": "1 Company access",
+  "owner": "Dot",
+  "acceptance": "Prove company A cannot access company B records, files or jobs.",
+  "implementation_acceptance": "Verified in the tested Django/API/browser scope; delivery metadata pending.",
+  "branch": "feat/company-boundaries-20261028",
+  "source_parent": "89b55b19448d24b1fdd256cfc4a90dfab08e75ef",
+  "upstream_review_commit": "98350baefdba37e380be40003339c7cffff1e326",
+  "upstream_tree_identical_to_parent": true,
+  "tested_working_tree_source_fingerprint": "a563121f6519168c3c180b97bc90648b7a6f7299bebc50e633f4e672558fa0a5",
+  "application_source_unchanged_during_final_gate": true,
+  "backend_full": {
+    "run": 1287,
+    "passed": 1286,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0,
+    "seconds": 443.205,
+    "error": "Existing Windows symlink fixture WinError1314 in core.test_repair_independent_security.RuntimeAdversarialTests.test_diagnostic_directory_symlink_is_rejected_without_touching_target. Fixture setup failed before assertion; not skipped or weakened."
+  },
+  "frontend_scripts_passed": 19,
+  "commands": [
+    {
+      "check": "backend-full",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "scripts/run_backend_tests.py",
+        "--verbosity",
+        "1"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1",
+      "exit_code": 1,
+      "seconds": 451.296
+    },
+    {
+      "check": "frontend-check-engineer-documents",
+      "command": [
+        "node",
+        "check-engineer-documents.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-engineer",
+      "command": [
+        "node",
+        "check-engineer.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 3.578
+    },
+    {
+      "check": "frontend-check-preview",
+      "command": [
+        "node",
+        "check-preview.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 3.579
+    },
+    {
+      "check": "frontend-check-qa-batch-links",
+      "command": [
+        "node",
+        "check-qa-batch-links.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.062
+    },
+    {
+      "check": "frontend-check-qa-bulk-unlink",
+      "command": [
+        "node",
+        "check-qa-bulk-unlink.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "frontend-check-qa-collection-restore",
+      "command": [
+        "node",
+        "check-qa-collection-restore.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-compact-layout",
+      "command": [
+        "node",
+        "check-qa-compact-layout.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.047
+    },
+    {
+      "check": "frontend-check-qa-filter-toolbar",
+      "command": [
+        "node",
+        "check-qa-filter-toolbar.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 2.14
+    },
+    {
+      "check": "frontend-check-qa-finding-table",
+      "command": [
+        "node",
+        "check-qa-finding-table.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "frontend-check-qa-guided-state",
+      "command": [
+        "node",
+        "check-qa-guided-state.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "check": "frontend-check-qa-navigation-gallery",
+      "command": [
+        "node",
+        "check-qa-navigation-gallery.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 1.797
+    },
+    {
+      "check": "frontend-check-qa-restore-links",
+      "command": [
+        "node",
+        "check-qa-restore-links.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.062
+    },
+    {
+      "check": "frontend-check-qa-workspace",
+      "command": [
+        "node",
+        "check-qa-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.11
+    },
+    {
+      "check": "frontend-check-shared-navigation",
+      "command": [
+        "node",
+        "check-shared-navigation.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 1.203
+    },
+    {
+      "check": "frontend-check-site-routing",
+      "command": [
+        "node",
+        "check-site-routing.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 3.578
+    },
+    {
+      "check": "frontend-check-survey-pause",
+      "command": [
+        "node",
+        "check-survey-pause.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.047
+    },
+    {
+      "check": "frontend-check-task-list-density",
+      "command": [
+        "node",
+        "check-task-list-density.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.984
+    },
+    {
+      "check": "frontend-check-web-references",
+      "command": [
+        "node",
+        "check-web-references.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "frontend-check-workspace",
+      "command": [
+        "node",
+        "check-workspace.cjs"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\frontend",
+      "exit_code": 0,
+      "seconds": 3.578
+    },
+    {
+      "check": "django-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\backend",
+      "exit_code": 0,
+      "seconds": 1.578
+    },
+    {
+      "check": "migration-drift",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\backend",
+      "exit_code": 0,
+      "seconds": 1.672
+    },
+    {
+      "check": "dependency-check",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1",
+      "exit_code": 0,
+      "seconds": 0.687
+    },
+    {
+      "check": "qa-javascript-syntax",
+      "command": [
+        "node",
+        "--check",
+        "backend/static/core/js/qa_evidence_review.js"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1",
+      "exit_code": 0,
+      "seconds": 0.063
+    },
+    {
+      "check": "static-build",
+      "command": [
+        "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+        "F:\\iSurvix\\iSurvix-Field\\.local\\b1\\.local\\company-boundaries-20261028\\final\\build_static.py"
+      ],
+      "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b1",
+      "exit_code": 0,
+      "seconds": 1.89
+    }
+  ],
+  "independent_qa": {
+    "date": "2026-10-28",
+    "independent_backend_tests_passed": 15,
+    "backend_seconds": 5.342,
+    "main_browser_checks_passed": 64,
+    "released_client_controls_passed": 3,
+    "reverse_company_controls_passed": 20,
+    "checks_overlap": true,
+    "separate_security_tests_passed": 5,
+    "security_seconds": 0.75,
+    "source_unchanged": true,
+    "source_hashes": {
+      "backend/core/access.py": "9e6a3e36b74517f7d1b25d89a88359ac38a8c4b56440b2eee6577583a770ea36",
+      "backend/core/company_service.py": "f0bdeb8720c9021c54a3be79c8b63edb054f64ca19f7ff610a17a34a5a4f98a8",
+      "backend/core/governance_views.py": "564bf2023e121315acc05792381e0996f3071c30cfac3e7e7fe979db01184646",
+      "backend/core/remote_worker_models.py": "10511373cb479d713d69244c1123e768dc4094fc9e22b68f95e85ad186001bcc",
+      "backend/core/remote_worker_service.py": "62ca055c70ac9ca2c5019f821deb9c70634bc26b0b6ca5138e89ec22345f2cc4",
+      "backend/core/migrations/0054_remote_worker_company_pin.py": "5f2eca22246bc958de217b4fe339bead1e76c3304d13acab20587b92d1346a32"
+    },
+    "new_exploitable_findings_established": 0,
+    "operational_data_used": false,
+    "native_inference_run": false,
+    "test_server_stopped": 8940,
+    "limitations": [
+      "No deployed nginx/TLS/VPS testing; native nginx unavailable.",
+      "No exhaustive concurrency/fuzzing or hostile upload review.",
+      "Existing unrelated approval-held findings unchanged."
+    ]
+  },
+  "migration_rehearsal": {
+    "disposable_database_only": true,
+    "source_snapshot_bytes_unchanged": true,
+    "migration": "0054_remote_worker_company_pin",
+    "completed": true,
+    "tables_compared": 70,
+    "unchanged_data_tables": 68,
+    "changed_tables": [
+      "django_migrations",
+      "sqlite_sequence"
+    ],
+    "migration_history_rows_added": 1,
+    "expected_sequence_change": {
+      "django_migrations": [
+        72,
+        73
+      ]
+    },
+    "verification_resumed_without_reapplying_migration": true,
+    "existing_worker_credentials": 0,
+    "new_worker_credentials": 0,
+    "sqlite_quick_check": "ok",
+    "foreign_key_check": "ok",
+    "external_attempts": 0,
+    "seconds": 1.36,
+    "operational_database_migrated": false
+  },
+  "data_preservation": {
+    "source_data_files_rehashed_matching": 3595,
+    "all_operational_tables_matching": 70,
+    "original_evidence_credentials_branding_unchanged": true,
+    "untracked_audit_reports_preserved": 2,
+    "operational_migration_0054_applied": false,
+    "seconds": 4.875
+  },
+  "migration": "0054_remote_worker_company_pin",
+  "operational_database_migrated": false,
+  "compatibility": "Unknown legacy worker issuing-company scope remains NULL and is denied until owning Admin reprovisions. Current local baseline has zero worker credentials. Records/jobs/history retained.",
+  "prior_blockers": "Task03 A12/native image acceptance and unrelated approval-held findings remain unchanged.",
+  "limitations": [
+    "No deployed Nginx/TLS/VPS verification; nginx unavailable.",
+    "No exhaustive concurrency/fuzzing or native AI throughput/engineering acceptance."
+  ],
+  "merged": false,
+  "production_deployed": false
+}

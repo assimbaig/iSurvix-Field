@@ -2,13 +2,14 @@
 
 28 October 2026. Owner names, tasks and acceptance checks retain the supplied
 list. **Two acceptance checks are Verified; task03 remains Blocked.** Due dates
-were not supplied and remain blank. A blocked investigation has no completed date.
+were not supplied and remain blank. A blocked investigation has no completed date. Task04 is In progress.
 
 | ID | Phase | Task | Status | Owner | Due date | Completed date | Acceptance check | Notes / evidence / PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01 | 0 Baseline | Reconcile source and environment | Verified | Dot |  | 2026-10-28 | Baseline branch, source and tests recorded. Operational data unchanged. | Main source reconciled to merged PR23 fd365f1 on review/pr23-local-20261028. Earlier refs and uncommitted audits preserved. Full1237 tests recorded:1236 passed,1 Windows symlink-privilege error;19 frontend checks passed. See BASELINE_SOURCE_ENVIRONMENT_20261028 and BASELINE_QA_20261028. Baseline verification is not release acceptance. |
 | 02 | 0 Baseline | Create the delivery ledger and recovery procedure | Verified | Dot |  | 2026-10-28 | Restore a disposable backup. Verify originals and review history. | Fresh trusted checkpoint restored to .local/r0:4657 file hashes and70 tables match;862 originals/862 previews/1 document/2 logos verified through readonly restored Django. BR1Low is reported/unfixed; same-drive and ACL/off-device limits remain. See BASELINE_RECOVERY_PROCEDURE_20261028 and BASELINE_QA_20261028. |
 | 03 | 0 Baseline | Investigate native AI crash A12 on the actual target PC | Blocked | Dot |  |  | Identify crash cause and pass real image tests on the target PC. | Historical Linux Python139 lacks native core/backtrace and failing build environment. Five Windows named regressions pass but do not identify cause. Standard Ollama500 missing runner; project runtime completed3 image requests but0/3 labels correct. No repair/installation performed. See A12_NATIVE_INVESTIGATION_20261028. |
+| 04 | 1 Company access | Define and implement company boundaries | In progress | Dot |  |  | Prove company A cannot access company B records, files or jobs. | Two-company TDD/integration matrix and immutable worker issuing-company scope in progress; see COMPANY_BOUNDARIES_REQUIREMENTS_20261028.md. No live data migration. |
 
 ## Evidence and scope
 

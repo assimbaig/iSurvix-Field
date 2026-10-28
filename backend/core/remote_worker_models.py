@@ -1,7 +1,7 @@
 """Scoped outbound compute credentials; survey inputs/results remain on the server."""
 import uuid
 from django.conf import settings
-from django.db import models
+from django.db import models, router
 
 
 class RemoteWorkerProject(models.Model):
@@ -16,10 +16,23 @@ class RemoteWorkerCredential(models.Model):
     secret_hash = models.CharField(max_length=64)
     projects = models.ManyToManyField('core.Project', related_name='remote_worker_credentials')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    # A bearer token must never acquire a different tenant when an account or
+    # an empty legacy project is reassigned. Unknown historic bindings fail closed.
+    issuing_company = models.ForeignKey('core.Company', null=True, blank=True,
+        editable=False, on_delete=models.PROTECT, related_name='issued_worker_credentials')
     expires_at = models.DateTimeField()
     revoked_at = models.DateTimeField(null=True, blank=True)
     last_seen_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            database = kwargs.get('using') or self._state.db or router.db_for_write(type(self), instance=self)
+            previous = type(self).objects.using(database).filter(pk=self.pk).values_list('issuing_company_id', flat=True)
+            if previous.exists() and previous.first() != self.issuing_company_id:
+                from django.core.exceptions import ValidationError
+                raise ValidationError('Worker company bindings are immutable; issue a new scoped credential.')
+        return super().save(*args, **kwargs)
 
 
 class RemoteSurveyLease(models.Model):

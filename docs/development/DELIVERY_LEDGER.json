@@ -1,7 +1,7 @@
 {
   "updated_utc": "2026-10-28T19:11:11.228883+00:00",
   "verified": 2,
-  "total": 3,
+  "total": 4,
   "rows": [
     {
       "ID": "01",
@@ -35,6 +35,17 @@
       "Completed date": "",
       "Acceptance check": "Identify crash cause and pass real image tests on the target PC.",
       "Notes / evidence / PR": "Historical Linux Python139 lacks native core/backtrace and failing build environment. Five Windows named regressions pass but do not identify cause. Standard Ollama500 missing runner; project runtime completed3 image requests but0/3 labels correct. No repair/installation performed. See A12_NATIVE_INVESTIGATION_20261028."
+    },
+    {
+      "ID": "04",
+      "Phase": "1 Company access",
+      "Task": "Define and implement company boundaries",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Prove company A cannot access company B records, files or jobs.",
+      "Notes / evidence / PR": "Two-company TDD/integration matrix and immutable worker issuing-company scope in progress; see COMPANY_BOUNDARIES_REQUIREMENTS_20261028.md. No live data migration."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
@@ -44,5 +55,7 @@
   "security_findings_not_fixed": [
     "BR1 Low"
   ],
-  "merged_or_deployed_by_this_task": false
+  "merged_or_deployed_by_this_task": false,
+  "active_task": "04",
+  "active_branch": "feat/company-boundaries-20261028"
 }

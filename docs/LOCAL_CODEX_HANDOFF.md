@@ -1,5 +1,31 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: task04 company-boundary implementation - 28 October 2026
+
+Company implementation is isolated in `.local/b1`, branch
+`feat/company-boundaries-20261028`, parent89b55b1/productfd365f1. PR24 merged while
+work ran; upstream98350ba has the identical parent tree. No operational deployment
+or migration has occurred. Main source/data and old worktrees remain preserved.
+
+Fresh identity guards, retained-project-company transfer protection, and immutable
+worker issuing-company pins are implemented. Migration0054 backfills only explicit
+coherent issue proof; unknown legacy credentials are denied pending Admin reissue.
+Current local live credentials0. All rows/jobs/history retained. No native AI call.
+
+Full1287tests:1286passed,oneunchanged Windows symlink fixture privilege error,
+zero failures/skips;19frontend/other checks passed on unchanged source. Independent
+15HTTP/unit,64browser/3Client/20reverse overlapping controls and separate5AppSec
+tests passed with no new exploitable finding established in that tested scope.
+All3595 protected files/70 operational tables and2old untracked reports unchanged.
+0054 actual-copy rehearsal kept all68 business tables identical; only expected
+migration metadata advanced. The live DB is still pre0054.
+
+Read `docs/development/COMPANY_BOUNDARIES_IMPLEMENTATION_20261028.md`, acceptance
+JSON, definition, migration guide and independent QA/security reports. Keep prior
+A12/native acceptance and BR1/D1/D2/L1 approval holds; do not fix those by inference.
+The task04 final ledger/delivery PR will be recorded after save/push. No merge or
+production deployment is authorized by this implementation.
+
 ## Latest: baseline, real restore and A12 investigation - 28 October 2026
 
 Merged PR23 baseline is `fd365f1`. After verified recovery, main local source now

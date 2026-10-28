@@ -1,6 +1,6 @@
 """Explicit same-company project grants; primary context never bypasses revocation."""
 from django.core.exceptions import PermissionDenied,ValidationError
-from .access import is_super_admin,role_for,can_access_project,company_id_for
+from .access import role_for,can_access_project,company_id_for
 from .models import Profile,ProjectMembership
 from django.utils import timezone
 from django.db.models import Q
@@ -9,10 +9,18 @@ from django.db import transaction
 
 
 def grant_guard(actor,target,project,revoking=False):
-    if is_super_admin(actor) and target.profile.role==Profile.Roles.CLIENT and not revoking:
+    # Callers may retain User/Profile/Project objects from before a company or
+    # role change. Recheck the stored target before deciding or updating scope.
+    target.refresh_from_db()
+    project.refresh_from_db()
+    if not getattr(target,'profile',None):
+        raise ValidationError('A current account profile is required before changing project access.')
+    actor_role=role_for(actor)
+    global_admin=actor_role==Profile.Roles.SUPER_ADMIN
+    if global_admin and target.profile.role==Profile.Roles.CLIENT and not revoking:
         raise PermissionDenied('Only the scoped Project Admin may add Client project access.')
-    if not is_super_admin(actor):
-        if role_for(actor)!=Profile.Roles.ADMIN or not can_access_project(actor,project):
+    if not global_admin:
+        if actor_role!=Profile.Roles.ADMIN or not can_access_project(actor,project):
             raise PermissionDenied('Grant projects only within your assigned company projects.')
         if target.profile.role not in {Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.PROJECT_MANAGER,Profile.Roles.QUALITY_ENGINEER} or target.is_superuser:
             raise PermissionDenied('Only Super Admin can assign administrator access.')
@@ -31,17 +39,18 @@ def grant_guard(actor,target,project,revoking=False):
     primary_grant=ProjectMembership.objects.filter(user=target,project=primary).first() if primary else None
     if other or (primary and (not primary_grant or primary_grant.is_active) and primary.company_id!=project.company_id):
         raise ValidationError('All active projects for this account must belong to the same company.')
+    return global_admin
 
 
 @transaction.atomic
 def grant_membership(actor,target,project,make_primary=False,expires_at=None,transfer_owner=False):
-    grant_guard(actor,target,project)
+    global_admin=grant_guard(actor,target,project)
     if target.profile.role==Profile.Roles.ADMIN:
         from .models import Project
         owner=Project.objects.filter(pk=project.pk).values_list('administrator_id',flat=True).first()
-        if owner and owner!=target.pk and not (transfer_owner and is_super_admin(actor)):
+        if owner and owner!=target.pk and not (transfer_owner and global_admin):
             raise ValidationError('This project already has an owning Admin. Use explicit ownership transfer instead of an additional Admin grant.')
-        if owner is None and is_super_admin(actor):
+        if owner is None and global_admin:
             Project.objects.filter(pk=project.pk,administrator__isnull=True).update(administrator_id=target.pk)
             if Project.objects.filter(pk=project.pk).exclude(administrator_id=target.pk).exists():
                 raise ValidationError('Project ownership changed. Reload before granting access.')
