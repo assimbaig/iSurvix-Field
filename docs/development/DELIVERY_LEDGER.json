@@ -1,0 +1,48 @@
+{
+  "updated_utc": "2026-10-28T19:11:11.228883+00:00",
+  "verified": 2,
+  "total": 3,
+  "rows": [
+    {
+      "ID": "01",
+      "Phase": "0 Baseline",
+      "Task": "Reconcile source and environment",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-10-28",
+      "Acceptance check": "Baseline branch, source and tests recorded. Operational data unchanged.",
+      "Notes / evidence / PR": "Main source reconciled to merged PR23 fd365f1 on review/pr23-local-20261028. Earlier refs and uncommitted audits preserved. Full1237 tests recorded:1236 passed,1 Windows symlink-privilege error;19 frontend checks passed. See BASELINE_SOURCE_ENVIRONMENT_20261028 and BASELINE_QA_20261028. Baseline verification is not release acceptance."
+    },
+    {
+      "ID": "02",
+      "Phase": "0 Baseline",
+      "Task": "Create the delivery ledger and recovery procedure",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-10-28",
+      "Acceptance check": "Restore a disposable backup. Verify originals and review history.",
+      "Notes / evidence / PR": "Fresh trusted checkpoint restored to .local/r0:4657 file hashes and70 tables match;862 originals/862 previews/1 document/2 logos verified through readonly restored Django. BR1Low is reported/unfixed; same-drive and ACL/off-device limits remain. See BASELINE_RECOVERY_PROCEDURE_20261028 and BASELINE_QA_20261028."
+    },
+    {
+      "ID": "03",
+      "Phase": "0 Baseline",
+      "Task": "Investigate native AI crash A12 on the actual target PC",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Identify crash cause and pass real image tests on the target PC.",
+      "Notes / evidence / PR": "Historical Linux Python139 lacks native core/backtrace and failing build environment. Five Windows named regressions pass but do not identify cause. Standard Ollama500 missing runner; project runtime completed3 image requests but0/3 labels correct. No repair/installation performed. See A12_NATIVE_INVESTIGATION_20261028."
+    }
+  ],
+  "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "application_fingerprint": "1bc667534b90fdb1aca80b02d5e8a9174bfa9d46463cd62af2ad1fa4c8ea86fb",
+  "main_review_branch": "review/pr23-local-20261028",
+  "audit_branch": "audit/baseline-recovery-a12-20261028",
+  "security_findings_not_fixed": [
+    "BR1 Low"
+  ],
+  "merged_or_deployed_by_this_task": false
+}

@@ -1,0 +1,116 @@
+{
+  "task_id": "02",
+  "date": "2026-10-28",
+  "source_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "checkpoint_relative": ".local\\backups\\project-checkpoint-20261028-215901",
+  "disposable_restore_relative": ".local/r0",
+  "archive_crc_verified": true,
+  "archive_sha256": "a8988b624d93b3190d927d4a59849c50278a840c3769952acccc44a7bf501630",
+  "source_files": 1061,
+  "restored_files_sha256_matched": 4657,
+  "media_files": 3537,
+  "private_and_configuration_files": 58,
+  "all_sqlite_tables_matched": 70,
+  "sqlite_quick_check": "ok",
+  "review_history_tables": {
+    "core_checklistaireview": 0,
+    "core_checklistreviewpolicy": 2,
+    "core_checklistsection": 0,
+    "core_evidencecorrectiondecision": 0,
+    "core_evidencereviewbinding": 0,
+    "core_governanceaudit": 272,
+    "core_reviewroute": 2,
+    "core_reviewrouteevent": 10,
+    "core_revisiondecision": 5,
+    "core_submissionrevision": 5,
+    "core_surveyprocessingevent": 376,
+    "core_surveyprocessingrevision": 5
+  },
+  "operational_tables_unchanged": true,
+  "operational_files_unchanged": true,
+  "main_uncommitted_reports_preserved": 2,
+  "git_bundle_verified": true,
+  "git_restored_source_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "git_restored_source_files_sha256_matched": 1061,
+  "git_source_hash_method": "Recovered Git commit/tree identical; Git archive with recorded Windows core.autocrlf=true matches checkpoint file hashes.",
+  "git_checkout_crlf_normalized_files": 666,
+  "guard_tests_passed": 8,
+  "meaningful_regression": "Actual265-character Windows restore failure; path-preflight test RED before shorter 228-character fresh destination and guard GREEN.",
+  "restored_application": {
+    "restored_source_loaded": true,
+    "database_readonly": true,
+    "write_probe_rejected": true,
+    "restored_database_bytes_unchanged": true,
+    "network_attempts": 0,
+    "orm_history_counts": {
+      "core_photoevidence": 862,
+      "core_reviewrouteevent": 10,
+      "core_surveyprocessingrevision": 5,
+      "core_surveyprocessingevent": 376,
+      "core_revisiondecision": 5,
+      "core_checklistsection": 0,
+      "core_governanceaudit": 272
+    },
+    "photo_original_records": 862,
+    "sample_original_read": true,
+    "preexisting_missing_original_record_count": 0,
+    "preexisting_database_digest_mismatch_count": 0,
+    "file_field_and_drawing_reference_summary": {
+      "ChecklistTemplate.client_left_logo": {
+        "references": 1,
+        "available_in_source_and_restore": 1,
+        "preexisting_missing_source": 0,
+        "restore_missing": 0,
+        "hash_mismatch": 0
+      },
+      "ChecklistTemplate.client_right_logo": {
+        "references": 1,
+        "available_in_source_and_restore": 1,
+        "preexisting_missing_source": 0,
+        "restore_missing": 0,
+        "hash_mismatch": 0
+      },
+      "PhotoEvidence.original": {
+        "references": 862,
+        "available_in_source_and_restore": 862,
+        "preexisting_missing_source": 0,
+        "restore_missing": 0,
+        "hash_mismatch": 0
+      },
+      "PhotoEvidence.preview": {
+        "references": 862,
+        "available_in_source_and_restore": 862,
+        "preexisting_missing_source": 0,
+        "restore_missing": 0,
+        "hash_mismatch": 0
+      },
+      "SurveyDocument.original": {
+        "references": 1,
+        "available_in_source_and_restore": 1,
+        "preexisting_missing_source": 0,
+        "restore_missing": 0,
+        "hash_mismatch": 0
+      }
+    },
+    "drawing_references_not_followed_outside_root": 0,
+    "limitations": [
+      "Reference anomalies, if any, are inherited from identical source data and are not silently repaired."
+    ]
+  },
+  "limitations": [
+    "Same-drive restore; no off-device disaster recovery verified.",
+    "Bytes restored, not proof of Windows ACL or credential revocation recovery.",
+    "No operational approval, job reset, worker/model request or deployment."
+  ],
+  "recovery_tool_hashes": {
+    "restore_guard.py": "4814e92ebaacdbc87346624deebc81983fcefe150cc62207adbf5ba9a55e2e8b",
+    "test_restore_guard.py": "cd0ce70782f392527a7458a3c9db983def7093947c65cbe15fa50255777eecad"
+  },
+  "security_review_finding": {
+    "id": "BR1",
+    "severity": "Low",
+    "status": "Reported; no owner approval to remediate.",
+    "scope": "Prefix file/directory conflicts and Windows trailing-dot aliases are not fully preflighted; malformed archives can partially populate a fresh disposable target before failure. No overwrite/outside-root write was established.",
+    "recommendation": "Use only trusted self-created verified checkpoints; mark every failed target incomplete. Obtain owner approval before improving alias/prefix preflight or transactional extraction."
+  }
+}
