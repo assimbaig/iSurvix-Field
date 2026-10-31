@@ -20,11 +20,18 @@ class RemoteProviderPolicyTests(Fixtures, TestCase):
         self.assertEqual(job.attempts, 0)
         self.assertIn('configured AI policy', job.error)
 
-    def test_enabling_policy_prevents_an_existing_lease_from_bypassing_it(self):
+    def test_enabling_policy_preserves_an_existing_native_pinned_lease(self):
         claimed = bridge.claim(self.credential, self.identity)
+        job=self.revision.processing_job
+        job.refresh_from_db()
+        native_pin=job.model_digest
         self.enable_policy()
-        with self.assertRaisesMessage(ValidationError, 'configured AI policy'):
-            bridge.next_task(self.credential, claimed['job_id'], claimed['lease'])
+        task=bridge.next_task(self.credential, claimed['job_id'], claimed['lease'])
+        self.assertEqual(task['kind'],'source')
+        job.refresh_from_db()
+        self.assertEqual(job.model_digest,native_pin)
+        from .ai_processing_models import AIProcessingPolicy
+        self.assertFalse(AIProcessingPolicy.objects.filter(job=job).exists())
         self.assertFalse(self.revision.source_analyses.exists())
 
     def test_disabling_unpinned_configuration_preserves_legacy_pc_path(self):

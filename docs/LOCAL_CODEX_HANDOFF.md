@@ -1,5 +1,26 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: PR29 legacy first-pin follow-up - 31 October 2026
+
+Owner reported PR29 checks not passed. Live checks on40fe6d4 actually completed
+SUCCESS (Windows/Linux/Chromium, run41219640855); no PR review comments existed.
+An independent investigation separately reproduced a functional first-pin bug:
+company AI settings activation could strand an interrupted native-pinned job.
+This is not the cause of an old CI failure and is not held finding AI1.
+
+Minimal repair preserves the FIRST durable pin: existing native work and leases
+remain native, while new unpinned jobs use the selected company policy. Existing
+API policies, model identity, tenant/auth and approval controls remain enforced.
+No policies/results/checkpoints were deleted or silently rebound.235affected
+unit/integration tests passed56.456s; independent11+4countercases passed; separate
+post-functionalAppSec17checks(6new+11prioroverlap) passed. No native/paid/network
+outside controlled fixtures or operational migrations. Current new full CI is
+pending until the follow-up source is committed and verified.
+
+Read PR29_LEGACY_PIN_REVIEW_20261031.md and separate SECURITY review. All older
+security holds, including AI1, remain unfixed/unapproved. Customer-server16-18
+work is isolated inB6 and will inherit this reviewed functional repair.
+
 ## Latest: AI settings verified; actual cloud pilot blocked - 31 October 2026
 
 Dedicated `.local/b5`, branch `feat/ai-settings-routing-20261031`, parent2dd7343.

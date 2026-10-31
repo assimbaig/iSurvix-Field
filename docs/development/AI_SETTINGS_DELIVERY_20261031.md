@@ -80,3 +80,7 @@ Read [operator/team guide](AI_SETTINGS_GUIDE_20261031.md),
 Safe screenshots and synthetic unreleased PDF/DXF/PNG examples are under
 `screenshots/ai-settings-20261031` and `samples/ai-settings-20261031`.
 Owner also added tasks13-15. Concrete pilot, capacity/cost and exact-release worksheets are prepared in CLOUD_PILOT_GATE_20261031.md/.json; all three remain Blocked. No real pilot, target capacity/cost acceptance, production deployment or automatic merge was performed.
+
+## Post-delivery first-pin regression follow-up
+
+An independent saved-record regression reproduced interrupted native work being stranded when company AI settings were enabled. The repair preserves the first durable native/provider pin and all completed checkpoints.235affected tests,11independent repair tests+4countercases and17separate security checks passed; counts overlap as recorded in their reports. A new full CI run must verify the follow-up commit before reusing the earlier full-suite claim. This functional repair does not fix held AI1 or any older security finding.

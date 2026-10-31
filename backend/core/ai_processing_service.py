@@ -61,6 +61,10 @@ def update_settings(actor,company,payload,expected_version):
 
 def configured(job):
     if AIProcessingPolicy.objects.filter(job=job).exists():return True
+    # A saved native-model pin predates the company provider policy. Enabling
+    # new routing must not migrate or strand that already-started revision.
+    from .survey_processing_models import SurveyProcessingJob
+    if SurveyProcessingJob.objects.filter(pk=job.pk).exclude(model_digest='').exists():return False
     return AIProcessingSettings.objects.filter(company_id=job.revision.checklist.project.company_id,enabled=True).exists()
 
 
@@ -73,6 +77,10 @@ def policy_for(job):
         if saved:
             if saved.company_id!=company_id or _digest(saved.snapshot)!=saved.fingerprint:raise ValidationError('The saved AI policy failed integrity verification.')
             return saved
+        from .survey_processing_models import SurveyProcessingJob
+        native=SurveyProcessingJob.objects.select_for_update().get(pk=job.pk)
+        if native.model_digest:
+            raise ValidationError('This revision already has a native model pin. Resume it with the original worker; new company policies apply only before its first durable pin.')
         config=AIProcessingSettings.objects.filter(company_id=company_id,enabled=True).first()
         if not config:raise ValidationError('No active company AI policy is configured.')
         data=serialize_settings(config)
@@ -100,7 +108,9 @@ def pin_processing_identity(job,identity):
 
 def lease_seconds(job):
     saved=AIProcessingPolicy.objects.filter(job=job).first()
-    config=None if saved else AIProcessingSettings.objects.filter(company_id=job.revision.checklist.project.company_id,enabled=True).first()
+    from .survey_processing_models import SurveyProcessingJob
+    native_pinned=not saved and SurveyProcessingJob.objects.filter(pk=job.pk).exclude(model_digest='').exists()
+    config=None if saved or native_pinned else AIProcessingSettings.objects.filter(company_id=job.revision.checklist.project.company_id,enabled=True).first()
     timeout=saved.snapshot['request_timeout'] if saved else config.request_timeout if config else 0
     return max(300,timeout*8+120) if timeout else max(300,getattr(settings,'OLLAMA_TIMEOUT',180)+120)
 

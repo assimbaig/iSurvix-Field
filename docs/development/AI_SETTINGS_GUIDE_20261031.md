@@ -17,8 +17,14 @@ administration. Operational reviewers do not receive configuration controls.
 
 Saving does not start jobs, download models, regenerate completed results,
 change published checklists, accept findings or approve engineering work.
-Already-pinned jobs retain their configuration revision; new settings do not
-rewrite existing source results. Results continue through existing human review.
+The first durable pin controls the route. Existing native-model-pinned jobs stay
+on their original local/PC worker after company routing is enabled; saved source
+checkpoints are retained and are not analysed again. Company provider settings
+apply to new jobs that have no native pin or saved provider policy. Jobs with a
+saved provider policy keep that policy revision. API-only workers do not claim
+native-pinned work, and enabling settings does not transfer an existing PC lease
+to the server. No pin, policy or source result is deleted or rebound. Results
+continue through existing human review.
 
 ## Operator connections and credentials
 

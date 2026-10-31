@@ -1,6 +1,6 @@
 {
   "updated_utc": "2026-10-31T16:23:36.800017+00:00",
-  "verified": 8,
+  "verified": 7,
   "total": 15,
   "rows": [
     {
@@ -128,12 +128,12 @@
       "ID": "12",
       "Phase": "3 AI settings",
       "Task": "Implement routing, quotas and recorded fallback",
-      "Status": "Verified",
+      "Status": "In progress",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "2026-10-31",
+      "Completed date": "",
       "Acceptance check": "Local/API fallback, quotas and retries pass without duplicate accepted work.",
-      "Notes / evidence / PR": "Pinned routing, durable quotas, bounded retries and recorded fallback verified, including actual HTTPS fallback and saved survey\u2192draftPDF/DXF. Replays avoid duplicate source results; human answers unchanged. Hosted PC-local fallback/native/live-credential acceptance remains outside verified scope. Full local1465: 1464passed,1existing WinError1314 error;19frontend+8checks. Implementation98092c2; draftPR29 https://github.com/assimbaig/iSurvix-Field/pull/29. No operational migration/deployment. See AI_SETTINGS_ACCEPTANCE_20261031.json."
+      "Notes / evidence / PR": "Prior4c40d1d/40fe6d4 CI passed. Independent review subsequently reproduced legacy-native job stranding after AI settings activation. First-pin preservation repair passed235affected+independent11/4+AppSec17 checks; final follow-up CI pending. Old model/source checkpoints preserved; no security-held repair or operational migration. DraftPR29."
     },
     {
       "ID": "13",
@@ -177,7 +177,7 @@
     "BR1 Low"
   ],
   "merged_or_deployed_by_this_task": false,
-  "active_task": null,
+  "active_task": "12 follow-up",
   "active_branch": "feat/cloud-staging-readiness-20261031",
   "last_verified_task": "06",
   "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/29",
@@ -193,5 +193,7 @@
     "15"
   ],
   "latest_verified_application_fingerprint": "8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575",
-  "active_tasks": []
+  "active_tasks": [
+    "12"
+  ]
 }

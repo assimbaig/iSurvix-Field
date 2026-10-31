@@ -223,11 +223,11 @@ def claim(*,configured_providers=False):
             Q(status='queued') | Q(status__in=ACTIVE, lease_until__lt=now) |
             Q(status__in=ACTIVE, lease_until__isnull=True)).filter(
                 ~Q(revision__checklist__project_id__in=RemoteWorkerProject.objects.filter(enabled=True).values('project_id')) |
-                Q(revision__checklist__project__company__ai_processing_settings__enabled=True) |
+                Q(model_digest='',revision__checklist__project__company__ai_processing_settings__enabled=True) |
                 Q(provider_policy__isnull=False))
         if configured_providers:
             candidates=candidates.filter(Q(provider_policy__snapshot__primary_provider='https_ollama') |
-                Q(provider_policy__isnull=True,revision__checklist__project__company__ai_processing_settings__enabled=True,
+                Q(provider_policy__isnull=True,model_digest='',revision__checklist__project__company__ai_processing_settings__enabled=True,
                   revision__checklist__project__company__ai_processing_settings__primary_provider='https_ollama'))
         job=candidates.order_by('pk').first()
         if not job:
