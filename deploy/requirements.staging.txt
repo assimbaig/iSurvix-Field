@@ -13,3 +13,5 @@ ezdxf==1.4.5
 reportlab==5.0.1
 pydantic==2.14.1
 requests==2.34.2
+pypdf==6.21.4
+pypdfium2==5.14.0

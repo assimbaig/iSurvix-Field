@@ -19,6 +19,7 @@ docker pull --quiet "$python_image"
 docker pull --quiet "$nginx_image"
 docker build -f "$output/context/deploy/Dockerfile" --build-arg "PYTHON_IMAGE=$python_image" --iidfile "$output/app-image-id" "$output/context" > "$output/build.log" 2>&1
 app_image="$(cat "$output/app-image-id")"
+docker run --rm --pull never --network none --entrypoint python "$app_image" -c "from pathlib import Path;import json,os,sys;assert os.getuid()==10001;assert Path('/app/RELEASE').read_text().strip()==sys.argv[1];[Path(name).open('rb').read(1) for name in ('/app/backend/manage.py','/app/backend/checklist/settings_staging.py','/app/deploy/healthcheck.py')];print(json.dumps({'image_uid':os.getuid(),'baked_release_readable':True,'application_code_readable':True}))" "$release" > "$output/image-user-readable.json"
 python "$repository/scripts/build_customer_package.py" --repository "$repository" --release-id "$release" --app-image "$app_image" --nginx-image "$nginx_image" --output "$output/package" > "$output/package-build.json"
 helper="$output/package/release/deploy/customer/customer.py"
 manifest_sha="$(sha256sum "$output/package/manifest.json" | cut -d' ' -f1)"

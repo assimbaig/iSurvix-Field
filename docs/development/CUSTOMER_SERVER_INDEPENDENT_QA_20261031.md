@@ -14,8 +14,8 @@ approval, existing service, customer machine or native Ollama model was changed.
 The exercised candidate-preservation, offline HTTP and local PDF/OCR boundaries
 passed the tests below. The original review reported a Medium context-validation
 gap. The owner subsequently approved exactly CP1/CP2 repairs. The addenda below
-record passing bounded checks and a later quoted-YAML credential countercase
-that still fails. **CP2 remains open pending that correction and retest.** This
+record passing bounded checks, the later quoted-YAML credential failure, and its
+subsequent passing repair retest. Earlier RED evidence remains preserved. This
 is **not customer-release approval**.
 Actual Docker installation and a second physical LAN device remain separate
 gates; mocked Docker commands cannot establish those results.
@@ -263,3 +263,17 @@ Task19's separate functional gate review and19passing tracked/private checks are
 recorded in [Shared release gate QA](SHARED_RELEASE_GATE_INDEPENDENT_QA_20261031.md).
 That proof is independent of CP2 disposition and does not approve deployment or
 an actual upgrade/recovery candidate.
+
+### Final known quoted-header countercase retest
+
+The package developer corrected quoted Authorization scalar interpretation and
+froze `customer.py` at SHA256
+`97b623695354c49bf0184084afe6461e8da69ca332f67b553d4a7dae5354d60a`.
+The reviewer independently reran the exact failing quoted-YAML build case:
+**one test passed in0.626seconds**, zero failures/errors/skips, external attempts
+or HTTP fixture connections. Receipt:
+`qa/approved-repair-quoted-header-green.log`. The original RED file was retained.
+This closes that known countercase within the approved CP2 repair. Broader
+separate AppSec confirmation and the unchanged older holds are recorded in
+`CUSTOMER_SERVER_SECURITY_REVIEW_20261031.md`; this is not universal secret-scan
+or new phase6updater approval.

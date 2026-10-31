@@ -34,7 +34,17 @@ def prepare_release(repository,target,release_id):
                 raise ValueError('Unsafe or symbolic source archive member; no export was created.')
         target.mkdir(parents=True,mode=0o700)
         archive.extractall(target)
+        # The host export stays beneath a private0700 root. COPY into an image
+        # must nevertheless leave code readable/traversable by its UID10001,
+        # independently of the operator's (often077) umask. Only new tracked
+        # export copies are changed; secrets/runtime inputs are never included.
+        for path in target.rglob('*'):
+            if path.is_dir():path.chmod(0o755)
+        for entry in archive.infolist():
+            if not entry.is_dir():
+                (target/entry.filename).chmod(0o755 if (entry.external_attr>>16)&0o111 else 0o644)
     (target/'RELEASE').write_text(release_id+'\n',encoding='ascii')
+    (target/'RELEASE').chmod(0o644)
     return {'release_id':release_id,'context':str(target),'source':'clean tracked Git export','private_ignored_files_copied':False}
 
 

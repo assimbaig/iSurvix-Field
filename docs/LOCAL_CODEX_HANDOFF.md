@@ -1,5 +1,38 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: PR30 verification and UP1 approval hold - 31 October2026
+
+Draft PR30 is open, unmerged and not deployed:
+https://github.com/assimbaig/iSurvix-Field/pull/30
+Current source b9502cb followed the e37b280 baseline/f93ad27 matrix pin.
+Full local regression and hosted application/staging/customer/shared-gate CI
+started. Frontend Chromium passed; first customer package run41225757191 failed
+before installation. Restrictive umask077 left Git-export code/RELEASE copies
+unreadable by the non-root image user. Root added an executed failing export
+regression, explicit permissions only on new tracked export copies (private
+context root stays0700), and an actual UID10001 image-readability probe. New PDF
+pins also need to match deploy/requirements.staging.txt. Affected rerun pending.
+
+Independent final host functional QA passed35 tests42.369s;3 actual TLS fixture
+checks passed. Update Center47 saved browser assertions passed at desktop/mobile.
+Separate gate10 and Update Center12 security checks passed in their bounded scope.
+
+NEW **UP1 Low** is CONFIRMED AND UNFIXED: terminal private host-journal replay
+returns stored completion before revalidating signed request/result/runtime
+bindings. Exploitation requires protected operator-journal write access or an
+operator metadata mistake; this is not a web-user privilege escalation.
+Separate host review9cases:8passed/1RED. Owner approval was requested through
+async input and remains PENDING. Do not repair UP1 without explicit approval.
+The CP1/CP2 approval does not cover it. Recording UP1 in active HOLD_IDS is
+inventory only, not remediation. Earlier8 holds remain unchanged.
+
+Continue independent CI/build repairs and verification. Keep exact baseline
+support only e37b280-to-final0057 source; earlier0056 automatic updates remain
+unsupported. Do not claim Linux installation/upgrade or final full gate passed
+until actual results exist. Read HOST_UPDATER_SECURITY_REVIEW_20261031.md and
+private .local/customer-server-20261031 logs. Preserve originals/approvals and
+operational mainfd365f1/schema0053. No model call, merge or customer deployment.
+
 ## Latest: shared update candidate baseline - 31 October2026
 
 Owner added tasks19-21: one immutable release pipeline for both editions,

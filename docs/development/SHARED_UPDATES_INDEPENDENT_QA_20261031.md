@@ -119,7 +119,88 @@ in the customer security report; this single repeat is not a universal secret sc
 
 Shared gate functional QA is in
 [its separate report](SHARED_RELEASE_GATE_INDEPENDENT_QA_20261031.md). Independent
-privileged host-tool countercases, separate phase6security review, final full
-regression, actual Linux supported-pair/failure-recovery evidence, physical target
-access and owner exact-release/licensing approval remain distinct gates. No merge,
+privileged host-tool countercases now have the bounded results below. Separate
+phase6security review, final full regression, actual Linux supported-pair/failure-
+recovery evidence, physical target access and owner exact-release/licensing
+approval remain distinct gates. No merge,
 deployment, real customer update, paid API or native Ollama call occurred here.
+
+## Historical initial host-tool countercases: reproduced false completion
+
+Private test module `qa/updater_independent.py` independently exercised actual
+temporary SQLite/media and the real operator state machine with controlled Docker
+responses. Initial run: **eight tests, seven passed, one failed in8.150seconds**,
+zero errors/skips, external attempts or HTTP fixture connections. Receipt:
+`qa/updater-independent-first.log`.
+
+Passing cases verified expired authorization and wrong image IDs stop before
+writer shutdown; a wrong running candidate release prevents listener activation;
+the actual OS journal lock excludes a concurrent operation; hard interruption
+retains the partial target and requires explicit recovery; activation uncertainty
+never restarts the old listener automatically; and completed replay does not run
+Docker again or change source/target human rows and evidence.
+
+The failing case showed a **false completion**: a target proxy reported exited/
+unhealthy while target web health remained good, yet the updater returned
+`completed`. Its post-proxy health check examined only the web container. The
+reviewer sent the executed reproduction to the lead/package developer for repair
+before separate phase6AppSec. No product code was edited by this reviewer.
+The same regression was retained and rerun after the repair as recorded below.
+No actual Docker daemon or customer listener was contacted by this reproduction.
+
+## Independent repaired proxy and actual TLS checks
+
+After the product owner added proxy running/healthy checks and a bounded TLS
+readiness probe, the unchanged eight independent cases plus19 tracked updater
+tests passed: **27 passed in33.941seconds**, zero failures/errors/skips or network
+attempts. Receipt: `qa/updater-independent-proxy-green.log`. This verifies the
+reported false completion no longer occurs in the controlled Docker fixture;
+post-activation failures retain `activation_uncertain` and cannot restart the old
+source automatically.
+
+Separately, `qa/updater_listener_tls.py` exercised the actual SSL/HTTP probe with a
+synthetic local certificate, explicit fixture-only trust, correct SNI/Host and
+three outcomes: exact-release readiness succeeds, wrong release fails, hostname
+mismatch fails. **Three passed in1.708seconds**, three actual loopback fixture
+connections, zero external requests. Receipt: `qa/updater-listener-tls.log`.
+Only the TCP connector mapped the requested private-LAN address to the fixture;
+certificate validation was not disabled and machine trust was not changed. This
+is real local TLS evidence, not proof of Docker, a physical LAN or customer TLS.
+
+## Final bounded cancellation recovery follow-up
+
+The reviewer also identified a pre-ACK withdrawal case: a cancelled application
+request could leave the independent host journal nonterminal before any writer
+stop. The product owner added a narrowly bounded recovery path, rather than
+deleting the journal or inventing a successful application receipt.
+
+Final command (absolute project Python; private QA path added to `PYTHONPATH`):
+
+```text
+scripts/run_backend_tests.py updater_independent.IndependentHostUpdaterTests updater_independent.IndependentCancellationRecoveryTests core.test_customer_updates --verbosity 2
+```
+
+Result: **35 passed in42.369seconds**, zero failures/errors/skips, zero external
+network attempts or HTTP fixture connections. These are13 independent private
+cases plus22 tracked cases, overlapping the earlier runs rather than additional
+unique full-suite tests. Receipt: `qa/updater-independent-final.log`.
+
+The unchanged original eight cases remain green. Five new independent cases
+verify exact owner withdrawal becomes host-only terminal cancellation with
+idempotent replay; wrong nonce and unknown application state are refused; source
+TLS failure cannot trigger a start/stop; and a preexisting partial target cannot
+be treated as a safe no-op. Each negative preserves the unresolved journal,
+original receipt, source database and target sentinel where applicable. Valid
+cancellation does not add an application receipt or invoke stop/start/migrate.
+The tracked set additionally verifies the next request can proceed and an
+unhealthy source proxy prevents reconciliation.
+
+Reviewed source at final execution:
+
+- `deploy/customer/updater.py`: `a2744e625d64799f583269f5c9c6cfe035157bf9c079f56e067e8823c98e9087`
+- `backend/core/test_customer_updates.py`: `547ce8fb98fdbbaa8e1ce7c3d24b3bb9264ced285c076f9ff90ab8c2ba4f8d7a`
+
+No further functional defect was reproduced in these bounded countercases. This
+does not close the separate security, actual Linux Docker, physical LAN, full
+regression or owner release-approval gates. No product source was edited by this
+reviewer and no operational records, native Ollama or paid service were used.

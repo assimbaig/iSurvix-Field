@@ -51,6 +51,7 @@ jobs:
             ${{ runner.temp }}/isurvix-customer/build.log
             ${{ runner.temp }}/isurvix-customer/compose.log
             ${{ runner.temp }}/isurvix-customer/readiness-probe.log
+            ${{ runner.temp }}/isurvix-customer/image-user-readable.json
             ${{ runner.temp }}/isurvix-customer/update-rehearsal/upgrade-verification.json
             ${{ runner.temp }}/isurvix-customer/update-rehearsal/build.log
             ${{ runner.temp }}/isurvix-customer/update-rehearsal/source-compose.log
