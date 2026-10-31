@@ -24,6 +24,9 @@ helper="$output/package/release/deploy/customer/customer.py"
 manifest_sha="$(sha256sum "$output/package/manifest.json" | cut -d' ' -f1)"
 python "$helper" verify --package "$output/package" --manifest-sha256 "$manifest_sha" > "$output/package-verified.json"
 
+# Prepare the explicitly supported older source before beginning offline phases.
+bash "$repository/deploy/verify_updates.sh" prepare "$output" "$repository" "$python_image" "$nginx_image"
+
 # Remove only this rehearsal's two images, then require the transfer archives to restore them.
 docker image rm "$app_image" "$nginx_image" > "$output/image-removal.log"
 if docker image inspect "$app_image" >/dev/null 2>&1; then printf '%s\n' 'Application image unexpectedly still present.' >&2; exit 1; fi
@@ -50,7 +53,7 @@ PY
 openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 1 -subj '/CN=customer.example.test' -addext 'subjectAltName=DNS:customer.example.test' -keyout "$output/tls/privkey.pem" -out "$output/tls/fullchain.pem" > "$output/certificate-build.log" 2>&1
 sudo chown 10001:10001 "$output/private/django-secret" "$output/private/owner-password"
 sudo chmod 400 "$output/private/django-secret" "$output/private/owner-password"
-sudo chown 101:101 "$output/tls/privkey.pem"
+sudo chown 101:101 "$output/tls" "$output/tls/privkey.pem"
 sudo chmod 400 "$output/tls/privkey.pem"
 chmod 444 "$output/tls/fullchain.pem"
 lan_ip=172.28.33.1
@@ -70,7 +73,7 @@ if "${cli[@]}" initialize --package "$output/package" --runtime "$output/runtime
 "${cli[@]}" start --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/start.json"
 client=(docker run --rm --pull never --network "$network" --add-host "customer.example.test:$lan_ip" -v "$output/tls/fullchain.pem:/run/fixture-ca.pem:ro" -v "$output/private/owner-password:/run/fixture-password:ro" -e "EXPECTED_RELEASE=$release" -i --entrypoint python "$app_image")
 for attempt in $(seq 1 30); do
-  if "${client[@]}" -c "import urllib.request,ssl; urllib.request.urlopen('https://customer.example.test:8443/ops/ready/',context=ssl.create_default_context(cafile='/run/fixture-ca.pem'),timeout=3)" > "$output/readiness-probe.log" 2>&1; then break; fi
+  if "${client[@]}" -c "import urllib.request,ssl; urllib.request.urlopen('https://customer.example.test:8443/ops/health/ready/',context=ssl.create_default_context(cafile='/run/fixture-ca.pem'),timeout=3)" > "$output/readiness-probe.log" 2>&1; then break; fi
   sleep 2
 done
 "${client[@]}" - > "$output/lan-client.json" <<'PY'
@@ -79,7 +82,7 @@ from pathlib import Path
 import requests
 base='https://customer.example.test:8443'
 s=requests.Session();s.trust_env=False;s.verify='/run/fixture-ca.pem'
-ready=s.get(base+'/ops/ready/',timeout=10);ready.raise_for_status()
+ready=s.get(base+'/ops/health/ready/',timeout=10);ready.raise_for_status()
 assert ready.json()['release']==os.environ['EXPECTED_RELEASE'],ready.text
 page=s.get(base+'/login/',timeout=10);page.raise_for_status()
 assert 'username' in page.text and 'password' in page.text
@@ -100,11 +103,14 @@ sudo sha256sum "$output/runtime/data/database.sqlite3" "$output/runtime/data/med
 "${cli[@]}" start --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/restart.json"
 "${cli[@]}" stop --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/after-restart.json"
 sudo sha256sum -c "$output/preserved-before.sha256" > "$output/preservation.json"
+ISURVIX_CI_CLIENT_NETWORK="$network" bash "$repository/deploy/verify_updates.sh" exercise "$output" "$repository"
 python - "$output" "$release" <<'PY'
 from pathlib import Path
 import json,sys
 out=Path(sys.argv[1]);assert not (out/'runtime-image-pulls.jsonl').read_text().strip()
 client=json.loads((out/'lan-client.json').read_text())
-result={'release':sys.argv[2],'candidate_only':True,'image_transfer_load':True,'runtime_image_pulls':0,'fresh_install':True,'repeat_initialization_denied':True,'restart_preserved_db_and_media':True,'client':client,'native_ai_tested':False,'physical_customer_lan_verified':False,'customer_deployed':False,'owner_release_approved':False}
+upgrade=json.loads((out/'update-rehearsal/upgrade-verification.json').read_text())
+assert upgrade['release']==sys.argv[2] and upgrade['upgrade_recovery_verified'] is True
+result={**upgrade,'release':sys.argv[2],'candidate_only':True,'image_transfer_load':True,'runtime_image_pulls':0,'fresh_install':True,'repeat_initialization_denied':True,'restart_preserved_db_and_media':True,'client':client,'native_ai_tested':False,'physical_customer_lan_verified':False,'customer_deployed':False,'owner_release_approved':False}
 (out/'verification.json').write_text(json.dumps(result,indent=2)+'\n')
 PY

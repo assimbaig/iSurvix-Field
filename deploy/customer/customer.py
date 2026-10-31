@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import importlib.util
+import io
 import ipaddress
 import json
 import os
@@ -16,10 +17,12 @@ import stat
 import subprocess
 import sys
 import types
+from zipfile import ZipFile
 
 
 FORMAT = 'isurvix-customer-bundle-v1'
-HOLD_IDS = ['A12', 'BR1', 'D1', 'D2', 'L1', 'CS1', 'CS2', 'AI1', 'CP1', 'CP2']
+HOLD_IDS = ['A12', 'BR1', 'D1', 'D2', 'L1', 'CS1', 'CS2', 'AI1']
+REPAIRED_FINDINGS = ['CP1', 'CP2']
 REQUIRED_FILES = {'release/RELEASE', 'release/deploy/staging.py',
     'release/deploy/nginx.conf.template', 'release/deploy/customer/customer.py',
     'release/deploy/customer/compose.yaml', 'release/backend/core/operations_backup.py',
@@ -106,7 +109,7 @@ def validate_lan_address(value):
     return str(address)
 
 
-def _docker(*args):
+def _local_docker_context():
     # An inherited remote context must not turn package inspection/testing into
     # operations on an unrelated customer or production daemon.
     if os.environ.get('DOCKER_HOST') and not os.environ['DOCKER_HOST'].startswith('unix://'):
@@ -115,6 +118,13 @@ def _docker(*args):
         context = subprocess.run(['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'], capture_output=True, check=False)
         if context.returncode or not context.stdout.decode('utf-8').strip().startswith('unix://'):
             raise ValueError('Use an explicitly local Linux Docker Unix-socket context; remote daemons are refused.')
+    except OSError:
+        raise ValueError('Docker is unavailable. Install the approved Linux Docker/Compose prerequisites separately.') from None
+
+
+def _docker(*args):
+    _local_docker_context()
+    try:
         result = subprocess.run(['docker', *map(str, args)], capture_output=True, check=False)
     except OSError:
         raise ValueError('Docker is unavailable. Install the approved Linux Docker/Compose prerequisites separately.') from None
@@ -183,6 +193,146 @@ def verify_package(package, *, expected_manifest_sha256=None):
     return manifest
 
 
+def _credential_key(value):
+    key = str(value).upper().replace('-', '_').replace('.', '_')
+    if key.endswith(('_FILE', '_PATH', '_ENV', '_REF', '_REFERENCE')):
+        return False
+    return key in {'PASSWORD', 'PASSWD', 'PWD', 'SECRET', 'TOKEN', 'API_KEY', 'PRIVATE_KEY',
+        'ACCESS_TOKEN', 'REFRESH_TOKEN', 'CLIENT_SECRET', 'DJANGO_SECRET_KEY'} or key.endswith(
+        ('_PASSWORD', '_PASSWD', '_TOKEN', '_SECRET', '_API_KEY', '_PRIVATE_KEY', '_ACCESS_KEY'))
+
+
+def _literal_credential(value):
+    if value is None or isinstance(value, bool):
+        return False
+    if not isinstance(value, str):
+        return isinstance(value, (int, float))
+    value = value.strip().strip('\"\'').strip()
+    if not value or value.upper() in {'CHANGEME', 'CHANGE_ME', 'REPLACE_ME', 'REDACTED', 'NOT_CONFIGURED', 'UNAVAILABLE', 'NONE', 'NULL'}:
+        return False
+    if (value.startswith('${') and value.endswith('}')) or (value.startswith('<') and value.endswith('>')):
+        return False
+    return True
+
+
+def _json_credentials(value):
+    if isinstance(value, dict):
+        return any(_credential_assignment(key, item) or _json_credentials(item)
+                   for key, item in value.items())
+    if isinstance(value, list):
+        return any(_json_credentials(item) for item in value)
+    return False
+
+
+def _credential_assignment(key, value):
+    if str(key).casefold() == 'authorization':
+        # Historical workflow receipts use this label for human approval text;
+        # an actual HTTP credential header has a controlled scheme prefix.
+        if not isinstance(value, str):
+            return False
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in '\"\'':
+            if value[0] == '\"':
+                try:
+                    value = json.loads(value)
+                except ValueError:
+                    value = value[1:-1]
+            else:
+                value = value[1:-1].replace("''", "'")
+        return bool(re.match(r'(?i)^\s*(?:bearer|basic|token)\s+\S+', value))
+    return _credential_key(key) and _literal_credential(value)
+
+
+def _configuration_credentials(text, *, template=False, yaml=False):
+    if yaml:
+        # Treat YAML literal/folded scalar bodies as strings rather than mapping
+        # fields. Workflows legitimately contain Python/shell test code in run:|.
+        # Credential-named scalar headers themselves are still checked below.
+        lines = []
+        block_indent = None
+        for line in text.splitlines():
+            indent = len(line) - len(line.lstrip(' \t'))
+            if block_indent is not None:
+                if not line.strip() or indent > block_indent:
+                    continue
+                block_indent = None
+            lines.append(line)
+            if re.match(r'^\s*(?:-\s+)?[^:#]+:\s*[|>][0-9+-]*\s*(?:#.*)?$', line):
+                block_indent = indent
+        text = '\n'.join(lines)
+    # Recognize mapping/assignment boundaries in the restricted data syntax,
+    # including nested YAML flow and TOML inline tables. Quoted scalar values
+    # are consumed whole, so example text containing "{password:...}" is not a
+    # second mapping. No YAML tag, constructor, alias or Python code is executed.
+    quoted = r'''(?:"(?:\\.|[^"\\])*"|'(?:''|[^'])*')'''
+    triple = r'''(?:"""[\s\S]*?"""|\x27\x27\x27[\s\S]*?\x27\x27\x27)'''
+    reference = r'\$\{(?:[^{}]|\{[^{}]*\})*\}'
+    value = '(?:'+triple+'|'+quoted+'|'+reference+r'|[^,{}\[\]\r\n#]*)'
+    expression = (r'(?P<assignment>(?:^[ \t]*(?:-[ \t]+)?|[,{][ \t]*)(?:export[ \t]+)?'
+        r'(?P<key>["\x27]?[A-Za-z_][A-Za-z0-9_.-]*["\x27]?)[ \t]*[:=][ \t]*'
+        '(?P<value>'+value+'))|(?:'+triple+'|'+quoted+')')
+    for match in re.finditer(expression, text, re.MULTILINE):
+        if match.group('assignment') is None:
+            continue
+        key = match.group('key').strip('\"\'')
+        raw_value = match.group('value')
+        value = raw_value.strip().strip('\"\'')
+        if template and value.lower().startswith(('replace_', 'replace-')) and re.fullmatch(r'[A-Za-z0-9_-]+', value):
+            continue
+        if _credential_assignment(key, raw_value):
+            return True
+    return False
+
+
+def _private_source(name, raw):
+    """Conservative artifact gates, not a proof about encoded/opaque secrets.
+
+    Armor is matched as an actual header line, so a Python test/reference string
+    containing the marker does not reject the source implementing this gate.
+    Structured credential checks apply to data/configuration, not source code.
+    """
+    path = PurePosixPath(name)
+    parts = tuple(part.casefold() for part in path.parts)
+    base = parts[-1]
+    if (any(part in {'.local', 'private', '.ssh', '.aws', '.azure'} for part in parts) or
+            base.endswith(('.sqlite', '.sqlite3', '.db', '.key', '.p12', '.pfx', '.jks', '.keystore', '.keytab')) or
+            base in {'id_rsa', 'id_dsa', 'id_ecdsa', 'id_ed25519', '.netrc', '.git-credentials', '.pgpass', '.pypirc', '.npmrc', 'credentials.json', 'service-account.json', 'service_account.json'} or
+            (name.startswith('backend/media/') and name != 'backend/media/.gitkeep')):
+        return True
+    env_artifact = 'env' in base.split('.') or base == '.envrc'
+    template = base.endswith(('.example', '.sample', '.template', '.example.env', '.sample.env', '.template.env'))
+    if env_artifact and not template:
+        return True
+    if re.search(rb'(?m)^[ \t]*-----BEGIN (?:[A-Z0-9 ]*PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----[ \t]*\r?$', raw):
+        return True
+    try:
+        text = raw.decode('utf-8-sig')
+    except UnicodeError:
+        return False
+    if base.endswith('.json'):
+        try:
+            if _json_credentials(json.loads(text)):
+                return True
+        except (ValueError, RecursionError):
+            pass
+    if env_artifact or path.suffix.lower() in {'.ini', '.cfg', '.conf', '.toml', '.yaml', '.yml', '.properties'}:
+        return _configuration_credentials(text, template=template, yaml=path.suffix.lower() in {'.yaml', '.yml'})
+    return False
+
+
+def _check_tracked_source(repository, release_id):
+    payload = subprocess.check_output(['git', 'archive', '--format=zip', release_id], cwd=repository)
+    with ZipFile(io.BytesIO(payload)) as archive:
+        for entry in archive.infolist():
+            if entry.is_dir():
+                continue
+            _relative(entry.filename)
+            if stat.S_ISLNK(entry.external_attr >> 16) or _private_source(entry.filename, archive.read(entry)):
+                # Neither filenames nor source bytes are echoed: an accidental
+                # credential may itself have been used as a filename.
+                raise ValueError('The tracked release contains a private-key or credential artifact. Remove it from the release before packaging; no candidate was exported.')
+
+
 def build_package(repository, target, release_id, app_image, nginx_image):
     repository = _no_links(repository)
     target = _no_links(target)
@@ -199,6 +349,7 @@ def build_package(repository, target, release_id, app_image, nginx_image):
         raise ValueError('Build only from a clean checkout of the exact reviewed commit.')
     if target.exists() or not target.parent.is_dir():
         raise ValueError('Use a new package directory with an existing parent; existing data is never replaced.')
+    _check_tracked_source(repository, release_id)
     app_id, nginx_id = _inspect(app_image), _inspect(nginx_image)
     baked = _docker('run', '--rm', '--pull=never', '--network', 'none', '--entrypoint', 'cat', app_id, '/app/RELEASE').decode('ascii').strip()
     if baked != release_id:
@@ -229,7 +380,7 @@ def build_package(repository, target, release_id, app_image, nginx_image):
         manifest = {'format': FORMAT, 'status': 'draft-for-review', 'owner_release_approved': False,
             'release_id': release_id, 'created_utc': datetime.now(timezone.utc).isoformat(),
             'target': {'os': 'linux', 'architecture': 'amd64'}, 'images': {'app': app_id, 'nginx': nginx_id},
-            'approval_holds': HOLD_IDS, 'private_runtime_included': False,
+            'approval_holds': HOLD_IDS, 'repaired_findings': REPAIRED_FINDINGS, 'private_runtime_included': False,
             'license_status': 'Observed metadata only; PyMuPDF AGPL/commercial route and all redistribution obligations require owner review. NOASSERTION is not clearance.',
             'trust_notice': 'SHA256 detects corruption, not an attacker replacing both manifest and package. Compare the manifest digest through a trusted independent channel.',
             'files': {name: _digest(path) for name, path in _files(target).items()}}
@@ -262,7 +413,21 @@ def _write_json(path, value):
     Path(path).chmod(0o600)
 
 
-def prepare_runtime(package, runtime, *, host, lan_ip, secret_file, tls_directory, acknowledge_draft=False, restore_backup=None):
+def _update_inputs(package, runtime, directory):
+    root = _no_links(directory)
+    if not root.is_dir() or any(root.is_relative_to(path) or path.is_relative_to(root) for path in (package, runtime)):
+        raise ValueError('Use a separate existing operator update directory, outside package and runtime data.')
+    _private_input(root/'catalog.json')
+    if not _no_links(root/'receipts').is_dir():
+        raise ValueError('The existing read-only update receipt directory is unavailable.')
+    if not (package/'release/deploy/customer/compose.updates.yaml').is_file():
+        raise ValueError('This package does not support persistent Update Center inputs.')
+    if any(char in str(root) for char in '\r\n\0$`"'):
+        raise ValueError('Use directive-safe external update paths.')
+    return root
+
+
+def prepare_runtime(package, runtime, *, host, lan_ip, secret_file, tls_directory, acknowledge_draft=False, restore_backup=None, update_directory=None):
     _draft(acknowledge_draft)
     manifest = verify_package(package)
     package = _no_links(package)
@@ -275,6 +440,7 @@ def prepare_runtime(package, runtime, *, host, lan_ip, secret_file, tls_director
     for path in (secret, _private_input(tls/'fullchain.pem'), _private_input(tls/'privkey.pem')):
         if path.is_relative_to(package) or path.is_relative_to(runtime):
             raise ValueError('Private key/secret inputs must be supplied outside the distributable package/runtime.')
+    updates = _update_inputs(package, runtime, update_directory) if update_directory is not None else None
     value = secret.read_text(encoding='utf-8').strip()
     if len(value) < 50 or value.startswith(('django-insecure-', 'change-me')):
         raise ValueError('Supply an external production-strength Django secret; its content is never shown.')
@@ -320,6 +486,8 @@ def prepare_runtime(package, runtime, *, host, lan_ip, secret_file, tls_director
             'ISURVIX_APP_IMAGE': manifest['images']['app'], 'ISURVIX_NGINX_IMAGE': manifest['images']['nginx'],
             'ISURVIX_DATA_DIRECTORY': data.as_posix(), 'ISURVIX_SECRET_FILE': secret.as_posix(),
             'ISURVIX_TLS_DIRECTORY': tls.as_posix(), 'ISURVIX_NGINX_CONFIG': nginx_path.as_posix()}
+        if updates is not None:
+            values['ISURVIX_UPDATE_DIRECTORY'] = updates.as_posix()
         for value in values.values():
             if any(char in value for char in '\r\n\0$`'):
                 raise ValueError('Use directive-safe runtime configuration.')
@@ -350,6 +518,8 @@ def _runtime(package, runtime):
             (runtime/'INCOMPLETE_PREPARATION').exists()):
         raise ValueError('Runtime/package configuration changed or is incomplete. Review the exact release and configuration before continuing.')
     validate_lan_address(state['values']['ISURVIX_LAN_IP'])
+    if state['values'].get('ISURVIX_UPDATE_DIRECTORY'):
+        _update_inputs(Path(package).absolute(), runtime, state['values']['ISURVIX_UPDATE_DIRECTORY'])
     return manifest, state
 
 
@@ -363,13 +533,21 @@ def load_images(package, *, acknowledge_draft=False):
     return {'loaded': True, 'images': manifest['images'], 'network_download_performed': False}
 
 
-def run_action(package, runtime, action, *, acknowledge_draft=False):
-    _draft(acknowledge_draft)
-    manifest, state = _runtime(package, runtime)
+def _compose_base(package, runtime, state):
     runtime, package = Path(runtime), Path(package)
     project = 'isurvix-customer-'+hashlib.sha256(str(runtime.absolute()).encode()).hexdigest()[:12]
     base = ('compose', '--env-file', str(runtime/'customer.env'), '-p', project,
             '-f', str(package/'release/deploy/customer/compose.yaml'))
+    if state['values'].get('ISURVIX_UPDATE_DIRECTORY'):
+        base += ('-f', str(package/'release/deploy/customer/compose.updates.yaml'))
+    return base
+
+
+def run_action(package, runtime, action, *, acknowledge_draft=False):
+    _draft(acknowledge_draft)
+    manifest, state = _runtime(package, runtime)
+    runtime, package = Path(runtime), Path(package)
+    base = _compose_base(package, runtime, state)
     database = runtime/'data/database.sqlite3'
     if action in ('initialize', 'migrate-restored'):
         restored = action == 'migrate-restored'
@@ -399,6 +577,7 @@ def run_action(package, runtime, action, *, acknowledge_draft=False):
             raise ValueError('Initialize the new installation before explicit owner provisioning.')
         # The human operator answers Django's terminal prompts directly. No
         # password argument, generated credential, stored output or default user.
+        _local_docker_context()
         result = subprocess.run(['docker', *base, 'run', '--rm', '--no-deps', '--pull', 'never',
                                  'web', 'python', 'manage.py', 'createsuperuser'], check=False)
         if result.returncode:
@@ -424,6 +603,7 @@ def main(argv=None):
             for option in ('host', 'lan-ip', 'secret-file', 'tls-directory'):
                 command.add_argument('--'+option, required=True)
             command.add_argument('--restore-backup', type=Path)
+            command.add_argument('--update-directory', type=Path)
     args = parser.parse_args(argv)
     try:
         if args.action == 'verify':
@@ -434,7 +614,7 @@ def main(argv=None):
         elif args.action == 'prepare':
             result = prepare_runtime(args.package, args.runtime, host=args.host, lan_ip=args.lan_ip,
                 secret_file=args.secret_file, tls_directory=args.tls_directory, acknowledge_draft=args.acknowledge_draft,
-                restore_backup=args.restore_backup)
+                restore_backup=args.restore_backup, update_directory=args.update_directory)
             # Optional recovery is explicit and targets a NEW runtime only.
         else:
             result = run_action(args.package, args.runtime, args.action, acknowledge_draft=args.acknowledge_draft)

@@ -12,8 +12,11 @@ approval, existing service, customer machine or native Ollama model was changed.
 ## Result
 
 The exercised candidate-preservation, offline HTTP and local PDF/OCR boundaries
-passed the tests below. One separately reported **provisional Medium context
-validation gap** remains unfixed. This is **not customer-release approval**.
+passed the tests below. The original review reported a Medium context-validation
+gap. The owner subsequently approved exactly CP1/CP2 repairs. The addenda below
+record passing bounded checks and a later quoted-YAML credential countercase
+that still fails. **CP2 remains open pending that correction and retest.** This
+is **not customer-release approval**.
 Actual Docker installation and a second physical LAN device remain separate
 gates; mocked Docker commands cannot establish those results.
 
@@ -121,7 +124,7 @@ Useful screenshots:
 - [Mobile QA](screenshots/customer-offline-20261031/offline-qa-linked-390.png)
 - [Enlarged viewer](screenshots/customer-offline-20261031/offline-qa-viewer.png)
 
-## Reported context boundary gap — provisional Medium, unfixed
+## Original context boundary gap — reported before repair approval
 
 Most package Docker actions call `_docker`, which rejects inherited remote Docker
 contexts. `run_action(..., 'create-owner')` launches its interactive Docker command
@@ -152,3 +155,111 @@ owner release approval remain unverified. Actual Linux package rehearsal, final
 full regression and separate security review must be reported independently.
 All earlier A12/BR1/D1/D2/L1/CS1/CS2/AI1 holds remain. No merge or deployment was
 performed, and this evidence does not approve one.
+
+## Owner-approved CP1/CP2 repair: independent verification addendum
+
+The owner explicitly approved **only CP1 and CP2** after the original separate
+security review. Implementation remained with the customer-package agent; the
+independent reviewer did not edit the installer or implementing agent's tests.
+All earlier security holds remain outside this approval.
+
+Reviewed frozen source hashes:
+
+- `deploy/customer/customer.py`:
+  `ece5e23ed39d943f2998a9e3b938826c3c3039e84a4b84e3eb52a08708b17de8`
+- `core/test_customer_package.py`:
+  `5c124bcd3a43ff9981b29b9521a7182046e8d2f44b39970e5fb763be10bac1a0`
+
+The original independent baseline was preserved: **seven cases, five failures,
+two passing controls, zero errors/skips, 4.358 seconds**. The same boundary
+assertions were retained; an eighth case added populated JSON credential data.
+Post-freeze execution:
+
+```text
+# Process-local PYTHONPATH points to .local/customer-server-20261031/qa
+F:\iSurvix\iSurvix-Field\.local\venv\Scripts\python.exe scripts\run_backend_tests.py approved_package_repair_qa.IndependentApprovedPackageRepair --verbosity 2
+F:\iSurvix\iSurvix-Field\.local\venv\Scripts\python.exe scripts\run_backend_tests.py core.test_customer_package core.test_customer_independent core.test_customer_rehearsal --verbosity 1
+```
+
+- **Eight independent repair checks passed in 4.846 seconds**, zero
+  failures/errors/skips; zero external attempts or fixture connections.
+- **38 affected checks passed in 13.292 seconds**, zero failures/errors/skips;
+  zero external attempts and 26 in-process fixture connections. These overlap
+  earlier and full-suite checks; do not count them as new unique full-suite tests.
+- Both source hashes matched the freeze values after execution.
+
+CP1 checks rejected an inherited remote `DOCKER_HOST` before subprocess execution
+and rejected a remote selected context after inspection but before the owner
+command. A supported local Unix context retained exactly one interactive owner
+command, inherited terminal streams and no captured input/output/password
+arguments. Synthetic database bytes remained unchanged. Docker calls were
+captured: **no daemon or account operation was actually performed**.
+
+CP2 checks used real clean disposable Git exports. Tracked `.key` material,
+extensionless PEM private-key armor, a runtime `.env.customer` and populated JSON
+`api_key` data were rejected **before Docker inspection or creation of a package
+directory**. Synthetic source bytes remained unchanged and secret-canary content
+was absent from errors/stdout/stderr. A public PEM certificate and Python source
+containing only a reference to a private-header marker still packaged and verified.
+These bounded cases address the original finding; they do not prove arbitrary
+encoded/binary secrets or secrets inside trusted image layers are absent.
+
+Private receipts: `qa/approved-repair-baseline.log`,
+`qa/approved-repair-first-green.log`, `qa/approved-repair-affected-green.log` and
+`qa/approved_package_repair_qa.py`. No original RED receipt was removed or relabelled.
+
+### Independently reviewed Linux rehearsal corrections
+
+The lead changed two readiness URL literals in `deploy/verify_customer.sh` from
+the nonexistent `/ops/ready/` to the application's actual `/ops/health/ready/`.
+The reviewer inspected the diff and independently ran
+`core.test_customer_rehearsal`: **one passed in 0.003 seconds**, zero external or
+fixture connections. Receipt: `qa/rehearsal-route-independent.log`. This route
+resolution check is not an actual deployment test.
+
+The lead also changed the generated fixture TLS directory's owner to UID/GID101,
+alongside its generated private key, so Nginx101 can traverse the mounted directory.
+Directory0700, key0400 and public certificate0444 modes remain unchanged. Only
+disposable generated fixture paths are affected; no customer TLS material or
+permissions were changed. This was reviewed by inspection. POSIX bind mounts,
+actual TLS and actual Docker installation still require the separate Linux run.
+
+**Disposition:** the original CP1/CP2 functional boundary reproductions now pass
+against the owner-approved repair. Separate AppSec confirmation, final integrated
+regression and actual Linux/target-device evidence remain distinct gates. No
+earlier finding was repaired, and no customer release, merge or deployment is
+approved by this addendum.
+
+### Subsequent CP2 structured-configuration retest: closure remains pending
+
+The package developer extended the approved CP2 repair for YAML flow mappings
+and nested TOML tables. At the subsequent source freeze, `customer.py` SHA256 was
+`12eebd5551ba601b4c088c39ba92c26f15c52fa76cab5ed013044191fc8c048e` and the tracked
+package tests hash was
+`c4e394125fe8bd39a8c79ec718b89e4ed11049e41bc4d30f8b3cdb92d756f2c0`.
+
+Independent rerun: ten private repair checks (the earlier eight plus YAML flow
+and nested TOML cases) and38affected checks, **48passed in20.394seconds**, zero
+failures/errors/skips, zero external attempts and26fixture connections. Receipt:
+`qa/approved-repair-yaml-final.log`.
+
+A further independently authored countercase then demonstrated that a YAML flow
+mapping with a **quoted Authorization Bearer value** still produced a complete
+package. The helper's Authorization-specific prefix check received the quoted
+raw scalar and missed its credential scheme. A real clean synthetic Git source
+and controlled Docker capture reproduced this: **one test, one failure,
+1.894seconds**, zero external attempts or fixture connections. Receipt:
+`qa/approved-repair-quoted-header-red.log`; test is
+`test_quoted_yaml_bearer_header_cannot_produce_complete_package` in the private
+repair module. No real credential was used or logged.
+
+The reviewer reported this remaining CP2 case to the lead/package developer and
+did not edit product code. Therefore the passing earlier bounded cases must
+**not** be interpreted as full CP2 closure. Correct scalar interpretation,
+unchanged narrative/reference positives, independent retest and separate AppSec
+confirmation remain required. Earlier RED receipts remain retained.
+
+Task19's separate functional gate review and19passing tracked/private checks are
+recorded in [Shared release gate QA](SHARED_RELEASE_GATE_INDEPENDENT_QA_20261031.md).
+That proof is independent of CP2 disposition and does not approve deployment or
+an actual upgrade/recovery candidate.

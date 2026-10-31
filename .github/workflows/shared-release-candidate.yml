@@ -1,0 +1,72 @@
+name: Shared immutable release candidate
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - 'backend/core/update*'
+      - 'backend/core/test_update*'
+      - 'backend/core/test_customer*'
+      - 'backend/core/test_release*'
+      - 'backend/core/migrations/**'
+      - 'backend/requirements.txt'
+      - '.github/workflows/**'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: shared-release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verified-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require successful exact-source application, staging and upgrade checks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python deploy/release_gate.py check --repository "$GITHUB_REPOSITORY" --release-id "$RELEASE_SHA" --output "$RUNNER_TEMP/gate.json" --wait-seconds 1500
+      - name: Select the already-built immutable candidate
+        id: source
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          gate=json.loads((Path(os.environ['RUNNER_TEMP'])/'gate.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('run_id='+str(gate['customer_run_id'])+'\n')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: customer-server-DRAFT-candidate
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/shared/package
+      - uses: actions/download-artifact@v4
+        with:
+          name: customer-server-verification
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/proof
+      - name: Recheck run identities immediately before candidate assembly
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python deploy/release_gate.py check --repository "$GITHUB_REPOSITORY" --release-id "$RELEASE_SHA" --output "$RUNNER_TEMP/gate-final.json"
+      - name: Bind proven upgrade support and both editions to the same image
+        run: python deploy/release_gate.py record --package "$RUNNER_TEMP/shared/package" --gate "$RUNNER_TEMP/gate.json" --fresh-gate "$RUNNER_TEMP/gate-final.json" --verification "$RUNNER_TEMP/proof/verification.json" --output "$RUNNER_TEMP/shared/release.json"
+      - name: Publish only the gated draft artifact; no release, merge or deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-release-candidate-${{ github.event.pull_request.head.sha || github.sha }}
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+          path: ${{ runner.temp }}/shared/

@@ -28,6 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -50,10 +51,17 @@ jobs:
             ${{ runner.temp }}/isurvix-customer/build.log
             ${{ runner.temp }}/isurvix-customer/compose.log
             ${{ runner.temp }}/isurvix-customer/readiness-probe.log
+            ${{ runner.temp }}/isurvix-customer/update-rehearsal/upgrade-verification.json
+            ${{ runner.temp }}/isurvix-customer/update-rehearsal/build.log
+            ${{ runner.temp }}/isurvix-customer/update-rehearsal/source-compose.log
+            ${{ runner.temp }}/isurvix-customer/update-rehearsal/caught-result.json
+            ${{ runner.temp }}/isurvix-customer/update-rehearsal/recovery-result.json
+            ${{ runner.temp }}/isurvix-customer/update-rehearsal/success-result.json
       - name: Retain unapproved transferable candidate for owner review
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: customer-server-DRAFT-candidate
+          include-hidden-files: true
           retention-days: 7
           path: ${{ runner.temp }}/isurvix-customer/package/

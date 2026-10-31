@@ -352,3 +352,144 @@ class CustomerBuilderIntegrationTests(SimpleTestCase):
                 customer.build_package(repo, path/'other', release, app, proxy)
             invoke.assert_not_called()
             self.assertFalse((path/'other').exists())
+
+
+class ApprovedCustomerPackageRepairs(SimpleTestCase):
+    """CP1/CP2 repairs approved by the owner; synthetic inputs, no daemon."""
+    setUp = CustomerPackageTests.setUp
+    bundle = CustomerPackageTests.bundle
+    private_inputs = CustomerPackageTests.private_inputs
+    prepare = CustomerPackageTests.prepare
+
+    def initialized(self):
+        package, _ = self.prepare()
+        runtime = self.path/'runtime'
+        (runtime/'data/database.sqlite3').write_bytes(b'SYNTHETIC retained database sentinel')
+        (runtime/'initialized.json').write_text('{}')
+        return package, runtime
+
+    def test_CP1_interactive_owner_refuses_remote_environment_without_starting_process(self):
+        package, runtime = self.initialized()
+        with patch.dict(os.environ, {'DOCKER_HOST': 'tcp://unrelated.example.test:2375'}), \
+             patch.object(self.customer.subprocess, 'run') as run, self.assertRaises(ValueError):
+            self.customer.run_action(package, runtime, 'create-owner', acknowledge_draft=True)
+        run.assert_not_called()
+
+    def test_CP1_interactive_owner_refuses_remote_selected_context(self):
+        from types import SimpleNamespace
+        package, runtime = self.initialized()
+        result = SimpleNamespace(returncode=0, stdout=b'ssh://unrelated.example.test')
+        with patch.dict(os.environ, {}, clear=True), \
+             patch.object(self.customer.subprocess, 'run', return_value=result) as run, self.assertRaises(ValueError):
+            self.customer.run_action(package, runtime, 'create-owner', acknowledge_draft=True)
+        self.assertTrue(run.called)
+        self.assertFalse(any('createsuperuser' in call.args[0] for call in run.call_args_list))
+
+    def test_CP1_supported_local_owner_inherits_terminal_without_capturing_passwords(self):
+        from types import SimpleNamespace
+        package, runtime = self.initialized()
+        calls = []
+        def capture(command, **kwargs):
+            calls.append((command, kwargs))
+            return SimpleNamespace(returncode=0, stdout=b'unix:///var/run/docker.sock')
+        with patch.dict(os.environ, {}, clear=True), patch.object(self.customer.subprocess, 'run', side_effect=capture):
+            self.customer.run_action(package, runtime, 'create-owner', acknowledge_draft=True)
+        interactive = [(command, kwargs) for command, kwargs in calls if 'createsuperuser' in command]
+        self.assertEqual(len(interactive), 1)
+        command, kwargs = interactive[0]
+        self.assertNotIn('capture_output', kwargs)
+        self.assertFalse({'stdout', 'stderr', 'stdin', 'input'} & set(kwargs))
+        self.assertFalse(any('password' in str(arg).lower() for arg in command))
+
+    def build_source(self, files, number=0):
+        repo = self.path/f'approved-repair-repo-{number}'
+        repo.mkdir()
+        def git(*args):
+            return subprocess.check_output(['git', *args], cwd=repo, text=True).strip()
+        git('init', '-q')
+        git('config', 'user.email', 'synthetic@example.invalid')
+        git('config', 'user.name', 'Synthetic approved repair')
+        git('config', 'core.autocrlf', 'false')
+        for name in ('deploy/customer/customer.py', 'deploy/customer/compose.yaml', 'deploy/staging.py',
+                     'deploy/nginx.conf.template', 'backend/core/operations_backup.py'):
+            target = repo/name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT/name).read_bytes())
+        for name, content in files.items():
+            target = repo/name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        git('add', '.')
+        git('commit', '-qm', 'Synthetic approved repair fixture')
+        return repo, git('rev-parse', 'HEAD')
+
+    def docker_fixture(self, release):
+        def docker(*args):
+            if args[:2] == ('image', 'inspect'):
+                return json.dumps([{'Id': args[2], 'Os': 'linux', 'Architecture': 'amd64'}]).encode()
+            if args[:2] == ('image', 'save'):
+                Path(args[3]).write_bytes(b'synthetic image archive')
+                return b''
+            if args[-1] == '/app/RELEASE': return (release+'\n').encode()
+            if args[-1] in ('/app/DEPENDENCIES.lock', '/app/OS-PACKAGES.lock'): return b'synthetic inventory'
+            return b'[]'
+        return docker
+
+    def test_CP2_tracked_private_key_and_credential_artifacts_fail_before_output_or_docker(self):
+        canary = b'SYNTHETIC_CREDENTIAL_NEVER_LOG_30981'
+        cases = {
+            'deployment-signing.key': b'-----BEGIN PRIVATE KEY-----\n'+canary+b'\n-----END PRIVATE KEY-----\n',
+            'notes/installation-material': b'-----BEGIN OPENSSH PRIVATE KEY-----\n'+canary+b'\n-----END OPENSSH PRIVATE KEY-----\n',
+            'runtime.env.customer': b'API_KEY='+canary+b'\n',
+            'config/connection.json': b'{"api_key":"'+canary+b'"}',
+            'config/connection.ini': b'[connection]\npassword='+canary+b'\n',
+            'config/header.json': b'{"authorization":"Bearer '+canary+b'"}',
+            'config/connection.yaml': b'{database: {password: '+canary+b'}}\n',
+            'config/connection.toml': b'database = { password = "'+canary+b'" }\n',
+            'config/header.yaml': b'headers: {Authorization: "Bearer '+canary+b'"}\n',
+            'config/header.toml': b'headers = { Authorization = "Basic '+canary+b'" }\n',
+        }
+        for number, (name, content) in enumerate(cases.items()):
+            with self.subTest(artifact=name):
+                repo, release = self.build_source({name: content}, number)
+                target = self.path/f'blocked-candidate-{number}'
+                with patch.object(self.customer, '_docker', side_effect=self.docker_fixture(release)) as docker:
+                    with self.assertRaises(ValueError) as error:
+                        self.customer.build_package(repo, target, release, self.app, self.proxy)
+                self.assertNotIn(canary.decode(), str(error.exception))
+                self.assertFalse(target.exists(), 'No candidate/private artifact should have been exported.')
+                docker.assert_not_called()
+
+    def test_CP2_public_certificate_public_key_and_source_references_remain_packageable(self):
+        files = {
+            'certs/approved-public.pem': b'-----BEGIN CERTIFICATE-----\nSYNTHETIC PUBLIC ONLY\n-----END CERTIFICATE-----\n',
+            'certs/approved-public.crt': b'-----BEGIN CERTIFICATE-----\nSYNTHETIC PUBLIC ONLY\n-----END CERTIFICATE-----\n',
+            'certs/operator.pub': b'ssh-ed25519 SYNTHETIC_PUBLIC_ONLY operator@example.invalid\n',
+            'tests/test_reference.py': b'PEM_MARKER = "-----BEGIN PRIVATE KEY-----"\nENV_REFERENCE = "API_KEY=not-a-runtime-assignment"\n',
+            'deploy/.env.example': b'DJANGO_SECRET_KEY_FILE=/external/private/django-secret\nDJANGO_SECRET_KEY=replace_with_a_unique_random_secret_key\n',
+            'config/server.env.example': b'DJANGO_SECRET_KEY=REPLACE_WITH_A_RANDOM_UNIQUE_SECRET_KEY\nAPI_KEY=${PRIVATE_OPERATOR_TOKEN}\n',
+            'config/reference.json': b'{"credential_env":"PRIVATE_OPERATOR_TOKEN","api_key":"${PRIVATE_OPERATOR_TOKEN}"}',
+            'docs/receipt.json': b'{"authorization":"Synthetic user-approved workflow, not a credential header"}',
+            'docs/reference.yaml': b'description: "Reference only {password: not-a-data-field}"\nrun: |\n  password = "synthetic source fixture, not runtime data"\n',
+        }
+        repo, release = self.build_source(files)
+        with patch.object(self.customer, '_docker', side_effect=self.docker_fixture(release)):
+            result = self.customer.build_package(repo, self.path/'safe-candidate', release, self.app, self.proxy)
+        self.assertEqual(result['status'], 'draft-for-review')
+        for name, content in files.items():
+            self.assertEqual((self.path/'safe-candidate/release'/name).read_bytes(), content)
+
+    def test_CP2_quoted_header_and_nested_config_syntax_variants_are_rejected(self):
+        cases = [
+            ('yaml', 'headers: {Authorization: "Bearer SYNTHETIC"}'),
+            ('yaml', "headers: {Authorization: 'Basic SYNTHETIC'}"),
+            ('yaml', 'headers:\n  Authorization: "Bearer SYNTHETIC"'),
+            ('toml', 'headers = { Authorization = "Basic SYNTHETIC" }'),
+            ('toml', "[headers]\nAuthorization = 'Token SYNTHETIC'"),
+            ('toml', 'headers = { Authorization = "Be\\u0061rer SYNTHETIC" }'),
+            ('yaml', 'database: {password: "SYNTHETIC"}'),
+            ('toml', 'database = { password = "SYNTHETIC" }'),
+        ]
+        for kind, content in cases:
+            with self.subTest(kind=kind, variant=cases.index((kind, content))):
+                self.assertTrue(self.customer._configuration_credentials(content, yaml=kind == 'yaml'))

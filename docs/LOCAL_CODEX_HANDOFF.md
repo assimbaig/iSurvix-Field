@@ -1,43 +1,109 @@
 # iSurvix Field: local Codex development brief
 
-## Latest: customer-server/free local PDF-OCR candidate - 31 October 2026
+## Latest: shared update candidate baseline - 31 October2026
 
-Owneraddedtasks16-18 andrequestedfreeGitHubPDF/OCRtoolswithnopaidPDF/OCRAPI.
-WorkisolatedinB6feat/customer-server-readiness-20261031; sharedparent e832def.
-First-pinfunctionalrepairnowhostCI41221090193ALLGREEN Windows1473/Linux1471+2
-Windows-onlyskips/Chromium. PR29leftdraft/unmerged. Nooperationalsourcemigration.
+Owner added tasks19-21: one immutable release pipeline for both editions,
+customer-server Update Center and proved upgrade/recovery. Work remains B6,
+`feat/customer-server-readiness-20261031`; no operational migration/deployment.
 
-Freshcheckpoint193523:3595protectedfiles+consistentSQLite/source/Gitverified.
-Mainremainsfd365f1/core0053;records/originals/branding/credentialsunchanged.
-NewLinuxDockertransfercandidate packagesexacttrackedsource+existingreviewed
-imagearchives,integrityinventory,DRAFTack,fresh/restoretargets,privateLANlistener,
-TLS/operatorsecretsoutsidebundle,explicitinit/migrate,neverruntimepull/modeldownload.
-22packagetestsGREEN;actualLinuxDockerCIpending(nolocalDocker/WSLinstalled).
+CP1/CP2 approved fixes now passed developer28, independent bounded QA and
+separate AppSec12+2 checks. Original/interim RED evidence remains preserved.
+Root then added backward-compatible optional Update Center mounts; the earlier
+CP source hash identifies the reviewed repair, not the later integrated source.
+Active holds remain A12/BR1/D1/D2/L1/CS1/CS2/AI1. No earlier finding repaired.
 
-OperationalUIassetsnowlocal:34fileswithlicenses/SHA+5oldSRIpinsmatching;scoped
-.gitattributes-textpreservesbytes.18affectedchecks+68realofflinebrowserassertions
-passed,0automaticthirdpartyrequests,originals+DBpreservedacrossrestart;6mapchecks
-onlyattempttilesafterexplicitonlineaction. ActualNICdisconnect/physical2ndLAN
-browsernotverified. Fixtures8954stopped. DocsCUSTOMER_OFFLINE_QA_20261031.
+Owner-only /ops/updates/ uses real saved requests, an additive0057 migration,
+strict operator-managed offline catalog, idempotency, one-active-request lock,
+CSRF and audited pending withdrawal. Privileged apply/recover runs on the host,
+never in web. Signed short-lived exports recheck authority; immutable sequenced
+host receipts populate history. The Docker socket and independent journals stay
+outside web; only optional catalog/receipt mounts are read-only.
 
-Freepypdf6.21.4/pypdfium2 5.14 pinned+installed(import/pipcheckpassed),actualPDF
-intake/protectedpreview/sketchsourceconversionlocal. ExistingRapidOCR1.4.4+3bundled
-weightsreusedwithstrictpreflight/CPU2-1,noadditionalmodelsorpaidcalls.150PDFrelated
-checks+54OCRrelatedGREEN(overlapping). Independent10/63/29passed(overlap). Actual
-nativePDF->OCRprintedHEIGHT30mexactpassed;strict3lineOCRspacingbenchmark1/3exact,
-3/3alphanumeric,remainingaccuracy/handwriting/Arabicnotclaimed. OCRproposalsremain
-unverified;canonicalremoteprovenanceandhelpercompatibilitypinsretained. Remaining
-MuPDFdrawingUnicodelibraryisLOCAL,notpaidAPI,butAGPL/commerciallicencegatestillheld.
+Integrated84 focused tests passed54.390s, zero external attempts/two controlled
+HTTP connections. Developer22 Update Center checks passed; independent47 actual
+browser assertions cover1920/1366/390, persistence, withdrawal, forged/stale
+receipts and recovery locks. Developer16 updater checks cover real SQLite/media
+and controlled Docker, hard interruption/recover, safe rollback, second upgrades
+and retained data. These are NOT actual Linux Docker or physical LAN evidence.
 
-CP1Medium(create-ownerbypasseslocalDockercontext) andCP2Medium(trackedprivatekeycan
-beexported) confirmedseparatelywithsyntheticREDtests. BothUNFIXED;ownerapproval
-requestpending. OldA12/BR1/D1/D2/L1/CS1/CS2/AI1holdsunapprovedanduntouched.
-Candidateackisnotownerreleaseapproval. Post-functionalPDFreview/wholeLinuxCIpending.
+Task19 gate requires completed successful application/staging/customer checks
+for one exact SHA, latest attempt chronology and a fresh check after download.
+It reuses the already-built application/proxy identities for both editions,
+binds install/upgrade proof to manifest+images and publishes only a DRAFT
+artifact.11 tracked+19 overlapping independent checks and10 separate security
+checks passed. Gated actual CI publication is still pending.
 
-ConcreteCUSTOMER_SERVICE_OFFER_DRAFT_20261031.md definesresponsibilities,licence/
-commercialdecisionfieldswithnopricesorservicelevelsforged. Task18Blockedowner
-acceptance;task16physicalcustomerLANandlicence/securitygatesremainexplicit.
-Rootownsverify_customer.sh+customerCIworkflow; noVPS/customerdeployment/merge.
+Root prepared verify_updates.sh for actual synthetic Linux install/failure/
+interruption/recovery/update and authenticated original-byte smoke checks.
+The first phase6 baseline commit must be recorded in supported-upgrades.json
+in the subsequent CI target commit. Do NOT publish/claim support with an empty
+baseline. Only that exact0057-to0057 pair is intended for automatic verification;
+earlier0056 automatic upgrades are unsupported. No generic migration guarantee.
+
+Full current regression, whole-integration AppSec and actual Linux CI remain
+pending. Preserve all receipts and correct actual CI failures without weakening
+checks. Real customer/second-device, licensing/commercial policy and exact
+release approval remain blocked. Source mainfd365f1/schema0053 and3595protected
+files/70tables were independently rechecked unchanged. PR29 stays draft.
+
+Read SHARED_UPDATES_REQUIREMENTS_20261031.md, independent gate/update QA reports,
+CUSTOMER_UPDATER_IMPLEMENTATION_20261031.md and deploy/customer/UPDATES.md.
+
+## Latest: approved customer-package security repairs - 31 October 2026
+
+The owner explicitly approved **CP1 and CP2**: validate the local Docker context
+before interactive owner creation, and reject private-key/credential artifacts
+from the distributable server package. These fixes are in progress on
+`feat/customer-server-readiness-20261031`, worktree `.local/b6`, candidate
+`dfbd557`. Original security RED receipts remain preserved. No earlier finding
+is approved by this reply; A12/BR1/D1/D2/L1/CS1/CS2/AI1 remain on hold.
+
+The existing Agency package developer owns the fixes and tracked regression
+tests. Independent Agency QA and separate AppSec review must verify the repair.
+The draft customer-package PR and real disposable Linux install CI follow the
+functional source freeze. Docker/WSL are unavailable locally. No actual customer
+server or second physical LAN device has been tested or deployed.
+
+Customer tasks16-18 include an exact-source Linux/amd64 Docker package candidate,
+local image archives, integrity/licence inventories, external TLS/secrets,
+explicit fresh/restore initialization and offline image loading. Runtime does
+not pull images or download models. Candidate acknowledgement does not approve
+release, customer installation or redistribution. Service/maintenance offer is
+a concrete draft; owner licence/commercial decisions remain outstanding.
+
+Operational UI dependencies are bundled locally with licences, SHA inventories
+and unchanged upstream bytes. Eighteen affected checks and68 real offline
+browser assertions passed, with no automatic third-party requests; restart
+preserved fixture records and originals. Separate map checks attempted tiles
+only after explicit online activation. Physical NIC/LAN acceptance is separate.
+
+The free PDF/OCR integration uses pinned pypdf6.21.4 and pypdfium2 5.14.0 plus the
+existing RapidOCR1.4.4 and its three dependency-bundled weights. No paid PDF/OCR
+API was found in the scanned source or introduced. Local PDF ingestion, protected
+previews and worker-only OCR are connected to the existing survey flow.
+150 PDF-related and54 OCR-related tests passed (overlap); independent10/63/29
+checks passed (overlap). Actual synthetic PDF-to-native-OCR passed for one
+printed line. The strict three-line spacing benchmark passed1/3 exact strings,
+3/3 alphanumeric content: do not claim perfect OCR, handwriting or site accuracy.
+Twelve separate PDF/OCR security checks passed; no new exploitable finding was
+established in that bounded scope. No native Ollama request was made.
+
+Remaining MuPDF use for drawing Unicode/HTML/rendering is a local library, not a
+paid API. Its AGPL/commercial redistribution route still requires owner review.
+Do not claim complete removal or licence clearance.
+
+PR29 head `e832def` CI41221090193 passed: Windows1473; Linux1471 plus2 existing
+Windows-only skips; Chromium passed. PR29 remains draft/unmerged. Its legacy
+first-pin fix retains the original model identity and completed checkpoints.
+
+Recovery checkpoint193523 preserves3595 protected files, a consistent SQLite
+backup and source/Git archives. Operational main remainsfd365f1/schema0053;
+records, originals, credentials, branding and approvals are unchanged. Do not
+apply feature migrations to operational data or stop unrelated services.
+
+Read CUSTOMER_SERVER_REQUIREMENTS_20261031.md, CUSTOMER_SERVICE_OFFER_DRAFT_20261031.md,
+FREE_PDF_OCR_INTEGRATION_20261031.md, independent QA/security/offline reports and
+the delivery ledger for evidence and explicit target/security/licence blockers.
 
 ## Latest: PR29 legacy first-pin follow-up - 31 October 2026
 

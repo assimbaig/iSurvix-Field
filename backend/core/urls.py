@@ -8,6 +8,7 @@ from .legacy_routes import protected_legacy
 from .private_files import checklist_file
 
 urlpatterns = [
+    path('ops/updates/', include('core.update_urls')),
     path('governance/ai-settings/', include('core.ai_settings_urls')),
     path('ops/', include('core.operations_urls')),
     path('governance/onboarding/', include('core.onboarding_urls')),

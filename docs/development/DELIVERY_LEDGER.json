@@ -1,7 +1,7 @@
 {
-  "updated_utc": "2026-10-31T16:23:36.800017+00:00",
+  "updated_utc": "2026-10-31T17:12:00.046614+00:00",
   "verified": 8,
-  "total": 18,
+  "total": 21,
   "rows": [
     {
       "ID": "01",
@@ -193,7 +193,7 @@
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Clean server install works from a second authorized LAN browser.",
-      "Notes / evidence / PR": "LinuxDocker drafttransfer package implemented;22focusedtests passed. ActualLinuxbuild/install/LAN-client simulation/fullCI pending; physicalsecondauthorisedLANdevice/customer/security/licence approval unavailable. CP1/CP2Medium remain unapproved/unfixed."
+      "Notes / evidence / PR": "LinuxDocker drafttransfer package implemented;22focusedtests passed. ActualLinuxbuild/install/LAN-client simulation/fullCI pending; physicalsecondauthorisedLANdevice/customer/security/licence approval unavailable. Owner explicitly approved CP1/CP2 repairs; executed RED evidence retained, implementation/independent closure in progress."
     },
     {
       "ID": "17",
@@ -218,6 +218,42 @@
       "Completed date": "",
       "Acceptance check": "Owner approves maintenance responsibilities, license and commercial policy.",
       "Notes / evidence / PR": "ConcreteCUSTOMER_SERVICE_OFFER_DRAFT_20261031.md prepared withresponsibilities,modeboundaries,licenceoptions,pricing/supportdecisionfields. Noowneracceptance,licencegrant,Artifexpurchase orcontractcommitment. LocalMuPDFdrawinglicencegate persists; no paidPDF/OCR API found/configured."
+    },
+    {
+      "ID": "19",
+      "Phase": "6",
+      "Phase Name": "Updates",
+      "Task": "Build one immutable release pipeline for both editions",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Release provenance is traceable. Failed tests block publication.",
+      "Notes / evidence / PR": "Explicit owner instruction31 October2026. Inspecting existing exact-source packages, update/recovery and shared CI; implementation and independent verification pending. No production/customer update or publication authorized."
+    },
+    {
+      "ID": "20",
+      "Phase": "6",
+      "Phase Name": "Updates",
+      "Task": "Build customer-server Update Center",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Verified update preserves data. Invalid packages and interrupted updates stop safely.",
+      "Notes / evidence / PR": "Explicit owner instruction31 October2026. Inspecting existing exact-source packages, update/recovery and shared CI; implementation and independent verification pending. No production/customer update or publication authorized."
+    },
+    {
+      "ID": "21",
+      "Phase": "6",
+      "Phase Name": "Updates",
+      "Task": "Prove upgrade and recovery across supported versions",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Demonstrate recovery from failed upgrade. Verify retained evidence hashes.",
+      "Notes / evidence / PR": "Explicit owner instruction31 October2026. Inspecting existing exact-source packages, update/recovery and shared CI; implementation and independent verification pending. No production/customer update or publication authorized."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",

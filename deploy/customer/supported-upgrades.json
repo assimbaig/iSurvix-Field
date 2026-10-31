@@ -1,0 +1,7 @@
+{
+  "format": "isurvix-upgrade-verification-v1",
+  "baseline_source_commit": "",
+  "source_schema": "0057_server_update_requests",
+  "target_schema": "0057_server_update_requests",
+  "scope": "Only the exact baseline-to-checked-out-candidate pair proved by disposable CI. Earlier automatic upgrades are unsupported."
+}
