@@ -1,7 +1,7 @@
 {
   "task": "06",
   "acceptance": "Two companies onboard separately. Replayed requests create no duplicates.",
-  "status": "Acceptance verified; final draft PR delivery pending",
+  "status": "Verified within Company access acceptance; full-suite environment error disclosed",
   "recorded_utc": "2026-10-31T14:16:51.613158+00:00",
   "branch": "feat/company-onboarding-20261031",
   "tested_source_fingerprint": "cd52a7411350228a4754b94f3020a23d174e84e67e01ee5bde4aadda1da7972a",
@@ -331,5 +331,23 @@
       "Controlled intake scope",
       "Invitation replacement lifecycle handoff"
     ]
-  }
+  },
+  "implementation_commit": "148e2cb92ae6f11c9edd1b3f69401fd2cd355fe1",
+  "draft_pr": "https://github.com/assimbaig/iSurvix-Field/pull/27",
+  "pr_base": "feat/platform-customer-admin-20261028",
+  "operational_migration_applied": false,
+  "merged": false,
+  "deployed": false,
+  "review_alignment": {
+    "previous_head": "e738569acfbfe5ca4588f7b303a1be7d099afc4f",
+    "aligned_head": "c063493fc0622292f2af09521fdd6730d7f7670b",
+    "base": "1cd28656a7bb1d95853d242af8947d4136c8c09b",
+    "recovery_branch": "recovery/company-onboarding-before-alignment-20261031",
+    "implementation_commit": "148e2cb92ae6f11c9edd1b3f69401fd2cd355fe1",
+    "tested_source_bytes_unchanged": true,
+    "tested_source_fingerprint": "cd52a7411350228a4754b94f3020a23d174e84e67e01ee5bde4aadda1da7972a",
+    "published_history_rewritten": false,
+    "index_refresh": "Restaged identical normalized content after restoring tested LF bytes; no staged or working changes."
+  },
+  "count_relationships": "Focused66 and independent12 unit/HTTP counts overlap backend fullsuite; browser39, visual10 and private AppSec12 are separate gates, not additional backend tests."
 }

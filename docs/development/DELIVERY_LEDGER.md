@@ -1,7 +1,8 @@
 # iSurvix Field delivery ledger
 
-31 October 2026. Four acceptance checks are Verified; task03 remains Blocked.
-Task06 is In progress. Due dates were not supplied. Verification is not deployment.
+31 October 2026. Five of six recorded acceptance checks are Verified; task03
+remains Blocked. Company access tasks04–06 are Verified. Due dates were not supplied.
+Feature acceptance is not deployment or a claim that the full suite is green.
 
 | ID | Phase | Task | Status | Owner | Due date | Completed date | Acceptance check | Notes / evidence / PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -10,7 +11,7 @@ Task06 is In progress. Due dates were not supplied. Verification is not deployme
 | 03 | 0 Baseline | Investigate native AI crash A12 on the actual target PC | Blocked | Dot |  |  | Identify crash cause and pass real image tests on the target PC. | Historical Linux Python139 lacks native core/backtrace and failing build environment. Five Windows named regressions pass but do not identify cause. Standard Ollama500 missing runner; project runtime completed3 image requests but0/3 labels correct. No repair/installation performed. See A12_NATIVE_INVESTIGATION_20261028. |
 | 04 | 1 Company access | Define and implement company boundaries | Verified | Dot |  | 2026-10-28 | Prove company A cannot access company B records, files or jobs. | Defined employer-Company scope; current authority/retained records and immutable worker-company pins implemented. CompanyA/B records/files/jobs HTTP+browser positives/denials passed. Full1287:1286passed,1existing Windows fixture error;19frontchecks. Migration0054 tested on disposable copy only. Implementation defc27d; draft PR25 https://github.com/assimbaig/iSurvix-Field/pull/25. No operational migration/deployment. PR25 subsequently merged upstream as 7d69e57; operational checkout was not deployed. |
 | 05 | 1 Company access | Separate platform-owner and customer-administrator permissions | Verified | Dot |  | 2026-10-31 | Role tests reject privilege escalation. Audit privileged changes. | Platform/customer authority overrides rejected; transactional allowlisted privileged-change audit verified. Full1323:1322passed,1existing Windows symlink privilege error,0failures/skips.19frontend checks passed; independent unit/HTTP/browser/security checks passed within scope. Implementation81982db. Draft PR26 https://github.com/assimbaig/iSurvix-Field/pull/26. No operational migration/deployment. See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md. |
-| 06 | 1 Company access | Build Apply -> Review -> Provision -> Invite onboarding | In progress | Dot |  |  | Two companies onboard separately. Replayed requests create no duplicates. | Controlled platform-owner intake and separate review/provision/invite flow under implementation. Independent RED tests executed. No public registration or staging rollout. |
+| 06 | 1 Company access | Build Apply -> Review -> Provision -> Invite onboarding | Verified | Dot |  | 2026-10-31 | Two companies onboard separately. Replayed requests create no duplicates. | Owner-controlled Apply > Review > Provision > Invite implemented. Two companies and actual accepted Admin accounts verified separately; replay/concurrent retry creates no duplicate records/audits.66focused tests overlap fullsuite; separate39browser,10visual and12AppSec checks passed. Full1350:1349passed,1existing Windows symlink privilege error,0failures/skips;19frontend passed. Implementation148e2cb; draft PR27 https://github.com/assimbaig/iSurvix-Field/pull/27. All3595protectedfiles/70operationaltables unchanged; no live migration/deployment. See COMPANY_ONBOARDING_ACCEPTANCE_20261031.json. |
 
 ## Evidence and scope
 
@@ -56,3 +57,8 @@ Company-boundary definition, implementation report, acceptance JSON, worker migr
 ## Task05 evidence
 
 See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md and independent QA/security reports. Draft PR26 remains for review. The Windows symlink fixture remains blocked; no full-green or deployment claim is made.
+
+
+## Task06 evidence
+
+See COMPANY_ONBOARDING_IMPLEMENTATION_20261031.md, acceptance JSON, guide, independent QA/security reports and screenshots. Draft PR27 is stacked after PR26; both remain for review. Staging and AI settings were deferred. No operational migration or deployment.

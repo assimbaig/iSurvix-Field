@@ -1,5 +1,25 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: verified company onboarding / draft PR27 - 31 October 2026
+
+Owner narrowed work to Company access only. Task06 is Verified on
+`feat/company-onboarding-20261031` in `.local/b3`; implementation148e2cb.
+Draft PR27: https://github.com/assimbaig/iSurvix-Field/pull/27 (stacked after draftPR26).
+Apply > Review > Provision > Invite uses existing company-bound Admin invitations.
+Two companies/actual browser Admin acceptances and replay/concurrent retries passed.
+66focused,12independent unit/HTTP,39browser,10visual and12separate AppSec passed
+(focused unit/HTTP counts overlap fullsuite; browser/visual/AppSec are separate gates). Full1350:1349passed,0failures,1unchanged Windows
+symlink-privilege fixture error,0skips; all19frontend and required system/build
+checks passed on unchanged source. The full suite is not green. Actual browser
+CSRF acceptance and CTA/mobile table defects were repaired before final review.
+See COMPANY_ONBOARDING_IMPLEMENTATION_20261031.md, acceptance JSON, guide and
+independent reports/screenshots. All3595 protectedfiles/70tables and2old reports
+unchanged.0054+0055 rehearsed only on disposable copy;66business tables unchanged.
+Operational main remainsfd365f1/schema0053; no live migration, nativeAI call,
+merge or deployment. Review refs/sourcebytes preserved before aligning the
+unpublished branch with PR26. Existing A12/BR1/D1/D2/L1 holds remain; no security
+finding was silently fixed after review. Staging/AI settings/pilot not active.
+
 ## Latest: company onboarding - 31 October 2026
 
 Owner narrowed current development to Company access only (task06). Staging
