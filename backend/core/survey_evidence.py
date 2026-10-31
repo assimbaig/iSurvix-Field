@@ -479,7 +479,7 @@ def _vision_check(model, base_url):
         raise EvidenceError('The selected local model does not support image analysis.')
 
 
-def analyse_source(source, model, base_url=None, *, compact=False):
+def analyse_source(source, model, base_url=None, *, compact=False, transport=None, verify=None):
     """Analyse one source with actual image bytes and strictly validated JSON.
 
     The durable worker must hold ``photo_queue.photo_inference_lease`` across this
@@ -503,7 +503,7 @@ def analyse_source(source, model, base_url=None, *, compact=False):
             raise EvidenceError('The source image data is invalid.') from exc
     if not text.strip() and not image:
         raise EvidenceError('The source has no readable content.')
-    _vision_check(model, base_url)
+    (verify or _vision_check)(model, base_url)
     catalog = source.get('field_catalog') or []
     if not isinstance(catalog, list) or len(catalog) > 40:
         raise EvidenceError('Use a bounded checklist field catalog for evidence analysis.')
@@ -535,7 +535,7 @@ def analyse_source(source, model, base_url=None, *, compact=False):
     # Never parse a partial response or repeatedly run completed source records.
     metrics = []
     for token_bound in TOKEN_BOUNDS:
-        response = local_ai.ollama('/api/chat', {'model': model, 'stream': False, 'think': False,
+        response = (transport or local_ai.ollama)('/api/chat', {'model': model, 'stream': False, 'think': False,
                  'format': schema, 'messages': messages,
                  'options': {**INFERENCE_OPTIONS, 'num_predict': token_bound}}, base_url=endpoint)
         metrics.append({key: response.get(key) for key in ('eval_count', 'eval_duration',

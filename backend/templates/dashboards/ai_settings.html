@@ -1,0 +1,31 @@
+﻿{% extends 'base.html' %}{% load static %}
+{% block title %}AI Settings Â· iSurvix Field{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/ai_settings.css' %}">{% endblock %}
+{% block content %}
+<main class="ai-settings-page">
+  <header class="ai-settings-heading"><div><p class="ai-settings-eyebrow">Administration{% if company %} / {{ company.name }}{% endif %}</p><h1>AI Settings</h1></div><a href="{% url 'governance_home' %}?view=administration">Back to administration</a></header>
+  {% if not company %}
+  <section class="ai-settings-card" aria-labelledby="ai-company-heading"><h2 id="ai-company-heading">Choose a company</h2><p>Manage processing configuration only. Survey records and engineering approvals remain with project roles.</p><ul class="ai-company-list">{% for item in companies %}<li><a href="{% url 'ai_settings_company' item.pk %}">{{ item.name }}</a></li>{% empty %}<li>No companies have been provisioned.</li>{% endfor %}</ul></section>
+  {% else %}
+  <p class="ai-settings-note">Changes apply to future processing attempts. Saving does not start analysis, download a model, rerun completed results or accept engineering work.</p>
+  <form method="post" class="ai-settings-form" novalidate>{% csrf_token %}{{ form.version }}
+    {% if form.errors %}<div class="ai-settings-error" role="alert"><strong>Settings were not saved.</strong>{{ form.non_field_errors }}<p>Correct the highlighted fields and retry. Your entered values remain below.</p></div>{% endif %}
+    <section class="ai-settings-card" aria-labelledby="ai-routing-heading"><header><h2 id="ai-routing-heading">Processing route</h2><small>{% if configuration %}Saved version {{ configuration.version }}{% else %}Not configured{% endif %}</small></header>
+      <label class="ai-settings-check">{{ form.enabled }}<span>{{ form.enabled.label }}</span></label>{{ form.enabled.errors }}
+      <p class="ai-settings-help">When disabled, existing local processing remains unchanged. Provider limits below govern configured routing only.</p>
+      <div class="ai-settings-grid"><div class="ai-settings-field">{{ form.primary_provider.label_tag }}{{ form.primary_provider }}{{ form.primary_provider.errors }}</div><div class="ai-settings-field">{{ form.local_model.label_tag }}{{ form.local_model }}{{ form.local_model.errors }}<small>An installed vision-capable model is required. No model is downloaded here.</small></div></div>
+    </section>
+    <section class="ai-settings-card" aria-labelledby="ai-provider-heading"><header><h2 id="ai-provider-heading">Optional HTTPS provider</h2><small>{{ available_provider_count }} configured connection{{ available_provider_count|pluralize }}</small></header>
+      <div class="ai-settings-grid"><div class="ai-settings-field">{{ form.api_endpoint.label_tag }}{{ form.api_endpoint }}{{ form.api_endpoint.errors }}</div><div class="ai-settings-field">{{ form.api_model.label_tag }}{{ form.api_model }}{{ form.api_model.errors }}</div></div>
+      <p class="ai-settings-help">Connections and credentials are maintained privately by the server operator. Only approved connection names appear here. Credentials and connection addresses are never shown or entered on this page.</p>
+      {% if not available_provider_count %}<p class="ai-settings-note">No HTTPS provider is configured. Keep the local route selected; external fallback is unavailable.</p>{% endif %}
+      <label class="ai-settings-check">{{ form.allow_external_evidence }}<span>{{ form.allow_external_evidence.label }}</span></label>{{ form.allow_external_evidence.errors }}
+      <label class="ai-settings-check">{{ form.fallback_enabled }}<span>{{ form.fallback_enabled.label }}</span></label>{{ form.fallback_enabled.errors }}
+      <p class="ai-settings-help">External processing sends evidence content to the selected connection. Fallback requires explicit permission and is recorded; matching never approves inspected work.</p>
+    </section>
+    <section class="ai-settings-card" aria-labelledby="ai-limits-heading"><h2 id="ai-limits-heading">Limits and recovery</h2><div class="ai-settings-grid"><div class="ai-settings-field">{{ form.daily_request_limit.label_tag }}{{ form.daily_request_limit }}{{ form.daily_request_limit.errors }}<small>Each source-provider attempt counts, including fallback. Zero blocks configured processing.</small></div><div class="ai-settings-field">{{ form.request_timeout.label_tag }}{{ form.request_timeout }}{{ form.request_timeout.errors }}<small>Between 5 and 600 seconds per request. Interrupted work is retried by the existing worker.</small></div></div></section>
+    <footer class="ai-settings-actions"><button type="submit">Save settings</button><a href="{% url 'ai_settings_company' company.pk %}">Reload saved settings</a>{% if is_super_admin %}<a href="{% url 'ai_settings_index' %}">Change company</a>{% endif %}</footer>
+  </form>
+  {% endif %}
+</main>
+{% endblock %}

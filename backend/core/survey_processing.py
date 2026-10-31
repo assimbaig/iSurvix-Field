@@ -213,21 +213,28 @@ def worker_guard(revision):
         if configuration_error(c): raise ValidationError(configuration_error(c))
 
 
-def claim():
+def claim(*,configured_providers=False):
     from .remote_worker_models import RemoteWorkerProject
     from .survey_pause import settle_expired
     settle_expired()
     now = timezone.now()
     with transaction.atomic():
-        job = SurveyProcessingJob.objects.select_for_update().filter(
+        candidates = SurveyProcessingJob.objects.select_for_update().filter(
             Q(status='queued') | Q(status__in=ACTIVE, lease_until__lt=now) |
-            Q(status__in=ACTIVE, lease_until__isnull=True)).exclude(
-                revision__checklist__project_id__in=RemoteWorkerProject.objects.filter(enabled=True).values('project_id')
-            ).order_by('pk').first()
+            Q(status__in=ACTIVE, lease_until__isnull=True)).filter(
+                ~Q(revision__checklist__project_id__in=RemoteWorkerProject.objects.filter(enabled=True).values('project_id')) |
+                Q(revision__checklist__project__company__ai_processing_settings__enabled=True) |
+                Q(provider_policy__isnull=False))
+        if configured_providers:
+            candidates=candidates.filter(Q(provider_policy__snapshot__primary_provider='https_ollama') |
+                Q(provider_policy__isnull=True,revision__checklist__project__company__ai_processing_settings__enabled=True,
+                  revision__checklist__project__company__ai_processing_settings__primary_provider='https_ollama'))
+        job=candidates.order_by('pk').first()
         if not job:
             return None
         job.lease_owner = uuid.uuid4().hex
-        job.lease_until = now + timedelta(seconds=max(300, getattr(settings, 'OLLAMA_TIMEOUT', 180) + 120))
+        from .ai_processing_service import lease_seconds
+        job.lease_until = now + timedelta(seconds=lease_seconds(job))
         job.attempts += 1
         job.status, job.error = 'analysing_evidence', ''
         job.save()
@@ -251,7 +258,8 @@ def progress(job, status=None, **values):
                 # an ownerless future lease that no worker can acknowledge.
                 saved.status = 'paused'
         if saved.status in ACTIVE | {'pausing'}:
-            saved.lease_until = timezone.now() + timedelta(seconds=max(300, getattr(settings, 'OLLAMA_TIMEOUT', 180) + 120))
+            from .ai_processing_service import lease_seconds
+            saved.lease_until = timezone.now() + timedelta(seconds=lease_seconds(saved))
         saved.save()
         job.completed, job.total = saved.completed, saved.total
 
@@ -581,13 +589,13 @@ def render_drawing_set(revision, payload, released=False, actor=None):
         review_digest=signature, geometry=geometry, manifest=manifest)
 
 
-def process_next():
+def process_next(*,configured_providers=False):
     from . import survey_evidence as evidence
     from .survey_model_identity import verified_identity,pin
     from .local_ai import InferenceBusy
     from .photo_queue import photo_inference_lease
     from .survey_pause import boundary, ProcessingPaused, yield_job
-    job = claim()
+    job = claim(configured_providers=configured_providers) if configured_providers else claim()
     if not job:
         return False
     try:
@@ -595,8 +603,10 @@ def process_next():
         worker_guard(job.revision)
         # Metadata readiness does not consume the GPU slot. A cache-only
         # revision can finish while another job owns actual inference.
-        identity = verified_identity(job.model,job.pipeline_version)
-        pin(job,identity)
+        from . import ai_processing_service as providers
+        routed = providers.configured(job)
+        identity = providers.processing_identity(job) if routed else verified_identity(job.model,job.pipeline_version)
+        providers.pin_processing_identity(job,identity) if routed else pin(job,identity)
         from .survey_acceleration import ObservationReuse
         reuse = ObservationReuse(job.revision, identity['fingerprint'])
         snapshot = job.revision.snapshot
@@ -624,12 +634,17 @@ def process_next():
                 with transaction.atomic():
                     progress(job)
                     reuse.flush_visuals()
-                analysed = reuse.lookup(source)
+                # Configured provider policies retain per-revision checkpoints;
+                # cross-revision model-weight reuse remains the legacy local path.
+                analysed = None if routed else reuse.lookup(source)
                 if analysed is None:
-                    with photo_inference_lease() as check:
-                        analysed = evidence.analyse_source(source, job.model,
-                            base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
-                        check()
+                    if routed:
+                        analysed = providers.execute_source(job, source)
+                    else:
+                        with photo_inference_lease() as check:
+                            analysed = evidence.analyse_source(source, job.model,
+                                base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
+                            check()
                     analysed = reuse.stamp(source, analysed)
                 if source.get('image_b64'):
                     import base64
@@ -692,7 +707,7 @@ def process_next():
                             'unassigned': [f['finding_key'] for f in batch['findings'] if f['finding_key'] not in selected]})
                     else:
                         progress(job)
-                        previous = (SurveySourceAnalysis.objects.filter(
+                        previous = None if routed else (SurveySourceAnalysis.objects.filter(
                             revision__checklist_id=job.revision.checklist_id,
                             revision__processing_job__model_digest=identity['fingerprint'],
                             source_id=batch['key']).exclude(revision=job.revision).order_by('-pk').first())
@@ -701,10 +716,13 @@ def process_next():
                                 raise ValidationError('Saved reusable checklist mapping failed integrity verification.')
                             mapped = deepcopy(previous.payload)
                         else:
-                            with photo_inference_lease() as check:
-                                mapped = bind_batch(batch, job.model,
-                                    base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
-                                check()
+                            if routed:
+                                mapped = providers.execute_mapping(job, batch)
+                            else:
+                                with photo_inference_lease() as check:
+                                    mapped = bind_batch(batch, job.model,
+                                        base_url=getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL))
+                                    check()
                         mapped = with_partial_mapping_context(batch, mapped, projection_context)
                         with transaction.atomic():
                             progress(job)

@@ -135,6 +135,9 @@ def _lock(credential, job_id, token, guard=True):
     if lease.versions != versions():
         raise ValidationError('This saved job is pinned to another reviewed worker release. Restore the matching release before resuming its checkpoints.')
     if guard:
+        from .ai_processing_service import configured
+        if configured(job):
+            raise ValidationError('This job uses a configured AI policy. The current PC worker cannot execute that policy; keep its evidence queued for the policy-aware server worker.')
         pipeline.worker_guard(job.revision)
     return job, lease
 
@@ -164,9 +167,20 @@ def claim(credential, payload):
             raise ValidationError('The worker model identity proof is invalid or incompatible.')
     now = timezone.now()
     with transaction.atomic():
-        job = SurveyProcessingJob.objects.select_for_update().select_related('revision__checklist').filter(
+        candidates = SurveyProcessingJob.objects.select_for_update().select_related('revision__checklist__project').filter(
             Q(status='queued') | Q(status__in=pipeline.ACTIVE, lease_until__lt=now) | Q(status__in=pipeline.ACTIVE, lease_until__isnull=True),
-            revision__checklist__project_id__in=_projects(credential)).order_by('pk').first()
+            revision__checklist__project_id__in=_projects(credential)).order_by('pk')
+        from .ai_processing_service import configured
+        job = None
+        for candidate in candidates:
+            if configured(candidate):
+                message = 'This job uses a configured AI policy. The current PC worker cannot execute that policy; use the policy-aware server worker. Saved evidence remains queued.'
+                if candidate.error != message:
+                    candidate.error = message
+                    candidate.save(update_fields=['error', 'updated_at'])
+                continue
+            job = candidate
+            break
         if job is None:
             return None
         try:

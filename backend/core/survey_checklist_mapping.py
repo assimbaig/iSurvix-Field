@@ -451,7 +451,7 @@ def verified_partial_mapping(source_id, result, context):
     return receipt.get('mapping_digest') == _digest(body)
 
 
-def bind_batch(batch, model, base_url=None):
+def bind_batch(batch, model, base_url=None, *, transport=None):
     """Validate one text-only mapping response without changing observations."""
     if not isinstance(model, str) or not model or len(model) > 160 or any(alias in model.lower() for alias in ('-cloud', ':cloud')):
         raise MappingError('Select an installed local model for checklist mapping.')
@@ -471,7 +471,7 @@ def bind_batch(batch, model, base_url=None):
                 'status': 'proposed', 'ranking_method': batch.get('ranking_method'), 'notice': batch.get('notice', '')})
     from django.conf import settings
     endpoint = base_url if base_url is not None else getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
-    response = local_ai.ollama('/api/chat', {'model': model, 'stream': False, 'think': False,
+    response = (transport or local_ai.ollama)('/api/chat', {'model': model, 'stream': False, 'think': False,
         'format': response_schema(batch), 'messages': [
             {'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': _user_content(batch)}],
         'options': {'temperature': 0, 'num_ctx': 8192, 'num_predict': 1800}}, base_url=endpoint)
