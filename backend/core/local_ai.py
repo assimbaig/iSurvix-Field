@@ -92,7 +92,7 @@ def local_context(request):
             'shell_projects': projects, 'shell_modules': modules}
 
 
-def ollama(path, payload=None, *, base_url=None):
+def ollama(path, payload=None, *, base_url=None, timeout=None):
     base = base_url if base_url is not None else settings.OLLAMA_BASE_URL
     parsed = urlsplit(base)
     if parsed.scheme != 'http' or parsed.hostname not in {'127.0.0.1', 'localhost', '::1'} or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in {'', '/'}:
@@ -100,7 +100,9 @@ def ollama(path, payload=None, *, base_url=None):
     body = json.dumps(payload).encode() if payload is not None else None
     req = Request(base.rstrip('/') + path, data=body, headers={'Content-Type': 'application/json'})
     # Ignore proxy environment variables and never follow a redirect to another host.
-    with build_opener(ProxyHandler({}), NoRedirect()).open(req, timeout=settings.OLLAMA_TIMEOUT if payload else 5) as response:
+    if timeout is not None and (type(timeout) not in (int,float) or not 1<=timeout<=600):
+        raise ValueError('Use a bounded Ollama request timeout.')
+    with build_opener(ProxyHandler({}), NoRedirect()).open(req, timeout=timeout if timeout is not None else settings.OLLAMA_TIMEOUT if payload else 5) as response:
         raw = response.read(2 * 1024 * 1024 + 1)
     if len(raw) > 2 * 1024 * 1024:
         raise ValueError('Ollama response exceeded the supported size.')

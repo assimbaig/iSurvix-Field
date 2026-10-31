@@ -147,6 +147,11 @@ PHOTO_OLLAMA_BASE_URL = os.environ.get('ISURVIX_PHOTO_OLLAMA_URL', OLLAMA_BASE_U
 OLLAMA_MODEL = os.environ.get('ISURVIX_AI_MODEL', 'qwen3.5:4b')
 OLLAMA_TIMEOUT = int(os.environ.get('ISURVIX_OLLAMA_TIMEOUT', '180'))
 
+# Operator-only alias metadata. Credential VALUES stay in the process environment;
+# company settings store neither endpoints nor keys. Empty means local only.
+from core.ai_provider_registry import load_registry
+AI_PROVIDER_REGISTRY = load_registry(os.environ.get('ISURVIX_AI_PROVIDER_REGISTRY', ''))
+
 
 # Logging
 LOGGING = {

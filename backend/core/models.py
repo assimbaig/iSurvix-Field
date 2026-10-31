@@ -573,3 +573,5 @@ from .review_route_models import ReviewRoute, ReviewRouteEvent  # noqa: E402,F40
 from .survey_processing_models import SurveyDocument, SurveyUploadSession, SurveyProcessingRevision, SurveyProcessingJob, SurveySourceAnalysis, SurveyProcessingResult, SurveyProcessingEvent, SurveyDrawingSet  # noqa: E402,F401
 from .remote_worker_models import RemoteWorkerProject, RemoteWorkerCredential, RemoteSurveyLease, RemoteSurveyTask  # noqa: E402,F401
 from .onboarding_models import CompanyApplication  # noqa: E402,F401
+
+from .ai_processing_models import AIProcessingSettings, AIProcessingPolicy, AIProcessingRequest, AIProcessingQuota, AIProcessingAttempt  # noqa: E402,F401
