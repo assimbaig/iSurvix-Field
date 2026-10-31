@@ -1,7 +1,7 @@
 {
-  "updated_utc": "2026-10-31T13:59:02.347683+00:00",
-  "verified": 4,
-  "total": 5,
+  "updated_utc": "2026-10-31T14:17:56.840602+00:00",
+  "verified": 5,
+  "total": 6,
   "rows": [
     {
       "ID": "01",
@@ -57,6 +57,17 @@
       "Completed date": "2026-10-31",
       "Acceptance check": "Role tests reject privilege escalation. Audit privileged changes.",
       "Notes / evidence / PR": "Platform/customer authority overrides rejected; transactional allowlisted privileged-change audit verified. Full1323:1322passed,1existing Windows symlink privilege error,0failures/skips.19frontend checks passed; independent unit/HTTP/browser/security checks passed within scope. Implementation81982db. Draft PR26 https://github.com/assimbaig/iSurvix-Field/pull/26. No operational migration/deployment. See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md."
+    },
+    {
+      "ID": "06",
+      "Phase": "1 Company access",
+      "Task": "Build Apply -> Review -> Provision -> Invite onboarding",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-10-31",
+      "Acceptance check": "Two companies onboard separately. Replayed requests create no duplicates.",
+      "Notes / evidence / PR": "Owner-controlled Apply > Review > Provision > Invite implemented. Two companies and actual accepted Admin accounts verified separately; replay/concurrent retry creates no duplicate records/audits.66focused tests overlap fullsuite; separate39browser,10visual and12AppSec checks passed. Full1350:1349passed,1existing Windows symlink privilege error,0failures/skips;19frontend passed. Implementation148e2cb; draft PR27 https://github.com/assimbaig/iSurvix-Field/pull/27. All3595protectedfiles/70operationaltables unchanged; no live migration/deployment. See COMPANY_ONBOARDING_ACCEPTANCE_20261031.json."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
@@ -67,9 +78,9 @@
     "BR1 Low"
   ],
   "merged_or_deployed_by_this_task": false,
-  "active_task": "05",
-  "active_branch": "feat/platform-customer-admin-20261028",
-  "last_verified_task": "05",
-  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/26",
-  "last_implementation_commit": "81982db2d6fd3c6088856b54556112a9a2cd94da"
+  "active_task": null,
+  "active_branch": "feat/company-onboarding-20261031",
+  "last_verified_task": "06",
+  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/27",
+  "last_implementation_commit": "148e2cb92ae6f11c9edd1b3f69401fd2cd355fe1"
 }

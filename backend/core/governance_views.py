@@ -401,7 +401,10 @@ def accept_invite(request,token):
                 login(request,user,backend='django.contrib.auth.backends.ModelBackend')
                 return redirect('governance_home')
     response=render(request,'dashboards/governance_accept_invite.html',{'invitation':invitation,'form':form},status=400 if request.method=='POST' else 200)
-    response['Referrer-Policy']='no-referrer'
+    # Keep the bearer path out of referrers while allowing same-origin form
+    # submissions to carry a valid Origin for CSRF verification. no-referrer
+    # makes browser form origins opaque (null) and blocks invitation acceptance.
+    response['Referrer-Policy']='strict-origin'
     return response
 
 
