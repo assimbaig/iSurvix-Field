@@ -1,5 +1,44 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: customer-server/free local PDF-OCR candidate - 31 October 2026
+
+Owneraddedtasks16-18 andrequestedfreeGitHubPDF/OCRtoolswithnopaidPDF/OCRAPI.
+WorkisolatedinB6feat/customer-server-readiness-20261031; sharedparent e832def.
+First-pinfunctionalrepairnowhostCI41221090193ALLGREEN Windows1473/Linux1471+2
+Windows-onlyskips/Chromium. PR29leftdraft/unmerged. Nooperationalsourcemigration.
+
+Freshcheckpoint193523:3595protectedfiles+consistentSQLite/source/Gitverified.
+Mainremainsfd365f1/core0053;records/originals/branding/credentialsunchanged.
+NewLinuxDockertransfercandidate packagesexacttrackedsource+existingreviewed
+imagearchives,integrityinventory,DRAFTack,fresh/restoretargets,privateLANlistener,
+TLS/operatorsecretsoutsidebundle,explicitinit/migrate,neverruntimepull/modeldownload.
+22packagetestsGREEN;actualLinuxDockerCIpending(nolocalDocker/WSLinstalled).
+
+OperationalUIassetsnowlocal:34fileswithlicenses/SHA+5oldSRIpinsmatching;scoped
+.gitattributes-textpreservesbytes.18affectedchecks+68realofflinebrowserassertions
+passed,0automaticthirdpartyrequests,originals+DBpreservedacrossrestart;6mapchecks
+onlyattempttilesafterexplicitonlineaction. ActualNICdisconnect/physical2ndLAN
+browsernotverified. Fixtures8954stopped. DocsCUSTOMER_OFFLINE_QA_20261031.
+
+Freepypdf6.21.4/pypdfium2 5.14 pinned+installed(import/pipcheckpassed),actualPDF
+intake/protectedpreview/sketchsourceconversionlocal. ExistingRapidOCR1.4.4+3bundled
+weightsreusedwithstrictpreflight/CPU2-1,noadditionalmodelsorpaidcalls.150PDFrelated
+checks+54OCRrelatedGREEN(overlapping). Independent10/63/29passed(overlap). Actual
+nativePDF->OCRprintedHEIGHT30mexactpassed;strict3lineOCRspacingbenchmark1/3exact,
+3/3alphanumeric,remainingaccuracy/handwriting/Arabicnotclaimed. OCRproposalsremain
+unverified;canonicalremoteprovenanceandhelpercompatibilitypinsretained. Remaining
+MuPDFdrawingUnicodelibraryisLOCAL,notpaidAPI,butAGPL/commerciallicencegatestillheld.
+
+CP1Medium(create-ownerbypasseslocalDockercontext) andCP2Medium(trackedprivatekeycan
+beexported) confirmedseparatelywithsyntheticREDtests. BothUNFIXED;ownerapproval
+requestpending. OldA12/BR1/D1/D2/L1/CS1/CS2/AI1holdsunapprovedanduntouched.
+Candidateackisnotownerreleaseapproval. Post-functionalPDFreview/wholeLinuxCIpending.
+
+ConcreteCUSTOMER_SERVICE_OFFER_DRAFT_20261031.md definesresponsibilities,licence/
+commercialdecisionfieldswithnopricesorservicelevelsforged. Task18Blockedowner
+acceptance;task16physicalcustomerLANandlicence/securitygatesremainexplicit.
+Rootownsverify_customer.sh+customerCIworkflow; noVPS/customerdeployment/merge.
+
 ## Latest: PR29 legacy first-pin follow-up - 31 October 2026
 
 Owner reported PR29 checks not passed. Live checks on40fe6d4 actually completed

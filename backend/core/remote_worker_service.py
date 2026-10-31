@@ -35,14 +35,14 @@ LEASE_SECONDS = 600
 
 
 def versions():
-    from . import survey_checklist_mapping as mapping, measurement_units
+    from . import survey_checklist_mapping as mapping, measurement_units, pdf_tools, local_evidence_tools
     # Windows Git checkouts may use CRLF while the VPS checkout uses LF. Their
     # reviewed Python implementation is identical; transport compatibility must
     # not depend on the operating system's checkout line-ending convention.
     # Numeric reconciliation also depends on the shared unit vocabulary. Pin
     # that source so a helper-only semantic change cannot mix PC/server releases.
     source = b''.join(Path(module.__file__).read_bytes().replace(b'\r\n', b'\n')
-                      for module in (evidence, mapping, measurement_units))
+                      for module in (evidence, mapping, measurement_units, pdf_tools, local_evidence_tools))
     return {'protocol': PROTOCOL, 'pipeline': pipeline.PIPELINE_VERSION,
             'evidence': evidence.EXTRACTION_VERSION, 'mapping': mapping.VERSION,
             'implementation': hashlib.sha256(source).hexdigest()}
@@ -386,10 +386,20 @@ def _validate_source(task, raw, model):
         item.update(source_id=task.key, source_type=task.payload.get('source_type', ''), reference=task.payload.get('reference', ''),
                     finding_key=f'{task.key}:finding:{index}', verification_status='needs_review', measured=False)
         findings.append(item)
+    local_ocr = {}
+    if 'local_ocr' in raw:
+        from .pdf_tools import canonical_ocr_report
+        if (task.payload.get('source_type') != 'pdf_page' or str(task.payload.get('text', '')).strip()
+                or not task.image):
+            raise ValidationError('Local OCR must refer to an image-only PDF page from this immutable task.')
+        try:
+            local_ocr = {'local_ocr': canonical_ocr_report(raw['local_ocr'])}
+        except ValueError:
+            raise ValidationError('The worker returned malformed local OCR evidence.') from None
     return {'source_id': task.key, 'source_type': task.payload.get('source_type', ''), 'reference': task.payload.get('reference', ''),
             'sha256': task.payload['sha256'], 'model': model, 'verification_status': 'needs_review',
             'findings': findings, 'missing': list(dict.fromkeys(missing)), 'conflicts': parsed.conflicts, 'suggested_items': parsed.suggested_items,
-            **({'preview_file': task.image.name} if task.image else {})}
+            **({'preview_file': task.image.name} if task.image else {}), **local_ocr}
 
 
 def _validate_mapping(task, raw, model):

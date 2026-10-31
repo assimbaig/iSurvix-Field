@@ -11,3 +11,6 @@ ezdxf>=1.4.5,<1.5
 reportlab>=4.4,<6.0
 pydantic>=2.12,<3.0
 requests>=2.32,<3.0
+# Local PDF-to-page/text conversion. No hosted PDF/OCR service or API key.
+pypdf==6.21.4
+pypdfium2==5.14.0

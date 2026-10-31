@@ -1,0 +1,59 @@
+name: Disposable customer server package
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'deploy/customer/**'
+      - 'deploy/verify_customer.sh'
+      - 'scripts/build_customer_package.py'
+      - 'backend/core/test_customer*'
+      - 'backend/core/pdf_tools.py'
+      - 'backend/core/local_evidence_tools.py'
+      - 'backend/templates/base.html'
+      - 'backend/static/vendor/**'
+      - 'backend/requirements.txt'
+      - '.github/workflows/customer-server-verification.yml'
+permissions:
+  contents: read
+concurrency:
+  group: customer-package-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  disposable-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      ISURVIX_DISPOSABLE_REHEARSAL: 'yes'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build, transfer, offline load and private LAN install rehearsal
+        shell: bash
+        run: bash deploy/verify_customer.sh "$RUNNER_TEMP/isurvix-customer" "$GITHUB_WORKSPACE"
+      - name: Retain review evidence without keys, credentials or databases
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-server-verification
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/isurvix-customer/verification.json
+            ${{ runner.temp }}/isurvix-customer/lan-client.json
+            ${{ runner.temp }}/isurvix-customer/package/manifest.json
+            ${{ runner.temp }}/isurvix-customer/package/metadata/
+            ${{ runner.temp }}/isurvix-customer/package-build.json
+            ${{ runner.temp }}/isurvix-customer/build.log
+            ${{ runner.temp }}/isurvix-customer/compose.log
+            ${{ runner.temp }}/isurvix-customer/readiness-probe.log
+      - name: Retain unapproved transferable candidate for owner review
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-server-DRAFT-candidate
+          retention-days: 7
+          path: ${{ runner.temp }}/isurvix-customer/package/

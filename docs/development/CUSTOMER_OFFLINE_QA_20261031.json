@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-31",
+  "branch": "feat/customer-server-readiness-20261031",
+  "task": "17 operating-mode browser dependencies and controlled offline verification",
+  "new_unit_http_tests": 6,
+  "affected_unit_http_tests": 18,
+  "affected_seconds": 3.223,
+  "ordinary_external_attempts": 0,
+  "ordinary_fixture_connections": 12,
+  "vendor_files": 34,
+  "vendor_bytes": 3296796,
+  "prior_sri_values_verified": 5,
+  "operational_browser_checks": 68,
+  "third_party_browser_requests": 0,
+  "server_outbound_connection_attempts": 0,
+  "restart_proof": {
+    "whole_fixture_database_unchanged": true,
+    "db_logical_sha256": "bba12eeb8ed1be471ca669fd1b554b424a6aebb0eaefdf0c14ea23285300525d",
+    "original_photos_sha256_unchanged": 3,
+    "browser_checks": 14,
+    "native_ai_called": false,
+    "operational_data_touched": false
+  },
+  "native_vision_tested": false,
+  "paid_or_real_provider_requests": 0,
+  "actual_customer_lan_or_second_device_tested": false,
+  "os_internet_interface_disconnected": false,
+  "previous_security_holds_fixed": false,
+  "source_sha256": {
+    "backend/templates/base.html": "c8890a6605d48557c83accac7227f8e0571330995f3512cb42c42d28420d21ce",
+    "backend/templates/dashboards/_assign_work_tab.html": "6ac653809186f811242903635c70dcf6597723b0c338a518ee4b907a281d646c",
+    "backend/templates/dashboards/_geolocation_tab.html": "797660bef8a7885387d2ed81c016b36e9b90d5d2d38a84187cecbcedacccd5b0",
+    "backend/core/test_customer_offline.py": "1993c3688d6da6d4807169407442d0ae7eab527e2469a5bacde552ec91f33f42"
+  },
+  "limitations": [
+    "Controlled browser/server outbound denial is not a physical disconnected-NIC or actual customer-LAN test.",
+    "Native/local AI requires preinstalled verified models; no model downloads or native generation were performed.",
+    "Connected external map services require explicit user action and internet; their availability was not certified.",
+    "Retired public home/development preview templates are outside the operational offline claim.",
+    "Approval/release policy and engineering decisions were not changed; synthetic work remained unapproved."
+  ],
+  "phase_check_counts": {
+    "engineer_to_qa": {
+      "passed": 16,
+      "total": 16
+    },
+    "roles_qa_report": {
+      "passed": 29,
+      "total": 29
+    },
+    "restart": {
+      "passed": 14,
+      "total": 14
+    },
+    "viewer": {
+      "passed": 9,
+      "total": 9
+    },
+    "retained_map_component": {
+      "passed": 6,
+      "total": 6
+    }
+  }
+}

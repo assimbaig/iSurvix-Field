@@ -58,7 +58,7 @@ class DocumentRepairTests(TestCase):
         row=self.uploaded(kind='report',name='cache-source.pdf',raw=original)
         url=reverse('photo_capture_document',args=[self.checklist.pk,row['id']])+'?preview=1&raster=1&page=1'
         first=self.read(self.client.get(url))
-        with patch('pymupdf.Page.get_pixmap',side_effect=AssertionError('Unchanged cache must not render again')):
+        with patch('core.pdf_tools.PDFPage.render_png',side_effect=AssertionError('Unchanged cache must not render again')):
             self.assertEqual(self.read(self.client.get(url)),first)
         folder=Path(settings.MEDIA_ROOT)/'survey_processing/document_previews'/str(row['id'])
         for manifest in folder.glob('*.json'):

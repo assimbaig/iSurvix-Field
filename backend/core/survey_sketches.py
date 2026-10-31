@@ -28,15 +28,13 @@ MAX_ASSET_BYTES = 96 * 1024 * 1024
 def _pages(record, raw):
     """Read complete images, not the 1280px inference thumbnail; retain all pages."""
     if Path(record.get('filename', '')).suffix.lower() == '.pdf':
-        import pymupdf
         with _open_pdf(raw) as document:
             for index, page in enumerate(document, 1):
-                if page.rect.width <= 0 or page.rect.height <= 0 or page.rect.width*page.rect.height > 100_000_000:
-                    raise EvidenceError('A sketch PDF page has unsupported dimensions.')
-                ratio = min(2, 3000 / max(page.rect.width, page.rect.height))
-                pixmap = page.get_pixmap(matrix=pymupdf.Matrix(ratio, ratio), alpha=False,
-                                         colorspace=pymupdf.csRGB)
-                yield f"document:{record['id']}:page:{index}", f'page {index}', Image.frombytes('RGB', (pixmap.width, pixmap.height), pixmap.samples)
+                try:
+                    image = Image.open(io.BytesIO(page.render_png(max_edge=3000,max_scale=2))).convert('RGB')
+                except ValueError as exc:
+                    raise EvidenceError(str(exc)) from exc
+                yield f"document:{record['id']}:page:{index}", f'page {index}', image
     elif Path(record.get('filename', '')).suffix.lower() == '.xlsx':
         from openpyxl import load_workbook
         _check_workbook_zip(raw)
