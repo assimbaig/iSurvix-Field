@@ -3,6 +3,8 @@
 This feature is on a review branch. It is not installed on the operational
 database automatically. The reviewed deployment needs migrations through0055;
 back up and rehearse them before applying to the operational installation.
+Reversing0055 drops the new application table. Preserve its history in a verified
+backup and assess rollback separately before reversing an operational database.
 
 ## Platform owner
 

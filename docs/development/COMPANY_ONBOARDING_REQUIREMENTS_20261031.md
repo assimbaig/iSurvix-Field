@@ -15,7 +15,7 @@ existing account-creation route and manages its own projects under existing rule
 | --- | --- | --- | --- | --- |
 | 06.1 | Current platform owner can record and inspect applications; other roles cannot. | Onboarding views/service; backend owner | Authorized HTTP/browser and role/session negatives | In progress |
 | 06.2 | Apply, review, provision and invite are deliberate, persisted transitions; rejected applications do not provision. | Onboarding service/model | Unit and saved-record integration, invalid-order attempts | In progress |
-| 06.3 | Two companies obtain distinct companies and correctly bound Admin accounts; no foreign record is claimed by matching name/email. | Existing Company/invitation acceptance reused | Actual account acceptance and company-scoped project positives/denials | In progress |
+| 06.3 | Two companies obtain distinct companies and correctly bound Admin accounts; no foreign record is claimed by matching name/email. | Existing Company/invitation acceptance reused | Actual two-Admin acceptance and saved company/industry IDs; existing Task04 isolation regressions | In progress |
 | 06.4 | Request and transition replays preserve IDs and create no duplicate company, invitation or audit change. | Unique request key, normalized name and transaction serialization | Repeated same/changed requests, retries and DB assertions | In progress |
 | 06.5 | Permissions, issuer/industry validity and posted authority are checked server-side. | Existing authority guards, new controlled forms | CSRF, stale/inactive owner, industry and forged-input tests | In progress |
 | 06.6 | Durable audit is atomic; raw invitation bearer is shown once and never stored in DB/session/audit. | Existing hashed invitation and audit reused | Rollback, token replay/redaction tests and response headers | In progress |
@@ -39,5 +39,5 @@ The suffix identifies the reused established checkpoint helper, not a deployment
 
 Agency ownership: backend implements model/migration/service/views/templates and
 own tests; independent Reality Checker owns its own regression tests and isolated
-browser fixtures, then performs a separate AppSec phase; lead owns this ledger,
+browser fixtures; a separate AppSec agent owns the adversarial review; lead owns this ledger,
 integration, final checks and delivery. No shared-file edit conflicts are intended.
