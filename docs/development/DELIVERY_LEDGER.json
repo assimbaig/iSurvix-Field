@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-28T19:11:11.228883+00:00",
-  "verified": 3,
+  "updated_utc": "2026-10-31T13:59:02.347683+00:00",
+  "verified": 4,
   "total": 5,
   "rows": [
     {
@@ -45,18 +45,18 @@
       "Due date": "",
       "Completed date": "2026-10-28",
       "Acceptance check": "Prove company A cannot access company B records, files or jobs.",
-      "Notes / evidence / PR": "Defined employer-Company scope; current authority/retained records and immutable worker-company pins implemented. CompanyA/B records/files/jobs HTTP+browser positives/denials passed. Full1287:1286passed,1existing Windows fixture error;19frontchecks. Migration0054 tested on disposable copy only. Implementation defc27d; draft PR25 https://github.com/assimbaig/iSurvix-Field/pull/25. No operational migration/deployment."
+      "Notes / evidence / PR": "Defined employer-Company scope; current authority/retained records and immutable worker-company pins implemented. CompanyA/B records/files/jobs HTTP+browser positives/denials passed. Full1287:1286passed,1existing Windows fixture error;19frontchecks. Migration0054 tested on disposable copy only. Implementation defc27d; draft PR25 https://github.com/assimbaig/iSurvix-Field/pull/25. No operational migration/deployment. PR25 subsequently merged upstream as 7d69e57; operational checkout was not deployed."
     },
     {
       "ID": "05",
       "Phase": "1 Company access",
       "Task": "Separate platform-owner and customer-administrator permissions",
-      "Status": "In progress",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Role tests reject privilege escalation. Audit privileged changes.",
-      "Notes / evidence / PR": "Scoped escalation rejection and transactional before/after privileged audits implemented; independent checks passed, final full suite running. See PLATFORM_CUSTOMER_ADMIN_REQUIREMENTS_20261028.md. No operational migration."
+      "Notes / evidence / PR": "Platform/customer authority overrides rejected; transactional allowlisted privileged-change audit verified. Full1323:1322passed,1existing Windows symlink privilege error,0failures/skips.19frontend checks passed; independent unit/HTTP/browser/security checks passed within scope. Implementation81982db. Draft PR26 https://github.com/assimbaig/iSurvix-Field/pull/26. No operational migration/deployment. See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
@@ -69,7 +69,7 @@
   "merged_or_deployed_by_this_task": false,
   "active_task": "05",
   "active_branch": "feat/platform-customer-admin-20261028",
-  "last_verified_task": "04",
-  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/25",
-  "last_implementation_commit": "defc27d37f47a80710e93cbe3424b7705a11c5fc"
+  "last_verified_task": "05",
+  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/26",
+  "last_implementation_commit": "81982db2d6fd3c6088856b54556112a9a2cd94da"
 }
