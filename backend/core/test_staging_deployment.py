@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sqlite3
 import sys
@@ -191,3 +192,33 @@ class StagingReleaseToolTests(SimpleTestCase):
             self.assertEqual(len(mounts),1,name)
             self.assertTrue(mounts[0].startswith('/tmp:'),name)
             self.assertIn('size=',mounts[0])
+
+    def test_disposable_host_validation_uses_explicit_privileged_readonly_context(self):
+        # Linux CI reproduced runner EACCES after the intended private0700 data
+        # directory was chowned to10001. Exercise actual helper invocations;
+        # the command double records privilege/env boundaries, not deployment.
+        source=(ROOT/'deploy/verify_staging.sh').read_text()
+        helper=re.search(r'^validate_host\(\) \{\n.*?^\}\n',source,re.M|re.S)
+        self.assertIsNotNone(helper,'Both host validation phases need a privilege-aware read-only helper.')
+        calls=[line for line in source.splitlines() if line=='validate_host' or line.startswith('validate_host ')]
+        self.assertEqual(calls,['validate_host --initialize-database','validate_host'])
+        bash='C:/Program Files/Git/bin/bash.exe' if os.name=='nt' else '/bin/bash'
+        command='\n'.join([
+            'set -euo pipefail',
+            'context="/synthetic reviewed context"',
+            'sudo() { printf "CALL\\n"; printf "%s\\n" "$@"; }',
+            helper[0],*calls,
+        ])
+        result=subprocess.run([bash,'-c',command],cwd=ROOT,text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        invocations=[part.strip().splitlines() for part in result.stdout.split('CALL\n')[1:]]
+        self.assertEqual(len(invocations),2)
+        allowed={'STAGING_HOST','ISURVIX_RELEASE_ID','ISURVIX_APP_IMAGE','ISURVIX_NGINX_IMAGE',
+                 'ISURVIX_DATA_DIRECTORY','ISURVIX_SECRET_FILE','ISURVIX_TLS_DIRECTORY','ISURVIX_NGINX_CONFIG'}
+        for arguments in invocations:
+            self.assertTrue(arguments[0].startswith('--preserve-env='))
+            self.assertEqual(set(arguments[0].split('=',1)[1].split(',')),allowed)
+            self.assertEqual(arguments[1],'/usr/bin/python3')
+            self.assertEqual(arguments[2:4],['/synthetic reviewed context/deploy/staging.py','validate'])
+        self.assertEqual(invocations[0][4:],['--initialize-database'])
+        self.assertEqual(invocations[1][4:],[])

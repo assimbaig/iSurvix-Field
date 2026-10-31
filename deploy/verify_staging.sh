@@ -60,7 +60,16 @@ cleanup() {
 }
 trap cleanup EXIT
 compose config --quiet
-python "$context/deploy/staging.py" validate --initialize-database
+validate_host() {
+  # The runner must not traverse application-owned0700 data. Validate paths in
+  # an explicit privileged read-only context instead of weakening permissions.
+  # Preserve configuration paths/identities only, never a plaintext secret.
+  # This stdlib-only validator uses Ubuntu's system Python, avoiding a hosted
+  # interpreter's loader/PATH dependencies after sudo's environment reset.
+  sudo --preserve-env=STAGING_HOST,ISURVIX_RELEASE_ID,ISURVIX_APP_IMAGE,ISURVIX_NGINX_IMAGE,ISURVIX_DATA_DIRECTORY,ISURVIX_SECRET_FILE,ISURVIX_TLS_DIRECTORY,ISURVIX_NGINX_CONFIG \
+    /usr/bin/python3 "$context/deploy/staging.py" validate "$@"
+}
+validate_host --initialize-database
 # Real additive schema upgrade from0054 to the new release, preserving a prior
 # synthetic company and private sentinel. No historic customer DB is used.
 compose run --rm --no-deps -e ISURVIX_INITIALIZE_DATABASE=yes web python manage.py migrate core 0054 --noinput
@@ -74,7 +83,7 @@ compose run --rm --no-deps web python manage.py migrate --noinput
 compose run --rm --no-deps web python manage.py shell -c "from core.models import Company; assert Company.objects.filter(name='Disposable pre-upgrade company').count()==1"
 compose run --rm --no-deps web python manage.py collectstatic --noinput
 compose run --rm --no-deps web python manage.py check --deploy --fail-level WARNING
-python "$context/deploy/staging.py" validate
+validate_host
 compose up -d --wait --wait-timeout 180
 probe() { curl --fail --silent --show-error --cacert "$runtime/tls/fullchain.pem" --resolve "$STAGING_HOST:8443:127.0.0.1" "https://$STAGING_HOST:8443$1"; }
 probe /ops/health/ready/ >"$runtime/ready-before.json"

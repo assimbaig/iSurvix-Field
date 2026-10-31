@@ -130,6 +130,57 @@ class BackupRecoveryTests(SimpleTestCase):
         with self.assertRaises(ValueError):restore_backup(self.backup,self.restored)
         self.assertFalse(self.restored.exists())
 
+    def test_wal_source_snapshot_contains_committed_records_without_source_mode_changes(self):
+        from .operations_backup import restore_backup,validate_backup
+        with closing(sqlite3.connect(self.database)) as writer:
+            self.assertEqual(writer.execute('pragma journal_mode=WAL').fetchone()[0],'wal')
+            writer.execute('pragma wal_autocheckpoint=0')
+            writer.execute('insert into preserved values (3,?,?)',('wal','committed-after-WAL-start'))
+            writer.commit()
+            wal=Path(str(self.database)+'-wal')
+            self.assertTrue(wal.is_file())
+            self.assertGreater(wal.stat().st_size,0)
+            source_bytes=self.database.read_bytes();wal_bytes=wal.read_bytes()
+            expected=list(writer.iterdump())
+            self.create()
+            self.assertEqual({p.name for p in self.backup.iterdir()},{'database.sqlite3','media','manifest.json'})
+            validate_backup(self.backup)
+            restore_backup(self.backup,self.restored)
+            with closing(sqlite3.connect((self.restored/'database.sqlite3').as_uri()+'?mode=ro&immutable=1',uri=True)) as recovered:
+                self.assertEqual(list(recovered.iterdump()),expected)
+                self.assertEqual(recovered.execute('pragma journal_mode').fetchone()[0],'delete')
+            self.assertEqual(writer.execute('pragma journal_mode').fetchone()[0],'wal')
+            self.assertEqual(self.database.read_bytes(),source_bytes)
+            self.assertEqual(wal.read_bytes(),wal_bytes)
+
+    def test_standalone_wal_header_validation_and_repeated_restore_do_not_mutate_artifact(self):
+        from .operations_backup import restore_backup,validate_backup
+        self.create();database=self.backup/'database.sqlite3'
+        # A closed WAL connection checkpoints its committed pages and leaves a
+        # standalone database with a WAL header. Validation must not create SHM
+        # or WAL files while inspecting this otherwise valid complete artifact.
+        with closing(sqlite3.connect(database)) as writer:
+            self.assertEqual(writer.execute('pragma journal_mode=WAL').fetchone()[0],'wal')
+            writer.execute('insert into preserved values (3,?,?)',('wal','checkpointed-standalone-record'))
+            writer.commit()
+            expected=list(writer.iterdump())
+        self.assertFalse(Path(str(database)+'-wal').exists())
+        self.assertFalse(Path(str(database)+'-shm').exists())
+        manifest=self.backup/'manifest.json';data=json.loads(manifest.read_text())
+        data['files']['database.sqlite3']={'size':database.stat().st_size,'sha256':hashlib.sha256(database.read_bytes()).hexdigest()}
+        manifest.write_text(json.dumps(data))
+        before={p.relative_to(self.backup).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in self.backup.rglob('*') if p.is_file()}
+        for number in (1,2):
+            validate_backup(self.backup)
+            after={p.relative_to(self.backup).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in self.backup.rglob('*') if p.is_file()}
+            self.assertEqual(after,before)
+            restored=self.root/f'repeated-restore-{number}'
+            restore_backup(self.backup,restored)
+            validate_backup(restored)
+            with closing(sqlite3.connect((restored/'database.sqlite3').as_uri()+'?mode=ro&immutable=1',uri=True)) as recovered:
+                self.assertEqual(list(recovered.iterdump()),expected)
+            self.assertEqual({p.relative_to(self.backup).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in self.backup.rglob('*') if p.is_file()},before)
+
 
 @override_settings(ROOT_URLCONF='checklist.urls_local',ALLOWED_HOSTS=['testserver'],
                    SECURE_SSL_REDIRECT=False,ISURVIX_RELEASE_ID='b'*40,
@@ -248,10 +299,23 @@ class OperationsSavedWorkflowRecoveryTests(remote_fixtures.Fixtures,LiveServerTe
         root=Path(temporary.name);database=root/'captured.sqlite3'
         connection.ensure_connection()
         with closing(sqlite3.connect(database)) as target:connection.connection.backup(target)
-        create_backup(database,media,root/'backup',release_id='a'*40,quiesced=True)
-        restore_backup(root/'backup',root/'restored')
-        with closing(sqlite3.connect(database)) as original,closing(sqlite3.connect(root/'restored/database.sqlite3')) as recovered:
-            self.assertEqual(list(original.iterdump()),list(recovered.iterdump()))
+        # Rehearse a real completed Django survey with additional committed WAL
+        # pages still outside its main DB file, as on the deployed SQLite runtime.
+        with closing(sqlite3.connect(database)) as original:
+            self.assertEqual(original.execute('pragma journal_mode=WAL').fetchone()[0],'wal')
+            original.execute('pragma wal_autocheckpoint=0')
+            original.execute('create table recovery_wal_marker (id integer primary key, value text)')
+            original.execute('insert into recovery_wal_marker values (1,?)',('SYNTHETIC-COMMITTED-WAL-RECORD',))
+            original.commit()
+            expected_dump=list(original.iterdump())
+            source_bytes=database.read_bytes();wal=Path(str(database)+'-wal');wal_bytes=wal.read_bytes()
+            create_backup(database,media,root/'backup',release_id='a'*40,quiesced=True)
+            restore_backup(root/'backup',root/'restored')
+            with closing(sqlite3.connect((root/'restored/database.sqlite3').as_uri()+'?mode=ro&immutable=1',uri=True)) as recovered:
+                self.assertEqual(expected_dump,list(recovered.iterdump()))
+            self.assertEqual(original.execute('pragma journal_mode').fetchone()[0],'wal')
+            self.assertEqual(database.read_bytes(),source_bytes)
+            self.assertEqual(wal.read_bytes(),wal_bytes)
         restored=root/'restored/media'
         actual={p.relative_to(restored).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in restored.rglob('*') if p.is_file()}
         self.assertEqual(actual,expected)

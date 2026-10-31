@@ -100,7 +100,11 @@ def _reserve(destination):
 
 def _database_ok(path):
     try:
-        with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True)) as db:
+        # These are standalone snapshot/artifact files, never the live source.
+        # Ordinary mode=ro may create WAL/SHM files for a persistent WAL header.
+        # Immutable read-only inspection avoids modifying the verified artifact;
+        # validate_backup still rejects every unlisted sidecar before this call.
+        with closing(sqlite3.connect(path.as_uri()+'?mode=ro&immutable=1',uri=True)) as db:
             if db.execute('pragma quick_check').fetchone()!=('ok',):raise ValueError('Backup database integrity check failed.')
     except sqlite3.DatabaseError:
         raise ValueError('Backup database integrity check failed.') from None
@@ -132,6 +136,12 @@ def create_backup(database_path,media_root,destination,*,release_id,quiesced=Fal
         (target/'media').mkdir(mode=0o700)
         with closing(sqlite3.connect(database.as_uri()+'?mode=ro',uri=True)) as src,closing(sqlite3.connect(target/'database.sqlite3')) as dst:
             src.backup(dst)
+            # The backup API includes all committed WAL frames, but also copies
+            # the source's persistent journal mode. Normalize only this newly
+            # created private snapshot to a self-contained rollback-journal DB
+            # before hashing/publication. Never checkpoint or change the source.
+            if dst.execute('pragma journal_mode=DELETE').fetchone()!=('delete',):
+                raise ValueError('Could not create a standalone SQLite snapshot.')
         _database_ok(target/'database.sqlite3')
         files={'database.sqlite3':_digest(target/'database.sqlite3')}
         for name,path in sorted(sources.items()):files['media/'+name]=_copy(path,target/'media'/name)
