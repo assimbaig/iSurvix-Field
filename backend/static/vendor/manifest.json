@@ -1,0 +1,279 @@
+{
+  "schema": 1,
+  "purpose": "Pinned browser resources served locally; connected vendoring is explicit, not runtime downloading.",
+  "assets": [
+    {
+      "path": "bootstrap-5.3.3/css/bootstrap.min.css",
+      "component": "bootstrap",
+      "version": "5.3.3",
+      "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.3/dist/css/bootstrap.min.css",
+      "sha256": "3c8f27e6009ccfd710a905e6dcf12d0ee3c6f2ac7da05b0572d3e0d12e736fc8",
+      "license_path": "bootstrap-5.3.3/LICENSE"
+    },
+    {
+      "path": "bootstrap-5.3.3/css/bootstrap.min.css.map",
+      "component": "bootstrap",
+      "version": "5.3.3",
+      "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.3/dist/css/bootstrap.min.css.map",
+      "sha256": "f12338536350a422c64d02d6e43ff1dea493c3156ad823fe19761cdd5d56c05b",
+      "license_path": "bootstrap-5.3.3/LICENSE"
+    },
+    {
+      "path": "bootstrap-5.3.3/js/bootstrap.bundle.min.js",
+      "component": "bootstrap",
+      "version": "5.3.3",
+      "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.3/dist/js/bootstrap.bundle.min.js",
+      "sha256": "0833b2e9c3a26c258476c46266e6877fc75218625162e0460be9a3a098a61c6c",
+      "license_path": "bootstrap-5.3.3/LICENSE"
+    },
+    {
+      "path": "bootstrap-5.3.3/js/bootstrap.bundle.min.js.map",
+      "component": "bootstrap",
+      "version": "5.3.3",
+      "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.3/dist/js/bootstrap.bundle.min.js.map",
+      "sha256": "5e3e0763164143baaa1ca0706b6100ba0452f911d6ce9713b48e3dbe07b35125",
+      "license_path": "bootstrap-5.3.3/LICENSE"
+    },
+    {
+      "path": "bootstrap-5.3.3/LICENSE",
+      "component": "bootstrap",
+      "version": "5.3.3",
+      "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.3/LICENSE",
+      "sha256": "8c14611ae41ac6fd543c13349f22188eb12c69b3e59105c5eca3925a8e4eca3e",
+      "license_path": "bootstrap-5.3.3/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/leaflet.css",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+      "sha256": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/leaflet.js",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+      "sha256": "db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/leaflet.js.map",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js.map",
+      "sha256": "600a10dc5cd110de0699510d322afcbe01c7ca90b4c5f48adc20314c70aac753",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/images/layers.png",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/images/layers.png",
+      "sha256": "1dbbe9d028e292f36fcba8f8b3a28d5e8932754fc2215b9ac69e4cdecf5107c6",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/images/layers-2x.png",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/images/layers-2x.png",
+      "sha256": "066daca850d8ffbef007af00b06eac0015728dee279c51f3cb6c716df7c42edf",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/images/marker-icon.png",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+      "sha256": "574c3a5cca85f4114085b6841596d62f00d7c892c7b03f28cbfa301deb1dc437",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/images/marker-icon-2x.png",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+      "sha256": "00179c4c1ee830d3a108412ae0d294f55776cfeb085c60129a39aa6fc4ae2528",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/images/marker-shadow.png",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      "sha256": "264f5c640339f042dd729062cfc04c17f8ea0f29882b538e3848ed8f10edb4da",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "leaflet-1.9.4/LICENSE",
+      "component": "leaflet",
+      "version": "1.9.4",
+      "source": "https://unpkg.com/leaflet@1.9.4/LICENSE",
+      "sha256": "53e8dc25862014e4324741ca18fbe3611e11d42ef69f59f86ea8c5389647d4cb",
+      "license_path": "leaflet-1.9.4/LICENSE"
+    },
+    {
+      "path": "fontawesome-6.5.1/css/all.min.css",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/css/all.min.css",
+      "sha256": "c22cfb6520a7fdbb738632834019acf47c78b1279462c0eb4cb83bae83ecb5a7",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/LICENSE.txt",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/LICENSE.txt",
+      "sha256": "0aa8f86525273b2efa4f40f4272a188e187704252170e979dc06879adf68d43c",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-brands-400.woff2",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-brands-400.woff2",
+      "sha256": "33bc709adb75706b44e269a0a4809fe58aef514c1cf6a4acf5882744dce50c69",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-brands-400.ttf",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-brands-400.ttf",
+      "sha256": "f29fff334747ec7d303bf58131ceddd28d1bfde973e981ce731e2d2bb93cc4e6",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-regular-400.woff2",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-regular-400.woff2",
+      "sha256": "398a1f8d508a0f822fe2f8e6a75ba1cd759bfcbccf1f6b49b00da04372559eca",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-regular-400.ttf",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-regular-400.ttf",
+      "sha256": "079413b7606191e1a393b467c6a467f3c2ee9bedd8ae7e980a93134758c5f51c",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-solid-900.woff2",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-solid-900.woff2",
+      "sha256": "1fbdfd5b5eeb365202f30b045bf3ba5e64cce0dddf1c58af74a4feb0158a03a2",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-solid-900.ttf",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-solid-900.ttf",
+      "sha256": "f1ce0da12a01f7ec15ae69c4ed54999ea875bd236e62fef58ac4ddbcb39b367a",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-v4compatibility.woff2",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-v4compatibility.woff2",
+      "sha256": "ef7d655a2e69d853c7dfdd2b6e41739d18d1274300421c104c574e3f2361c3db",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "fontawesome-6.5.1/webfonts/fa-v4compatibility.ttf",
+      "component": "fontawesome",
+      "version": "6.5.1",
+      "source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.5.1/webfonts/fa-v4compatibility.ttf",
+      "sha256": "12082fc0a217f4475024d9fe2395d053e66140d0b7b32782c1cf2adc7c1eb1c9",
+      "license_path": "fontawesome-6.5.1/LICENSE.txt"
+    },
+    {
+      "path": "inter-4.1/InterVariable.woff2",
+      "component": "inter",
+      "version": "4.1",
+      "source": "https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2",
+      "sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
+      "license_path": "inter-4.1/LICENSE.txt"
+    },
+    {
+      "path": "inter-4.1/LICENSE.txt",
+      "component": "inter",
+      "version": "4.1",
+      "source": "https://raw.githubusercontent.com/rsms/inter/v4.1/LICENSE.txt",
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "license_path": "inter-4.1/LICENSE.txt"
+    },
+    {
+      "path": "jquery-3.6.0/LICENSE.txt",
+      "component": "jquery",
+      "version": "3.6.0",
+      "source": "https://raw.githubusercontent.com/jquery/jquery/3.6.0/LICENSE.txt",
+      "sha256": "d4db9ebe6f29f5168eac45ad713f055623ac5d0dcd5ba92da23d650ae012020d",
+      "license_path": "jquery-3.6.0/LICENSE.txt"
+    },
+    {
+      "path": "jquery-3.6.0/jquery.min.js",
+      "component": "jquery",
+      "version": "3.6.0",
+      "source": "https://code.jquery.com/jquery-3.6.0.min.js",
+      "sha256": "ff1523fb7389539c84c65aba19260648793bb4f5e29329d2ee8804bc37a3fe6e",
+      "license_path": "jquery-3.6.0/LICENSE.txt"
+    },
+    {
+      "path": "select2-4.1.0-rc.0/css/select2.min.css",
+      "component": "select2",
+      "version": "4.1.0-rc.0",
+      "source": "https://raw.githubusercontent.com/select2/select2/4.1.0-rc.0/dist/css/select2.min.css",
+      "sha256": "cda4a81c187015d95ed2c71f1841540b08203cdec5fa2a7d5d1825a3c2166f8c",
+      "license_path": "select2-4.1.0-rc.0/LICENSE.md"
+    },
+    {
+      "path": "select2-4.1.0-rc.0/js/select2.min.js",
+      "component": "select2",
+      "version": "4.1.0-rc.0",
+      "source": "https://raw.githubusercontent.com/select2/select2/4.1.0-rc.0/dist/js/select2.min.js",
+      "sha256": "ad6c771f1b4cb0ce73fbefe833ac92db097a01a026c30e78f67ba5224424bda1",
+      "license_path": "select2-4.1.0-rc.0/LICENSE.md"
+    },
+    {
+      "path": "select2-4.1.0-rc.0/LICENSE.md",
+      "component": "select2",
+      "version": "4.1.0-rc.0",
+      "source": "https://raw.githubusercontent.com/select2/select2/4.1.0-rc.0/LICENSE.md",
+      "sha256": "4ee0cbc51370afde358652a0f977972053729ed578b6a42f5e2a037d114f0b39",
+      "license_path": "select2-4.1.0-rc.0/LICENSE.md"
+    },
+    {
+      "path": "inter-4.1/inter.css",
+      "component": "inter",
+      "version": "4.1",
+      "source": "https://github.com/rsms/inter/tree/v4.1",
+      "sha256": "e5badf1d736d2f415ceefaf4683a94d7b4160d6e2899cfbdddc5e57d3909663a",
+      "license_path": "inter-4.1/LICENSE.txt",
+      "transformation": "Local font-face wrapper; original variable font bytes retained."
+    },
+    {
+      "path": "leaflet-color-markers-234813b7dffa/img/marker-icon-2x-red.png",
+      "component": "leaflet-color-markers",
+      "version": "234813b7dffa11eee06f41618e1f5752c6b7bd8d",
+      "source": "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/234813b7dffa11eee06f41618e1f5752c6b7bd8d/img/marker-icon-2x-red.png",
+      "sha256": "97f48c8af2a7b241dbc1053a175363ce53e06649a05c418bcd44b74b1f5fbe0f",
+      "license_path": "leaflet-color-markers-234813b7dffa/LICENSE"
+    },
+    {
+      "path": "leaflet-color-markers-234813b7dffa/LICENSE",
+      "component": "leaflet-color-markers",
+      "version": "234813b7dffa11eee06f41618e1f5752c6b7bd8d",
+      "source": "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/234813b7dffa11eee06f41618e1f5752c6b7bd8d/LICENSE",
+      "sha256": "c7f6469de27b38e47e645a36207aa9db22c7be1cc7cb878e5ad714c5f9d9df3d",
+      "license_path": "leaflet-color-markers-234813b7dffa/LICENSE"
+    }
+  ]
+}

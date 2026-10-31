@@ -3,16 +3,45 @@ from functools import lru_cache
 from io import BytesIO
 import math
 from datetime import datetime
+from pathlib import Path
 from PIL import Image,ImageFilter,ImageStat
 
 TOOL_VERSION='local-tools-v1'
 
+
+def _ocr_model_paths():
+    """Resolve only the already-installed RapidOCR 1.4.4 model bundle.
+
+    Metadata lookup does not import ONNX or construct an engine. Check every
+    file before importing the OCR package so a missing bundle cannot invoke a
+    constructor's fallback or download behavior, now or after an upgrade.
+    """
+    from importlib import metadata
+    try:
+        package=metadata.distribution('rapidocr-onnxruntime')
+        root=Path(package.locate_file('rapidocr_onnxruntime/models'))
+        names={'det_model_path':'ch_PP-OCRv4_det_infer.onnx',
+               'cls_model_path':'ch_ppocr_mobile_v2.0_cls_infer.onnx',
+               'rec_model_path':'ch_PP-OCRv4_rec_infer.onnx'}
+        paths={}
+        for key,name in names.items():
+            path=(root/name).resolve(strict=True)
+            if not path.is_file() or path.stat().st_size<=0:raise OSError()
+            with path.open('rb') as model:
+                if not model.read(1):raise OSError()
+            paths[key]=str(path)
+        return paths
+    except (metadata.PackageNotFoundError,OSError,ValueError,TypeError):
+        raise ImportError('The approved offline OCR model bundle is unavailable.') from None
+
+
 @lru_cache(maxsize=1)
 def _ocr_engine():
+    paths=_ocr_model_paths()
     from rapidocr_onnxruntime import RapidOCR
     # Leave CPU capacity for the web app, embeddings and GPU input preparation.
     # Unbounded ONNX thread pools can contend heavily on this eight-core PC.
-    return RapidOCR(intra_op_num_threads=2, inter_op_num_threads=1)
+    return RapidOCR(**paths,intra_op_num_threads=2, inter_op_num_threads=1)
 
 def capture_facts(source_metadata):
     source=source_metadata if isinstance(source_metadata,dict) else {}
@@ -90,6 +119,24 @@ def extract_local_tools(image_source,ocr_backend=None,qr_backend=None,source_met
 def _vector(value):
     if not isinstance(value,list) or not 1<=len(value)<=4096 or any(type(number) not in {int,float} or not math.isfinite(number) for number in value):raise ValueError('Invalid local embedding vector.')
     return value
+
+
+def local_ocr(image_source,ocr_backend=None):
+    """Local text/confidence/boxes only; QR contents never trigger lookups.
+
+    A controlled backend can be supplied by ordinary tests. Actual native OCR
+    is verified separately against synthetic evidence and installed weights.
+    OCR text is source evidence, not a verified engineering answer.
+    """
+    result=extract_local_tools(image_source,ocr_backend=ocr_backend,qr_backend=lambda image:[])
+    errors=[entry['code'] for entry in result['errors'] if entry.get('tool')=='ocr']
+    result['status']='unavailable' if 'unavailable' in errors else 'failed' if errors else 'complete'
+    from importlib import metadata
+    try:version=metadata.version('rapidocr-onnxruntime') if ocr_backend is None else None
+    except metadata.PackageNotFoundError:version=None
+    result['provenance']={'engine':'rapidocr-onnxruntime' if ocr_backend is None else 'provided_adapter',
+                          'version':version,'verification_status':'unverified_source_text'}
+    return result
 
 def semantic_similarities(metadata,fields,embed_callback):
     if not isinstance(fields,list) or len(fields)>500:raise ValueError('Bound the field catalog before embedding.')

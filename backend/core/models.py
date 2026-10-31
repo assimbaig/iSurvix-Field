@@ -575,3 +575,4 @@ from .remote_worker_models import RemoteWorkerProject, RemoteWorkerCredential, R
 from .onboarding_models import CompanyApplication  # noqa: E402,F401
 
 from .ai_processing_models import AIProcessingSettings, AIProcessingPolicy, AIProcessingRequest, AIProcessingQuota, AIProcessingAttempt  # noqa: E402,F401
+from .update_models import ServerUpdateRequest, ServerUpdateEvent  # noqa: E402,F401

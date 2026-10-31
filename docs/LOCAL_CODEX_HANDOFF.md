@@ -1,5 +1,217 @@
 # iSurvix Field: local Codex development brief
 
+## Current: final exact-source gates passed - 31 October2026
+
+Verified source6f5f40d2b7e296e626636c700b85547f95bcd6be, draftPR30, branch
+feat/customer-server-readiness-20261031. All FOUR workflows passed:
+application41228944646 (Windows1611passed;Linux1609passed+2existingWindows-only
+skips;19frontendpassed;pip/migrationchecks passed), staging41228944652,
+customer41228944635 and shared41228944697. No failed check was treated as success.
+
+Sharedartifact13052619886 SHA256afb9e7c4de6c9550a08aa0b077b1e9dea482613c76560ccdbdb57b77de50fec5
+binds the same immutable app/proxy images to cloud/customer and passed the actual
+consumer in CI. This is a gated DRAFT artifact with7day hosted retention, not
+owner release approval. Later documentation-only commits remain separate from
+the exact tested source. No merge, production/customer deployment or live update.
+
+Actual Linux install, zero runtime image pulls, restart, private TLS, caught
+migration failure rollback, hard interruption/recover, successful upgrade/replay
+passed.374rows/73tables and original evidence retained. Exact0057baselinee37b280
+to6f5 only;0056 automatic upgrade unsupported. Latest proof artifact13053286662
+SHA256858339416a0e72231441a09cd08520eeefd447a414719c94a9e113d2b0fc4913 independently
+downloaded/inspected by root and AgencyQA. Physical LAN/nativeAI/owner approval
+remain false; isolated client NIC and host-published TLS listener tested separately.
+
+Agency final consumer12checks and separate security14checks passed(overlap);
+CP1/CP2/UP1 are closed in their tested bounds. Earlier A12/BR1/D1/D2/L1/CS1/CS2/AI1
+remain unapproved/unfixed; D1/D2 High still block public release. No nativeOllama
+or paid API was called. Licensing and service-offer owner decisions remain.
+
+Ledger:11of21 tasks Verified;10Blocked. Tasks19-21 code acceptance verified only
+for the exact documented pair.16physicalLAN/17physical-native modes/18owneroffer,
+03native,07-09targetstaging and13-15pilot/capacity/release remain blocked. Read
+SHARED_RELEASE_DELIVERY_20261031.md and updated requirement/QA/security reports.
+
+Final data recheck:3595protectedfiles/70operationaltables/2olduntracked audits
+unchanged. Operational mainfd365f1/schema0053 retained;0054-0057 not applied.
+Local full runs were not frozen-source acceptance: latest1608pass/2errors
+(WinError1314 and old loaded URL-fixture parser); corrected parser focused checks
+passed. Keep local privilege limit visible despite hosted Windows success.
+No project preview/worker was started in final integration; Ollama unchanged.
+
+## Latest: UP1 repaired; final verification restart - 31 October2026
+
+Owner explicitly approved UP1. The narrow repair is implemented: both apply and
+recover validate signed terminal request identity, exact result/path bindings,
+receipt chain, retained static runtime/package identity and immutable backup/
+retention proofs. A separate purpose-scoped terminal seal authenticates host
+history. Replay preserves later human DB/media writes and requires no running
+old service or current catalog. Legacy unsealed history fails closed.
+
+Developer26 passed38.767s; independent50 passed82.500s (overlap); original AppSec
+countercase unchanged1 passed0.490s plus8 new security checks passed21.032s.
+Original RED evidence is retained. UP1 is now repaired inventory; the earlier8
+A12/BR1/D1/D2/L1/CS1/CS2/AI1 remain held and unfixed. No release approval inferred.
+
+PR30 remains draft, unmerged, undeployed. Current Linux staging rehearsal passed.
+The customer rehearsal now passed UID10001/source readability and image package
+build, then failed on a synthetic fixture chmod after TLS directory ownership
+changed to101/mode0700. Only that public-cert chmod now uses sudo; private key400
+and directory700 remain unchanged. Actual customer install/update remains pending
+until the next CI finishes. No physical customer or second LAN device verified.
+
+First broad local run:1605 tests,1604passed/0failures/1existingWinError1314 symlink
+fixture error,0skips; zero external attempts/103controlled fixture connections.
+19frontend+11other checks passed. Six export/config/test files changed during
+that run; it is NOT a frozen-source final acceptance. Receipt preserved. The
+52affected tests and60independent export/staging checks passed after build repair.
+Final full current-source verification is restarting after this last repair.
+
+Keep baseline e37b28088a80de11e56f95a7989ad90f41fd9f48 and exact0057-to-current
+support only. Earlier0056 automatic upgrade remains unsupported. Mainfd365f1/
+schema0053/data/approvals unchanged; no native Ollama or paid OCR request made.
+See approved UP1 fix report, separate security closure, QA report and final logs.
+
+## Latest: PR30 verification and UP1 approval hold - 31 October2026
+
+Draft PR30 is open, unmerged and not deployed:
+https://github.com/assimbaig/iSurvix-Field/pull/30
+Current source b9502cb followed the e37b280 baseline/f93ad27 matrix pin.
+Full local regression and hosted application/staging/customer/shared-gate CI
+started. Frontend Chromium passed; first customer package run41225757191 failed
+before installation. Restrictive umask077 left Git-export code/RELEASE copies
+unreadable by the non-root image user. Root added an executed failing export
+regression, explicit permissions only on new tracked export copies (private
+context root stays0700), and an actual UID10001 image-readability probe. New PDF
+pins also need to match deploy/requirements.staging.txt. Affected rerun pending.
+
+Independent final host functional QA passed35 tests42.369s;3 actual TLS fixture
+checks passed. Update Center47 saved browser assertions passed at desktop/mobile.
+Separate gate10 and Update Center12 security checks passed in their bounded scope.
+
+NEW **UP1 Low** is CONFIRMED AND UNFIXED: terminal private host-journal replay
+returns stored completion before revalidating signed request/result/runtime
+bindings. Exploitation requires protected operator-journal write access or an
+operator metadata mistake; this is not a web-user privilege escalation.
+Separate host review9cases:8passed/1RED. The owner subsequently EXPLICITLY APPROVED UP1 through async input. The
+repair now passes26 focused tests; independent QA and separate security closure
+are pending. Both apply/recover validate signed terminal history and retained
+proofs without rejecting legitimate later human data changes. Earlier8 findings
+remain held; UP1 approval does not cover them. Recording UP1 in active HOLD_IDS is
+inventory only, not remediation. Earlier8 holds remain unchanged.
+
+Continue independent CI/build repairs and verification. Keep exact baseline
+support only e37b280-to-final0057 source; earlier0056 automatic updates remain
+unsupported. Do not claim Linux installation/upgrade or final full gate passed
+until actual results exist. Read HOST_UPDATER_SECURITY_REVIEW_20261031.md and
+private .local/customer-server-20261031 logs. Preserve originals/approvals and
+operational mainfd365f1/schema0053. No model call, merge or customer deployment.
+
+## Latest: shared update candidate baseline - 31 October2026
+
+Owner added tasks19-21: one immutable release pipeline for both editions,
+customer-server Update Center and proved upgrade/recovery. Work remains B6,
+`feat/customer-server-readiness-20261031`; no operational migration/deployment.
+
+CP1/CP2 approved fixes now passed developer28, independent bounded QA and
+separate AppSec12+2 checks. Original/interim RED evidence remains preserved.
+Root then added backward-compatible optional Update Center mounts; the earlier
+CP source hash identifies the reviewed repair, not the later integrated source.
+Active holds remain A12/BR1/D1/D2/L1/CS1/CS2/AI1. No earlier finding repaired.
+
+Owner-only /ops/updates/ uses real saved requests, an additive0057 migration,
+strict operator-managed offline catalog, idempotency, one-active-request lock,
+CSRF and audited pending withdrawal. Privileged apply/recover runs on the host,
+never in web. Signed short-lived exports recheck authority; immutable sequenced
+host receipts populate history. The Docker socket and independent journals stay
+outside web; only optional catalog/receipt mounts are read-only.
+
+Integrated84 focused tests passed54.390s, zero external attempts/two controlled
+HTTP connections. Developer22 Update Center checks passed; independent47 actual
+browser assertions cover1920/1366/390, persistence, withdrawal, forged/stale
+receipts and recovery locks. Developer16 updater checks cover real SQLite/media
+and controlled Docker, hard interruption/recover, safe rollback, second upgrades
+and retained data. These are NOT actual Linux Docker or physical LAN evidence.
+
+Task19 gate requires completed successful application/staging/customer checks
+for one exact SHA, latest attempt chronology and a fresh check after download.
+It reuses the already-built application/proxy identities for both editions,
+binds install/upgrade proof to manifest+images and publishes only a DRAFT
+artifact.11 tracked+19 overlapping independent checks and10 separate security
+checks passed. Gated actual CI publication is still pending.
+
+Root prepared verify_updates.sh for actual synthetic Linux install/failure/
+interruption/recovery/update and authenticated original-byte smoke checks.
+The first phase6 baseline commit must be recorded in supported-upgrades.json
+in the subsequent CI target commit. Do NOT publish/claim support with an empty
+baseline. Only that exact0057-to0057 pair is intended for automatic verification;
+earlier0056 automatic upgrades are unsupported. No generic migration guarantee.
+
+Full current regression, whole-integration AppSec and actual Linux CI remain
+pending. Preserve all receipts and correct actual CI failures without weakening
+checks. Real customer/second-device, licensing/commercial policy and exact
+release approval remain blocked. Source mainfd365f1/schema0053 and3595protected
+files/70tables were independently rechecked unchanged. PR29 stays draft.
+
+Read SHARED_UPDATES_REQUIREMENTS_20261031.md, independent gate/update QA reports,
+CUSTOMER_UPDATER_IMPLEMENTATION_20261031.md and deploy/customer/UPDATES.md.
+
+## Latest: approved customer-package security repairs - 31 October 2026
+
+The owner explicitly approved **CP1 and CP2**: validate the local Docker context
+before interactive owner creation, and reject private-key/credential artifacts
+from the distributable server package. These fixes are in progress on
+`feat/customer-server-readiness-20261031`, worktree `.local/b6`, candidate
+`dfbd557`. Original security RED receipts remain preserved. No earlier finding
+is approved by this reply; A12/BR1/D1/D2/L1/CS1/CS2/AI1 remain on hold.
+
+The existing Agency package developer owns the fixes and tracked regression
+tests. Independent Agency QA and separate AppSec review must verify the repair.
+The draft customer-package PR and real disposable Linux install CI follow the
+functional source freeze. Docker/WSL are unavailable locally. No actual customer
+server or second physical LAN device has been tested or deployed.
+
+Customer tasks16-18 include an exact-source Linux/amd64 Docker package candidate,
+local image archives, integrity/licence inventories, external TLS/secrets,
+explicit fresh/restore initialization and offline image loading. Runtime does
+not pull images or download models. Candidate acknowledgement does not approve
+release, customer installation or redistribution. Service/maintenance offer is
+a concrete draft; owner licence/commercial decisions remain outstanding.
+
+Operational UI dependencies are bundled locally with licences, SHA inventories
+and unchanged upstream bytes. Eighteen affected checks and68 real offline
+browser assertions passed, with no automatic third-party requests; restart
+preserved fixture records and originals. Separate map checks attempted tiles
+only after explicit online activation. Physical NIC/LAN acceptance is separate.
+
+The free PDF/OCR integration uses pinned pypdf6.21.4 and pypdfium2 5.14.0 plus the
+existing RapidOCR1.4.4 and its three dependency-bundled weights. No paid PDF/OCR
+API was found in the scanned source or introduced. Local PDF ingestion, protected
+previews and worker-only OCR are connected to the existing survey flow.
+150 PDF-related and54 OCR-related tests passed (overlap); independent10/63/29
+checks passed (overlap). Actual synthetic PDF-to-native-OCR passed for one
+printed line. The strict three-line spacing benchmark passed1/3 exact strings,
+3/3 alphanumeric content: do not claim perfect OCR, handwriting or site accuracy.
+Twelve separate PDF/OCR security checks passed; no new exploitable finding was
+established in that bounded scope. No native Ollama request was made.
+
+Remaining MuPDF use for drawing Unicode/HTML/rendering is a local library, not a
+paid API. Its AGPL/commercial redistribution route still requires owner review.
+Do not claim complete removal or licence clearance.
+
+PR29 head `e832def` CI41221090193 passed: Windows1473; Linux1471 plus2 existing
+Windows-only skips; Chromium passed. PR29 remains draft/unmerged. Its legacy
+first-pin fix retains the original model identity and completed checkpoints.
+
+Recovery checkpoint193523 preserves3595 protected files, a consistent SQLite
+backup and source/Git archives. Operational main remainsfd365f1/schema0053;
+records, originals, credentials, branding and approvals are unchanged. Do not
+apply feature migrations to operational data or stop unrelated services.
+
+Read CUSTOMER_SERVER_REQUIREMENTS_20261031.md, CUSTOMER_SERVICE_OFFER_DRAFT_20261031.md,
+FREE_PDF_OCR_INTEGRATION_20261031.md, independent QA/security/offline reports and
+the delivery ledger for evidence and explicit target/security/licence blockers.
+
 ## Latest: PR29 legacy first-pin follow-up - 31 October 2026
 
 Owner reported PR29 checks not passed. Live checks on40fe6d4 actually completed

@@ -138,19 +138,10 @@ def _check_workbook_zip(raw):
 
 def _open_pdf(raw):
     try:
-        import pymupdf
-        document = pymupdf.open(stream=raw, filetype='pdf')
-        if document.needs_pass:
-            document.close()
-            raise EvidenceError('Encrypted PDF documents are unsupported.')
-        if not 1 <= len(document) <= MAX_PDF_PAGES:
-            document.close()
-            raise EvidenceError(f'Use PDF documents containing 1–{MAX_PDF_PAGES} pages.')
-        return document
-    except (RuntimeError, ValueError) as exc:
-        if isinstance(exc, EvidenceError):
-            raise
-        raise EvidenceError('The PDF document is corrupt or unsupported.') from exc
+        from .pdf_tools import open_pdf
+        return open_pdf(raw, max_bytes=MAX_DOCUMENT_BYTES, max_pages=MAX_PDF_PAGES)
+    except ValueError as exc:
+        raise EvidenceError(str(exc)) from exc
 
 
 def validate_document(upload):
@@ -258,25 +249,23 @@ def _document_sources(record):
         image, dimensions = _image(raw)
         yield _source(record, identifier, 'document_image', 'original', image=image, metadata=dimensions)
     elif extension == '.pdf':
-        import pymupdf
+        from .pdf_tools import renderer_identity
         with _open_pdf(raw) as document:
             for index, page in enumerate(document, 1):
-                rectangle = page.rect
-                if rectangle.width <= 0 or rectangle.height <= 0 or rectangle.width * rectangle.height > 100_000_000:
-                    raise EvidenceError('A PDF page has unsupported page dimensions.')
-                scale = min(2, IMAGE_EDGE / max(rectangle.width, rectangle.height))
-                pixmap = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
-                image, dimensions = _image(pixmap.tobytes('png'))
-                text = page.get_text('text')
-                if len(text) > 240_000:
-                    raise EvidenceError('A PDF page exceeds the supported extracted-text limit.')
+                try:
+                    image, dimensions = _image(page.render_png(max_edge=IMAGE_EDGE, max_scale=2))
+                    text = page.extract_text(max_chars=240_000)
+                except ValueError as exc:
+                    raise EvidenceError(str(exc)) from exc
                 chunks = list(_text_chunks(text)) or ['']
                 for part, chunk in enumerate(chunks, 1):
                     suffix = f':part:{part}' if len(chunks) > 1 else ''
                     yield _source(record, f'{identifier}:page:{index}{suffix}', 'pdf_page',
                                   f'page {index}' + (f', text part {part}' if suffix else ''),
                                   image=image if part == 1 else None, text=chunk,
-                                  metadata={**dimensions, 'page': index, 'part': part})
+                                  metadata={**dimensions, 'page': index, 'part': part,
+                                            'pdf_engine': 'pypdfium2', 'pdf_renderer': renderer_identity(),
+                                            'local_ocr_required': not bool(text.strip())})
     elif extension == '.xlsx':
         _check_workbook_zip(raw)
         from openpyxl import load_workbook
@@ -511,8 +500,24 @@ def analyse_source(source, model, base_url=None, *, compact=False, transport=Non
     metadata_json = json.dumps(source.get('metadata') or {}, ensure_ascii=False)
     if len(catalog_json) > 12_000 or len(metadata_json) > 6000:
         raise EvidenceError('The evidence context exceeds its processing bound.')
-    content = json.dumps({'source_reference': source.get('reference', ''), 'evidence_text': text,
-                          'recorded_metadata': json.loads(metadata_json), 'checklist_catalog': catalog}, ensure_ascii=False)
+    local_ocr = None
+    if source.get('source_type') == 'pdf_page' and not text.strip() and image:
+        from .local_evidence_tools import local_ocr as read_local_ocr
+        from .pdf_tools import canonical_ocr_report
+        transcribed = read_local_ocr(base64.b64decode(image, validate=True))
+        local_ocr = canonical_ocr_report({key: transcribed[key] for key in ('status', 'provenance', 'ocr_lines', 'errors')})
+        transcription = '\n'.join(line['text'] for line in local_ocr['ocr_lines'])
+        local_ocr['prompt_text_truncated'] = len(transcription) > MAX_TEXT_PER_SOURCE
+        text = transcription[:MAX_TEXT_PER_SOURCE]
+    prompt_content = {'source_reference': source.get('reference', ''), 'evidence_text': text,
+                      'recorded_metadata': json.loads(metadata_json), 'checklist_catalog': catalog}
+    if local_ocr is not None:
+        # Keep the original metadata within its existing bound; OCR locations and
+        # full bounded readings live in the result, not repeated in the prompt.
+        prompt_content['local_ocr'] = {'status': local_ocr['status'],
+            'provenance': local_ocr['provenance'], 'line_count': len(local_ocr['ocr_lines']),
+            'prompt_text_truncated': local_ocr['prompt_text_truncated']}
+    content = json.dumps(prompt_content, ensure_ascii=False)
     user = {'role': 'user', 'content': 'UNTRUSTED_EVIDENCE_JSON\n' + content + '\nEND_UNTRUSTED_EVIDENCE_JSON'}
     if image:
         user['images'] = [image]
@@ -520,6 +525,8 @@ def analyse_source(source, model, base_url=None, *, compact=False, transport=Non
     endpoint = base_url if base_url is not None else getattr(settings, 'PHOTO_OLLAMA_BASE_URL', settings.OLLAMA_BASE_URL)
     schema = observation_response_schema(catalog, compact=compact)
     prompt = SYSTEM_PROMPT
+    if local_ocr is not None:
+        prompt += '\nLocal OCR is uncertain source text. Corroborate it against the supplied image; OCR confidence is never an engineering approval or a calibrated measurement.'
     if (source.get('metadata') or {}).get('kind') == 'hand_sketch':
         prompt += ('\nThis is an Engineer hand sketch. Preserve every visible detail as evidence. '
                    'Transcribe all legible dimension labels with their explicit units and exact evidence quote. '
@@ -578,13 +585,21 @@ def analyse_source(source, model, base_url=None, *, compact=False, transport=Non
                     reference=source.get('reference', ''), finding_key=f"{source['source_id']}:finding:{index + 1}",
                     verification_status='needs_review', measured=False)
         findings.append(item)
+    if local_ocr is not None:
+        if local_ocr['status'] != 'complete':
+            missing.append('Local OCR is unavailable or failed; inspect the preserved page image and supply unreadable recorded information.')
+        elif not local_ocr['ocr_lines']:
+            missing.append('Local OCR found no readable text; inspect the preserved page image.')
+        if local_ocr['prompt_text_truncated']:
+            missing.append('Local OCR prompt text was truncated at the processing bound; the complete bounded readings and source image are retained for review.')
     return {'source_id': source['source_id'], 'source_type': source.get('source_type', ''),
             'performance': {'requests': len(metrics), 'native': metrics,
                             'wire': 'compact-1' if compact else 'canonical-1'},
             'reference': source.get('reference', ''), 'sha256': source.get('sha256', ''),
             'model': model, 'verification_status': 'needs_review', 'findings': findings,
             'missing': list(dict.fromkeys(missing)), 'conflicts': list(result.conflicts),
-            'suggested_items': list(result.suggested_items)}
+            'suggested_items': list(result.suggested_items),
+            **({'local_ocr': local_ocr} if local_ocr is not None else {})}
 
 
 def _normalised_value(item):

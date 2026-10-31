@@ -1,0 +1,11 @@
+# Optional persistent Update Center inputs, supplied by the local operator.
+# Only these two paths are exposed; privileged journals and Docker stay on host.
+services:
+  web:
+    environment:
+      ISURVIX_UPDATE_CATALOG_FILE: /run/isurvix-updates/catalog.json
+      ISURVIX_UPDATE_RECEIPTS_ROOT: /run/isurvix-updates/receipts
+      ISURVIX_EDITION: customer
+    volumes:
+      - ${ISURVIX_UPDATE_DIRECTORY:?Configure the external trusted update directory}/catalog.json:/run/isurvix-updates/catalog.json:ro
+      - ${ISURVIX_UPDATE_DIRECTORY:?Configure the external trusted update directory}/receipts:/run/isurvix-updates/receipts:ro

@@ -54,13 +54,22 @@ class QADocumentPreviewTests(TestCase):
         image=Image.open(BytesIO(image_data));self.assertLessEqual(max(image.size),1600)
         self.assertGreater(min(image.size),500)
         self.assertLess(min(low for low,high in image.getextrema()),200)
-        with patch('pymupdf.Page.get_pixmap',side_effect=AssertionError('Do not render an unchanged page twice')):
+        with patch('core.pdf_tools.PDFPage.render_png',side_effect=AssertionError('Do not render an unchanged page twice')):
             repeated=self.client.get(document['raster_preview_url'])
             self.assertEqual(repeated.status_code,200)
             self.assertEqual(b''.join(repeated.streaming_content),image_data)
         original=SurveyDocument.objects.get(pk=document['id'])
         self.assertEqual(Path(original.original.path).read_bytes(),data)
         self.assertEqual(original.sha256,hashlib.sha256(data).hexdigest())
+
+    def test_authorised_preview_is_local_without_a_legacy_pdf_engine_or_service(self):
+        with patch.dict('sys.modules', {'pymupdf': None, 'fitz': None}):
+            document,data,_=self.source()
+            response=self.client.get(document['raster_preview_url'])
+            self.assertEqual(response.status_code,200)
+            self.assertTrue(b''.join(response.streaming_content).startswith(b'\x89PNG'))
+        original=SurveyDocument.objects.get(pk=document['id'])
+        self.assertEqual(Path(original.original.path).read_bytes(),data)
 
     def test_page_navigation_invalid_pages_and_original_download_are_distinct(self):
         document,data,_=self.source()

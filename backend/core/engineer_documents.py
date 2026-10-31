@@ -186,7 +186,7 @@ def remove(request,checklist_id,data):
     return capture.state(request,checklist_id)
 
 
-PREVIEW_CACHE_VERSION=2
+PREVIEW_CACHE_VERSION=3
 PREVIEW_CACHE_SALT='isurvix.document-preview.v2'
 MAX_PREVIEW_BYTES=16*1024*1024
 
@@ -237,8 +237,7 @@ def _cached_preview(name,identity,base):
 def _pdf_raster(doc,page):
     """Bounded image derivative; never rewrite or browser-execute the original."""
     import hashlib
-    import math
-    import pymupdf
+    from .pdf_tools import open_pdf,renderer_identity
     from io import BytesIO
     from django.core import signing
     with doc.original.open('rb') as original:
@@ -246,21 +245,17 @@ def _pdf_raster(doc,page):
     if len(raw)>MAX_DOCUMENT_BYTES or hashlib.sha256(raw).hexdigest()!=doc.sha256:
         raise ValidationError('The PDF source bytes no longer match the saved original. Preview was not served.')
     try:
-        with pymupdf.open(stream=raw,filetype='pdf') as pdf:
-            if pdf.needs_pass:raise ValueError('Encrypted PDF')
+        with open_pdf(raw) as pdf:
             count=len(pdf)
             if not 1<=page<=count:raise Http404()
             base=f'survey_processing/document_previews/{doc.pk}/{doc.sha256}-page{page}-v{PREVIEW_CACHE_VERSION}'
             name=base+'.json'
             identity={'document':doc.pk,'source':doc.sha256,'page':page,
-                'renderer':pymupdf.VersionBind,'version':PREVIEW_CACHE_VERSION,
+                'renderer':renderer_identity(),'version':PREVIEW_CACHE_VERSION,
                 'max_edge':1598,'max_scale':2}
             image=_cached_preview(name,identity,base)
             if image is None:
-                selected=pdf[page-1];extent=max(selected.rect.width,selected.rect.height)
-                if not math.isfinite(extent) or extent<=0:raise ValueError('Invalid page dimensions')
-                scale=min(2.0,1598/extent)
-                image=selected.get_pixmap(matrix=pymupdf.Matrix(scale,scale),alpha=False).tobytes('png')
+                image=pdf[page-1].render_png(max_edge=1598,max_scale=2)
                 if len(image)>MAX_PREVIEW_BYTES:raise ValueError('Preview exceeds bounded size')
                 sha=hashlib.sha256(image).hexdigest()
                 receipt=signing.dumps({'identity':identity,'sha256':sha},salt=PREVIEW_CACHE_SALT).encode('utf-8')

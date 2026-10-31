@@ -2,6 +2,8 @@
 # Preserve document artifacts byte-for-byte.
 *.pdf binary
 *.docx binary
+# Third-party asset SRI and SHA256 manifests require exact upstream bytes.
+/backend/static/vendor/** -text whitespace=cr-at-eol
 # Native export samples contain recorded byte hashes; do not change line endings.
 /samples/drawings/integration-verification-20261021/*.dxf binary
 /samples/drawings/integration-verification-20261021/*.json -text whitespace=cr-at-eol

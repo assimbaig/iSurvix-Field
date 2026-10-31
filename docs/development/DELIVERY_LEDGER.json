@@ -1,11 +1,12 @@
 {
-  "updated_utc": "2026-10-31T16:23:36.800017+00:00",
-  "verified": 7,
-  "total": 15,
+  "updated_utc": "2026-10-31T18:33:20.071165+00:00",
+  "verified": 11,
+  "total": 21,
   "rows": [
     {
       "ID": "01",
-      "Phase": "0 Baseline",
+      "Phase": "0",
+      "Phase Name": "Baseline",
       "Task": "Reconcile source and environment",
       "Status": "Verified",
       "Owner": "Dot",
@@ -16,7 +17,8 @@
     },
     {
       "ID": "02",
-      "Phase": "0 Baseline",
+      "Phase": "0",
+      "Phase Name": "Baseline",
       "Task": "Create the delivery ledger and recovery procedure",
       "Status": "Verified",
       "Owner": "Dot",
@@ -27,7 +29,8 @@
     },
     {
       "ID": "03",
-      "Phase": "0 Baseline",
+      "Phase": "0",
+      "Phase Name": "Baseline",
       "Task": "Investigate native AI crash A12 on the actual target PC",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -38,7 +41,8 @@
     },
     {
       "ID": "04",
-      "Phase": "1 Company access",
+      "Phase": "1",
+      "Phase Name": "Company access",
       "Task": "Define and implement company boundaries",
       "Status": "Verified",
       "Owner": "Dot",
@@ -49,7 +53,8 @@
     },
     {
       "ID": "05",
-      "Phase": "1 Company access",
+      "Phase": "1",
+      "Phase Name": "Company access",
       "Task": "Separate platform-owner and customer-administrator permissions",
       "Status": "Verified",
       "Owner": "Dot",
@@ -60,7 +65,8 @@
     },
     {
       "ID": "06",
-      "Phase": "1 Company access",
+      "Phase": "1",
+      "Phase Name": "Company access",
       "Task": "Build Apply -> Review -> Provision -> Invite onboarding",
       "Status": "Verified",
       "Owner": "Dot",
@@ -71,7 +77,8 @@
     },
     {
       "ID": "07",
-      "Phase": "2 Cloud staging",
+      "Phase": "2",
+      "Phase Name": "Cloud staging",
       "Task": "Prepare a reproducible production deployment",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -82,7 +89,8 @@
     },
     {
       "ID": "08",
-      "Phase": "2 Cloud staging",
+      "Phase": "2",
+      "Phase Name": "Cloud staging",
       "Task": "Add operational visibility and recovery",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -93,7 +101,8 @@
     },
     {
       "ID": "09",
-      "Phase": "2 Cloud staging",
+      "Phase": "2",
+      "Phase Name": "Cloud staging",
       "Task": "Validate staging end to end before proposing public launch",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -104,7 +113,8 @@
     },
     {
       "ID": "10",
-      "Phase": "3 AI settings",
+      "Phase": "3",
+      "Phase Name": "AI settings",
       "Task": "Implement a provider-neutral processing interface",
       "Status": "Verified",
       "Owner": "Dot",
@@ -115,7 +125,8 @@
     },
     {
       "ID": "11",
-      "Phase": "3 AI settings",
+      "Phase": "3",
+      "Phase Name": "AI settings",
       "Task": "Build AI Settings",
       "Status": "Verified",
       "Owner": "Dot",
@@ -126,18 +137,20 @@
     },
     {
       "ID": "12",
-      "Phase": "3 AI settings",
+      "Phase": "3",
+      "Phase Name": "AI settings",
       "Task": "Implement routing, quotas and recorded fallback",
-      "Status": "In progress",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Local/API fallback, quotas and retries pass without duplicate accepted work.",
-      "Notes / evidence / PR": "Prior4c40d1d/40fe6d4 CI passed. Independent review subsequently reproduced legacy-native job stranding after AI settings activation. First-pin preservation repair passed235affected+independent11/4+AppSec17 checks; final follow-up CI pending. Old model/source checkpoints preserved; no security-held repair or operational migration. DraftPR29."
+      "Notes / evidence / PR": "First durable native/provider pins preserved after settings activation; completed sources not repeated.235affected tests,independent11+4 and separate17security checks passed. HostedCI41221090193 on e832def passedWindows1473/Linux1471+2skips/Chromium. No security-held repairs, native/paid calls or operational migrations. PR29."
     },
     {
       "ID": "13",
-      "Phase": "4 Cloud pilot",
+      "Phase": "4",
+      "Phase Name": "Cloud pilot",
       "Task": "Run one limited company pilot after approved staging deployment",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -148,7 +161,8 @@
     },
     {
       "ID": "14",
-      "Phase": "4 Cloud pilot",
+      "Phase": "4",
+      "Phase Name": "Cloud pilot",
       "Task": "Measure service capacity and cost",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -159,7 +173,8 @@
     },
     {
       "ID": "15",
-      "Phase": "4 Cloud pilot",
+      "Phase": "4",
+      "Phase Name": "Cloud pilot",
       "Task": "Complete the cloud release gate",
       "Status": "Blocked",
       "Owner": "Dot",
@@ -167,33 +182,78 @@
       "Completed date": "",
       "Acceptance check": "Owner approves exact release. Deployment and smoke checks identify version.",
       "Notes / evidence / PR": "Blocked: exact release/security/target approval and deployment/smoke evidence absent. No merge or deployment performed; no owner approval inferred. See CLOUD_PILOT_GATE_20261031."
+    },
+    {
+      "ID": "16",
+      "Phase": "5",
+      "Phase Name": "Customer server",
+      "Task": "Build the installable server package from the shared release",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Clean server install works from a second authorized LAN browser.",
+      "Notes / evidence / PR": "Exact-source Linux/amd64 package and final6f5 CI41228944635 install/restart/private TLS/update/recovery passed. CP1/CP2/UP1 approved repairs independently closed. Acceptance remains blocked on an approved customer server and second physical authorised LAN browser; isolated Docker clients are not physical LAN evidence. Draft PR30; no deployment."
+    },
+    {
+      "ID": "17",
+      "Phase": "5",
+      "Phase Name": "Customer server",
+      "Task": "Validate local, connected and offline operating modes",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Claimed offline functions work with internet disconnected and no hidden downloads.",
+      "Notes / evidence / PR": "34local assets/68saved-browser assertions and actual final6f5 isolated Linux client with internet unreachable passed; runtime image pulls0. Local free PDF/OCR tested with existing bundled weights and disclosed accuracy limits. Physical disconnected-NIC/customer modes and native vision remain unverified; no fully-offline-native-AI claim. Draft PR30."
+    },
+    {
+      "ID": "18",
+      "Phase": "5",
+      "Phase Name": "Customer server",
+      "Task": "Define the service and maintenance offer for owner approval",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Owner approves maintenance responsibilities, license and commercial policy.",
+      "Notes / evidence / PR": "ConcreteCUSTOMER_SERVICE_OFFER_DRAFT_20261031.md prepared withresponsibilities,modeboundaries,licenceoptions,pricing/supportdecisionfields. Noowneracceptance,licencegrant,Artifexpurchase orcontractcommitment. LocalMuPDFdrawinglicencegate persists; no paidPDF/OCR API found/configured."
+    },
+    {
+      "ID": "19",
+      "Phase": "6",
+      "Phase Name": "Updates",
+      "Task": "Build one immutable release pipeline for both editions",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-10-31",
+      "Acceptance check": "Release provenance is traceable. Failed tests block publication.",
+      "Notes / evidence / PR": "VERIFIED at6f5f40d: all exact-source app41228944646/staging41228944652/customer41228944635/shared41228944697 succeeded. Sharedartifact13052619886 binds source/manifest/same immutable images to both editions and passed actual updater consumer. Negative gates reject failed/missing/stale/foreign checks;12tracked+14bounded final security checks(overlap). Draft PR30; candidate_only, no owner release."
+    },
+    {
+      "ID": "20",
+      "Phase": "6",
+      "Phase Name": "Updates",
+      "Task": "Build customer-server Update Center",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-10-31",
+      "Acceptance check": "Verified update preserves data. Invalid packages and interrupted updates stop safely.",
+      "Notes / evidence / PR": "VERIFIED at6f5f40d: owner-only persisted Update Center, signed host apply/recover and immutable receipts.47actual saved-browser assertions plus actual Linux update/recovery;374rows/73tables and originals retained. CP1/CP2/UP1 explicitly approved and independently closed. Windows1611pass;Linux1609pass+2existingWindows-onlyskips;19frontendpass. PR30; no operational update."
+    },
+    {
+      "ID": "21",
+      "Phase": "6",
+      "Phase Name": "Updates",
+      "Task": "Prove upgrade and recovery across supported versions",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-10-31",
+      "Acceptance check": "Demonstrate recovery from failed upgrade. Verify retained evidence hashes.",
+      "Notes / evidence / PR": "VERIFIED exact e37b280(schema0057)->6f5f40d(schema0057) supported pair: actual Linux caught migration failure rollback, hard interruption/recover, successful upgrade and idempotent replay passed.374retainedrows/73tables/digest and original evidence hashes agree.0056 automatic upgrades unsupported. All final exact-source CIpassed; PR30. Physical target/owner approval remain separate."
     }
-  ],
-  "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
-  "application_fingerprint": "1bc667534b90fdb1aca80b02d5e8a9174bfa9d46463cd62af2ad1fa4c8ea86fb",
-  "main_review_branch": "review/pr23-local-20261028",
-  "audit_branch": "audit/baseline-recovery-a12-20261028",
-  "security_findings_not_fixed": [
-    "BR1 Low"
-  ],
-  "merged_or_deployed_by_this_task": false,
-  "active_task": "12 follow-up",
-  "active_branch": "feat/cloud-staging-readiness-20261031",
-  "last_verified_task": "06",
-  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/29",
-  "last_implementation_commit": "98092c2cc025bea0e5978d9678df22b70e1cc17b",
-  "phase2_baseline_commit": "e3121970bd64b1909a0c9036aea438d4b0800870",
-  "blocked_tasks": [
-    "03",
-    "07",
-    "08",
-    "09",
-    "13",
-    "14",
-    "15"
-  ],
-  "latest_verified_application_fingerprint": "8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575",
-  "active_tasks": [
-    "12"
   ]
 }
