@@ -69,7 +69,10 @@ python backend/manage.py survey_processing_worker --configured-providers --setti
 ```
 
 Add `--once` for one bounded worker iteration. Hosted local-only policies remain
-queued; this option does not start a local model. The legacy outbound PC worker
+queued; this option does not start a local model. This hosted worker mode
+cannot provide API-to-local fallback through the PC: when local inference is
+disabled, the attempt records `local_worker_required` without a loopback call.
+The legacy outbound PC worker
 cannot execute a newly configured company policy and explicitly defers it rather
 than bypassing its quota, credentials or consent. Existing unconfigured outbound
 jobs retain their original mechanism. Enabling a policy during an old PC lease
@@ -93,6 +96,9 @@ late result. Original uploads and human decisions remain authoritative.
 Configured processing deliberately does not reuse visual inference across survey
 revisions; within-revision checkpoints remain durable. Legacy local reuse remains
 unchanged. This avoids treating a different provider policy as the same model.
+These settings govern the integrated survey evidence/checklist processing worker.
+The separate conversational assistant and legacy photo worker retain their
+existing configuration; this feature does not claim to reroute those services.
 
 ## Verification limits
 

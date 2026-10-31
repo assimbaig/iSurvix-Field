@@ -1,9 +1,6 @@
-# iSurvix Field delivery ledger
+# Delivery ledger
 
-31 October 2026. Five of nine recorded acceptance checks are Verified. Task03 and
-cloud staging07–09 remain Blocked. Independent cloud preparation, local gates and
-disposable Linux CI passed; actual target/security release gates did not. Due
-dates were not supplied. Blocked tasks have no completed date.
+8 of 15 acceptance rows verified within their recorded scope. Tasks03/07/08/09/13/14/15 remain blocked; no public-release approval.
 
 | ID | Phase | Task | Status | Owner | Due date | Completed date | Acceptance check | Notes / evidence / PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -16,58 +13,9 @@ dates were not supplied. Blocked tasks have no completed date.
 | 07 | 2 Cloud staging | Prepare a reproducible production deployment | Blocked | Dot |  |  | Clean staging install, restart and upgrade pass. Private media stays protected. | Deployment package implemented; actual disposable Linux CI41214056349 passed clean install,0054->0055 upgrade,TLS/static/media-denial,backup/restore and restart.20focused tests. Target VPS/private DNS/TLS access and security approvals still unavailable. Draft PR28 https://github.com/assimbaig/iSurvix-Field/pull/28; implementation7e88049. No target deployment. |
 | 08 | 2 Cloud staging | Add operational visibility and recovery | Blocked | Dot |  |  | Worker failure, restart and backup restore preserve uploads and results. | Health/owner diagnostics and quiesced SQLite/media new-target recovery implemented. WAL functional defect fixed with executed RED/GREEN. Restored3537media/70tables from saved-data COPY;202-photo fixture restart retained71tables/406media hashes. Actual VPS/PC/offdevice drill and CS2log-retention approval remain blocked. PR28; see CLOUD_STAGING_ACCEPTANCE_20261031.json. |
 | 09 | 2 Cloud staging | Validate staging end to end before proposing public launch | Blocked | Dot |  |  | Phone, upload, concurrency and workflow tests pass. Security review recorded. | Local39HTTPS browser+14restart/proxy checks passed,202unique syntheticphotos and human QA/TL/Client flow retained;12security cases+36HTTPS controls and independent WAL/configuration review passed in scope. CI Windows1407pass;Linux1405pass/2Windows-only skips. Local1406pass/1existingWinError1314.19frontend passed. Actual VPS/physicalphone/nativePC/offdevice and D1/D2/CS1/CS2 approval gates remain Blocked; no public launch. Draft PR28. |
-
-## Evidence and scope
-
-The phase0 tested product baseline is merged PR23 `fd365f1`. The main local checkout is
-now on `review/pr23-local-20261028` at that revision. Audit documentation is on
-`audit/baseline-recovery-a12-20261028` in `.local/b0`. Earlier PR22/PR23 references,
-the previous preview worktree and the two uncommitted audit reports are retained.
-Phase0 changed no application code. Task04 code/migration changes are isolated on `feat/company-boundaries-20261028`, implementation `defc27d`, draft [PR25](https://github.com/assimbaig/iSurvix-Field/pull/25). Operational source/data were not deployed or migrated; no approval decision changed.
-
-- `BASELINE_SOURCE_ENVIRONMENT_20261028.md` records source/environment reconciliation.
-- `BASELINE_QA_20261028.md` and JSON record exact tests and independent review.
-- `BASELINE_RECOVERY_PROCEDURE_20261028.md` and JSON document the actual restore.
-- `A12_NATIVE_INVESTIGATION_20261028.md` and JSON separate historical A12, the
-  current missing runner and incorrect image outputs.
-
-The full suite is **not green**: the unchanged symlink test could not construct
-its fixture because Windows denied privilege (WinError1314). Its security
-assertion did not run. This is not the historical native process crash.
-
-**BR1 / Low**: malformed file/directory prefix or Windows filename-alias conflicts
-can leave partial files inside a newly created disposable restore destination.
-No operational path was overwritten. Recommendation: reject these conflicts in
-preflight. The finding is reported and **not fixed without owner approval**.
-Use only the verified self-created checkpoint and mark failed targets incomplete.
-Other previously held security findings remain under their original approval rules.
-
-Task03 needs the original Linux crash core/native backtrace and matching failing
-native environment to establish A12's cause. The standard Windows Ollama also
-needs its missing compatible runner restored, followed by correct source-backed
-image results. HTTP completion alone is insufficient; current diagnostic labels
-passed0/3. No extra model, runtime repair or paid/cloud fallback was introduced.
-
-This same-drive drill proves restoration of the checked source/data, not off-device
-disaster recovery, Windows ACL restoration, credential revocation or engineering
-acceptance. Read-only restored Django used the existing installed environment.
-The app and workers stayed stopped; only the original loopback Ollama remains.
-
-## Task04 evidence
-
-Company-boundary definition, implementation report, acceptance JSON, worker migration guide and independent QA/security reports are under `COMPANY_BOUNDARIES_*`, `COMPANY_WORKER_BINDING_MIGRATION_20261028` and `INDEPENDENT_COMPANY_BOUNDARIES_QA_20261028`. The tested source fingerprint is `a563121f6519168c3c180b97bc90648b7a6f7299bebc50e633f4e672558fa0a5`. In-scope CompanyA/B acceptance is Verified; wider Windows symlink, A12/native-image and production proxy/rollout gates are explicitly not claimed complete. Unknown legacy worker pins fail closed until authorized reissue; current local credentials0. No new exploitable finding was established by the scoped separate security phase; prior approval-held findings remain untouched.
-
-
-## Task05 evidence
-
-See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md and independent QA/security reports. Draft PR26 remains for review. The Windows symlink fixture remains blocked; no full-green or deployment claim is made.
-
-
-## Task06 evidence
-
-See COMPANY_ONBOARDING_IMPLEMENTATION_20261031.md, acceptance JSON, guide, independent QA/security reports and screenshots. Draft PR27 is stacked after PR26; both remain for review. Staging and AI settings were deferred. No operational migration or deployment.
-
-
-## Cloud staging07–09 evidence
-
-See CLOUD_STAGING_DELIVERY_20261031.md, acceptance JSON, requirements matrix, deployment/operations runbooks and independent QA/security reports. DraftPR28 remains for review, stacked after PR27/PR26. Actual Linux disposable CI passed; actual VPS/offdevice/physicalphone/native-PC and security approval gates remain Blocked. No production deployment or public launch.
+| 10 | 3 AI settings | Implement a provider-neutral processing interface | Verified | Dot |  | 2026-10-31 | Provider tests handle invalid output, timeouts and duplicates. Keys stay private. | Provider boundary integrated with actual survey images/documents and strict results. Invalid/timeout/replay tests and actual HTTPS image/TLS checks passed. Keys remain server-side references. Protocol is Ollama-compatible, not universal vendor support. Full local1465: 1464passed,1existing WinError1314 error;19frontend+8checks. Implementation98092c2; draftPR29 https://github.com/assimbaig/iSurvix-Field/pull/29. No operational migration/deployment. See AI_SETTINGS_ACCEPTANCE_20261031.json. |
+| 11 | 3 AI settings | Build AI Settings | Verified | Dot |  | 2026-10-31 | Settings persist with correct permissions, redacted audits and clear errors. | Company Admin/owner settings save/reload, current permissions, CSRF, version conflicts and secret redaction verified by unit/HTTP and30browser checks. AI1Low audit before/after detail gap reported and unfixed pending approval. Full local1465: 1464passed,1existing WinError1314 error;19frontend+8checks. Implementation98092c2; draftPR29 https://github.com/assimbaig/iSurvix-Field/pull/29. No operational migration/deployment. See AI_SETTINGS_ACCEPTANCE_20261031.json. |
+| 12 | 3 AI settings | Implement routing, quotas and recorded fallback | Verified | Dot |  | 2026-10-31 | Local/API fallback, quotas and retries pass without duplicate accepted work. | Pinned routing, durable quotas, bounded retries and recorded fallback verified, including actual HTTPS fallback and saved survey→draftPDF/DXF. Replays avoid duplicate source results; human answers unchanged. Hosted PC-local fallback/native/live-credential acceptance remains outside verified scope. Full local1465: 1464passed,1existing WinError1314 error;19frontend+8checks. Implementation98092c2; draftPR29 https://github.com/assimbaig/iSurvix-Field/pull/29. No operational migration/deployment. See AI_SETTINGS_ACCEPTANCE_20261031.json. |
+| 13 | 4 Cloud pilot | Run one limited company pilot after approved staging deployment | Blocked | Dot |  |  | Engineer-to-report pilot completes. Originals and human decisions preserved. | Blocked: no approved target staging deployment/company pilot, approved real evidence or authorised operator accounts. Synthetic tests are not a company pilot. See CLOUD_PILOT_GATE_20261031. |
+| 14 | 4 Cloud pilot | Measure service capacity and cost | Blocked | Dot |  |  | Owner accepts measured capacity, costs and operating limits. | Blocked: representative approved staging pilot/load, native/provider benchmark, actual billing/cost inputs and owner acceptance are missing. No throughput or cost values invented. Measurement worksheet prepared in CLOUD_PILOT_GATE_20261031. |
+| 15 | 4 Cloud pilot | Complete the cloud release gate | Blocked | Dot |  |  | Owner approves exact release. Deployment and smoke checks identify version. | Blocked: exact release/security/target approval and deployment/smoke evidence absent. No merge or deployment performed; no owner approval inferred. See CLOUD_PILOT_GATE_20261031. |

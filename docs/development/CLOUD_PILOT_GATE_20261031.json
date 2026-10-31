@@ -1,0 +1,117 @@
+{
+  "prepared_date": "2026-10-31",
+  "scope": "Independent preparation only for tasks 13-15",
+  "owner": "Dot",
+  "source_context": {
+    "worktree": ".local/b5",
+    "branch": "feat/ai-settings-routing-20261031",
+    "candidate_implementation": "98092c2cc025bea0e5978d9678df22b70e1cc17b",
+    "draft_pr": "https://github.com/assimbaig/iSurvix-Field/pull/29",
+    "candidate_is_approved_release": false,
+    "final_broad_regression_at_preparation": "In progress; a newly observed failure requires diagnosis and repair",
+    "final_verified_source": "4c40d1dbb1a1c0000d0b0d5f937f5b0b3446e5cc",
+    "final_verification": "Hosted application CI passed; local run retains one existing Windows symlink privilege error. No target/pilot acceptance."
+  },
+  "rows": [
+    {
+      "ID": "13",
+      "Phase": "4 Cloud pilot",
+      "Task": "Run one limited company pilot after approved staging deployment",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Engineer-to-report pilot completes. Originals and human decisions preserved.",
+      "Notes / evidence / PR": "Pilot procedure and integrity/human-review evidence record prepared. Actual approved staging target, release, cohort, device/native-worker validation and security disposition are missing. Synthetic browser/TLS outputs are not pilot acceptance. No pilot/deployment or engineering approval performed."
+    },
+    {
+      "ID": "14",
+      "Phase": "4 Cloud pilot",
+      "Task": "Measure service capacity and cost",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Owner accepts measured capacity, costs and operating limits.",
+      "Notes / evidence / PR": "Measurement and cost-allocation worksheet prepared. No target workload/resource series, actual invoices/rates, approved load envelope or owner acceptance exists. Upload fixture speed is not sustained AI throughput; attempt quotas are not billing totals. No capacity/cost estimate claimed."
+    },
+    {
+      "ID": "15",
+      "Phase": "4 Cloud pilot",
+      "Task": "Complete the cloud release gate",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Owner approves exact release. Deployment and smoke checks identify version.",
+      "Notes / evidence / PR": "Exact source/image/config/worker/migration/backup/rollback and smoke evidence record prepared. No owner-approved exact release or target deployment/smoke record exists; tasks07-09 and13-14 remain prerequisites. Agent review cannot substitute for owner approval. No merge/deployment performed."
+    }
+  ],
+  "blocked_prerequisite_tasks": [
+    "03",
+    "07",
+    "08",
+    "09"
+  ],
+  "held_findings_unchanged": [
+    "A12",
+    "BR1",
+    "D1",
+    "D2",
+    "L1",
+    "CS1",
+    "CS2",
+    "AI1"
+  ],
+  "missing_inputs": [
+    "Approved VPS/SSH identity reference, private access route and DNS/TLS",
+    "Owner-approved staging deployment and security disposition",
+    "Final repaired and verified source plus trusted immutable application artifact",
+    "Actual target backup/restart and off-device restore evidence",
+    "Approved company/project/site/user/evidence cohort and physical phone/network list",
+    "Approved live AI path, private credential references, model vision/accuracy and worker recovery evidence",
+    "Approved load/duration/storage envelope and measured target resource series",
+    "Actual invoice/rate/usage inputs and explicit owner capacity/cost acceptance",
+    "Exact owner release approval, authorised operator and versioned deployment/smoke record"
+  ],
+  "measurements": {
+    "target_upload_latency": null,
+    "target_queue_delay": null,
+    "sustained_unique_photo_inference_per_second": null,
+    "target_document_processing": null,
+    "target_ai_completion_latency": null,
+    "human_correction_time": null,
+    "engineer_submission_to_released_report": null,
+    "tested_concurrency_limit": null,
+    "resource_usage_series": null,
+    "actual_pilot_cost": null,
+    "cost_per_accepted_report": null,
+    "currency": null,
+    "owner_accepted_capacity_cost_limits": false
+  },
+  "execution_performed": {
+    "application_code_changed": false,
+    "ledger_or_handoff_changed": false,
+    "target_contacted": false,
+    "credentials_inspected": false,
+    "native_or_paid_ai_called": false,
+    "operational_data_or_approvals_changed": false,
+    "pilot_run": false,
+    "merged_or_deployed": false,
+    "purchases_or_spend_authorised": false
+  },
+  "owner_approval": {
+    "exact_release_commit": null,
+    "application_image_digest": null,
+    "approval_reference": null,
+    "approved_by": null,
+    "approved_at_utc": null,
+    "scope_and_window": null
+  },
+  "evidence_documents": [
+    "CLOUD_STAGING_DELIVERY_20261031.md",
+    "AI_SETTINGS_INDEPENDENT_QA_20261031.md",
+    "SECURITY_REVIEW_AI_SETTINGS_20261031.md",
+    "AI_SETTINGS_GUIDE_20261031.md"
+  ]
+}

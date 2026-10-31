@@ -1,5 +1,58 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: AI settings verified; actual cloud pilot blocked - 31 October 2026
+
+Dedicated `.local/b5`, branch `feat/ai-settings-routing-20261031`, parent2dd7343.
+Implementation98092c2 plus exact-navigation contract test update4c40d1d. DraftPR29:
+https://github.com/assimbaig/iSurvix-Field/pull/29 stacked after draftPR28.
+DO NOT merge/deploy automatically. Main source/data remainfd365f1/core0053.
+Fresh checkpoint184928 verified3595protectedfiles/consistentSQLite/source/Git.
+Final preservation proof:3595files/70tables+2olduntracked reports unchanged.
+
+Tasks10-12 integrate company AI Settings, private operator registry aliases,
+pinned policies, durable attempts/quotas/retries and local/HTTPS Ollama-compatible
+routing into the actual survey evidence/mapping worker. Configured hosted
+API-primary worker mode and explicit legacy-PC policy deferral preserve controls.
+Existing unconfigured local, inspections, originals and human approvals remain.
+Migration0056 is additive and NOT applied operationally. No new dependencies,
+model download, native/commercial/paid request or real API credential test.
+
+Focused208GREEN; independent18unit/HTTP+30browser+5actualTLS casesGREEN,
+including saved synthetic survey -> actual unreleasedPDF/DXF and recordedfallback.
+SeparateAppSec11newtestsGREEN + existingTLSrerun11(5TLS+6overlap). AI1Low audit
+before/after detail gap confirmed UNFIXED pending ownerapproval. Earlier
+A12/BR1/D1/D2/L1/CS1/CS2 approvalholds remain. No public release clearance.
+
+First complete broad run1465tests found3stale navigation expectations for the
+new authorized AISettings link and1existingWinError1314symlink fixture error.
+IndependentQA approved exact-list updates preserving all permission/private-data
+assertions.29focusedGREEN; independent10affectedGREEN. Appsource unchanged;
+only2tests updated in4c40d1d. Final3:1465run/1464passed/0failures/1existing
+WinError1314/0skips,632.437s;19frontend+8other checks passed. Local fullsuite
+is not green. HostedCI41218476239 PASSED:Windows1465/1465;Linux1463passed+2
+existing Windows-only skips;Chromium passed.
+Frozen592source/configfiles unchanged; fingerprintd5768e691d99a4eb4bc28616f64b53aed31a54d1acffd4e13621a2475bd9b44a.
+Tasks10-12 Verified in isolated fixtures, not native/provider/target acceptance.
+Initial incomplete gate interrupted for3EOFnewline corrections; all receipts kept.
+
+Owner also added13-15 cloudpilot. Only concrete pilot procedure/measurement/
+release gate MD+JSON prepared. Actual13-15 Blocked: approved staging/hostaccess,
+security disposition, cohort, live worker/model, measured costs/capacity and exact
+ownerrelease approval missing. Fixture upload/AI/TLS results are NOT realpilot or
+capacity evidence. No targets contacted, no deployment/merge/approval performed.
+
+Codex warning investigated read-only at owner request: logs confirm legacy_notify
+Windows206 failure ('after_agent hook failed; continuing') and optional
+openai-api-credit-promo MCP startupHTTP403. Codexconfig/auth unchanged; diagnosis
+receipt private `.local/ai-settings-20261031/codex-warning-diagnosis.json`.
+
+Read AI_SETTINGS_GUIDE_20261031, AI_SETTINGS_INDEPENDENT_QA_20261031,
+SECURITY_REVIEW_AI_SETTINGS_20261031, AI_SETTINGS_REQUIREMENTS_20261031 and
+CLOUD_PILOT_GATE_20261031. Samples/screenshots are synthetic and unreleased.
+APIprotocol limited to approved HTTPS Ollama-compatible service, not universal
+vendor support; hosted PC-localfallback unsupported, configured cross-revision
+visual reuse disabled, separate assistant/legacyphoto settings unchanged.
+
 ## Latest: cloud preparation verified, actual target/release blocked - 31 October 2026
 
 Dedicated `.local/b4`, branch `feat/cloud-staging-readiness-20261031`, implementation

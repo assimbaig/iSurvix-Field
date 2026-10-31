@@ -1,0 +1,497 @@
+{
+  "implementation": "98092c2cc025bea0e5978d9678df22b70e1cc17b",
+  "branch": "feat/ai-settings-routing-20261031",
+  "pr": 29,
+  "pr_url": "https://github.com/assimbaig/iSurvix-Field/pull/29",
+  "draft": true,
+  "parent": "2dd7343c0b0619f404beabff72f1dac9fc625fa2",
+  "main_operational": "fd365f107b75c370caa2b765837d2a23f907a80c",
+  "focused": {
+    "passed": 208,
+    "seconds": 55.455,
+    "overlaps_full_suite": true
+  },
+  "independent_ordinary": {
+    "passed": 18,
+    "seconds": 7.048,
+    "overlaps_full_suite": true
+  },
+  "browser": {
+    "passed": 30,
+    "widths": [
+      1920,
+      1366,
+      390
+    ],
+    "javascript_errors": 0,
+    "unexpected_failed_requests": 0,
+    "deliberate_external_aborts": 90,
+    "expected_console_messages": 94
+  },
+  "https_fixture": {
+    "explicit_cases": 5,
+    "seconds": 4.267,
+    "native_or_paid": false,
+    "full_saved_survey_pdf_dxf": true
+  },
+  "security": {
+    "new_tests": 11,
+    "seconds": 0.185,
+    "unfixed_finding": "AI1 Low: configuration audit omits allowlisted nonsecret before/after values",
+    "prior_holds": [
+      "A12",
+      "BR1",
+      "D1",
+      "D2",
+      "L1",
+      "CS1",
+      "CS2"
+    ]
+  },
+  "hosted_ci_run": 41218476239,
+  "native_accuracy_or_real_external_credential_verified": false,
+  "operational_migration_or_deployment": false,
+  "test_contract_commit": "4c40d1dbb1a1c0000d0b0d5f937f5b0b3446e5cc",
+  "verified_source_commit": "4c40d1dbb1a1c0000d0b0d5f937f5b0b3446e5cc",
+  "regression_contract_repair": {
+    "old_full_run": 1465,
+    "old_failures": 3,
+    "old_errors": 1,
+    "old_skips": 0,
+    "old_seconds": 571.737,
+    "root_cause": "Exact legacy Admin/Super Admin navigation expectations omitted the authorized AI Settings link",
+    "repair": "Exact expected lists extended and real settings URL asserted; all other permission/payload checks retained",
+    "focused_rerun": 29,
+    "focused_seconds": 10.46,
+    "app_behavior_changed": false
+  },
+  "prior_failed_ci_run": 41217611648,
+  "recorded_utc": "2026-10-31T16:23:36.789414+00:00",
+  "local_full": {
+    "run": 1465,
+    "passed": 1464,
+    "failures": 0,
+    "errors": 1,
+    "skips": 0,
+    "seconds": 632.437,
+    "error": "Existing diagnostic-directory symlink fixture cannot create link: WinError1314; local suite is not green"
+  },
+  "final_gate": {
+    "started_utc": "2026-10-31T16:11:32.620614+00:00",
+    "finished_utc": "2026-10-31T16:22:42.231785+00:00",
+    "branch": "feat/ai-settings-routing-20261031",
+    "commit": "4c40d1dbb1a1c0000d0b0d5f937f5b0b3446e5cc",
+    "results": [
+      {
+        "check": "backend-full",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "scripts/run_backend_tests.py",
+          "--verbosity",
+          "1"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 1,
+        "seconds": 641.094
+      },
+      {
+        "check": "frontend-check-engineer-documents",
+        "command": [
+          "node",
+          "check-engineer-documents.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-engineer",
+        "command": [
+          "node",
+          "check-engineer.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 3.578
+      },
+      {
+        "check": "frontend-check-preview",
+        "command": [
+          "node",
+          "check-preview.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 4.156
+      },
+      {
+        "check": "frontend-check-qa-batch-links",
+        "command": [
+          "node",
+          "check-qa-batch-links.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "check": "frontend-check-qa-bulk-unlink",
+        "command": [
+          "node",
+          "check-qa-bulk-unlink.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-qa-collection-restore",
+        "command": [
+          "node",
+          "check-qa-collection-restore.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-qa-compact-layout",
+        "command": [
+          "node",
+          "check-qa-compact-layout.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "check": "frontend-check-qa-filter-toolbar",
+        "command": [
+          "node",
+          "check-qa-filter-toolbar.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 1.75
+      },
+      {
+        "check": "frontend-check-qa-finding-table",
+        "command": [
+          "node",
+          "check-qa-finding-table.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.062
+      },
+      {
+        "check": "frontend-check-qa-guided-state",
+        "command": [
+          "node",
+          "check-qa-guided-state.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-qa-navigation-gallery",
+        "command": [
+          "node",
+          "check-qa-navigation-gallery.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 1.797
+      },
+      {
+        "check": "frontend-check-qa-restore-links",
+        "command": [
+          "node",
+          "check-qa-restore-links.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-qa-workspace",
+        "command": [
+          "node",
+          "check-qa-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.125
+      },
+      {
+        "check": "frontend-check-shared-navigation",
+        "command": [
+          "node",
+          "check-shared-navigation.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 1.328
+      },
+      {
+        "check": "frontend-check-site-routing",
+        "command": [
+          "node",
+          "check-site-routing.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 3.579
+      },
+      {
+        "check": "frontend-check-survey-pause",
+        "command": [
+          "node",
+          "check-survey-pause.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.046
+      },
+      {
+        "check": "frontend-check-task-list-density",
+        "command": [
+          "node",
+          "check-task-list-density.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 1.032
+      },
+      {
+        "check": "frontend-check-web-references",
+        "command": [
+          "node",
+          "check-web-references.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-workspace",
+        "command": [
+          "node",
+          "check-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\frontend",
+        "exit_code": 0,
+        "seconds": 3.578
+      },
+      {
+        "check": "django-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\backend",
+        "exit_code": 0,
+        "seconds": 2.281
+      },
+      {
+        "check": "migration-drift",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\backend",
+        "exit_code": 0,
+        "seconds": 1.938
+      },
+      {
+        "check": "dependency-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 0,
+        "seconds": 0.922
+      },
+      {
+        "check": "qa-javascript-syntax",
+        "command": [
+          "node",
+          "--check",
+          "backend/static/core/js/qa_evidence_review.js"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 0,
+        "seconds": 0.046
+      },
+      {
+        "check": "static-build",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "F:\\iSurvix\\iSurvix-Field\\.local\\b5\\.local\\ai-settings-20261031\\final3\\build_static.py"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 0,
+        "seconds": 1.125
+      },
+      {
+        "check": "staging-python-syntax",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "-m",
+          "py_compile",
+          "deploy/staging.py",
+          "deploy/healthcheck.py"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 0,
+        "seconds": 0.094
+      },
+      {
+        "check": "reviewed-deploy-shell-syntax",
+        "command": [
+          "C:/Program Files/Git/bin/bash.exe",
+          "-n",
+          "backend/deploy.sh"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 0,
+        "seconds": 0.047
+      },
+      {
+        "check": "disposable-rehearsal-shell-syntax",
+        "command": [
+          "C:/Program Files/Git/bin/bash.exe",
+          "-n",
+          "deploy/verify_staging.sh"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b5",
+        "exit_code": 0,
+        "seconds": 0.031
+      }
+    ],
+    "source_unchanged": true,
+    "source_fingerprint": "d5768e691d99a4eb4bc28616f64b53aed31a54d1acffd4e13621a2475bd9b44a",
+    "changed_source_files": []
+  },
+  "source_files": 592,
+  "hosted_ci": {
+    "run_id": 41218476239,
+    "commit": "4c40d1dbb1a1c0000d0b0d5f937f5b0b3446e5cc",
+    "url": "https://github.com/assimbaig/iSurvix-Field/actions/runs/41218476239",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 124587905685,
+        "name": "Frontend / Chromium",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 124587905890,
+        "name": "Backend / windows-latest",
+        "status": "completed",
+        "conclusion": "success",
+        "footers": [
+          "2026-10-31T16:22:38.6799514Z Ran 1465 tests in 565.390s\r",
+          "2026-10-31T16:22:38.6843989Z Isolation: temporary database/media/model cache; zero external network attempts; 67 connections to in-process HTTP fixtures.\r",
+          "2026-10-31T16:22:40.5637118Z No changes detected\r"
+        ],
+        "tests_run": 1465,
+        "passed": 1465,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "seconds": 565.39,
+        "ok_footer_verified": true
+      },
+      {
+        "id": 124587905939,
+        "name": "Backend / ubuntu-latest",
+        "status": "completed",
+        "conclusion": "success",
+        "footers": [
+          "2026-10-31T16:17:37.7391456Z Ran 1465 tests in 313.090s",
+          "2026-10-31T16:17:37.7391703Z OK (skipped=2)",
+          "2026-10-31T16:17:37.7406110Z Isolation: temporary database/media/model cache; zero external network attempts; 67 connections to in-process HTTP fixtures.",
+          "2026-10-31T16:17:38.5212854Z No changes detected"
+        ],
+        "tests_run": 1465,
+        "passed": 1463,
+        "failures": 0,
+        "errors": 0,
+        "skips": 2,
+        "seconds": 313.09
+      }
+    ]
+  },
+  "preservation": {
+    "source_data_files_rehashed_matching": 3595,
+    "all_operational_tables_matching": 70,
+    "original_evidence_credentials_branding_unchanged": true,
+    "untracked_audit_reports_preserved": 2,
+    "operational_migration_0054_applied": false,
+    "seconds": 25.609
+  },
+  "security_review": {
+    "review": "Separate post-functional security review",
+    "timestamp": "2026-10-31T16:00:47.686757+00:00",
+    "functional_freeze_received": true,
+    "independent_security_tests": {
+      "run": 11,
+      "passed": 11,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "seconds": 0.185,
+      "external_attempts": 0,
+      "fixture_connections": 0
+    },
+    "existing_tls_module_rerun": {
+      "run": 11,
+      "passed": 11,
+      "explicit_tls_tests": 5,
+      "imported_existing_routing_overlap": 6,
+      "seconds": 10.748,
+      "external_attempts": 0,
+      "fixture_connections": 25
+    },
+    "findings": [
+      {
+        "id": "AI1",
+        "severity": "Low",
+        "description": "Settings audit field names lack nonsecret before/after policy values",
+        "status": "Reported; unfixed; requires owner approval"
+      }
+    ],
+    "application_files_modified": false,
+    "reviewed_application_source_unchanged": true,
+    "native_model_calls": 0,
+    "paid_or_external_calls": 0,
+    "operational_data_modified": false,
+    "security_clearance_for_public_release": false,
+    "implementation_commit": "98092c2cc025bea0e5978d9678df22b70e1cc17b",
+    "lead_whitespace_only_normalization": [
+      "backend/core/test_ai_settings.py",
+      "backend/core/test_ai_settings_independent.py",
+      "backend/templates/dashboards/ai_settings.html"
+    ]
+  },
+  "limits": [
+    "Ollama-compatible HTTPS protocol only; no universal vendor SDK adapters",
+    "No live native-model accuracy or real external credential acceptance",
+    "Configured policies do not reuse visual inference across survey revisions",
+    "Legacy outbound PC workers defer configured policies; hosted local fallback is unavailable without local inference",
+    "Separate assistant/legacy photo worker remains on its existing configuration",
+    "AI1Low audit-detail recommendation remains unfixed pending approval",
+    "Earlier security and actual VPS/public-release gates remain open"
+  ]
+}

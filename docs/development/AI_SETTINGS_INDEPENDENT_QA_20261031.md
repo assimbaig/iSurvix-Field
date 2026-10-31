@@ -156,3 +156,29 @@ No tests were weakened or skipped to obtain the result.
   security review. Earlier security findings remain subject to owner approval.
 - Private detailed receipts, synthetic cookies, fixture keys and databases remain
   under `.local/ai-settings-20261031/qa` and are not published with this report.
+
+## Independent post-regression navigation-contract review
+
+Reviewed commit `4c40d1dbb1a1c0000d0b0d5f937f5b0b3446e5cc` after the full regression
+exposed old exact navigation expectations. The diff changes only
+`core/test_superadmin_console.py` and `core/test_shared_navigation.py`: it adds the
+authorized **AI Settings** link to the exact Admin and platform-owner ordered
+lists, adds an exact real-route check, and requires zero such links for operational
+roles. Every prior link, five console-view expectation, operational-payload
+restriction, role check and global-count assertion remains. The production
+navigation and application code were not changed by that commit.
+
+This is a valid expected-contract update for task 11, not an assertion removal or
+a looser comparison to conceal a defect. The independently executed command was:
+
+```text
+F:\iSurvix\iSurvix-Field\.local\venv\Scripts\python.exe scripts\run_backend_tests.py core.test_superadmin_console core.test_shared_navigation --verbosity 2
+```
+
+Result: **10 passed in 2.045 seconds**, zero failures/errors/skips, zero external
+network attempts and zero fixture connections. Private receipt:
+`.local/ai-settings-20261031/qa/navigation-contract-independent.log`.
+These ten tests overlap the final regression suite; the earlier 18 independent,
+30 browser and five explicit HTTPS checks are unchanged. This focused result does
+not replace the final full-suite result or close its existing Windows symlink
+privilege limitation. No security-review finding was repaired by this update.
