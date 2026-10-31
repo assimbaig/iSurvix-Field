@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-31T17:56:42.457587+00:00",
-  "verified": 8,
+  "updated_utc": "2026-10-31T18:33:20.071165+00:00",
+  "verified": 11,
   "total": 21,
   "rows": [
     {
@@ -188,24 +188,24 @@
       "Phase": "5",
       "Phase Name": "Customer server",
       "Task": "Build the installable server package from the shared release",
-      "Status": "In progress",
+      "Status": "Blocked",
       "Owner": "Dot",
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Clean server install works from a second authorized LAN browser.",
-      "Notes / evidence / PR": "LinuxDocker drafttransfer package implemented;22focusedtests passed. ActualLinuxbuild/install/LAN-client simulation/fullCI pending; physicalsecondauthorisedLANdevice/customer/security/licence approval unavailable. Owner explicitly approved CP1/CP2 repairs; executed RED evidence retained, implementation/independent closure in progress."
+      "Notes / evidence / PR": "Exact-source Linux/amd64 package and final6f5 CI41228944635 install/restart/private TLS/update/recovery passed. CP1/CP2/UP1 approved repairs independently closed. Acceptance remains blocked on an approved customer server and second physical authorised LAN browser; isolated Docker clients are not physical LAN evidence. Draft PR30; no deployment."
     },
     {
       "ID": "17",
       "Phase": "5",
       "Phase Name": "Customer server",
       "Task": "Validate local, connected and offline operating modes",
-      "Status": "In progress",
+      "Status": "Blocked",
       "Owner": "Dot",
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Claimed offline functions work with internet disconnected and no hidden downloads.",
-      "Notes / evidence / PR": "34localassets/68savedbrowserchecks/6mapchecks/18affectedtests passed; noautomaticthirdpartyrequests. LocalfreePDF/OCR conversion andnativeprintedtext tested withuncertainresults disclosed; fullsharedsuite andactualcustomerNIC-disconnection/nativevision gates pending."
+      "Notes / evidence / PR": "34local assets/68saved-browser assertions and actual final6f5 isolated Linux client with internet unreachable passed; runtime image pulls0. Local free PDF/OCR tested with existing bundled weights and disclosed accuracy limits. Physical disconnected-NIC/customer modes and native vision remain unverified; no fully-offline-native-AI claim. Draft PR30."
     },
     {
       "ID": "18",
@@ -224,65 +224,36 @@
       "Phase": "6",
       "Phase Name": "Updates",
       "Task": "Build one immutable release pipeline for both editions",
-      "Status": "In progress",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Release provenance is traceable. Failed tests block publication.",
-      "Notes / evidence / PR": "Shared same-source draft gate and immutable image/package provenance implemented.11tracked+19overlapping independent+10security checks passed. PR30. Actual Linux/package gate is being repaired and retested; no release approved or published."
+      "Notes / evidence / PR": "VERIFIED at6f5f40d: all exact-source app41228944646/staging41228944652/customer41228944635/shared41228944697 succeeded. Sharedartifact13052619886 binds source/manifest/same immutable images to both editions and passed actual updater consumer. Negative gates reject failed/missing/stale/foreign checks;12tracked+14bounded final security checks(overlap). Draft PR30; candidate_only, no owner release."
     },
     {
       "ID": "20",
       "Phase": "6",
       "Phase Name": "Updates",
       "Task": "Build customer-server Update Center",
-      "Status": "In progress",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Verified update preserves data. Invalid packages and interrupted updates stop safely.",
-      "Notes / evidence / PR": "Owner-only real Update Center and signed host apply/recover implemented.47saved-browser checks; approvedUP1repair26developer/50independent/9security checks passed(overlap). Finalfull+actualLinuxgate pending. PR30; no live update."
+      "Notes / evidence / PR": "VERIFIED at6f5f40d: owner-only persisted Update Center, signed host apply/recover and immutable receipts.47actual saved-browser assertions plus actual Linux update/recovery;374rows/73tables and originals retained. CP1/CP2/UP1 explicitly approved and independently closed. Windows1611pass;Linux1609pass+2existingWindows-onlyskips;19frontendpass. PR30; no operational update."
     },
     {
       "ID": "21",
       "Phase": "6",
       "Phase Name": "Updates",
       "Task": "Prove upgrade and recovery across supported versions",
-      "Status": "In progress",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Demonstrate recovery from failed upgrade. Verify retained evidence hashes.",
-      "Notes / evidence / PR": "Actual SQLite/media controlled-Docker recovery tests and strict retained-row/hash proofs pass. Exact0057baseline e37b280 selected; actual Linux caught-failure/interruption/success matrix still running. Earlier0056 automatic upgrades unsupported. PR30."
+      "Notes / evidence / PR": "VERIFIED exact e37b280(schema0057)->6f5f40d(schema0057) supported pair: actual Linux caught migration failure rollback, hard interruption/recover, successful upgrade and idempotent replay passed.374retainedrows/73tables/digest and original evidence hashes agree.0056 automatic upgrades unsupported. All final exact-source CIpassed; PR30. Physical target/owner approval remain separate."
     }
-  ],
-  "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
-  "application_fingerprint": "1bc667534b90fdb1aca80b02d5e8a9174bfa9d46463cd62af2ad1fa4c8ea86fb",
-  "main_review_branch": "review/pr23-local-20261028",
-  "audit_branch": "audit/baseline-recovery-a12-20261028",
-  "security_findings_not_fixed": [
-    "BR1 Low"
-  ],
-  "merged_or_deployed_by_this_task": false,
-  "active_task": "16-17 customer candidate",
-  "active_branch": "feat/cloud-staging-readiness-20261031",
-  "last_verified_task": "06",
-  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/29",
-  "last_implementation_commit": "98092c2cc025bea0e5978d9678df22b70e1cc17b",
-  "phase2_baseline_commit": "e3121970bd64b1909a0c9036aea438d4b0800870",
-  "blocked_tasks": [
-    "03",
-    "07",
-    "08",
-    "09",
-    "13",
-    "14",
-    "15",
-    "18"
-  ],
-  "latest_verified_application_fingerprint": "8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575",
-  "active_tasks": [
-    "16",
-    "17"
   ]
 }

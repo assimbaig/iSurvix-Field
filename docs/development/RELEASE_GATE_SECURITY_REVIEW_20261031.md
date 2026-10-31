@@ -79,3 +79,62 @@ their later assembled trust boundary needs a separate post-functional review.
 CP1/CP2 repair status is in `CUSTOMER_SERVER_SECURITY_REVIEW_20261031.md`. Earlier
 A12/BR1/D1/D2/L1/CS1/CS2/AI1 findings remain held. No unrelated repair approval is
 inferred. No product/security fix, customer deployment or merge was performed.
+
+## Final isolated-client/artifact-consumer follow-up at `6f5f40d`
+
+The lead requested this bounded follow-up after commits `4ac435f` (Linux fixture
+permissions/isolated-client topology) and `6f5f40d` (real artifact-consumer layout).
+The reviewer inspected those exact diffs, actual workflow/script paths and the
+installed updater `_package` consumer. No broader implementation or product edit
+was performed. Six new private cases plus seven original CP controls and the
+original UP1 countercase ran:
+
+```text
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py artifact_security customer_security updater_security.IndependentHostUpdaterSecurityTests.test_UP1_terminal_journal_cannot_replay_another_requests_completion --verbosity 2
+```
+
+**14 passed in 4.094 seconds**, zero failures/errors/skips, zero external attempts
+and zero fixture HTTP connections. Eight cases are repeat closure checks, not
+new unique ordinary tests. No real Docker or customer records were used.
+
+The new cases extracted the producer's actual `shared/release.json` relative path,
+created a valid synthetic package/record using the real gate, reproduced the
+workflow's actual hard-link copy into `<exact-SHA>/package` and
+`<exact-SHA>/shared/release.json`, then invoked the actual installed updater
+consumer. Matching package/images passed. Different record source/images or
+owner-approval label, a missing record, altered image archive and a traversal
+target at the signed-request boundary were rejected without execution.
+
+The separate client now reaches an added isolated proxy NIC/DNS alias instead
+of pretending to traverse the host-published port. A distinct host-side probe
+still checks the real published listener using `--cacert`, `--resolve` and
+`--noproxy`, then confirms the exact release. The isolated client retains CA/
+hostname verification and explicitly reports `client_used_host_published_port`
+false. No unverified SSL context, `verify=False`, `CERT_NONE` or insecure curl
+flag was introduced in the reviewed scripts. This is source/configuration and
+static-consumer evidence, **not a native topology run by this reviewer**.
+
+The shared workflow still has read-only permissions, downloads the required
+same-source customer-run artifacts and uploads only the explicitly unapproved
+shared candidate. No fixture password, host journal, runtime database or Docker
+socket was added to that artifact path. This inspection does not certify that a
+conservative artifact screen detects every encoded/opaque secret.
+
+CP1/CP2 closures remain intact: nine relevant package guard function ASTs match
+their reviewed `e37b280` source, and the original private assertions passed.
+The whole customer helper has later inventory/configuration changes, so the
+reviewer does **not** claim its old whole-file hash is unchanged. UP1's updater
+hash still exactly matches its approved closure, and its original countercase
+passed again. The eight earlier approval-held findings remain unchanged.
+
+Six follow-up source/script/workflow hashes matched before/after this review.
+Private evidence: `.local/customer-server-20261031/final-artifact-security/`
+contains `artifact_security.py`, `checks.log`, `closure-guards.json`, source
+inventories and `receipt.json`.
+
+**No new exploitable finding was established in this bounded follow-up.** At
+the request, the lead reported prior customer CI `41228058279` successful and
+current `41228944635` still running; this reviewer did not replace those actual
+run receipts with local assertions or claim the current run had passed. Final
+same-source CI/artifact digests, physical target devices, licensing and owner
+release approval remain separate delivery evidence/gates.

@@ -1,5 +1,44 @@
 # iSurvix Field: local Codex development brief
 
+## Current: final exact-source gates passed - 31 October2026
+
+Verified source6f5f40d2b7e296e626636c700b85547f95bcd6be, draftPR30, branch
+feat/customer-server-readiness-20261031. All FOUR workflows passed:
+application41228944646 (Windows1611passed;Linux1609passed+2existingWindows-only
+skips;19frontendpassed;pip/migrationchecks passed), staging41228944652,
+customer41228944635 and shared41228944697. No failed check was treated as success.
+
+Sharedartifact13052619886 SHA256afb9e7c4de6c9550a08aa0b077b1e9dea482613c76560ccdbdb57b77de50fec5
+binds the same immutable app/proxy images to cloud/customer and passed the actual
+consumer in CI. This is a gated DRAFT artifact with7day hosted retention, not
+owner release approval. Later documentation-only commits remain separate from
+the exact tested source. No merge, production/customer deployment or live update.
+
+Actual Linux install, zero runtime image pulls, restart, private TLS, caught
+migration failure rollback, hard interruption/recover, successful upgrade/replay
+passed.374rows/73tables and original evidence retained. Exact0057baselinee37b280
+to6f5 only;0056 automatic upgrade unsupported. Latest proof artifact13053286662
+SHA256858339416a0e72231441a09cd08520eeefd447a414719c94a9e113d2b0fc4913 independently
+downloaded/inspected by root and AgencyQA. Physical LAN/nativeAI/owner approval
+remain false; isolated client NIC and host-published TLS listener tested separately.
+
+Agency final consumer12checks and separate security14checks passed(overlap);
+CP1/CP2/UP1 are closed in their tested bounds. Earlier A12/BR1/D1/D2/L1/CS1/CS2/AI1
+remain unapproved/unfixed; D1/D2 High still block public release. No nativeOllama
+or paid API was called. Licensing and service-offer owner decisions remain.
+
+Ledger:11of21 tasks Verified;10Blocked. Tasks19-21 code acceptance verified only
+for the exact documented pair.16physicalLAN/17physical-native modes/18owneroffer,
+03native,07-09targetstaging and13-15pilot/capacity/release remain blocked. Read
+SHARED_RELEASE_DELIVERY_20261031.md and updated requirement/QA/security reports.
+
+Final data recheck:3595protectedfiles/70operationaltables/2olduntracked audits
+unchanged. Operational mainfd365f1/schema0053 retained;0054-0057 not applied.
+Local full runs were not frozen-source acceptance: latest1608pass/2errors
+(WinError1314 and old loaded URL-fixture parser); corrected parser focused checks
+passed. Keep local privilege limit visible despite hosted Windows success.
+No project preview/worker was started in final integration; Ollama unchanged.
+
 ## Latest: UP1 repaired; final verification restart - 31 October2026
 
 Owner explicitly approved UP1. The narrow repair is implemented: both apply and

@@ -244,3 +244,130 @@ Linux Docker/physical LAN proof or release approval. Older unsealed draft
 journals fail closed and need manual reconciliation; preserved original signing
 keys, static installation metadata and immutable proof/backup artifacts remain
 required. The reviewer's code changes are private tests/reporting only.
+
+## Independent actual CI evidence and producer/consumer follow-up
+
+At local HEAD `6f5f40d2b7e296e626636c700b85547f95bcd6be`, the reviewer executed:
+
+```text
+scripts/run_backend_tests.py core.test_release_gate --verbosity 2
+```
+
+**12 passed in0.966seconds**, zero failures/errors/skips or external attempts,
+two controlled HTTP fixture connections. This includes the actual workflow
+producer's `shared/release.json` output being consumed by the real updater
+`_package` verifier. It is a real code/fixture integration, not Docker execution
+or proof that the latest hosted shared artifact has already been published.
+Receipt: `qa/release-consumer-final.log`.
+
+The reviewer independently queried GitHub: customer workflow run41228058279,
+job124616271002 completed successfully for exact source
+`4ac435ff5d8e5de43abcb548de4cb9b74d199ebd`. The94KB verification artifact13052473014
+was independently downloaded and its complete ZIP SHA256 matched GitHub's digest:
+`3fa898e36934b309bd13722a01e59f7ec4c758a713f334f67b8b60af5b45857d`.
+
+Actual JSON/log inspection verified:
+
+- UID10001 could read the baked release and code; fresh image transfer/load,
+  initialization, restart and repeat-initialization rejection passed.
+- The artifact's actual manifest bytes match the reported SHA256; application
+  and proxy image identities match across the manifest/install/upgrade proofs.
+- Caught migration failure and separate interrupted-process recovery returned
+  the original release; successful upgrade and idempotent replay passed.
+- Source/target retention proofs agree:374 retained rows across73 tables and the
+  same retained-row digest. Existing rows remain equal under the documented
+  audit-append, last-login and maintenance-table exclusions.
+- The separate isolated client verified TLS, persisted update history and exact
+  Engineer original-photo bytes. Anonymous original access and platform-owner
+  operational evidence access were denied. Raw media and external client
+  connectivity were denied in the initial synthetic install.
+
+The actual supported pair is the0057 baseline
+`e37b28088a80de11e56f95a7989ad90f41fd9f48` to that exact4ac435f candidate. The proof
+explicitly marks schema0056 automatic upgrade, native AI, physical customer LAN,
+physical customer devices, real customer deployment and release approval as
+false. The client uses an isolated proxy NIC; host-published TLS readiness was
+checked separately. These boundaries are retained in the report.
+
+The reviewer compared4ac435f to6f5: install/upgrade rehearsal assertions were not
+removed. The shared workflow changed its record location and added a static
+consumer verification before artifact upload. Current customer run41228944635 /
+job124618873308 remained in progress at this observation, so the earlier passing
+CI cannot establish latest-source acceptance. No complete transferable500MB
+candidate was independently downloaded or installed by this reviewer.
+
+Private evidence: `qa/ci-4ac435f-evidence.zip`, `qa/ci-4ac435f-job.log`,
+`qa/ci-4ac435f-independent-receipt.json` and `qa/ci-independent-status.json`.
+Final latest-source hosted checks, gated shared publication and owner exact
+release approval remain the lead's separate delivery gates. No merge or
+deployment was performed.
+
+### Latest-source customer CI addendum
+
+The later GitHub query independently confirmed run41228944635 /
+job124618873308 completed **successfully** for exact source
+`6f5f40d2b7e296e626636c700b85547f95bcd6be`. This supersedes the pending customer
+status above. The reviewer hashed the latest locally retained ZIP, artifact
+13053286662: SHA256
+`858339416a0e72231441a09cd08520eeefd447a414719c94a9e113d2b0fc4913` matches the
+recorded artifact digest.
+
+Independent inspection of the ZIP's actual manifest/install/upgrade/result
+records verified exact target source, matching manifest bytes and image IDs,
+UID10001 readability, fresh install/restart, caught-failure rollback, interrupted
+recovery and successful upgrade/replay. Source/target retention again agrees on
+374 rows and73 tables, digest
+`2287c755eccb935d644ef366746f6aa5d59147cebfdceafd70bbf62518076b13`.
+The authenticated original-byte/access-denial and TLS checks are retained.
+Only baseline `e37b28088a80de11e56f95a7989ad90f41fd9f48` is supported by this
+proof. The earlier12 producer/actual-consumer integration tests remain applicable
+to this exact source; no product code was changed during this addendum.
+
+Receipt: `qa/ci-6f5-independent-receipt.json`. This closes the latest-source
+**disposable customer Linux rehearsal** observation only. Full backend regression
+and the hosted shared-release gate were still separate pending checks at this
+review; physical LAN/devices, native AI, real customer deployment and owner
+release approval remain explicitly unverified. No merge or deployment occurred.
+
+### Final exact-source code-verification closure
+
+The independent GitHub query subsequently confirmed all four workflows for the
+same `6f5f40d2b7e296e626636c700b85547f95bcd6be` source completed successfully:
+
+| Workflow | Run | Independently checked evidence |
+| --- | --- | --- |
+| Application verification | 41228944646 | Windows1611/1611 passed465.613s; Linux1609passed and2 existing Windows-only skips472.415s; pip/migration checks and Chromium job succeeded |
+| Disposable staging | 41228944652 | Completed success for the exact source |
+| Disposable customer server | 41228944635 | Actual install/update/recovery and hashed evidence inspected above |
+| Shared immutable candidate | 41228944697 | Exact-source/fresh gate, actual-consumer step and draft artifact publication succeeded |
+
+Backend counts/time were independently read from downloaded job-log footers;
+frontend logs report19/19 scripts passed. The two Linux platform skips correspond
+to existing native Windows launcher/process-tree cases, rather than newly
+suppressed failing assertions. This hosted result supersedes the pending full/
+shared observations above. It does not rewrite the disclosed earlier local
+Windows privilege error or changing-source runs as successful frozen runs.
+
+The actual shared artifact13052619886 ZIP SHA256 independently matches
+`afb9e7c4de6c9550a08aa0b077b1e9dea482613c76560ccdbdb57b77de50fec5`.
+The reviewer inspected its actual `shared/release.json` and consumer proof, then
+ran the trusted current updater's static `_package` consumer against the real
+downloaded package, with any Docker invocation explicitly rejected. It passed;
+record/package/proof source, manifest and immutable image IDs agree. Both editions
+reference those same image IDs. Eight existing holds and
+`owner_release_approved: false` remain in the actual artifact.
+
+Task19's exact-source draft gate/provenance, task20's owner-request/privileged
+operator separation and task21's tested-pair recovery/retention have executable
+evidence in the defined candidate scope. No additional in-scope omission was
+identified in this final reconciliation. The supported upgrade is still only
+e37b280(schema0057) to6f5(schema0057); this is not a general migration guarantee.
+Physical customer/LAN acceptance, native AI accuracy, licensing, earlier eight
+holds and owner exact-release approval remain outside this code-verification
+closure. No customer deployment, merge or release approval occurred.
+
+Private receipts: `qa/final-exact-workflows.json`, `qa/final-ci-windows.log`,
+`qa/final-ci-linux.log`, `qa/final-ci-frontend.log` and
+`qa/final-shared-independent-receipt.json`. Only this QA report and private
+evidence were changed by the reviewer; shared requirements/ledger remain owned
+by the lead.
