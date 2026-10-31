@@ -130,3 +130,49 @@ ephemeral and is not emitted into `docker compose logs`. Actual Linux restart
 semantics were not exercised here. After explicit owner approval, use a protected
 persistent destination or privacy-preserving collector/stdout configuration with
 bounded retention, then verify restart retention. No configuration fix was made.
+
+## Final WAL/recovery addendum
+
+The real-data-copy drill exposed WAL sidecars after the initial61-test gate. Three
+executed RED cases produced2failures/1error; only the new destination snapshot was
+normalized to DELETE mode, and standalone inspection became immutable/read-only.
+The final63 focused tests passed (24operations+13independent+26remote regressions);
+independent24+12 review reruns passed. The full-copy3537media/70table restore passed
+with exact hashes; short F: paths avoided Windows MAX_PATH. Existing long-path/WAL
+failed artifacts remain private. No source checkpoint, source journal mode, source
+file deletion or relaxed inventory check occurred. Later Linux CI also passed
+normal schema/recovery/restart gates, but did not verify proxy-log retention (CS2).
+
+
+## Exact Windows app/worker commands
+
+Use these only after selecting the reviewed source and completing the separately
+approved database update. They do not switch branches, migrate data, approve work
+or deploy the hosted site. The protected main checkout was not updated here.
+
+Local development app (existing local records stay under this F: project):
+
+```powershell
+Set-Location 'F:\iSurvix\iSurvix-Field'
+& '.local\venv\Scripts\python.exe' backend\manage.py runserver 127.0.0.1:8000 --settings=checklist.settings_local
+```
+
+For hosted compute, the company/project Admin must first issue scoped credentials
+for the approved HTTPS server and save the private configuration at
+`.local\private\remote-worker.json`. Never put its bearer into a command line,
+Git, screenshot or report. Resolve the separate native-runtime/A12 and Windows
+private-file permission gates before production use.
+
+Metadata/connectivity preflight (not an actual native vision correctness test):
+
+```powershell
+Set-Location 'F:\iSurvix\iSurvix-Field'
+& '.\scripts\Start-RemoteSurveyWorker.ps1' -PhotoOllamaUrl 'http://127.0.0.1:11434' -Model 'qwen3.5:4b' -ConfigPath '.local\private\remote-worker.json' -CheckOnly
+```
+
+After the native image request and approved server connection are verified, start
+the independent outbound worker by repeating the command without `-CheckOnly`.
+Use Ctrl+C to stop it; queued jobs/results remain on the server and local result
+cache is retained. Do not expose11434, share the SQLite file over the internet or
+disable HTTPS certificate verification. These commands were documented, not run
+against a native model or external server during this task.

@@ -1,8 +1,9 @@
 # Task07: reproducible staging deployment preparation
 
-Status: application/configuration preparation and local focused checks completed;
-**actual clean Linux installation, Linux container restart/upgrade and target-VPS
-deployment remain unverified**. Do not mark Task07 accepted on this document alone.
+Status: application/configuration preparation, local focused checks and an
+**actual disposable Linux Docker clean-install/upgrade/restart rehearsal passed**.
+The target VPS is not deployed or accepted. Do not mark Task07 accepted for the
+real staging target on the disposable rehearsal alone.
 The owner must approve the exact target, artifact and configuration before any
 staging installation. No production service, DNS, firewall, database, public Ollama
 listener or external registry publication was changed by this work.
@@ -46,8 +47,10 @@ set is not established by `pip check`. Existing dependency ranges were preserved
   is fetched at web startup; native inference is disabled on the VPS.
 - `deploy/compose.yaml`: persistent data mount; read-only, capability-dropped
   application/proxy containers; loopback-only host ports8080/8443; no exposed web,
-  database or Ollama port. An internal network separates the web process from
-  external services. The PC continues outbound HTTPS through the approved proxy.
+  database or Ollama port. The web process remains attached only to the internal
+  application network. The proxy additionally joins an ordinary ingress bridge
+  so Docker can publish its loopback ports; this does not make them public.
+  The PC continues outbound HTTPS through the approved proxy.
 - `deploy/nginx.conf.template`: TLS1.2/1.3, HTTP redirect, request correlation,
   private access logs without URL/query/authorization values and a global deny
   for `/media` and `/media/`. Nginx mounts **static assets only**, never media or DB.
@@ -99,9 +102,14 @@ Fixtures, keys, backups and databases are not uploaded as CI artifacts. Only
 verification/build logs, readiness responses and dependency manifests are retained.
 No customer data, native inference or target VPS is involved.
 
-**This workflow has not been executed in the current Windows environment.** A
-committed workflow is not evidence of a successful hosted run. Record its actual
-run URL, resolved images and result before accepting that Linux gate.
+Docker remains unavailable in the current Windows environment, but the hosted
+Linux workflow has now actually executed successfully. The final successful run
+is [41214056349](https://github.com/assimbaig/iSurvix-Field/actions/runs/41214056349),
+at commit `7e88049e0640d15f353f1ab209d48687409ff091`. The two preceding failed
+attempts and their functional repairs are recorded in the final addendum below.
+The lead retains the downloaded verification artifact and resolved image IDs in
+the cloud-staging acceptance evidence. A passing disposable hosted run does not
+establish that an actual target-VPS installation or physical phone test passed.
 
 ## Prepared installation commands — require staging approval first
 
@@ -205,7 +213,7 @@ From `.local/b4`, existing Python3.12 environment:
 & 'C:\Program Files\Git\bin\bash.exe' -n backend/deploy.sh
 ```
 
-Final focused result: **18 passed in14.021s**, zero external attempts. Unit and
+Final focused result: **20 passed in16.613s**, zero external attempts. Unit and
 actual subprocess integration cover fail-closed host/origin/key/release/data
 configuration, real Django deployment checks, existing DB-byte preservation,
 clean Git source export, direct dependency compatibility and production policy
@@ -227,10 +235,43 @@ Private receipts and13-file source freeze:
 actual portable-Nginx/HTTP QA evidence, independent security review and final
 delivery ledger; those are not inferred from these focused results.
 
-External blockers: Docker and WSL/Linux are unavailable on this PC; no approved
-staging target/credentials were supplied. Direct official Docker Hub metadata
-lookup also failed certificate-expiry validation; validation was not disabled
-and no digest was invented. Resolve registry metadata through a trusted Linux
-build environment, execute and review CI evidence, then perform the approved
-target-server install/restart/upgrade/device tests. Existing A12/native inference
-acceptance and prior approval-held security findings remain separate and unchanged.
+External blockers: Docker and WSL/Linux remain unavailable on this PC; no approved
+staging target/credentials were supplied. The initial direct Windows Docker Hub
+metadata lookup failed certificate-expiry validation; validation was not disabled
+and no digest was invented. The hosted Linux build subsequently resolved actual
+registry digests and built the image with normal verified connections. Review its
+recorded artifacts before promotion, then perform the approved target-server
+install/restart/upgrade/device tests. Existing A12/native inference acceptance and
+prior approval-held security findings remain separate and unchanged.
+
+## Final Linux test–fix–retest addendum
+
+The following are actual disposable GitHub Actions attempts, not projected
+results or mocked container launches. No customer VPS or operational records
+were involved:
+
+| Attempt | Executed result | Functional repair and regression |
+| --- | --- | --- |
+| [41213150689](https://github.com/assimbaig/iSurvix-Field/actions/runs/41213150689) | Exact source export, official image pulls and application image build succeeded. Host validation then failed with Permission denied while the runner tried to traverse application-owned0700 data. | Kept data/key ownership and private permissions. Both host validation phases now run only the read-only stdlib validator under explicit sudo, preserving an allowlist of eight configuration path/identity variables. System `/usr/bin/python3` avoids hosted-interpreter loader dependencies. Portable Bash invocation assertions were executed RED then GREEN; actual Linux rerun passed this boundary. |
+| [41213609956](https://github.com/assimbaig/iSurvix-Field/actions/runs/41213609956) | Build, host validation,0054→0055 upgrade, backup/restore, static collection and Django deployment checks passed. Both containers were healthy, but the first HTTPS connection was refused. | A proxy attached only to an internal Docker network had no effective published host port. Kept the web service solely internal with no host ports; attached only the proxy to an additional ordinary ingress bridge. Loopback bindings, TLS verification, private-media denial and health checks remain intact. A network-graph regression failed before the change; CI now also asserts the actual published mapping before the unchanged real HTTPS probe. |
+| [41214056349](https://github.com/assimbaig/iSurvix-Field/actions/runs/41214056349) | **Succeeded** on commit `7e88049e0640d15f353f1ab209d48687409ff091`: actual Linux image build and fresh install, synthetic0054→current upgrade with retained Company, quiesced backup/new-target restore, real verified TLS readiness, public-static delivery, direct-private-media denial and restart with retained database/original hashes. | This is the final executed disposable Linux deployment evidence. Actual registry/image identifiers and verification JSON are retained by the lead; no values were guessed and no certificate verification was disabled. |
+
+The network repair follows the documented separation between an externally
+connected frontend bridge and an internal backend network. See the primary
+[Docker networking overview](https://docs.docker.com/engine/network/) and the
+matching [Docker Engine internal-network port-publishing discussion](https://github.com/moby/moby/discussions/53256).
+
+The final local deployment module contains20 passing unit/integration tests;
+shell syntax checks also passed. The private deployment source-freeze manifest
+was refreshed after the functional repairs. These fixes did not change the held
+D1/D2/CS1/CS2 findings, dependency pins, production log retention, workflow
+selection policy or engineering approval rules. No security finding was silently
+remediated after review.
+
+**Still blocked/unverified:** approved target-VPS installation and its operating
+permissions, public DNS and publicly trusted TLS, physical phone acceptance,
+actual target-connected Windows PC/vision processing, off-device recovery, and
+resolution of the owner-held release/security findings. A12/native-model evidence
+is not supplied by this deployment rehearsal. Do not propose public launch from
+these results alone. The lead's final full-suite and independent review evidence
+are recorded separately; they are not inferred from this CI success.

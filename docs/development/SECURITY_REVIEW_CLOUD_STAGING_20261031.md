@@ -120,3 +120,18 @@ The actual-proxy command requires the designated isolated synthetic fixture and
 owned loopback services, never an operational database. Full repository checks,
 preservation proof, hosted CI results and final delivery are the lead's gates;
 this report does not claim those unexecuted checks passed.
+
+
+## Later lead verification addendum
+
+After this initial Windows proxy review, actual disposable Linux run41214056349
+passed normal TLS/private-media/static/recovery/restart checks on7e88049. It did
+not exercise hostile Gunicorn parser cases or capture proxy-log retention across
+restart, and did not deploy a VPS. Thus the original runtime-scope limits and
+CS2 configuration finding are not silently closed by that later CI result.
+
+The independently found functional WAL snapshot repair received a separate bounded
+read-only review and24 operations/12 existing security-regression reruns; the
+network configuration repair received20 independent deployment-test reruns.
+See WAL_RECOVERY_INDEPENDENT_REVIEW_20261031.md and CONFIGURATION_INDEPENDENT_REVIEW.md.
+No additional security finding was fixed or waived. D1/D2/CS1/CS2 remain held.

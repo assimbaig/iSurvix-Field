@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-31T14:52:15.453073+00:00",
+  "updated_utc": "2026-10-31T15:32:56.792905+00:00",
   "verified": 5,
   "total": 9,
   "rows": [
@@ -73,34 +73,34 @@
       "ID": "07",
       "Phase": "2 Cloud staging",
       "Task": "Prepare a reproducible production deployment",
-      "Status": "In progress",
+      "Status": "Blocked",
       "Owner": "Dot",
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Clean staging install, restart and upgrade pass. Private media stays protected.",
-      "Notes / evidence / PR": "Implementation/local verification in progress. Actual staging host/access and approved deployment unavailable; no live deployment claim. See CLOUD_STAGING_REQUIREMENTS_20261031.md."
+      "Notes / evidence / PR": "Deployment package implemented; actual disposable Linux CI41214056349 passed clean install,0054->0055 upgrade,TLS/static/media-denial,backup/restore and restart.20focused tests. Target VPS/private DNS/TLS access and security approvals still unavailable. Draft PR28 https://github.com/assimbaig/iSurvix-Field/pull/28; implementation7e88049. No target deployment."
     },
     {
       "ID": "08",
       "Phase": "2 Cloud staging",
       "Task": "Add operational visibility and recovery",
-      "Status": "In progress",
+      "Status": "Blocked",
       "Owner": "Dot",
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Worker failure, restart and backup restore preserve uploads and results.",
-      "Notes / evidence / PR": "Implementation/local verification in progress. Actual staging host/access and approved deployment unavailable; no live deployment claim. See CLOUD_STAGING_REQUIREMENTS_20261031.md."
+      "Notes / evidence / PR": "Health/owner diagnostics and quiesced SQLite/media new-target recovery implemented. WAL functional defect fixed with executed RED/GREEN. Restored3537media/70tables from saved-data COPY;202-photo fixture restart retained71tables/406media hashes. Actual VPS/PC/offdevice drill and CS2log-retention approval remain blocked. PR28; see CLOUD_STAGING_ACCEPTANCE_20261031.json."
     },
     {
       "ID": "09",
       "Phase": "2 Cloud staging",
       "Task": "Validate staging end to end before proposing public launch",
-      "Status": "In progress",
+      "Status": "Blocked",
       "Owner": "Dot",
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Phone, upload, concurrency and workflow tests pass. Security review recorded.",
-      "Notes / evidence / PR": "Implementation/local verification in progress. Actual staging host/access and approved deployment unavailable; no live deployment claim. See CLOUD_STAGING_REQUIREMENTS_20261031.md."
+      "Notes / evidence / PR": "Local39HTTPS browser+14restart/proxy checks passed,202unique syntheticphotos and human QA/TL/Client flow retained;12security cases+36HTTPS controls and independent WAL/configuration review passed in scope. CI Windows1407pass;Linux1405pass/2Windows-only skips. Local1406pass/1existingWinError1314.19frontend passed. Actual VPS/physicalphone/nativePC/offdevice and D1/D2/CS1/CS2 approval gates remain Blocked; no public launch. Draft PR28."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
@@ -111,10 +111,17 @@
     "BR1 Low"
   ],
   "merged_or_deployed_by_this_task": false,
-  "active_task": "07-09",
+  "active_task": null,
   "active_branch": "feat/cloud-staging-readiness-20261031",
   "last_verified_task": "06",
-  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/27",
-  "last_implementation_commit": "148e2cb92ae6f11c9edd1b3f69401fd2cd355fe1",
-  "phase2_baseline_commit": "e3121970bd64b1909a0c9036aea438d4b0800870"
+  "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/28",
+  "last_implementation_commit": "7e88049e0640d15f353f1ab209d48687409ff091",
+  "phase2_baseline_commit": "e3121970bd64b1909a0c9036aea438d4b0800870",
+  "blocked_tasks": [
+    "03",
+    "07",
+    "08",
+    "09"
+  ],
+  "latest_verified_application_fingerprint": "8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575"
 }
