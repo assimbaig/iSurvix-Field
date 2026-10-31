@@ -68,8 +68,11 @@ class SuperAdminConsoleTests(TestCase):
             response=self.client.get(reverse('governance_home'),{'view':view})
             self.assertEqual(response.status_code,200)
             nav=re.search(r'<nav[^>]*class="[^"]*\bplatform-nav\b[^"]*"[^>]*>(.*?)</nav>',response.content.decode(),re.S).group(1)
-            self.assertEqual(re.findall(r'<a[^>]*>(.*?)</a>',nav,re.S),['Dashboard','Industries','Clients','Projects','Sites','Checklist Wizard'])
+            # Company AI administration adds a scoped entry, not an operational
+            # console view. Keep the full navigation contract exact.
+            self.assertEqual(re.findall(r'<a[^>]*>(.*?)</a>',nav,re.S),['Dashboard','Industries','Clients','Projects','Sites','Checklist Wizard','AI Settings'])
             self.assertIn('href="'+reverse('checklist_wizard')+'"',nav)
+            self.assertIn('href="'+reverse('ai_settings_index')+'"',nav)
             self.assertEqual(response.context['active_view'],view)
             self.assertFalse(response.context['can_assign'])
             for key in ['surveys','assignments','review_queue','reports']:self.assertFalse(response.context[key])
