@@ -1,0 +1,663 @@
+{
+  "scope": "Delivery07-09 Cloud staging",
+  "status": "Blocked for target-server/public-release acceptance; independent implementation and verification completed",
+  "recorded_utc": "2026-10-31T15:31:30.626239+00:00",
+  "branch": "feat/cloud-staging-readiness-20261031",
+  "implementation_commit": "7e88049e0640d15f353f1ab209d48687409ff091",
+  "draft_pr": "https://github.com/assimbaig/iSurvix-Field/pull/28",
+  "tested_source_fingerprint": "8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575",
+  "gate": {
+    "started_utc": "2026-10-31T15:19:03.276792+00:00",
+    "finished_utc": "2026-10-31T15:28:00.321658+00:00",
+    "branch": "feat/cloud-staging-readiness-20261031",
+    "commit": "7e88049e0640d15f353f1ab209d48687409ff091",
+    "results": [
+      {
+        "check": "backend-full",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "scripts/run_backend_tests.py",
+          "--verbosity",
+          "1"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 1,
+        "seconds": 508.89
+      },
+      {
+        "check": "frontend-check-engineer-documents",
+        "command": [
+          "node",
+          "check-engineer-documents.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.093
+      },
+      {
+        "check": "frontend-check-engineer",
+        "command": [
+          "node",
+          "check-engineer.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 3.594
+      },
+      {
+        "check": "frontend-check-preview",
+        "command": [
+          "node",
+          "check-preview.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 3.609
+      },
+      {
+        "check": "frontend-check-qa-batch-links",
+        "command": [
+          "node",
+          "check-qa-batch-links.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "check": "frontend-check-qa-bulk-unlink",
+        "command": [
+          "node",
+          "check-qa-bulk-unlink.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-qa-collection-restore",
+        "command": [
+          "node",
+          "check-qa-collection-restore.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.062
+      },
+      {
+        "check": "frontend-check-qa-compact-layout",
+        "command": [
+          "node",
+          "check-qa-compact-layout.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "check": "frontend-check-qa-filter-toolbar",
+        "command": [
+          "node",
+          "check-qa-filter-toolbar.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 1.937
+      },
+      {
+        "check": "frontend-check-qa-finding-table",
+        "command": [
+          "node",
+          "check-qa-finding-table.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "check": "frontend-check-qa-guided-state",
+        "command": [
+          "node",
+          "check-qa-guided-state.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.093
+      },
+      {
+        "check": "frontend-check-qa-navigation-gallery",
+        "command": [
+          "node",
+          "check-qa-navigation-gallery.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 1.86
+      },
+      {
+        "check": "frontend-check-qa-restore-links",
+        "command": [
+          "node",
+          "check-qa-restore-links.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.062
+      },
+      {
+        "check": "frontend-check-qa-workspace",
+        "command": [
+          "node",
+          "check-qa-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.125
+      },
+      {
+        "check": "frontend-check-shared-navigation",
+        "command": [
+          "node",
+          "check-shared-navigation.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 1.407
+      },
+      {
+        "check": "frontend-check-site-routing",
+        "command": [
+          "node",
+          "check-site-routing.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 3.593
+      },
+      {
+        "check": "frontend-check-survey-pause",
+        "command": [
+          "node",
+          "check-survey-pause.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.063
+      },
+      {
+        "check": "frontend-check-task-list-density",
+        "command": [
+          "node",
+          "check-task-list-density.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 1.047
+      },
+      {
+        "check": "frontend-check-web-references",
+        "command": [
+          "node",
+          "check-web-references.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 0.078
+      },
+      {
+        "check": "frontend-check-workspace",
+        "command": [
+          "node",
+          "check-workspace.cjs"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\frontend",
+        "exit_code": 0,
+        "seconds": 3.578
+      },
+      {
+        "check": "django-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\backend",
+        "exit_code": 0,
+        "seconds": 2.203
+      },
+      {
+        "check": "migration-drift",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "manage.py",
+          "makemigrations",
+          "--check",
+          "--dry-run"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\backend",
+        "exit_code": 0,
+        "seconds": 1.922
+      },
+      {
+        "check": "dependency-check",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 0,
+        "seconds": 0.781
+      },
+      {
+        "check": "qa-javascript-syntax",
+        "command": [
+          "node",
+          "--check",
+          "backend/static/core/js/qa_evidence_review.js"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 0,
+        "seconds": 0.047
+      },
+      {
+        "check": "static-build",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "F:\\iSurvix\\iSurvix-Field\\.local\\b4\\.local\\cloud-staging-20261031\\final3\\build_static.py"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 0,
+        "seconds": 1.063
+      },
+      {
+        "check": "staging-python-syntax",
+        "command": [
+          "F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe",
+          "-m",
+          "py_compile",
+          "deploy/staging.py",
+          "deploy/healthcheck.py"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 0,
+        "seconds": 0.093
+      },
+      {
+        "check": "reviewed-deploy-shell-syntax",
+        "command": [
+          "C:/Program Files/Git/bin/bash.exe",
+          "-n",
+          "backend/deploy.sh"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 0,
+        "seconds": 0.047
+      },
+      {
+        "check": "disposable-rehearsal-shell-syntax",
+        "command": [
+          "C:/Program Files/Git/bin/bash.exe",
+          "-n",
+          "deploy/verify_staging.sh"
+        ],
+        "cwd": "F:\\iSurvix\\iSurvix-Field\\.local\\b4",
+        "exit_code": 0,
+        "seconds": 0.031
+      }
+    ],
+    "source_unchanged": true,
+    "source_fingerprint": "8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575",
+    "changed_source_files": []
+  },
+  "local_backend": {
+    "run": 1407,
+    "passed": 1406,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0,
+    "seconds": 501.357,
+    "known_error": "Unchanged diagnostic symlink fixture: WinError1314 before security assertion",
+    "full_suite_green": false
+  },
+  "hosted_application_verification": {
+    "url": "https://github.com/assimbaig/iSurvix-Field/actions/runs/41214056106",
+    "conclusion": "success",
+    "windows": {
+      "run": 1407,
+      "passed": 1407,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 558.411,
+      "job_id": 124574840179
+    },
+    "linux": {
+      "run": 1407,
+      "passed": 1405,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "seconds": 440.353,
+      "job_id": 124574840350,
+      "skip_reason": "Existing native powershell.exe launcher and Windows process-tree cases; executed successfully on hosted Windows"
+    },
+    "frontend_chromium": "success"
+  },
+  "linux_disposable_deployment": {
+    "run_id": 41214056349,
+    "run_url": "https://github.com/assimbaig/iSurvix-Field/actions/runs/41214056349",
+    "conclusion": "success",
+    "artifact_id": 13047547589,
+    "artifact_sha256": "5401c6f8f22054e7e23ce8383c8c23f8bc47feb5fe9c670d8cd3c12c2f5e6ebc",
+    "artifact_sha256_verified": true,
+    "verification": {
+      "release": "7e88049e0640d15f353f1ab209d48687409ff091",
+      "python_image": "python@sha256:e697c81897302a4c4333bade000d98038fbb21eb064f8ee1fd42d02ebcd9d337",
+      "nginx_image": "nginx@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949",
+      "application_image": "sha256:3698234f455743e0c5074882b8f439f1d2bb261735981f24e30d0006de8ee898",
+      "clean_install": true,
+      "core_0054_upgrade_preserved_company": true,
+      "restart_preserved_db_and_original": true,
+      "quiesced_backup_and_new_target_restore": true,
+      "tls_readiness": true,
+      "static_delivery": true,
+      "private_media_direct_denied": true,
+      "proxy_loopback_port_published": true,
+      "native_ai_invoked": false,
+      "production_or_vps_deployed": false
+    },
+    "actual_target_vps_deployed": false,
+    "physical_phone_verified": false,
+    "actual_pc_native_inference_verified": false,
+    "off_device_restore_verified": false,
+    "security_approval": "Denied/pending owner-approved D1/D2/CS1/CS2 remediation",
+    "scope": "Actual disposable Linux Docker rehearsal on GitHub Actions, not target-server or launch acceptance"
+  },
+  "qa": {
+    "status": "Blocked for actual cloud staging/public-launch acceptance; independent local gates passed",
+    "unit_http_file_tests": {
+      "run": 13,
+      "passed": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 5.187,
+      "external_connections": 0
+    },
+    "actual_local_tls_browser": {
+      "passed": 39,
+      "failed": 0,
+      "javascript_exceptions": 0,
+      "unexpected_request_failures": 0,
+      "explicit_blocked_external_assets": 66,
+      "explicit_manual_redirect_abort": 1,
+      "external_asset_availability_verified": false
+    },
+    "upload": {
+      "ui_photos": 200,
+      "unique_total": 202,
+      "bytes": 735364,
+      "ui_elapsed_ms": 6699,
+      "ui_batch_requests": 11,
+      "concurrency": {
+        "initial_statuses": [
+          201,
+          201
+        ],
+        "final_statuses": [
+          201,
+          201
+        ],
+        "elapsed_ms": 831.1999999992549,
+        "replay_status": 201,
+        "replay_duplicate": true
+      },
+      "total_upload_requests": 14,
+      "measurement_note": "UI batch count is the original recorded bounded-upload assertion snapshot; total includes two concurrent requests and one duplicate replay. Concurrency elapsed includes session completion and replay."
+    },
+    "readonly_saved_state": {
+      "source": "readonly isolated SQLite + SHA256 of actual synthetic originals",
+      "checklist_id": 2,
+      "unique_photos": 202,
+      "groups": {
+        "Civil": 71,
+        "Electrical": 71,
+        "Tower": 60
+      },
+      "all_original_sha256_match": true,
+      "review_route": "closed",
+      "human_decisions": [
+        "submit",
+        "validate",
+        "approve",
+        "customer_approve"
+      ],
+      "submission_revisions": 1,
+      "queued_jobs": 1,
+      "native_ai_requests": 0,
+      "no_duplicate_job_or_submission": true
+    },
+    "actual_stopped_app_backup_restore": {
+      "stage": "backup_restore",
+      "created": {
+        "status": "complete",
+        "release_id": "e3121970bd64b1909a0c9036aea438d4b0800870",
+        "files": 407,
+        "media_files": 406
+      },
+      "recovered": {
+        "status": "complete",
+        "release_id": "e3121970bd64b1909a0c9036aea438d4b0800870",
+        "files": 407
+      },
+      "existing_tables_unchanged": 71,
+      "media_files_unchanged": 406,
+      "source_unchanged": true,
+      "restore_matches_browser_fixture": true,
+      "synthetic_only": true
+    },
+    "actual_same_data_restart": {
+      "stage": "after_restart",
+      "all_tables_identical": 71,
+      "all_media_sha256_identical": 406,
+      "site_photos": 202,
+      "human_decisions_preserved": 4,
+      "submission_revisions": 1,
+      "queued_jobs": 1,
+      "synthetic_only": true
+    },
+    "final_proxy_checks": {
+      "checks": [
+        {
+          "label": "Final proxy live after actual app restart",
+          "passed": true
+        },
+        {
+          "label": "Final proxy ready after actual app restart",
+          "passed": true
+        },
+        {
+          "label": "Final proxy request correlation header",
+          "passed": true
+        },
+        {
+          "label": "Real collected static stylesheet served",
+          "passed": true
+        },
+        {
+          "label": "Final template denies private raw path /media",
+          "passed": true
+        },
+        {
+          "label": "Final template denies private raw path /media/photos/original.png",
+          "passed": true
+        },
+        {
+          "label": "Final template denies private raw path /media/documents/report.pdf",
+          "passed": true
+        },
+        {
+          "label": "Final template denies private raw path /media/survey_processing/drawing.dxf",
+          "passed": true
+        },
+        {
+          "label": "Restart retains202 saved sources and engineering lock",
+          "passed": true
+        },
+        {
+          "label": "Engineer original SHA256 unchanged after restart",
+          "passed": true
+        },
+        {
+          "label": "Client still receives released source bytes",
+          "passed": true
+        },
+        {
+          "label": "Client still denied unreleased draft source",
+          "passed": true
+        },
+        {
+          "label": "Saved reviewed report export survives restart",
+          "passed": true
+        },
+        {
+          "label": "Foreign company remains denied after restart",
+          "passed": true
+        }
+      ],
+      "passed": 14,
+      "failed": 0,
+      "actual_app_restart": true,
+      "actual_final_proxy": true,
+      "synthetic_only": true,
+      "native_ai_requests": 0
+    },
+    "synthetic_only": true,
+    "native_ai_requests": 0,
+    "operational_database_or_media_modified": false,
+    "physical_phone_tested": false,
+    "linux_container_install_tested": false,
+    "actual_vps_deployed": false,
+    "limitations": [
+      "Docker and WSL unavailable",
+      "No approved staging host/credentials or actual Linux install/restart/upgrade",
+      "Self-signed local test TLS, not production certificate validation",
+      "External CDN assets explicitly blocked in isolated browser fixture",
+      "No native inference/remote-PC connectivity or off-device disaster restore proof"
+    ],
+    "test_source_sha256": "6f71a910b5d0d14c96fd67c3913914993f072b16253ce82b8b56c818aa01e390",
+    "screenshots": {
+      "customer-decision-1366.png": "aba27497f36fe1361b2f0d4a9dbfc0c3fc4dc4cf060d1a85046454255088c5e9",
+      "engineer-general-1366.png": "4e06c9ccd1c29e3b154b79300d06d88280ece6a85b67ceca8f2af10451f06152",
+      "engineer-submitted-1366.png": "1ee98d0ae70e903024d7a3686d42e7e64ba929e8d221f2516e4e499d265a9700",
+      "engineer-viewport-1366.png": "a82124e3902569c91d7e89f7b8b51fee1a6a1f0735927033deec8dbcc12afcbd",
+      "engineer-viewport-390.png": "e564869c75879c3bd519ea9c9fb91c3e16e794d1e413f947ab62a3311d103643",
+      "lead-decision-1366.png": "6e8e673bf46c9cd6e27c8218752011a6c438e46e2973d883ebce8e2bf9b0b448",
+      "quality-viewport-1366.png": "0c78ee999078b470cbb1cfbf293a9d766d0250c31566899a0b14152c65005baa",
+      "quality-viewport-390.png": "acb80e1feb786c720e976a616c8c16ed6e35eafd90cc044cb5b45cfce3648af4"
+    }
+  },
+  "full_dataset_copy_recovery": {
+    "kind": "Non-destructive real-data-copy drill; never operational source writes",
+    "source_media_copy": "Trusted task02 restored copy, reverified against original manifest",
+    "database_source": "Fresh task07 checkpoint snapshot copied to disposable source",
+    "media_files_preserved": 3537,
+    "database_tables_preserved": 70,
+    "sqlite_logical_dump_sha256_before": "d40b7efd321a4e0c261c0c38c1aa8b2a1587aa88f02e9487b4b7e141d240308c",
+    "sqlite_logical_dump_sha256_after": "d40b7efd321a4e0c261c0c38c1aa8b2a1587aa88f02e9487b4b7e141d240308c",
+    "all_restored_media_sha256_match": true,
+    "backup": {
+      "status": "complete",
+      "release_id": "fd365f107b75c370caa2b765837d2a23f907a80c",
+      "files": 3538,
+      "media_files": 3537
+    },
+    "restore": {
+      "status": "complete",
+      "release_id": "fd365f107b75c370caa2b765837d2a23f907a80c",
+      "files": 3538
+    },
+    "source_release": "fd365f107b75c370caa2b765837d2a23f907a80c",
+    "live_database_modified": false,
+    "live_media_modified": false,
+    "off_device_or_cloud_restore": false,
+    "seconds": 496.203
+  },
+  "operational_preservation": {
+    "source_data_files_rehashed_matching": 3595,
+    "all_operational_tables_matching": 70,
+    "original_evidence_credentials_branding_unchanged": true,
+    "untracked_audit_reports_preserved": 2,
+    "operational_migration_0054_applied": false,
+    "seconds": 42.703
+  },
+  "focused_counts": {
+    "deployment": 20,
+    "operations": 24,
+    "independent": 13,
+    "remote_existing": 26,
+    "wal_independent_operations_rerun": 24,
+    "existing_security_final_rerun": 12,
+    "configuration_independent_rerun": 20
+  },
+  "count_relationships": "Focused unit/integration counts overlap full backend suite; browser39, postrestart proxy14 and separate security/proxy12/36 are separate gates, not additional backend tests.",
+  "security": {
+    "findings": [
+      {
+        "id": "D1",
+        "severity": "High",
+        "state": "Existing approval-held",
+        "issue": "Pillow10.4/APNG allocation risk; incompatible upper cap blocks patched release"
+      },
+      {
+        "id": "D2",
+        "severity": "High",
+        "state": "Existing approval-held",
+        "issue": "Gunicorn21.2 request-parsing advisories; upper cap excludes fix"
+      },
+      {
+        "id": "CS1",
+        "severity": "Low",
+        "state": "New approval-held",
+        "issue": "Docker CI path filter operational* misses operations_*.py-only future changes"
+      },
+      {
+        "id": "CS2",
+        "severity": "Low",
+        "state": "New approval-held",
+        "issue": "Proxy logs are tmpfs files without persistent/collector retention"
+      }
+    ],
+    "all_reported_findings_fixed": false,
+    "production_release_approved": false,
+    "new_runtime_exploit_established_in_executed_checks": false,
+    "comprehensive_sca_performed": false,
+    "review_reports": [
+      "SECURITY_REVIEW_CLOUD_STAGING_20261031.md",
+      "WAL_RECOVERY_INDEPENDENT_REVIEW_20261031.md",
+      "CONFIGURATION_INDEPENDENT_REVIEW.md"
+    ]
+  },
+  "remaining_gates": [
+    "Owner approval and implementation of D1/D2/CS1/CS2 remediations",
+    "Approved staging VPS/SSH identity/private access and real DNS/TLS",
+    "Actual target-server install/restart/upgrade and off-device recovery",
+    "Physical phone and representative target concurrency/workflow acceptance",
+    "Real PC outbound connection and native Ollama processing/accuracy gate (A12 remains separate)",
+    "External CDN asset availability; full offline operation not established",
+    "Local Windows symlink privilege check"
+  ],
+  "scope_notes": [
+    "Browser fixture used a matching synthetic release file; actual built release identity is independently verified by the Linux image/health checks on7e88049.",
+    "Later Linux CI tested normal TLS/private-media/restart behavior, not adversarial Gunicorn parser cases or proxy-log retention.",
+    "Full-copy recovery used trusted restored media and a fresh database SNAPSHOT; no operational database or source-media write.",
+    "Small synthetic-photo capacity is not sustained native-AI or production-network throughput."
+  ],
+  "vps_deployed": false,
+  "public_launch_proposed": false,
+  "merged": false,
+  "live_migration_applied": false,
+  "native_ollama_requests": 0
+}

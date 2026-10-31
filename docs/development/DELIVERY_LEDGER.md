@@ -1,8 +1,9 @@
 # iSurvix Field delivery ledger
 
-31 October 2026. Five of six recorded acceptance checks are Verified; task03
-remains Blocked. Company access tasks04–06 are Verified. Due dates were not supplied.
-Feature acceptance is not deployment or a claim that the full suite is green.
+31 October 2026. Five of nine recorded acceptance checks are Verified. Task03 and
+cloud staging07–09 remain Blocked. Independent cloud preparation, local gates and
+disposable Linux CI passed; actual target/security release gates did not. Due
+dates were not supplied. Blocked tasks have no completed date.
 
 | ID | Phase | Task | Status | Owner | Due date | Completed date | Acceptance check | Notes / evidence / PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -12,6 +13,9 @@ Feature acceptance is not deployment or a claim that the full suite is green.
 | 04 | 1 Company access | Define and implement company boundaries | Verified | Dot |  | 2026-10-28 | Prove company A cannot access company B records, files or jobs. | Defined employer-Company scope; current authority/retained records and immutable worker-company pins implemented. CompanyA/B records/files/jobs HTTP+browser positives/denials passed. Full1287:1286passed,1existing Windows fixture error;19frontchecks. Migration0054 tested on disposable copy only. Implementation defc27d; draft PR25 https://github.com/assimbaig/iSurvix-Field/pull/25. No operational migration/deployment. PR25 subsequently merged upstream as 7d69e57; operational checkout was not deployed. |
 | 05 | 1 Company access | Separate platform-owner and customer-administrator permissions | Verified | Dot |  | 2026-10-31 | Role tests reject privilege escalation. Audit privileged changes. | Platform/customer authority overrides rejected; transactional allowlisted privileged-change audit verified. Full1323:1322passed,1existing Windows symlink privilege error,0failures/skips.19frontend checks passed; independent unit/HTTP/browser/security checks passed within scope. Implementation81982db. Draft PR26 https://github.com/assimbaig/iSurvix-Field/pull/26. No operational migration/deployment. See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md. |
 | 06 | 1 Company access | Build Apply -> Review -> Provision -> Invite onboarding | Verified | Dot |  | 2026-10-31 | Two companies onboard separately. Replayed requests create no duplicates. | Owner-controlled Apply > Review > Provision > Invite implemented. Two companies and actual accepted Admin accounts verified separately; replay/concurrent retry creates no duplicate records/audits.66focused tests overlap fullsuite; separate39browser,10visual and12AppSec checks passed. Full1350:1349passed,1existing Windows symlink privilege error,0failures/skips;19frontend passed. Implementation148e2cb; draft PR27 https://github.com/assimbaig/iSurvix-Field/pull/27. All3595protectedfiles/70operationaltables unchanged; no live migration/deployment. See COMPANY_ONBOARDING_ACCEPTANCE_20261031.json. |
+| 07 | 2 Cloud staging | Prepare a reproducible production deployment | Blocked | Dot |  |  | Clean staging install, restart and upgrade pass. Private media stays protected. | Deployment package implemented; actual disposable Linux CI41214056349 passed clean install,0054->0055 upgrade,TLS/static/media-denial,backup/restore and restart.20focused tests. Target VPS/private DNS/TLS access and security approvals still unavailable. Draft PR28 https://github.com/assimbaig/iSurvix-Field/pull/28; implementation7e88049. No target deployment. |
+| 08 | 2 Cloud staging | Add operational visibility and recovery | Blocked | Dot |  |  | Worker failure, restart and backup restore preserve uploads and results. | Health/owner diagnostics and quiesced SQLite/media new-target recovery implemented. WAL functional defect fixed with executed RED/GREEN. Restored3537media/70tables from saved-data COPY;202-photo fixture restart retained71tables/406media hashes. Actual VPS/PC/offdevice drill and CS2log-retention approval remain blocked. PR28; see CLOUD_STAGING_ACCEPTANCE_20261031.json. |
+| 09 | 2 Cloud staging | Validate staging end to end before proposing public launch | Blocked | Dot |  |  | Phone, upload, concurrency and workflow tests pass. Security review recorded. | Local39HTTPS browser+14restart/proxy checks passed,202unique syntheticphotos and human QA/TL/Client flow retained;12security cases+36HTTPS controls and independent WAL/configuration review passed in scope. CI Windows1407pass;Linux1405pass/2Windows-only skips. Local1406pass/1existingWinError1314.19frontend passed. Actual VPS/physicalphone/nativePC/offdevice and D1/D2/CS1/CS2 approval gates remain Blocked; no public launch. Draft PR28. |
 
 ## Evidence and scope
 
@@ -62,3 +66,8 @@ See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md and independent QA/securi
 ## Task06 evidence
 
 See COMPANY_ONBOARDING_IMPLEMENTATION_20261031.md, acceptance JSON, guide, independent QA/security reports and screenshots. Draft PR27 is stacked after PR26; both remain for review. Staging and AI settings were deferred. No operational migration or deployment.
+
+
+## Cloud staging07–09 evidence
+
+See CLOUD_STAGING_DELIVERY_20261031.md, acceptance JSON, requirements matrix, deployment/operations runbooks and independent QA/security reports. DraftPR28 remains for review, stacked after PR27/PR26. Actual Linux disposable CI passed; actual VPS/offdevice/physicalphone/native-PC and security approval gates remain Blocked. No production deployment or public launch.

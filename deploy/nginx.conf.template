@@ -1,0 +1,53 @@
+worker_processes 1;
+pid logs/nginx.pid;
+error_log logs/error.log crit;
+events { worker_connections 1024; }
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    server_tokens off;
+    # Deliberately omit URL, query string, cookies and authorization bearer values.
+    log_format private_access '$time_iso8601 $status $request_method $request_time $upstream_response_time $upstream_http_x_request_id';
+    access_log logs/access.log private_access;
+    client_max_body_size 120m;
+    client_body_timeout 300s;
+    client_body_temp_path temp/client_body;
+    proxy_temp_path temp/proxy;
+    fastcgi_temp_path temp/fastcgi;
+    uwsgi_temp_path temp/uwsgi;
+    scgi_temp_path temp/scgi;
+    server {
+        listen @@LISTEN_ADDRESS@@:@@HTTP_PORT@@;
+        server_name @@HOST@@;
+        if ($host != "@@HOST@@") { return 444; }
+        return 308 https://@@HOST@@:@@HTTPS_PORT@@$request_uri;
+    }
+    server {
+        listen @@LISTEN_ADDRESS@@:@@HTTPS_PORT@@ ssl;
+        server_name @@HOST@@;
+        if ($host != "@@HOST@@") { return 444; }
+        ssl_certificate "@@CERTIFICATE@@";
+        ssl_certificate_key "@@KEY@@";
+        ssl_protocols TLSv1.2 TLSv1.3;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options DENY always;
+        location = /media { return 404; }
+        location ^~ /media/ { return 404; }
+        location /static/ {
+            alias "@@STATIC_ROOT@@/";
+            autoindex off;
+        }
+        location / {
+            proxy_pass http://@@UPSTREAM@@;
+            proxy_http_version 1.1;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Request-ID $request_id;
+            proxy_read_timeout 120s;
+            proxy_send_timeout 300s;
+            proxy_buffering off;
+        }
+    }
+}

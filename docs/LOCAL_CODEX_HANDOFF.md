@@ -1,5 +1,56 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: cloud preparation verified, actual target/release blocked - 31 October 2026
+
+Dedicated `.local/b4`, branch `feat/cloud-staging-readiness-20261031`, implementation
+7e88049. DraftPR28 https://github.com/assimbaig/iSurvix-Field/pull/28 stacked after
+PR27/PR26. DO NOT automatically merge/deploy. Cloud rows07–09 remain Blocked,
+not Done: approved target/server/device/offdevice/native-PC/security gates missing.
+
+Actual disposable Linux CI41214056349 PASSED build/install,0054->0055 retention,
+TLS/static/raw-media denial, backup/restore and restart. Full application CI41214056106
+passed: Windows1407/1407;Linux1405passed+2existing native-Windows skips. Local final
+1407run/1406passed/1unchanged WinError1314 fixture error/0failures/0skips;19frontend
+and8other checks passed, frozen fingerprint8afac4ff0208016db59ba1ce88b72540fae2ee0e0e48a581261f44e9a41ec575.
+The local full suite is not green. No tests were weakened to obtain these results.
+
+Actual HTTPS39browser/14restart probes verified202unique syntheticphotos and manual
+Engineer>QA>TL>Client/report whileAIqueued. New-target backup/restore/restart kept
+71fixture tables/406files; full saved-data COPY drill kept3537media/70tables exactly.
+Live3595protectedfiles/70tables+2old reports unchanged. Main remainsfd365f1/schema0053.
+OriginalOllama11434/PID20216 untouched; owned8950/8951/8952 services stopped.
+
+Fixed functional WAL-sidecar recovery defect, private Linux validation context and
+internal-only proxy ingress after executed failures. Producer normalizes only new
+snapshot journal; source mode/bytes/checkpoint and strict inventory stay intact.
+Independent post-fix24+12 backup/security and20configuration checks passed.
+
+SECURITY HOLDS: D1High Pillow/APNG, D2High Gunicorn request parsing remain unapproved.
+New CS1Low CI operations-path coverage and CS2Low ephemeral proxy logs also remain
+UNFIXED pending explicit owner approval. Do not reinterpret new development as
+approval. Earlier A12/BR1/L1 holds remain unchanged. Public launch not proposed.
+
+Read CLOUD_STAGING_DELIVERY_20261031.md, acceptance JSON, requirements, deployment/
+operations runbooks and independent QA/security/WAL/configuration reports. Build
+inventories/CIproof under docs/development/staging-ci-20261031; secrets/cookies/DBs
+private only. Next inputs: approved staging host/access/private route/DNS-TLS and
+explicit approval for held fixes. No paid API, native model call, source evidence
+analysis or live human approval occurred in this cloud preparation.
+
+## Latest: cloud staging07–09 in progress - 31 October 2026
+
+Owner now authorized Cloud staging work. Dedicated `.local/b4`, branch
+`feat/cloud-staging-readiness-20261031`, parente312197 (draftPR27/PR26 remainopen).
+Freshcheckpoint174052 verified3595protectedfiles/SQLite/source/Git. Operational
+mainfd365f1/schema0053 and original services/data untouched. Docker/WSL/approved
+stagingSSH unavailable. Implement local code/config and verification; actual
+Linux/cloud/privateDNS/TLS/physicalphone/offdevice restore gates remain unverified.
+PortableofficialPGP-verifiedNginx1.31.8 runs loopback8950/8952 against isolated
+Django8951; selfsignedfixtureTLS is not publiccertificate validation. Use
+CLOUD_STAGING_REQUIREMENTS_20261031.md; active Agency owners separate deployment,
+operations, independent QA and postfunctional AppSec. No nativeOllamacalls, paid
+services, automatic deployment or merge. Existing heldsecurityfindings unchanged.
+
 ## Latest: verified company onboarding / draft PR27 - 31 October 2026
 
 Owner narrowed work to Company access only. Task06 is Verified on

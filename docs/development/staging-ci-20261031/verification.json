@@ -1,0 +1,30 @@
+{
+  "run_id": 41214056349,
+  "run_url": "https://github.com/assimbaig/iSurvix-Field/actions/runs/41214056349",
+  "conclusion": "success",
+  "artifact_id": 13047547589,
+  "artifact_sha256": "5401c6f8f22054e7e23ce8383c8c23f8bc47feb5fe9c670d8cd3c12c2f5e6ebc",
+  "artifact_sha256_verified": true,
+  "verification": {
+    "release": "7e88049e0640d15f353f1ab209d48687409ff091",
+    "python_image": "python@sha256:e697c81897302a4c4333bade000d98038fbb21eb064f8ee1fd42d02ebcd9d337",
+    "nginx_image": "nginx@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949",
+    "application_image": "sha256:3698234f455743e0c5074882b8f439f1d2bb261735981f24e30d0006de8ee898",
+    "clean_install": true,
+    "core_0054_upgrade_preserved_company": true,
+    "restart_preserved_db_and_original": true,
+    "quiesced_backup_and_new_target_restore": true,
+    "tls_readiness": true,
+    "static_delivery": true,
+    "private_media_direct_denied": true,
+    "proxy_loopback_port_published": true,
+    "native_ai_invoked": false,
+    "production_or_vps_deployed": false
+  },
+  "actual_target_vps_deployed": false,
+  "physical_phone_verified": false,
+  "actual_pc_native_inference_verified": false,
+  "off_device_restore_verified": false,
+  "security_approval": "Denied/pending owner-approved D1/D2/CS1/CS2 remediation",
+  "scope": "Actual disposable Linux Docker rehearsal on GitHub Actions, not target-server or launch acceptance"
+}
