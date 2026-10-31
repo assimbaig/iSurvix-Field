@@ -129,7 +129,16 @@ request="$(new_request "$work/success-request.private.json")"
 sudo /usr/bin/python3 "$updater" apply "${args[@]}" --target-runtime "$work/target-success" --request-id "$request" > "$work/success-result.json"
 sudo /usr/bin/python3 "$updater" apply "${args[@]}" --target-runtime "$work/target-success" --request-id "$request" > "$work/repeat-result.json"
 [[ -n "${ISURVIX_CI_CLIENT_NETWORK:-}" ]] || exit 2
-docker run --rm --pull never --network "$ISURVIX_CI_CLIENT_NETWORK" --add-host customer.example.test:172.28.33.1 -v "$output/tls/fullchain.pem:/run/fixture-ca.pem:ro" -v "$output/private/owner-password:/run/fixture-password:ro" -v "$work/evidence-reference.json:/run/evidence-reference.json:ro" -e "EXPECTED_RELEASE=$target" -i --entrypoint python "$(cat "$output/app-image-id")" - > "$work/updated-client.json" <<'PY'
+target_project="$(python - "$work/target-success" <<'PY'
+import hashlib,sys
+from pathlib import Path
+print('isurvix-customer-'+hashlib.sha256(str(Path(sys.argv[1]).absolute()).encode()).hexdigest()[:12])
+PY
+)"
+target_proxy="$(sudo docker compose --env-file "$work/target-success/customer.env" -p "$target_project" -f "$approved/$target/package/release/deploy/customer/compose.yaml" -f "$approved/$target/package/release/deploy/customer/compose.updates.yaml" ps -q proxy)"
+[[ -n "$target_proxy" ]] || exit 1
+docker network connect --alias customer.example.test "$ISURVIX_CI_CLIENT_NETWORK" "$target_proxy"
+docker run --rm --pull never --network "$ISURVIX_CI_CLIENT_NETWORK" -v "$output/tls/fullchain.pem:/run/fixture-ca.pem:ro" -v "$output/private/owner-password:/run/fixture-password:ro" -v "$work/evidence-reference.json:/run/evidence-reference.json:ro" -e "EXPECTED_RELEASE=$target" -i --entrypoint python "$(cat "$output/app-image-id")" - > "$work/updated-client.json" <<'PY'
 from pathlib import Path
 import hashlib,json,os
 import requests
@@ -146,7 +155,7 @@ ref=json.loads(Path('/run/evidence-reference.json').read_text());url=base+'/loca
 assert owner.get(url,timeout=10).status_code==403
 engineer=login('synthetic_retained_engineer');original=engineer.get(url,timeout=10);original.raise_for_status();assert hashlib.sha256(original.content).hexdigest()==ref['sha256']
 anonymous=requests.Session();anonymous.trust_env=False;anonymous.verify='/run/fixture-ca.pem';assert anonymous.get(url,timeout=10,allow_redirects=False).status_code in (302,404)
-print(json.dumps({'release':os.environ['EXPECTED_RELEASE'],'tls_verified':True,'update_history_persisted':True,'engineer_original_hash_matches':True,'owner_operational_access_denied':True,'anonymous_original_denied':True,'physical_customer_device_tested':False}))
+print(json.dumps({'release':os.environ['EXPECTED_RELEASE'],'tls_verified':True,'connection':'isolated proxy NIC; host listener verified separately','client_used_host_published_port':False,'update_history_persisted':True,'engineer_original_hash_matches':True,'owner_operational_access_denied':True,'anonymous_original_denied':True,'physical_customer_device_tested':False}))
 PY
 sudo /usr/bin/python3 - "$repository" "$work" "$output/package" "$baseline" "$target" <<'PY'
 from pathlib import Path

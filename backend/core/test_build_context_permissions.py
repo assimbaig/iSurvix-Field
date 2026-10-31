@@ -32,6 +32,7 @@ class BuildContextPermissionTests(SimpleTestCase):
             (repository / 'backend').mkdir()
             (repository / 'backend/manage.py').write_bytes(b'print("SYNTHETIC ONLY")\n')
             (repository / 'start.sh').write_bytes(b'#!/bin/sh\nexit 0\n')
+            (repository / 'start.sh').chmod(0o755)
             (repository / '.gitignore').write_text('operator-private/\n')
             git('add', '.')
             git('update-index', '--chmod=+x', 'start.sh')

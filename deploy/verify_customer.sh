@@ -72,7 +72,14 @@ compose=(sudo docker compose --env-file "$output/runtime/customer.env" -p "$proj
 if "${cli[@]}" initialize --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/reinitialize-denied.json" 2>&1; then exit 1; fi
 "${compose[@]}" run --rm --no-deps --pull never -v "$output/private/owner-password:/run/fixture-password:ro" web python manage.py shell -c "from pathlib import Path; from django.contrib.auth import get_user_model; U=get_user_model(); assert U.objects.count()==0; U.objects.create_superuser('synthetic_owner','owner@example.test',Path('/run/fixture-password').read_text()); p=Path('/data/media/ci/sentinel.bin'); p.parent.mkdir(parents=True); p.write_bytes(b'SYNTHETIC-CUSTOMER-RESTART-EVIDENCE')" > "$output/fixture-bootstrap.log"
 "${cli[@]}" start --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/start.json"
-client=(docker run --rm --pull never --network "$network" --add-host "customer.example.test:$lan_ip" -v "$output/tls/fullchain.pem:/run/fixture-ca.pem:ro" -v "$output/private/owner-password:/run/fixture-password:ro" -e "EXPECTED_RELEASE=$release" -i --entrypoint python "$app_image")
+# A second isolated NIC models the private LAN without routing the client via
+# another Docker bridge's DNAT/isolation policy. Host publication is tested
+# separately; this is not a physical customer-device acceptance claim.
+fresh_proxy="$("${compose[@]}" ps -q proxy)"
+[[ -n "$fresh_proxy" ]] || exit 1
+docker network connect --alias customer.example.test "$network" "$fresh_proxy"
+sudo curl --fail --silent --show-error --retry 15 --retry-delay 1 --retry-connrefused --retry-max-time 45 --connect-timeout 3 --max-time 5 --noproxy '*' --cacert "$output/tls/fullchain.pem" --resolve "customer.example.test:8443:$lan_ip" https://customer.example.test:8443/ops/health/ready/ > "$output/host-listener-ready.json"
+client=(docker run --rm --pull never --network "$network" -v "$output/tls/fullchain.pem:/run/fixture-ca.pem:ro" -v "$output/private/owner-password:/run/fixture-password:ro" -e "EXPECTED_RELEASE=$release" -i --entrypoint python "$app_image")
 for attempt in $(seq 1 30); do
   if "${client[@]}" -c "import urllib.request,ssl; urllib.request.urlopen('https://customer.example.test:8443/ops/health/ready/',context=ssl.create_default_context(cafile='/run/fixture-ca.pem'),timeout=3)" > "$output/readiness-probe.log" 2>&1; then break; fi
   sleep 2
@@ -97,21 +104,23 @@ try:
     with socket.create_connection(('1.1.1.1',443),timeout=2):pass
 except OSError:unreachable=True
 assert unreachable,'Client namespace unexpectedly reached the internet.'
-print(json.dumps({'tls_verified':True,'separate_client_namespace':True,'authenticated_owner':True,'raw_media_denied':True,'critical_assets_local':True,'client_internet_unreachable':True,'release':os.environ['EXPECTED_RELEASE'],'physical_customer_device_tested':False}))
+print(json.dumps({'tls_verified':True,'separate_client_namespace':True,'connection':'isolated proxy NIC; host listener verified separately','client_used_host_published_port':False,'authenticated_owner':True,'raw_media_denied':True,'critical_assets_local':True,'client_internet_unreachable':True,'release':os.environ['EXPECTED_RELEASE'],'physical_customer_device_tested':False}))
 PY
 "${cli[@]}" stop --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/before-restart.json"
 sudo sha256sum "$output/runtime/data/database.sqlite3" "$output/runtime/data/media/ci/sentinel.bin" > "$output/preserved-before.sha256"
 "${cli[@]}" start --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/restart.json"
 "${cli[@]}" stop --package "$output/package" --runtime "$output/runtime" --acknowledge-draft > "$output/after-restart.json"
 sudo sha256sum -c "$output/preserved-before.sha256" > "$output/preservation.json"
+docker network disconnect --force "$network" "$fresh_proxy"
 ISURVIX_CI_CLIENT_NETWORK="$network" bash "$repository/deploy/verify_updates.sh" exercise "$output" "$repository"
 python - "$output" "$release" <<'PY'
 from pathlib import Path
 import json,sys
 out=Path(sys.argv[1]);assert not (out/'runtime-image-pulls.jsonl').read_text().strip()
 client=json.loads((out/'lan-client.json').read_text())
+assert json.loads((out/'host-listener-ready.json').read_text())['release']==sys.argv[2]
 upgrade=json.loads((out/'update-rehearsal/upgrade-verification.json').read_text())
 assert upgrade['release']==sys.argv[2] and upgrade['upgrade_recovery_verified'] is True
-result={**upgrade,'release':sys.argv[2],'candidate_only':True,'image_transfer_load':True,'runtime_image_pulls':0,'fresh_install':True,'repeat_initialization_denied':True,'restart_preserved_db_and_media':True,'client':client,'native_ai_tested':False,'physical_customer_lan_verified':False,'customer_deployed':False,'owner_release_approved':False}
+result={**upgrade,'release':sys.argv[2],'candidate_only':True,'image_transfer_load':True,'runtime_image_pulls':0,'fresh_install':True,'repeat_initialization_denied':True,'restart_preserved_db_and_media':True,'host_listener_tls_verified':True,'client':client,'native_ai_tested':False,'physical_customer_lan_verified':False,'customer_deployed':False,'owner_release_approved':False}
 (out/'verification.json').write_text(json.dumps(result,indent=2)+'\n')
 PY

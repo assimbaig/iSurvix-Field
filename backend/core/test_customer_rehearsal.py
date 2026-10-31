@@ -9,7 +9,7 @@ from django.urls import resolve
 class CustomerRehearsalRouteTests(SimpleTestCase):
     def test_rehearsal_probes_use_registered_application_routes(self):
         script = (Path(__file__).resolve().parents[2] / 'deploy/verify_customer.sh').read_text(encoding='utf-8')
-        paths = set(re.findall(r"https://customer\.example\.test:8443(/[^'\"]*)", script))
+        paths = set(re.findall(r"https://customer\.example\.test:8443(/[^'\"\s]*)", script))
         paths.update(re.findall(r"base\+'([^']+)'", script))
         # The raw-media probe is deliberately denied by Nginx, not Django.
         routes = {path for path in paths if not path.startswith('/media/')}
