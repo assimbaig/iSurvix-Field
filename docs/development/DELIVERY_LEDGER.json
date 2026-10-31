@@ -1,7 +1,7 @@
 {
-  "updated_utc": "2026-10-31T14:17:56.840602+00:00",
+  "updated_utc": "2026-10-31T14:52:15.453073+00:00",
   "verified": 5,
-  "total": 6,
+  "total": 9,
   "rows": [
     {
       "ID": "01",
@@ -68,6 +68,39 @@
       "Completed date": "2026-10-31",
       "Acceptance check": "Two companies onboard separately. Replayed requests create no duplicates.",
       "Notes / evidence / PR": "Owner-controlled Apply > Review > Provision > Invite implemented. Two companies and actual accepted Admin accounts verified separately; replay/concurrent retry creates no duplicate records/audits.66focused tests overlap fullsuite; separate39browser,10visual and12AppSec checks passed. Full1350:1349passed,1existing Windows symlink privilege error,0failures/skips;19frontend passed. Implementation148e2cb; draft PR27 https://github.com/assimbaig/iSurvix-Field/pull/27. All3595protectedfiles/70operationaltables unchanged; no live migration/deployment. See COMPANY_ONBOARDING_ACCEPTANCE_20261031.json."
+    },
+    {
+      "ID": "07",
+      "Phase": "2 Cloud staging",
+      "Task": "Prepare a reproducible production deployment",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Clean staging install, restart and upgrade pass. Private media stays protected.",
+      "Notes / evidence / PR": "Implementation/local verification in progress. Actual staging host/access and approved deployment unavailable; no live deployment claim. See CLOUD_STAGING_REQUIREMENTS_20261031.md."
+    },
+    {
+      "ID": "08",
+      "Phase": "2 Cloud staging",
+      "Task": "Add operational visibility and recovery",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Worker failure, restart and backup restore preserve uploads and results.",
+      "Notes / evidence / PR": "Implementation/local verification in progress. Actual staging host/access and approved deployment unavailable; no live deployment claim. See CLOUD_STAGING_REQUIREMENTS_20261031.md."
+    },
+    {
+      "ID": "09",
+      "Phase": "2 Cloud staging",
+      "Task": "Validate staging end to end before proposing public launch",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Phone, upload, concurrency and workflow tests pass. Security review recorded.",
+      "Notes / evidence / PR": "Implementation/local verification in progress. Actual staging host/access and approved deployment unavailable; no live deployment claim. See CLOUD_STAGING_REQUIREMENTS_20261031.md."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",
@@ -78,9 +111,10 @@
     "BR1 Low"
   ],
   "merged_or_deployed_by_this_task": false,
-  "active_task": null,
-  "active_branch": "feat/company-onboarding-20261031",
+  "active_task": "07-09",
+  "active_branch": "feat/cloud-staging-readiness-20261031",
   "last_verified_task": "06",
   "last_delivery_pr": "https://github.com/assimbaig/iSurvix-Field/pull/27",
-  "last_implementation_commit": "148e2cb92ae6f11c9edd1b3f69401fd2cd355fe1"
+  "last_implementation_commit": "148e2cb92ae6f11c9edd1b3f69401fd2cd355fe1",
+  "phase2_baseline_commit": "e3121970bd64b1909a0c9036aea438d4b0800870"
 }

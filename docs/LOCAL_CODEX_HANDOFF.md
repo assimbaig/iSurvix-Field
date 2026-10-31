@@ -1,5 +1,19 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: cloud staging07–09 in progress - 31 October 2026
+
+Owner now authorized Cloud staging work. Dedicated `.local/b4`, branch
+`feat/cloud-staging-readiness-20261031`, parente312197 (draftPR27/PR26 remainopen).
+Freshcheckpoint174052 verified3595protectedfiles/SQLite/source/Git. Operational
+mainfd365f1/schema0053 and original services/data untouched. Docker/WSL/approved
+stagingSSH unavailable. Implement local code/config and verification; actual
+Linux/cloud/privateDNS/TLS/physicalphone/offdevice restore gates remain unverified.
+PortableofficialPGP-verifiedNginx1.31.8 runs loopback8950/8952 against isolated
+Django8951; selfsignedfixtureTLS is not publiccertificate validation. Use
+CLOUD_STAGING_REQUIREMENTS_20261031.md; active Agency owners separate deployment,
+operations, independent QA and postfunctional AppSec. No nativeOllamacalls, paid
+services, automatic deployment or merge. Existing heldsecurityfindings unchanged.
+
 ## Latest: verified company onboarding / draft PR27 - 31 October 2026
 
 Owner narrowed work to Company access only. Task06 is Verified on

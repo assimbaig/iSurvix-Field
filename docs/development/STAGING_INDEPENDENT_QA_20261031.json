@@ -1,0 +1,184 @@
+{
+  "status": "Blocked for actual cloud staging/public-launch acceptance; independent local gates passed",
+  "unit_http_file_tests": {
+    "run": 13,
+    "passed": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 5.187,
+    "external_connections": 0
+  },
+  "actual_local_tls_browser": {
+    "passed": 39,
+    "failed": 0,
+    "javascript_exceptions": 0,
+    "unexpected_request_failures": 0,
+    "explicit_blocked_external_assets": 66,
+    "explicit_manual_redirect_abort": 1,
+    "external_asset_availability_verified": false
+  },
+  "upload": {
+    "ui_photos": 200,
+    "unique_total": 202,
+    "bytes": 735364,
+    "ui_elapsed_ms": 6699,
+    "ui_batch_requests": 11,
+    "concurrency": {
+      "initial_statuses": [
+        201,
+        201
+      ],
+      "final_statuses": [
+        201,
+        201
+      ],
+      "elapsed_ms": 831.1999999992549,
+      "replay_status": 201,
+      "replay_duplicate": true
+    },
+    "total_upload_requests": 14,
+    "measurement_note": "UI batch count is the original recorded bounded-upload assertion snapshot; total includes two concurrent requests and one duplicate replay. Concurrency elapsed includes session completion and replay."
+  },
+  "readonly_saved_state": {
+    "source": "readonly isolated SQLite + SHA256 of actual synthetic originals",
+    "checklist_id": 2,
+    "unique_photos": 202,
+    "groups": {
+      "Civil": 71,
+      "Electrical": 71,
+      "Tower": 60
+    },
+    "all_original_sha256_match": true,
+    "review_route": "closed",
+    "human_decisions": [
+      "submit",
+      "validate",
+      "approve",
+      "customer_approve"
+    ],
+    "submission_revisions": 1,
+    "queued_jobs": 1,
+    "native_ai_requests": 0,
+    "no_duplicate_job_or_submission": true
+  },
+  "actual_stopped_app_backup_restore": {
+    "stage": "backup_restore",
+    "created": {
+      "status": "complete",
+      "release_id": "e3121970bd64b1909a0c9036aea438d4b0800870",
+      "files": 407,
+      "media_files": 406
+    },
+    "recovered": {
+      "status": "complete",
+      "release_id": "e3121970bd64b1909a0c9036aea438d4b0800870",
+      "files": 407
+    },
+    "existing_tables_unchanged": 71,
+    "media_files_unchanged": 406,
+    "source_unchanged": true,
+    "restore_matches_browser_fixture": true,
+    "synthetic_only": true
+  },
+  "actual_same_data_restart": {
+    "stage": "after_restart",
+    "all_tables_identical": 71,
+    "all_media_sha256_identical": 406,
+    "site_photos": 202,
+    "human_decisions_preserved": 4,
+    "submission_revisions": 1,
+    "queued_jobs": 1,
+    "synthetic_only": true
+  },
+  "final_proxy_checks": {
+    "checks": [
+      {
+        "label": "Final proxy live after actual app restart",
+        "passed": true
+      },
+      {
+        "label": "Final proxy ready after actual app restart",
+        "passed": true
+      },
+      {
+        "label": "Final proxy request correlation header",
+        "passed": true
+      },
+      {
+        "label": "Real collected static stylesheet served",
+        "passed": true
+      },
+      {
+        "label": "Final template denies private raw path /media",
+        "passed": true
+      },
+      {
+        "label": "Final template denies private raw path /media/photos/original.png",
+        "passed": true
+      },
+      {
+        "label": "Final template denies private raw path /media/documents/report.pdf",
+        "passed": true
+      },
+      {
+        "label": "Final template denies private raw path /media/survey_processing/drawing.dxf",
+        "passed": true
+      },
+      {
+        "label": "Restart retains202 saved sources and engineering lock",
+        "passed": true
+      },
+      {
+        "label": "Engineer original SHA256 unchanged after restart",
+        "passed": true
+      },
+      {
+        "label": "Client still receives released source bytes",
+        "passed": true
+      },
+      {
+        "label": "Client still denied unreleased draft source",
+        "passed": true
+      },
+      {
+        "label": "Saved reviewed report export survives restart",
+        "passed": true
+      },
+      {
+        "label": "Foreign company remains denied after restart",
+        "passed": true
+      }
+    ],
+    "passed": 14,
+    "failed": 0,
+    "actual_app_restart": true,
+    "actual_final_proxy": true,
+    "synthetic_only": true,
+    "native_ai_requests": 0
+  },
+  "synthetic_only": true,
+  "native_ai_requests": 0,
+  "operational_database_or_media_modified": false,
+  "physical_phone_tested": false,
+  "linux_container_install_tested": false,
+  "actual_vps_deployed": false,
+  "limitations": [
+    "Docker and WSL unavailable",
+    "No approved staging host/credentials or actual Linux install/restart/upgrade",
+    "Self-signed local test TLS, not production certificate validation",
+    "External CDN assets explicitly blocked in isolated browser fixture",
+    "No native inference/remote-PC connectivity or off-device disaster restore proof"
+  ],
+  "test_source_sha256": "6f71a910b5d0d14c96fd67c3913914993f072b16253ce82b8b56c818aa01e390",
+  "screenshots": {
+    "customer-decision-1366.png": "aba27497f36fe1361b2f0d4a9dbfc0c3fc4dc4cf060d1a85046454255088c5e9",
+    "engineer-general-1366.png": "4e06c9ccd1c29e3b154b79300d06d88280ece6a85b67ceca8f2af10451f06152",
+    "engineer-submitted-1366.png": "1ee98d0ae70e903024d7a3686d42e7e64ba929e8d221f2516e4e499d265a9700",
+    "engineer-viewport-1366.png": "a82124e3902569c91d7e89f7b8b51fee1a6a1f0735927033deec8dbcc12afcbd",
+    "engineer-viewport-390.png": "e564869c75879c3bd519ea9c9fb91c3e16e794d1e413f947ab62a3311d103643",
+    "lead-decision-1366.png": "6e8e673bf46c9cd6e27c8218752011a6c438e46e2973d883ebce8e2bf9b0b448",
+    "quality-viewport-1366.png": "0c78ee999078b470cbb1cfbf293a9d766d0250c31566899a0b14152c65005baa",
+    "quality-viewport-390.png": "acb80e1feb786c720e976a616c8c16ed6e35eafd90cc044cb5b45cfce3648af4"
+  }
+}

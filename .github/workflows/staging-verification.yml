@@ -1,0 +1,50 @@
+name: Disposable staging deployment
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - 'backend/checklist/settings_staging.py'
+      - 'backend/core/operational*'
+      - 'backend/core/management/commands/staging_*'
+      - '.github/workflows/staging-verification.yml'
+permissions:
+  contents: read
+concurrency:
+  group: staging-verification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  disposable-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ISURVIX_DISPOSABLE_REHEARSAL: 'yes'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare exact tracked release
+        shell: bash
+        run: |
+          release="$(git rev-parse HEAD)"
+          python deploy/staging.py prepare-release --repository "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/isurvix-context" --release-id "$release"
+      - name: Clean install, schema upgrade, TLS/private files and restart
+        shell: bash
+        run: bash deploy/verify_staging.sh "$RUNNER_TEMP/isurvix-runtime" "$RUNNER_TEMP/isurvix-context"
+      - name: Retain verification evidence (no private keys, secrets or database)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: disposable-staging-evidence
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/isurvix-runtime/verification.json
+            ${{ runner.temp }}/isurvix-runtime/ready-*.json
+            ${{ runner.temp }}/isurvix-runtime/DEPENDENCIES.lock
+            ${{ runner.temp }}/isurvix-runtime/OS-PACKAGES.lock
+            ${{ runner.temp }}/isurvix-runtime/build.log
+            ${{ runner.temp }}/isurvix-runtime/compose.log

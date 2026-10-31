@@ -1,0 +1,64 @@
+name: isurvix-staging
+services:
+  web:
+    image: ${ISURVIX_APP_IMAGE:?Use the approved immutable application image}
+    user: "10001:10001"
+    read_only: true
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 60s
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      DJANGO_SETTINGS_MODULE: checklist.settings_staging
+      DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
+      DJANGO_ALLOWED_HOSTS: ${STAGING_HOST:?Set the approved staging DNS name}
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://${STAGING_HOST}:8443
+      ISURVIX_RELEASE_ID: ${ISURVIX_RELEASE_ID:?Set the exact approved commit}
+      ISURVIX_RELEASE_FILE: /app/RELEASE
+      ISURVIX_DATA_ROOT: /data
+      ISURVIX_LOCAL_AI_ENABLED: "False"
+      DEBUG: "False"
+    volumes:
+      - ${ISURVIX_DATA_DIRECTORY:?Set the existing persistent data directory}:/data
+    secrets: [django_secret_key]
+    tmpfs: ["/tmp:mode=1777,size=268435456"]
+    expose: ["8000"]
+    healthcheck:
+      test: [CMD, python, /app/deploy/healthcheck.py]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks: [application]
+  proxy:
+    image: ${ISURVIX_NGINX_IMAGE:?Use an official Nginx image pinned by digest}
+    user: "101:101"
+    read_only: true
+    init: true
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      web:
+        condition: service_healthy
+    ports: ["127.0.0.1:8080:8080", "127.0.0.1:8443:8443"]
+    entrypoint: [/bin/sh, -c]
+    command: ["mkdir -p /tmp/nginx/logs /tmp/nginx/temp && exec nginx -p /tmp/nginx/ -c /etc/nginx/nginx.conf -g 'daemon off;'"]
+    volumes:
+      - ${ISURVIX_NGINX_CONFIG:?Render and review nginx.conf first}:/etc/nginx/nginx.conf:ro
+      - ${ISURVIX_DATA_DIRECTORY}/static:/data/static:ro
+      - ${ISURVIX_TLS_DIRECTORY:?Provide approved TLS files}:/tls:ro
+    tmpfs: ["/tmp:uid=101,gid=101,mode=0700,size=268435456"]
+    healthcheck:
+      test: [CMD, nginx, -p, /tmp/nginx/, -c, /etc/nginx/nginx.conf, -t, -q]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [application]
+secrets:
+  django_secret_key:
+    file: ${ISURVIX_SECRET_FILE:?Use a private existing secret file}
+networks:
+  application:
+    internal: true
