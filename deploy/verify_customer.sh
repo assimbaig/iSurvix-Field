@@ -56,7 +56,7 @@ sudo chown 10001:10001 "$output/private/django-secret" "$output/private/owner-pa
 sudo chmod 400 "$output/private/django-secret" "$output/private/owner-password"
 sudo chown 101:101 "$output/tls" "$output/tls/privkey.pem"
 sudo chmod 400 "$output/tls/privkey.pem"
-chmod 444 "$output/tls/fullchain.pem"
+sudo chmod 444 "$output/tls/fullchain.pem"
 lan_ip=172.28.33.1
 docker network create --internal --subnet 172.28.33.0/24 --gateway "$lan_ip" "$network" > "$output/client-network-id"
 sudo /usr/bin/python3 "$helper" prepare --package "$output/package" --runtime "$output/runtime" --host customer.example.test --lan-ip "$lan_ip" --secret-file "$output/private/django-secret" --tls-directory "$output/tls" --acknowledge-draft > "$output/prepare.json"

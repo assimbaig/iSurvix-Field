@@ -55,7 +55,7 @@ def canonical(value):
 
 
 def signature(secret, domain, payload):
-    if domain not in ('request-v1', 'receipt-v1'):
+    if domain not in ('request-v1', 'receipt-v1', 'host-terminal-v1'):
         raise ValueError('Unsupported update signing purpose.')
     key = hmac.new(secret.encode('utf-8'), b'isurvix-update-bridge-v1', hashlib.sha256).digest()
     return hmac.new(key, domain.encode('ascii')+b'\n'+canonical(payload), hashlib.sha256).hexdigest()
@@ -379,6 +379,157 @@ def _result(state, status, release, error_code=''):
         'automatic_downloads': 0, 'owner_release_approved': False}
 
 
+def _retained_runtime(package, runtime, release, *, initialized=False):
+    manifest, state = customer._runtime(package, runtime)
+    if manifest['release_id'] != release:
+        raise ValueError('Retained runtime/package identity differs from the historical update.')
+    database = customer._no_links(Path(runtime)/'data/database.sqlite3')
+    if not database.is_file() or not stat.S_ISREG(database.stat().st_mode):
+        raise ValueError('The historical runtime database is no longer retained.')
+    for name in ('media', 'static', 'upload-tmp'):
+        if not customer._no_links(Path(runtime)/'data'/name).is_dir():
+            raise ValueError('The historical runtime data directories are no longer retained.')
+    proof = {'manifest': customer._digest(Path(package)/'manifest.json'),
+             'install': customer._digest(Path(runtime)/'install.json'),
+             'env': customer._digest(Path(runtime)/'customer.env'),
+             'nginx': customer._digest(Path(runtime)/'nginx.conf')}
+    initialized_file = Path(runtime)/'initialized.json'
+    if initialized or initialized_file.exists():
+        if _read(initialized_file).get('release_id') != release:
+            raise ValueError('The retained initialization identity is invalid.')
+        proof['initialized'] = customer._digest(initialized_file)
+    return proof, state
+
+
+def _terminal_receipts(state, paths, secret, payload):
+    sequence = state.get('sequence')
+    if type(sequence) is not int or not 1 <= sequence <= 1000:
+        raise ValueError('The historical receipt sequence is invalid.')
+    root = customer._no_links(paths['update_directory']/'receipts'/payload['request_id'])
+    expected = {'%06d.json' % index for index in range(1, sequence+1)}
+    if not root.is_dir() or {path.name for path in root.iterdir()} != expected:
+        raise ValueError('The historical receipt chain is incomplete or inconsistent.')
+    transitions = {'pending': {'verified'}, 'verified': {'verified', 'applying', 'failed'},
+                   'applying': {'applying', 'failed', 'completed', 'rolled_back'},
+                   'failed': {'rolled_back'}, 'completed': set(), 'rolled_back': set()}
+    required = {'format', *BINDINGS, 'sequence', 'status', 'release_id', 'error_code', 'at'}
+    optional = {'backup_manifest_sha256', 'evidence_inventory_sha256'}
+    current, last, hashes = 'pending', None, {}
+    for index in range(1, sequence+1):
+        name = '%06d.json' % index
+        signed = _read(root/name, 16384)
+        if not isinstance(signed, dict) or set(signed) != {'payload', 'signature'}:
+            raise ValueError('The historical receipt wrapper is invalid.')
+        value = signed['payload']
+        if (not isinstance(value, dict) or not required <= set(value) or set(value)-required-optional or
+                value['format'] != 'isurvix-update-receipt-v1' or value['sequence'] != index or
+                any(value[key] != payload[key] for key in BINDINGS) or
+                not isinstance(signed['signature'], str) or
+                not hmac.compare_digest(signature(secret, 'receipt-v1', value), signed['signature'])):
+            raise ValueError('The historical receipt HMAC or request binding is invalid.')
+        if (value['status'] not in transitions.get(current, set()) or
+                value['release_id'] not in (payload['source_release'], payload['target_release'])):
+            raise ValueError('The historical receipt state is invalid.')
+        for key in optional & set(value):
+            if value[key] != state.get(key) or not re.fullmatch('[a-f0-9]{64}', str(value[key])):
+                raise ValueError('Historical backup/evidence receipt identities changed.')
+        current, last = value['status'], value
+        hashes[name] = customer._digest(root/name)
+    if current != state.get('last_status'):
+        raise ValueError('The historical terminal status differs from its receipt chain.')
+    return last, hashes
+
+
+def _terminal_record(transaction, state, paths, request_id, secret):
+    """Derive immutable historical proof without reading mutable human rows.
+
+    Current DB/media contents and server uptime are deliberately excluded. The
+    original verified backup and signed immutable proof remain the historical
+    basis after legitimate later user writes or subsequent upgrades.
+    """
+    if (state.get('format') != 'isurvix-host-update-journal-v1' or
+            state.get('paths') != {key: str(value) for key, value in paths.items()} or
+            state.get('phase') not in TERMINAL):
+        raise ValueError('The terminal journal format, paths or phase is invalid.')
+    payload = verify_request(state.get('request'), secret, request_id, check_expiry=False)
+    phase = state['phase']
+    result = state.get('result')
+    if not isinstance(result, dict):
+        raise ValueError('The terminal result is unavailable.')
+    release = payload['target_release'] if phase == 'completed' else payload['source_release']
+    error_code = '' if phase == 'completed' else ('cancelled' if phase == 'cancelled' else result.get('error_code'))
+    if (phase == 'rolled_back' and error_code not in {'backup_failed', 'migration_failed', 'health_failed', 'interrupted'} or
+            result != _result(state, phase, release, error_code)):
+        raise ValueError('The terminal result does not match the signed request and actual phase.')
+    source, _ = _retained_runtime(paths['installed_package'], paths['installed_runtime'],
+                                  payload['source_release'], initialized=True)
+    last, receipts = _terminal_receipts(state, paths, secret, payload)
+    if phase == 'cancelled':
+        if state['sequence'] != 1 or last['status'] != 'verified':
+            raise ValueError('The terminal cancellation receipt sequence is invalid.')
+        expected = {key: payload[key] for key in BINDINGS}
+        expected.update(status='failed', error_code='cancelled', last_sequence=1)
+        if _read(transaction/'cancellation-proof.json') != expected:
+            raise ValueError('The retained cancellation proof differs from this request.')
+    elif (last['status'] != phase or last['release_id'] != release or last['error_code'] != error_code):
+        raise ValueError('The terminal result differs from its last signed receipt.')
+    artifacts = {}
+    for name in ('backup/manifest.json', 'retained-records.json', 'retention-proof.json', 'cancellation-proof.json'):
+        path = customer._no_links(transaction/name)
+        if path.exists():
+            artifacts[name] = customer._digest(path)
+    if phase == 'completed':
+        required = {'backup/manifest.json', 'retained-records.json', 'retention-proof.json'}
+        if not required <= set(artifacts) or not {'backup_manifest_sha256', 'evidence_inventory_sha256'} <= set(last):
+            raise ValueError('Historical completion lacks backup/retention evidence.')
+    if state.get('backup_manifest_sha256'):
+        backup = _module(paths['installed_package']/'release/backend/core/operations_backup.py', 'retained_update_backup')
+        manifest = backup.validate_backup(transaction/'backup')
+        evidence = {key: value for key, value in manifest['files'].items() if key.startswith('media/')}
+        if (manifest['release_id'] != payload['source_release'] or
+                customer._digest(transaction/'backup/manifest.json')['sha256'] != state['backup_manifest_sha256'] or
+                hashlib.sha256(canonical(evidence)).hexdigest() != state.get('evidence_inventory_sha256')):
+            raise ValueError('Historical backup integrity differs from the signed receipt.')
+    target = None
+    if phase == 'completed':
+        candidate = paths['packages_root']/payload['target_release']/'package'
+        manifest = customer.verify_package(candidate, expected_manifest_sha256=payload['manifest_sha256'])
+        if manifest['release_id'] != payload['target_release']:
+            raise ValueError('The retained candidate package belongs to another release.')
+        target, _ = _retained_runtime(candidate, paths['target_runtime'], payload['target_release'], initialized=True)
+    return {'format': 'isurvix-host-terminal-proof-v1', 'request_id': request_id,
+        'phase': phase, 'request_sha256': hashlib.sha256(canonical(state['request'])).hexdigest(),
+        'paths_sha256': hashlib.sha256(canonical(state['paths'])).hexdigest(),
+        'result_sha256': hashlib.sha256(canonical(result)).hexdigest(),
+        'sequence': state['sequence'], 'last_status': state['last_status'],
+        'source': source, 'target': target, 'receipts': receipts, 'artifacts': artifacts}
+
+
+def _finish_terminal(transaction, state, secret, phase):
+    paths = {name: Path(value) for name, value in state['paths'].items()}
+    terminal = {**state, 'phase': phase}
+    record = _terminal_record(transaction, terminal, paths, state['request']['payload']['request_id'], secret)
+    proof = transaction/'terminal-proof.json'
+    if proof.exists():
+        raise ValueError('An immutable terminal proof already exists; preserve it for reconciliation.')
+    _atomic(proof, {'payload': record, 'signature': signature(secret, 'host-terminal-v1', record)})
+    _phase(transaction, state, phase)
+
+
+def _terminal_replay(transaction, state, paths, request_id):
+    # Validate source static identity and recover its original external signing
+    # key before accepting even a no-op historical success. No Docker is called.
+    _, source_state = customer._runtime(paths['installed_package'], paths['installed_runtime'])
+    secret = customer._private_input(source_state['values']['ISURVIX_SECRET_FILE']).read_text(encoding='utf-8').strip()
+    expected = _terminal_record(transaction, state, paths, request_id, secret)
+    proof = _read(transaction/'terminal-proof.json', 524288)
+    if (not isinstance(proof, dict) or set(proof) != {'payload', 'signature'} or
+            proof['payload'] != expected or not isinstance(proof['signature'], str) or
+            not hmac.compare_digest(signature(secret, 'host-terminal-v1', expected), proof['signature'])):
+        raise ValueError('The terminal historical proof is missing, corrupt or belongs to another request.')
+    return state['result']
+
+
 def _phase(transaction, state, phase):
     state['phase'] = phase
     _atomic(transaction/'journal.json', state)
@@ -421,7 +572,7 @@ def apply_update(*, installed_package, installed_runtime, update_directory, pack
             if previous.get('paths') != {key: str(value) for key, value in paths.items()}:
                 raise ValueError('This request already belongs to other immutable operator inputs.')
             if previous.get('phase') in TERMINAL and isinstance(previous.get('result'), dict):
-                return previous['result']
+                return _terminal_replay(transaction, previous, paths, request_id)
             raise ValueError('An interrupted update requires explicit operator recovery; preserve both runtimes and the independent journal.')
         source_manifest, source_state = customer._runtime(source_package, source_runtime)
         if source_state['values'].get('ISURVIX_UPDATE_DIRECTORY') != paths['update_directory'].as_posix():
@@ -528,7 +679,7 @@ def apply_update(*, installed_package, installed_runtime, update_directory, pack
             _receipt(transaction, state, secret, 'completed', payload['target_release'],
                      acknowledge=(candidate, paths['target_runtime'], candidate_state))
             state['result'] = _result(state, 'completed', payload['target_release'])
-            _phase(transaction, state, 'completed')
+            _finish_terminal(transaction, state, secret, 'completed')
             return state['result']
         except (ValueError, OSError, KeyError, UnicodeError):
             if state['phase'] == 'activation_started':
@@ -565,7 +716,7 @@ def apply_update(*, installed_package, installed_runtime, update_directory, pack
             _receipt(transaction, state, secret, 'rolled_back', payload['source_release'], error_code,
                      acknowledge=(source_package, source_runtime, source_state))
             state['result'] = _result(state, 'rolled_back', payload['source_release'], error_code)
-            _phase(transaction, state, 'rolled_back')
+            _finish_terminal(transaction, state, secret, 'rolled_back')
             return state['result']
 
 
@@ -591,7 +742,7 @@ def recover_update(*, installed_package, installed_runtime, update_directory, pa
                 state.get('paths') != {key: str(value) for key, value in paths.items()}):
             raise ValueError('The independent recovery journal belongs to different operator inputs.')
         if state.get('phase') in TERMINAL and isinstance(state.get('result'), dict):
-            return state['result']
+            return _terminal_replay(transaction, state, paths, request_id)
         if state.get('phase') in ('activation_started', 'activation_uncertain'):
             raise ValueError('Possible activation writes require explicit data reconciliation; automatic rollback is refused.')
         if state.get('phase') not in {'verified-package', 'stopping-writers', 'backing-up', 'restoring', 'migrating', 'checking-candidate', 'recovery_required'}:
@@ -614,7 +765,7 @@ def recover_update(*, installed_package, installed_runtime, update_directory, pa
             _proxy_health(source_package, source_runtime, source_state, payload['source_release'])
             _atomic(transaction/'cancellation-proof.json', proof)
             state['result'] = _result(state, 'cancelled', payload['source_release'], 'cancelled')
-            _phase(transaction, state, 'cancelled')
+            _finish_terminal(transaction, state, secret, 'cancelled')
             return state['result']
         if paths['target_runtime'].exists():
             candidate, _ = _package(paths['packages_root'], payload)
@@ -651,7 +802,7 @@ def recover_update(*, installed_package, installed_runtime, update_directory, pa
         _receipt(transaction, state, secret, 'rolled_back', payload['source_release'], 'interrupted',
                  acknowledge=(source_package, source_runtime, source_state))
         state['result'] = _result(state, 'rolled_back', payload['source_release'], 'interrupted')
-        _phase(transaction, state, 'rolled_back')
+        _finish_terminal(transaction, state, secret, 'rolled_back')
         return state['result']
 
 

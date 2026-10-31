@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-31T17:12:00.046614+00:00",
+  "updated_utc": "2026-10-31T17:56:42.457587+00:00",
   "verified": 8,
   "total": 21,
   "rows": [
@@ -229,7 +229,7 @@
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Release provenance is traceable. Failed tests block publication.",
-      "Notes / evidence / PR": "Explicit owner instruction31 October2026. Inspecting existing exact-source packages, update/recovery and shared CI; implementation and independent verification pending. No production/customer update or publication authorized."
+      "Notes / evidence / PR": "Shared same-source draft gate and immutable image/package provenance implemented.11tracked+19overlapping independent+10security checks passed. PR30. Actual Linux/package gate is being repaired and retested; no release approved or published."
     },
     {
       "ID": "20",
@@ -241,7 +241,7 @@
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Verified update preserves data. Invalid packages and interrupted updates stop safely.",
-      "Notes / evidence / PR": "Explicit owner instruction31 October2026. Inspecting existing exact-source packages, update/recovery and shared CI; implementation and independent verification pending. No production/customer update or publication authorized."
+      "Notes / evidence / PR": "Owner-only real Update Center and signed host apply/recover implemented.47saved-browser checks; approvedUP1repair26developer/50independent/9security checks passed(overlap). Finalfull+actualLinuxgate pending. PR30; no live update."
     },
     {
       "ID": "21",
@@ -253,7 +253,7 @@
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Demonstrate recovery from failed upgrade. Verify retained evidence hashes.",
-      "Notes / evidence / PR": "Explicit owner instruction31 October2026. Inspecting existing exact-source packages, update/recovery and shared CI; implementation and independent verification pending. No production/customer update or publication authorized."
+      "Notes / evidence / PR": "Actual SQLite/media controlled-Docker recovery tests and strict retained-row/hash proofs pass. Exact0057baseline e37b280 selected; actual Linux caught-failure/interruption/success matrix still running. Earlier0056 automatic upgrades unsupported. PR30."
     }
   ],
   "baseline_commit": "fd365f107b75c370caa2b765837d2a23f907a80c",

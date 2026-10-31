@@ -277,3 +277,40 @@ This closes that known countercase within the approved CP2 repair. Broader
 separate AppSec confirmation and the unchanged older holds are recorded in
 `CUSTOMER_SERVER_SECURITY_REVIEW_20261031.md`; this is not universal secret-scan
 or new phase6updater approval.
+
+## Independent build-export regression follow-up: 9b9b202
+
+The first actual customer CI build failed before installation because umask077
+made new Git-export copies unreadable by image UID10001. The lead repaired only
+the newly exported copies: directories755, regular source files644, Git-tracked
+executable files755 and generated RELEASE644. The export root remains0700;
+private runtime input files and original repository files are not chmod targets.
+
+Independent source review confirmed that boundary. Two additional private tests
+assert the exact chmod target/mode set, Git executable intent, byte/mode retention
+for every original fixture file and ignored private key, and existing-export
+rejection without any chmod or overwrite. These use a clean synthetic Git repo,
+private canary and umask077. No real credential is opened.
+
+Final command, with private QA path on PYTHONPATH and the shared project Python:
+
+```text
+scripts/run_backend_tests.py build_export_independent.IndependentBuildExportTests core.test_build_context_permissions core.test_staging_deployment core.test_staging_independent core.test_staging_operations --verbosity 1
+```
+
+**60 passed in30.289seconds**, zero failures/errors/skips, zero external attempts
+and eight controlled HTTP fixture connections. These are two independent cases
+and58 existing/tracked cases, overlapping earlier totals. Receipt:
+`qa/build-export-independent.log`. An earlier run passed the58 tracked cases but
+errored in both new tests because the reviewer's fixture resolved B6 one directory
+too high; `qa/build-export-harness-error.log` is retained. Only that private path
+was corrected; no assertion or product code was changed by the reviewer.
+
+Reviewed `deploy/staging.py` SHA256:
+`bfb2a86b11438cacce35699291ad044428671bbb723ef094678589a5fe962ee7`.
+The two new direct PDF constraints match backend pins exactly; held Pillow and
+Gunicorn pins remain unchanged. The customer rehearsal now executes a no-network
+image probe asserting UID10001 can actually read RELEASE and application files.
+That probe and true POSIX mode enforcement still require the actual Linux CI;
+Windows chmod-call assertions alone do not establish container readability.
+No deployment, actual Docker, model inference or operational write occurred.

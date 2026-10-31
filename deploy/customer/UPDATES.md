@@ -76,6 +76,21 @@ Only a server-confirmed completion receipt yields
 `completed`. The same completed request returns its durable result without
 rerunning Docker or creating another target.
 
+Historical replay validates the signed original request, result and receipt chain
+and retains a purpose-separated signed `terminal-proof.json` in the private host
+journal. Keep the original source/target packages, installation/configuration and
+initialization files, external signing key, backup and retention artifacts. A
+foreign, copied, missing or corrupted terminal history is rejected before any
+Docker action. An older unsealed draft journal requires manual reconciliation;
+the helper does not manufacture retrospective proof.
+
+Replay confirms the historical operation, without asserting that its release is
+still running. It does not require current catalog contents or network uptime,
+and does not compare mutable current survey/database/media bytes to the old
+backup. Later human answers and uploads remain intact. A source signing-key
+rotation or removal of retained artifacts needs a separately verified history/key
+retention procedure; keep the original material instead of silently rewriting it.
+
 The operator must retain the returned target runtime/package and use those paths
 for future normal starts and subsequent updates. No old package/data directory
 is deleted. A source package may be a previous target under the approved package

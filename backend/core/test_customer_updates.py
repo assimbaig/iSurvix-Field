@@ -69,7 +69,7 @@ class CustomerUpdateTests(SimpleTestCase):
             db.execute('insert into retained values (1, ?)', ('confirmed human answer',))
             db.commit()
         (self.source_runtime/'data/media/original.bin').write_bytes(b'Original evidence: preserve exact bytes.')
-        (self.source_runtime/'initialized.json').write_text('{}')
+        (self.source_runtime/'initialized.json').write_text(json.dumps({'release_id': self.source}))
         row = {'release_id': self.target,
                'manifest_sha256': self.updater.customer._digest(self.target_package/'manifest.json')['sha256'],
                'supported_from': [self.source], 'editions': ['customer']}
@@ -477,3 +477,75 @@ class CustomerUpdateTests(SimpleTestCase):
         state = json.loads((self.journals/self.request_id/'journal.json').read_text())
         self.assertEqual(state['phase'], 'verified-package')
         self.assertFalse((self.journals/self.request_id/'cancellation-proof.json').exists())
+
+    def test_UP1_foreign_signed_terminal_journal_is_rejected_by_apply_and_recover(self):
+        paths = self.updater._paths(installed_package=self.source_package, installed_runtime=self.source_runtime,
+            update_directory=self.updates, packages_root=self.packages, target_runtime=self.target_runtime,
+            journal_root=self.journals)
+        foreign_id = str(uuid.uuid4())
+        foreign = {**self.payload, 'request_id': foreign_id}
+        transaction = self.journals/self.request_id
+        transaction.mkdir()
+        journal = {'format': 'isurvix-host-update-journal-v1', 'phase': 'completed',
+            'paths': {key: str(value) for key, value in paths.items()}, 'request': self.signed(foreign),
+            'sequence': 3, 'last_status': 'completed',
+            'result': {'request_id': foreign_id, 'status': 'completed', 'release_id': self.target}}
+        path = transaction/'journal.json'
+        path.write_text(json.dumps(journal))
+        original = path.read_bytes()
+        for action in ('apply', 'recover'):
+            with self.subTest(action=action), self.assertRaises(ValueError): self.apply(action)
+        self.assertEqual(self.calls, [])
+        self.assertFalse(self.target_runtime.exists())
+        self.assertEqual(path.read_bytes(), original)
+
+    def test_UP1_terminal_result_tampering_or_missing_retained_target_is_rejected_without_docker(self):
+        self.apply()
+        path = self.journals/self.request_id/'journal.json'
+        original = path.read_bytes()
+        journal = json.loads(original)
+        before = len(self.calls)
+        for key, value in (('request_id', str(uuid.uuid4())), ('status', 'rolled_back'),
+                           ('release_id', self.source), ('owner_release_approved', True)):
+            altered = {**journal, 'result': {**journal['result'], key: value}}
+            path.write_text(json.dumps(altered))
+            for action in ('apply', 'recover'):
+                with self.subTest(key=key, action=action), self.assertRaises(ValueError): self.apply(action)
+        path.write_bytes(original)
+        absent = self.path/'preserved-target-moved'
+        self.target_runtime.rename(absent)
+        for action in ('apply', 'recover'):
+            with self.subTest(missing_target=action), self.assertRaises(ValueError): self.apply(action)
+        self.assertEqual(len(self.calls), before)
+        self.assertEqual(path.read_bytes(), original)
+        self.assertTrue(absent.is_dir())
+
+    def test_UP1_backup_and_retention_proof_corruption_cannot_report_historical_success(self):
+        self.apply()
+        transaction = self.journals/self.request_id
+        before = len(self.calls)
+        for name in ('backup/media/original.bin', 'retention-proof.json', 'retained-records.json'):
+            path = transaction/name
+            original = path.read_bytes()
+            path.write_bytes(b'Corrupt immutable synthetic historical proof')
+            for action in ('apply', 'recover'):
+                with self.subTest(name=name, action=action), self.assertRaises(ValueError): self.apply(action)
+            self.assertEqual(path.read_bytes(), b'Corrupt immutable synthetic historical proof')
+            path.write_bytes(original)
+        self.assertEqual(len(self.calls), before)
+
+    def test_UP1_historical_replay_preserves_later_human_writes_without_uptime_or_fresh_token(self):
+        result = self.apply()
+        with closing(sqlite3.connect(self.target_runtime/'data/database.sqlite3')) as db:
+            db.execute("update retained set human_answer='later legitimate human correction'")
+            db.commit()
+        (self.target_runtime/'data/media/later-upload.bin').write_bytes(b'Later legitimate original')
+        database_before = (self.target_runtime/'data/database.sqlite3').read_bytes()
+        self.running = {}  # A historical release may intentionally be stopped.
+        before = len(self.calls)
+        with patch.object(self.updater.time, 'time', return_value=int(time.time())+86400):
+            self.assertEqual(self.apply(), result)
+            self.assertEqual(self.apply('recover'), result)
+        self.assertEqual(len(self.calls), before)
+        self.assertEqual((self.target_runtime/'data/database.sqlite3').read_bytes(), database_before)
+        self.assertEqual((self.target_runtime/'data/media/later-upload.bin').read_bytes(), b'Later legitimate original')

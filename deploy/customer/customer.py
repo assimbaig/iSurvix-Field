@@ -21,8 +21,8 @@ from zipfile import ZipFile
 
 
 FORMAT = 'isurvix-customer-bundle-v1'
-HOLD_IDS = ['A12', 'BR1', 'D1', 'D2', 'L1', 'CS1', 'CS2', 'AI1', 'UP1']
-REPAIRED_FINDINGS = ['CP1', 'CP2']
+HOLD_IDS = ['A12', 'BR1', 'D1', 'D2', 'L1', 'CS1', 'CS2', 'AI1']
+REPAIRED_FINDINGS = ['CP1', 'CP2', 'UP1']
 REQUIRED_FILES = {'release/RELEASE', 'release/deploy/staging.py',
     'release/deploy/nginx.conf.template', 'release/deploy/customer/customer.py',
     'release/deploy/customer/compose.yaml', 'release/backend/core/operations_backup.py',

@@ -204,3 +204,43 @@ No further functional defect was reproduced in these bounded countercases. This
 does not close the separate security, actual Linux Docker, physical LAN, full
 regression or owner release-approval gates. No product source was edited by this
 reviewer and no operational records, native Ollama or paid service were used.
+
+## Owner-approved UP1 repair: independent functional review
+
+After the separate security reviewer reproduced UP1, the owner explicitly
+approved that finding's repair. This approval does not apply to older held
+findings. The implementing agent added shared terminal-history validation to
+both apply/recover and a purpose-separated signed immutable terminal proof.
+The original security RED and intermediate functional evidence remain retained.
+
+Independent command (shared project Python; private QA path on PYTHONPATH):
+
+```text
+scripts/run_backend_tests.py up1_independent.IndependentTerminalReplayTests updater_independent.IndependentHostUpdaterTests updater_independent.IndependentCancellationRecoveryTests core.test_customer_updates --verbosity 2
+```
+
+**50 passed in82.500seconds**, zero failures/errors/skips, zero external attempts
+or HTTP fixture connections. These are11 new independent UP1 cases, the prior13
+independent host/cancellation cases and26 tracked cases; totals overlap prior
+runs. Receipt: `qa/up1-independent-final.log`.
+
+The11 new cases check both apply and recover. Invalid request HMAC, signed
+foreign request UUID, altered result identity/release/status/approval, absent
+terminal receipt, invalid receipt HMAC and changed retained-target installation
+identity are rejected without Docker execution or journal replacement. Positive
+controls preserve legitimate completed history after token expiry, later human
+database writes and two successive successful updates with a changed catalog.
+Rolled-back and cancelled histories remain idempotent. In particular, later
+human data is not compared to the old backup or overwritten during replay.
+
+Reviewed frozen hashes, confirmed before execution:
+
+- `deploy/customer/updater.py`: `2ad0d506faf6e6453f493d12e1e0f308a8df8c6b797065e7830e6e2c9cfba2e0`
+- `backend/core/test_customer_updates.py`: `0e6393574ebdb7bef2e1e85e206de1555e73229a34f89060fd220e445db6f71c`
+
+No further functional defect was reproduced. This is functional regression
+verification of the approved repair, not its separate security closure, actual
+Linux Docker/physical LAN proof or release approval. Older unsealed draft
+journals fail closed and need manual reconciliation; preserved original signing
+keys, static installation metadata and immutable proof/backup artifacts remain
+required. The reviewer's code changes are private tests/reporting only.

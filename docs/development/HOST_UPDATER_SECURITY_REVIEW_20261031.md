@@ -4,8 +4,10 @@
 branch `feat/customer-server-readiness-20261031`. Review began after explicit
 functional freeze of the proxy-readiness and pre-ACK cancellation repairs.
 
-**New UP1 Low is confirmed and remains unfixed pending explicit owner approval.**
-Nine private cases ran: eight passed and one meaningful security assertion failed.
+**UP1 Low was confirmed, then explicitly approved for repair by the owner. The
+final re-review below verifies that repair in the executed boundaries. Original
+RED evidence remains preserved.** In the initial review, nine private cases ran:
+eight passed and one meaningful security assertion failed.
 No real Docker operation, native model, external/paid request or customer record
 was used. This is not a public/customer deployment clearance.
 
@@ -22,9 +24,10 @@ Frozen implementation hashes at review:
 - `deploy/customer/updater.py`: `a2744e625d64799f583269f5c9c6cfe035157bf9c079f56e067e8823c98e9087`
 - `backend/core/test_customer_updates.py`: `547ce8fb98fdbbaa8e1ce7c3d24b3bb9264ced285c076f9ff90ab8c2ba4f8d7a`
 
-The reviewer did not implement the helper or alter product/core tests. The owner
-approved CP1/CP2 repairs only; that approval does not authorize UP1 or any earlier
-held finding. Actual Linux/upgrade CI was pending when this review was requested.
+The reviewer did not implement the helper or alter product/core tests. At the
+initial review, the owner had approved CP1/CP2 repairs only. The later explicit
+UP1 approval is recorded below; earlier held findings remain unapproved. Actual
+Linux/upgrade CI was pending when this review was requested.
 
 ## Independent executed cases
 
@@ -94,8 +97,9 @@ re-executing anything or overwriting evidence. Preserve legitimate historical
 completed/rolled-back/cancelled replay semantics; a historical completion need
 not falsely claim it is still the currently running release after later upgrades.
 
-**Disposition:** reported only, **unfixed**. The failing private assertion and
-observation remain preserved. Explicit owner approval is required before repair.
+**Initial disposition:** reported only, **unfixed**, requiring explicit owner
+approval. That failing private assertion and observation remain preserved; later
+approval, functional repair and independent closure are recorded below.
 
 ## Evidence and remaining limits
 
@@ -114,6 +118,88 @@ delivered digests. Real install/upgrade/recovery CI and final exact-version targ
 acceptance remain separate gates.
 
 CP1/CP2 have their separately approved bounded closure. A12/BR1/D1/D2/L1/CS1/CS2/AI1
-remain held; UP1 adds a new owner-approval decision. No other new exploitable
+remain held; UP1 required a new owner-approval decision at the initial review.
+No other new exploitable
 defect was established in this bounded host review. No fix, merge, release,
 deployment, engineering decision or original evidence change was performed.
+
+## Owner-approved UP1 repair: final separate closure review
+
+The owner subsequently explicitly selected **"Approve UP1 fix"**. The lead
+assigned a narrow shared terminal-history validator for both `apply` and
+`recover`, then requested this separate review after the implementation agent's
+executed failing regressions and functional GREEN. No approval for the older
+eight held findings was inferred.
+
+Reviewed final frozen SHA256:
+
+- `deploy/customer/updater.py`: `2ad0d506faf6e6453f493d12e1e0f308a8df8c6b797065e7830e6e2c9cfba2e0`
+- `backend/core/test_customer_updates.py`: `0e6393574ebdb7bef2e1e85e206de1555e73229a34f89060fd220e445db6f71c`
+
+The shared terminal validator now checks the stored signed request identity and
+input/path/result bindings, immutable signed receipt sequence, retained static
+source/target identities and original backup/retention artifacts. A purpose-
+separated `host-terminal-v1` HMAC seal binds that historical proof. It does not
+re-run an update or require that a historical target's mutable human database,
+later uploads or service uptime remain unchanged. Expiry is exempted only for
+the authenticated historical replay; new apply authorization retains its TTL.
+
+### Independently executed closure checks
+
+First, the **original UP1 private assertion was rerun unchanged**:
+
+```text
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py updater_security.IndependentHostUpdaterSecurityTests.test_UP1_terminal_journal_cannot_replay_another_requests_completion --verbosity 2
+```
+
+**1 passed in 0.490 seconds**, zero failures/errors/skips. Its original failing
+receipt and `UP1-observation.json` are retained rather than overwritten.
+
+Eight additional independent closure cases then ran:
+
+```text
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py terminal_closure --verbosity 2
+```
+
+**8 passed in 21.032 seconds**, zero failures/errors/skips:
+
+1. Genuine completed replay remains read-only after later human database edits,
+   additional original uploads, request expiry and intentionally stopped services.
+2. A request-domain signature cannot substitute for a terminal-proof signature.
+3. A validly signed foreign request cannot reuse another terminal proof.
+4. Changed signed receipt inputs or an incomplete receipt sequence reject replay.
+5. Corrupt immutable backup media or retention proof rejects historical success.
+6. Changed static target identity is rejected without touching later human rows.
+7. Result UUID or owner-release-approval tampering is rejected in both commands.
+8. Genuine cancelled and rolled-back histories also replay idempotently without
+   executing Docker or repeating any update/recovery operation.
+
+Every rejecting case exercised both `apply` and `recover`. Both commands retained
+files rather than deleting or overwriting the tampered evidence. All closure
+commands recorded zero external network attempts and zero fixture connections.
+They used actual disposable SQLite/media/backup files and controlled Docker/
+listener boundaries, not a real customer daemon or native vision service.
+
+**UP1 is verified repaired within these reported and executed boundaries.** No
+new exploitable defect was established in this bounded closure review. The
+reviewer changed only private tests, receipts and this report. Final code hashes
+matched the supplied functional freeze; no product/core test was altered by the
+reviewer.
+
+Private evidence under `updater-security/`: `UP1-original-green.log`,
+`terminal_closure.py`, `UP1-closure-security.log`, `closure-source-before.json`,
+`closure-source-after.json` and `UP1-final-closure-receipt.json`. Counts are
+independent executions and must not inflate the ordinary unique suite total.
+
+Separate Linux rehearsal changes addressing public-certificate readability and
+build-context readability were inspected as fixture/configuration changes;
+inspection is not an actual Linux run. Private-key/directory restrictions remain
+separate requirements. Actual same-source Docker install, upgrade/recovery,
+UID/mount permissions and final package results must be assessed from their
+executed CI receipts, not inferred from these controlled tests.
+
+CP1/CP2 retain their separate approved bounded closure. The eight older findings
+A12/BR1/D1/D2/L1/CS1/CS2/AI1 remain held and were not repaired. Source/retained
+verifier/key/journal trust, arbitrary hostile-root tampering, all power-loss
+timings, customer devices, licensing and exact release approval remain outside
+this closure. No public/customer deployment or merge was performed.
