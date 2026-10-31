@@ -23,6 +23,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from .access import is_super_admin,role_for,can_access_project,managed_project_ids,project_role_guard,accessible_projects,user_project_ids,users_for_project,company_id_for
 from .models import Profile,Project,Checklist,WorkAssignment,ProjectInvitation,GovernanceAudit,GovernanceState,Company,ProjectMembership,IndustryCatalog,ClientOrganization
 from .governance_forms import ProjectForm,InvitationForm,InvitationAcceptForm,AssignmentForm,ClientApprovalForm,MaintenanceResetForm,ProjectAdministratorForm,CompanyForm,ProjectCompanyForm,MembershipForm,IndustryForm,AdminIndustryForm,ClientOrganizationForm,ProjectClientForm
+from .privileged_audit import snapshot_user,snapshot_project,snapshot_membership,snapshot_invitation,snapshot_maintenance,snapshot_client_organization,change_details
 
 
 def guarded_write(view):
@@ -57,6 +58,21 @@ def lock_governance(actor=None):
 def manager_guard(actor):
     if not is_super_admin(actor) and role_for(actor)!=Profile.Roles.ADMIN:
         raise PermissionDenied('Project administration access is required.')
+
+
+_ACCOUNT_AUTHORITY_FIELDS={'is_superuser','is_staff','groups','user_permissions'}
+
+
+def reject_authority_fields(request,extra=()):
+    """Account authority is supplied by an authorised route, never mass assigned.
+
+    Reject attempted overrides explicitly instead of reporting an unrelated valid
+    account change as successful. Ordinary form validation remains unchanged.
+    """
+    authority=set(extra)|{key+'_id' for key in extra}
+    if (_ACCOUNT_AUTHORITY_FIELDS|authority).intersection(request.POST):
+        return HttpResponse('Account authority cannot be changed through this action.',status=400)
+    return None
 
 
 def project_creation_guard(actor):
@@ -281,7 +297,8 @@ def projects(request):
             request.user.profile.project=project
             request.user.profile.save(update_fields=['project'])
         audit(request.user,'project_created',project,name=project.name,template_id=project.checklist_template_id,
-              company_id=project.company_id,industry=project.industry,review_layers=project.review_layers)
+              company_id=project.company_id,industry=project.industry,review_layers=project.review_layers,
+              **change_details(request.user,'project',project.pk,None,snapshot_project(project),project=project))
     messages.success(request,'Project created.')
     return redirect(reverse('governance_home')+'?view=projects&project='+str(project.pk))
 
@@ -295,6 +312,12 @@ def invite(request):
     with transaction.atomic():
         lock_governance(request.user)
         manager_guard(request.user)
+        rejected=reject_authority_fields(request)
+        if rejected is not None:return rejected
+        if not is_super_admin(request.user):
+            for key,expected in [('company',company_id_for(request.user))]:
+                if key in request.POST and request.POST[key] not in {'',str(expected)}:
+                    return HttpResponse('Invitation authority must remain within your company and industry.',status=400)
         form=InvitationForm(request.POST,actor=request.user)
         if not form.is_valid():
             return workspace_response(request,status=400,invite_form=form)
@@ -306,7 +329,8 @@ def invite(request):
         if not data['project']:pending=pending.filter(company=data.get('company'))
         pending.update(revoked_at=now)
         invitation=ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),email=data['email'],role=data['role'],admin_industry=data.get('admin_industry') if data['role']==Profile.Roles.ADMIN else None,company=data.get('company'),project=data['project'],created_by=request.user,expires_at=now+timedelta(hours=72))
-        audit(request.user,'invitation_created',data['project'],invitation_id=invitation.pk,email=data['email'],role=data['role'])
+        audit(request.user,'invitation_created',data['project'],invitation_id=invitation.pk,email=data['email'],role=data['role'],
+              **change_details(request.user,'invitation',invitation.pk,None,snapshot_invitation(invitation),project=data['project'],company_id=invitation.company_id))
     # Raw bearer token is shown once, never persisted in session, messages or audit.
     return workspace_response(request,invite_url=request.build_absolute_uri(reverse('governance_accept_invite',args=[token])))
 
@@ -339,11 +363,14 @@ def accept_invite(request,token):
     invitation=invitation_for(token)
     form=InvitationAcceptForm(request.POST or None,invitation=invitation)
     if request.method=='POST':
+        rejected=reject_authority_fields(request,{'role','project','company','admin_industry'})
+        if rejected is not None:return rejected
         with transaction.atomic():
             lock_governance()
             invitation=invitation_for(token)
             form=InvitationAcceptForm(request.POST,invitation=invitation)
             if form.is_valid():
+                project_before=snapshot_project(invitation.project) if invitation.project_id else None
                 now=timezone.now()
                 consumed=ProjectInvitation.objects.filter(pk=invitation.pk,accepted_at__isnull=True,revoked_at__isnull=True,expires_at__gt=now).update(accepted_at=now)
                 if not consumed:
@@ -361,14 +388,16 @@ def accept_invite(request,token):
                 profile.save(update_fields=['role','project','company','admin_industry'])
                 from .company_service import grant_membership
                 if invitation.project_id:grant_membership(invitation.created_by,user,invitation.project,make_primary=True)
-                if invitation.role==Profile.Roles.ADMIN and invitation.project_id and invitation.project.administrator_id is None:
+                if invitation.role==Profile.Roles.ADMIN and invitation.project_id and project_before['administrator_id'] is None:
                     invitation.project.administrator=user
                     invitation.project.save(update_fields=['administrator'])
-                    audit(invitation.created_by,'project_administrator_assigned',invitation.project,administrator_id=user.pk,via_invitation_id=invitation.pk)
+                    audit(invitation.created_by,'project_administrator_assigned',invitation.project,administrator_id=user.pk,via_invitation_id=invitation.pk,
+                          **change_details(invitation.created_by,'project',invitation.project_id,project_before,snapshot_project(invitation.project),project=invitation.project))
                 invitation.accepted_by=user
                 invitation.accepted_at=now
                 invitation.save(update_fields=['accepted_by','accepted_at'])
-                audit(user,'invitation_accepted',invitation.project,invitation_id=invitation.pk,role=invitation.role,email=invitation.email)
+                audit(user,'invitation_accepted',invitation.project,invitation_id=invitation.pk,role=invitation.role,email=invitation.email,
+                      **change_details(user,'user',user.pk,None,snapshot_user(user),project=invitation.project,company_id=invitation.company_id))
                 login(request,user,backend='django.contrib.auth.backends.ModelBackend')
                 return redirect('governance_home')
     response=render(request,'dashboards/governance_accept_invite.html',{'invitation':invitation,'form':form},status=400 if request.method=='POST' else 200)
@@ -474,9 +503,11 @@ def revoke_invite(request,invitation_id):
             issue_guard(request.user,invitation.project,invitation.role)
         if invitation.accepted_at:
             return HttpResponse('An accepted invitation cannot be revoked; manage the member instead.',status=409)
+        before=snapshot_invitation(invitation)
         invitation.revoked_at=timezone.now()
         invitation.save(update_fields=['revoked_at'])
-        audit(request.user,'invitation_revoked',invitation.project,invitation_id=invitation.pk)
+        audit(request.user,'invitation_revoked',invitation.project,invitation_id=invitation.pk,
+              **change_details(request.user,'invitation',invitation.pk,before,snapshot_invitation(invitation),project=invitation.project,company_id=invitation.company_id))
     return redirect('governance_home')
 
 
@@ -485,6 +516,8 @@ def revoke_invite(request,invitation_id):
 @guarded_write
 def member(request,user_id):
     manager_guard(request.user)
+    rejected=reject_authority_fields(request,{'company','admin_industry','project'})
+    if rejected is not None:return rejected
     with transaction.atomic():
         lock_governance(request.user)
         target=get_object_or_404(User,pk=user_id)
@@ -504,6 +537,7 @@ def member(request,user_id):
         action=request.POST.get('action')
         if action not in {'activate','deactivate','role','unlock'}:
             return HttpResponse('Choose a membership action.',status=400)
+        before=snapshot_user(target)
         if action=='unlock':
             profile.is_locked=False
             profile.failed_attempts=0
@@ -520,7 +554,8 @@ def member(request,user_id):
         else:
             target.is_active=action=='activate'
             target.save(update_fields=['is_active'])
-        audit(request.user,'member_'+action,profile.project,user_id=target.pk,role=profile.role,active=target.is_active)
+        audit(request.user,'member_'+action,profile.project,user_id=target.pk,role=profile.role,active=target.is_active,
+              **change_details(request.user,'user',target.pk,before,snapshot_user(target),project=profile.project))
     return redirect('governance_home')
 
 
@@ -552,13 +587,15 @@ def reset(request):
                 raise PermissionDenied()
             form=MaintenanceResetForm(request.POST,actor=request.user)
             if form.is_valid():
+                before=snapshot_maintenance()
                 sessions=Session.objects.count()
                 invitations=ProjectInvitation.objects.filter(accepted_at__isnull=True,revoked_at__isnull=True).update(revoked_at=timezone.now())
                 profiles=Profile.objects.filter(is_locked=True).update(is_locked=False,failed_attempts=0,login_locked_until=None)
                 Profile.objects.exclude(failed_attempts=0).update(failed_attempts=0,login_locked_until=None)
                 Profile.objects.filter(login_locked_until__isnull=False).update(login_locked_until=None)
                 Session.objects.all().delete()
-                audit(request.user,'access_maintenance_reset',sessions=sessions,invitations=invitations,unlocked_profiles=profiles)
+                audit(request.user,'access_maintenance_reset',sessions=sessions,invitations=invitations,unlocked_profiles=profiles,
+                      **change_details(request.user,'maintenance',None,before,snapshot_maintenance()))
                 logout(request)
                 return redirect('/login/')
     return render(request,'dashboards/governance_reset.html',{'form':form,'counts':counts},status=400 if request.method=='POST' else 200)
@@ -584,6 +621,7 @@ def project_admin(request,project_id):
         if profile.role!=Profile.Roles.ADMIN:
             raise PermissionDenied('Choose a Project Admin account.')
         previous=project.administrator_id
+        before=snapshot_project(project)
         from .company_service import grant_membership
         try:
             grant_membership(request.user,administrator,project,transfer_owner=True)
@@ -591,7 +629,8 @@ def project_admin(request,project_id):
             return workspace_response(request,status=400,error='; '.join(exc.messages))
         project.administrator=administrator
         project.save(update_fields=['administrator'])
-        audit(request.user,'project_administrator_assigned',project,administrator_id=administrator.pk,previous_administrator_id=previous)
+        audit(request.user,'project_administrator_assigned',project,administrator_id=administrator.pk,previous_administrator_id=previous,
+              **change_details(request.user,'project',project.pk,before,snapshot_project(project),project=project))
     messages.success(request,'Project ownership assigned. Only this Admin can administer or view the project; evidence and history are preserved.')
     return redirect('governance_home')
 
@@ -615,7 +654,8 @@ def company(request):
         organization.created_by=request.user
         if ClientOrganization.objects.filter(company_id=organization.company_id,industry=organization.industry,name__iexact=organization.name).exists():return workspace_response(request,status=400,clientorg_form=form,error='This Client organization already exists in your industry.')
         organization.save()
-        audit(request.user,'client_organization_created',client_organization_id=organization.pk,company_id=organization.company_id,industry_id=organization.industry_id,name=organization.name)
+        audit(request.user,'client_organization_created',client_organization_id=organization.pk,company_id=organization.company_id,industry_id=organization.industry_id,name=organization.name,
+              **change_details(request.user,'client_organization',organization.pk,None,snapshot_client_organization(organization),company_id=organization.company_id))
     return redirect('governance_home')
 
 
@@ -654,9 +694,11 @@ def project_company(request,project_id):
             ):
                 return workspace_response(request,status=409,error='This project has retained company records or evidence. Its company cannot be changed through classification; preserve the original tenant and review any migration separately.')
             previous=project.company_id
+            before=snapshot_project(project)
             project.company=organization
             project.save(update_fields=['company'])
-            audit(request.user,'project_company_assigned',project,company_id=organization.pk,previous_company_id=previous)
+            audit(request.user,'project_company_assigned',project,company_id=organization.pk,previous_company_id=previous,
+                  **change_details(request.user,'project',project.pk,before,snapshot_project(project),project=project))
     return redirect('governance_home')
 
 
@@ -665,6 +707,8 @@ def project_company(request,project_id):
 @guarded_write
 def membership(request,user_id):
     manager_guard(request.user)
+    rejected=reject_authority_fields(request,{'role','company','admin_industry'})
+    if rejected is not None:return rejected
     with transaction.atomic():
         lock_governance(request.user)
         manager_guard(request.user)
@@ -674,6 +718,7 @@ def membership(request,user_id):
             return workspace_response(request,status=400,error='Choose an accessible project and a grant or revoke action.')
         data=form.cleaned_data
         from .company_service import grant_membership,revoke_membership
+        before=snapshot_membership(target,data['project'])
         try:
             if data['action']=='grant':
                 grant_membership(request.user,target,data['project'],data['make_primary'],expires_at=data.get('expires_at'))
@@ -681,7 +726,9 @@ def membership(request,user_id):
                 revoke_membership(request.user,target,data['project'])
         except ValidationError as exc:
             return workspace_response(request,status=400,error='; '.join(exc.messages))
-        audit(request.user,'project_membership_'+data['action'],data['project'],user_id=target.pk,primary_project_id=target.profile.project_id,expires_at=data['expires_at'].isoformat() if data.get('expires_at') else None)
+        after=snapshot_membership(target,data['project'])
+        audit(request.user,'project_membership_'+data['action'],data['project'],user_id=target.pk,primary_project_id=target.profile.project_id,expires_at=data['expires_at'].isoformat() if data.get('expires_at') else None,
+              **change_details(request.user,'membership',after['id'],before,after,project=data['project']))
     return redirect('governance_home')
 
 
@@ -698,10 +745,12 @@ def admin_industry(request,user_id):
         if not form.is_valid():return workspace_response(request,status=400,admin_industry_form=form,error='Choose an active industry.')
         profile=Profile.objects.select_for_update().get(user=target)
         previous=profile.admin_industry_id
+        before=snapshot_user(target)
         profile.admin_industry=form.cleaned_data['admin_industry']
         profile.admin_industry_pending=False
         profile.save(update_fields=['admin_industry','admin_industry_pending'])
-        audit(request.user,'admin_industry_bound',administrator_id=target.pk,industry_id=profile.admin_industry_id,previous_industry_id=previous)
+        audit(request.user,'admin_industry_bound',administrator_id=target.pk,industry_id=profile.admin_industry_id,previous_industry_id=previous,
+              **change_details(request.user,'user',target.pk,before,snapshot_user(target)))
     return redirect('governance_home')
 
 
@@ -721,7 +770,9 @@ def project_client(request,project_id):
         form=ProjectClientForm(request.POST,actor=request.user,project=project)
         if not form.is_valid():return workspace_response(request,status=400,error='Choose a Client organization from your company and industry.')
         previous=project.client_organization_id
+        before=snapshot_project(project)
         project.client_organization=form.cleaned_data['client_organization']
         project.save(update_fields=['client_organization'])
-        audit(request.user,'project_client_assigned',project,client_organization_id=project.client_organization_id,previous_client_organization_id=previous)
+        audit(request.user,'project_client_assigned',project,client_organization_id=project.client_organization_id,previous_client_organization_id=previous,
+              **change_details(request.user,'project',project.pk,before,snapshot_project(project),project=project))
     return redirect('governance_home')
