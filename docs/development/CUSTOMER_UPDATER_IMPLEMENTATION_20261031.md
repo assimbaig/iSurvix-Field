@@ -46,7 +46,7 @@ rejection, an unrecovered request bypass, the disposable hard-interruption hook,
 and owner revocation after a slow offline image load. No assertion was loosened
 to obtain green. Test-only fixture writes preserve Windows file bytes/hashes.
 
-Final focused run: **16 passed in19.981s, zero failed, errored or skipped**.
+Final focused run: **22 passed in28.235s, zero failed, errored or skipped**.
 The runner recorded zero external network attempts and zero HTTP fixture calls.
 Tests use real disposable SQLite/media and the actual backup/restore helper;
 Docker is controlled. Signature compatibility is compared against the real
@@ -58,7 +58,26 @@ interruption/recovery, activation uncertainty and two successive updates.
 Private receipts are under `.local/customer-server-20261031/package/`:
 `updater-red.log`, `updater-recovery-red.log`, `updater-second-upgrade-red.log`,
 `updater-recovery-boundary-red.log`, `updater-fresh-authority-red.log` and
-`updater-green6.log`. Help and whitespace checks passed.
+`updater-green6.log`. Independent functional QA then found a false completion
+when the candidate web was healthy but its proxy had exited. Three tracked RED
+regressions reproduced stopped/unhealthy candidate proxy, failed TLS readiness
+and false recovery with an unhealthy original proxy. The repaired bounded check
+requires running/healthy proxy and actual private-LAN TLS readiness with validated
+host/certificate and exact release before completion or rollback success.
+`updater-proxy-readiness-red.log` and `updater-proxy-readiness-green.log` preserve
+this loop. Ordinary tests explicitly control Docker and listener I/O; actual
+TLS integration is the separate Linux rehearsal. Help and whitespace checks passed.
+
+A further executed RED reproduced the ACK1-withdrawal race leaving the independent
+journal blocked after the website had authoritatively cancelled the request.
+Recovery now performs a fixed read-only local-container ORM query with a separate
+UUID argv, requires exact immutable bindings and failed/cancelled sequence1,
+checks current source web/proxy/TLS, and closes only the pre-stop host journal as
+`cancelled`. It does not alter the database, conflict receipt, audit or source
+service state; no completed/rolled-back application event is invented. Replay is
+idempotent and a subsequent valid request proceeds. Unknown states, changed nonce
+and unhealthy source remain gated. Receipts:
+`updater-cancelled-recovery-red.log` and `updater-cancelled-final-green.log`.
 
 ## Remaining verification/operational limits
 
@@ -67,9 +86,9 @@ recovery, full integrated regression and physical customer-server/second-LAN
 device acceptance are separate gates. Docker/WSL are unavailable on this PC.
 An ordinary controlled-Docker test does not establish those outcomes.
 
-Pre-first-applying receipt conflicts and post-activation uncertainty need operator
-reconciliation; the helper refuses to guess at revoked authority or potential
-new writes. External/unmanaged writer quiescence remains an explicit operator
+Unknown pre-first-applying receipt conflicts and post-activation uncertainty need
+operator reconciliation. Exact terminal cancellation has the verified no-op
+recovery above; other authority states are not guessed. External/unmanaged writer quiescence remains an explicit operator
 responsibility. Only exact independently tested source commit pairs may appear
 in the release support list. Legacy releases lacking the bridge are unsupported
 by automatic updates. Windows-to-Linux absolute historical output paths are not

@@ -57,6 +57,16 @@ catalog={'format':'isurvix-update-catalog-v1','releases':[{'release_id':data['re
 PY
 # No Git/network, image build, pip, model download or registry pull below here.
 python "$helper" load --package "$work/source-package" --acknowledge-draft > "$work/source-load.json"
+# The already-installed baseline verifier checks candidate bytes BEFORE its
+# reviewed host tooling is used. The proof records the host-tool version too.
+python "$work/source-package/release/deploy/customer/customer.py" verify --package "$output/package" --manifest-sha256 "$(sha256sum "$output/package/manifest.json" | cut -d' ' -f1)" > "$work/pre-execution-verification.json"
+python - "$repository" "$output/package" <<'PY'
+from pathlib import Path
+import hashlib,sys
+source,package=map(Path,sys.argv[1:])
+for name in ('deploy/customer/updater.py','deploy/customer/customer.py'):
+    assert hashlib.sha256((source/name).read_bytes()).digest()==hashlib.sha256((package/'release'/name).read_bytes()).digest()
+PY
 sudo /usr/bin/python3 "$helper" prepare --package "$work/source-package" --runtime "$work/runtime" --host customer.example.test --lan-ip 172.28.33.1 --secret-file "$output/private/django-secret" --tls-directory "$output/tls" --update-directory "$updates" --acknowledge-draft > "$work/prepare.json"
 sudo /usr/bin/python3 "$helper" initialize --package "$work/source-package" --runtime "$work/runtime" --acknowledge-draft > "$work/initialize.json"
 project="$(python - "$work/runtime" <<'PY'
@@ -148,6 +158,6 @@ target=upgrade_fixture.assert_retained(before,work/'target-success/data/database
 first=json.loads((work/'success-result.json').read_text());repeat=json.loads((work/'repeat-result.json').read_text())
 assert first==repeat and first['status']=='completed' and first['release_id']==sys.argv[5]
 manifest=json.loads((package/'manifest.json').read_text())
-result={'release':sys.argv[5],'supported_from':[sys.argv[4]],'images':manifest['images'],'manifest_sha256':hashlib.sha256((package/'manifest.json').read_bytes()).hexdigest(),'upgrade_recovery_verified':True,'caught_failure_rolled_back':True,'interrupted_process_recovered':True,'replay_idempotent':True,'source_retention':source,'target_retention':target,'authenticated_updated_client':json.loads((work/'updated-client.json').read_text()),'earlier_schema_0056_automatic_update_supported':False,'native_ai_tested':False,'customer_deployed':False}
+result={'release':sys.argv[5],'supported_from':[sys.argv[4]],'installed_verifier_source':sys.argv[4],'reviewed_host_updater_source':sys.argv[5],'images':manifest['images'],'manifest_sha256':hashlib.sha256((package/'manifest.json').read_bytes()).hexdigest(),'upgrade_recovery_verified':True,'caught_failure_rolled_back':True,'interrupted_process_recovered':True,'replay_idempotent':True,'source_retention':source,'target_retention':target,'authenticated_updated_client':json.loads((work/'updated-client.json').read_text()),'earlier_schema_0056_automatic_update_supported':False,'native_ai_tested':False,'customer_deployed':False}
 (work/'upgrade-verification.json').write_text(json.dumps(result,indent=2))
 PY

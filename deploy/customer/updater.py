@@ -8,10 +8,13 @@ import argparse
 from contextlib import contextmanager
 import hashlib
 import hmac
+from http.client import HTTPException, HTTPResponse
 import json
 import os
 from pathlib import Path
 import re
+import socket
+import ssl
 import stat
 import sys
 import time
@@ -33,7 +36,17 @@ REQUEST_FIELDS = {'format', 'request_id', 'request_key', 'source_release', 'targ
     'release_record_sha256', 'issued_at', 'expires_at'}
 BINDINGS = ('request_id', 'source_release', 'target_release', 'manifest_sha256',
             'catalog_sha256', 'edition', 'nonce')
-TERMINAL = {'completed', 'rolled_back'}
+TERMINAL = {'completed', 'rolled_back', 'cancelled'}
+REQUEST_STATE_SCRIPT = """# ISURVIX_REQUEST_STATE_V1: fixed read-only host recovery query
+import django,json,sys
+django.setup()
+from core.update_models import ServerUpdateRequest
+r=ServerUpdateRequest.objects.get(pk=sys.argv[1])
+print(json.dumps({'request_id':str(r.pk),'source_release':r.source_release,
+'target_release':r.target_release,'manifest_sha256':r.manifest_sha256,
+'catalog_sha256':r.catalog_sha256,'edition':r.edition,'nonce':r.nonce,
+'status':r.status,'error_code':r.error_code,'last_sequence':r.last_sequence},sort_keys=True))
+"""
 
 
 def canonical(value):
@@ -163,6 +176,23 @@ def _container(package, runtime, state, *args):
     return customer._docker(*_compose(package, runtime, state), 'exec', '-T', 'web', *args)
 
 
+def _cancelled_request(package, runtime, state, payload):
+    # Only the fixed installed-app ORM query runs; the UUID is a separate argv
+    # value, never interpolated as Python or shell text. No write is performed.
+    raw = _container(package, runtime, state, 'python', '-c', REQUEST_STATE_SCRIPT, payload['request_id'])
+    if len(raw) > 16384:
+        raise ValueError('The installed application returned an oversized request state.')
+    try:
+        value = json.loads(raw)
+    except (ValueError, UnicodeError):
+        raise ValueError('The installed application could not establish terminal cancellation.') from None
+    expected = {key: payload[key] for key in BINDINGS}
+    expected.update(status='failed', error_code='cancelled', last_sequence=1)
+    if value != expected:
+        raise ValueError('The installed request is not the exact terminal owner cancellation; preserve the journal for recovery.')
+    return value
+
+
 def _catalog(update_directory, payload):
     path = Path(update_directory)/'catalog.json'
     if customer._digest(path)['sha256'] != payload['catalog_sha256']:
@@ -236,6 +266,59 @@ def _health(package, runtime, state, release):
         except ValueError:
             if attempt == 29:
                 raise
+            time.sleep(1)
+
+
+def _probe_listener(state, release):
+    """Check the actual private-LAN TLS listener, host identity and app release.
+
+    Connecting directly to the validated LAN IP avoids DNS/proxy redirection;
+    SNI and certificate hostname validation still use the configured host. Only
+    this process trusts the operator-provided certificate chain. No system trust
+    store, certificate, server configuration or uploaded evidence is modified.
+    """
+    values = state['values']
+    address = customer.validate_lan_address(values['ISURVIX_LAN_IP'])
+    host = values['STAGING_HOST']
+    if not isinstance(host, str) or not re.fullmatch(r'[A-Za-z0-9.-]{1,253}', host):
+        raise ValueError('The private listener host is invalid.')
+    certificate = customer._private_input(Path(values['ISURVIX_TLS_DIRECTORY'])/'fullchain.pem')
+    try:
+        context = ssl.create_default_context()
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_verify_locations(cafile=str(certificate))
+        if hasattr(ssl, 'VERIFY_X509_PARTIAL_CHAIN'):
+            context.verify_flags |= ssl.VERIFY_X509_PARTIAL_CHAIN
+        with socket.create_connection((address, 8443), timeout=3) as raw:
+            with context.wrap_socket(raw, server_hostname=host) as secured:
+                secured.sendall(('GET /ops/health/ready/ HTTP/1.1\r\nHost: '+host+
+                                 ':8443\r\nConnection: close\r\n\r\n').encode('ascii'))
+                response = HTTPResponse(secured)
+                response.begin()
+                body = response.read(16385)
+                if response.status != 200 or len(body) > 16384:
+                    raise ValueError()
+                value = json.loads(body)
+                if not isinstance(value, dict) or value.get('status') != 'ready' or value.get('release') != release:
+                    raise ValueError()
+    except (OSError, HTTPException, ValueError, UnicodeError):
+        raise ValueError('The private TLS listener did not confirm readiness for this exact release.') from None
+
+
+def _proxy_health(package, runtime, state, release):
+    """A healthy backend alone is not a reachable customer service."""
+    for attempt in range(30):
+        try:
+            raw = customer._docker(*_compose(package, runtime, state), 'ps', '--all', '--format', 'json', 'proxy').decode('utf-8').strip()
+            rows = json.loads(raw) if raw.startswith('[') else [json.loads(line) for line in raw.splitlines() if line]
+            proxies = [row for row in rows if isinstance(row, dict) and row.get('Service') == 'proxy']
+            if len(proxies) != 1 or proxies[0].get('State') != 'running' or proxies[0].get('Health') != 'healthy':
+                raise ValueError('The proxy is absent, stopped or unhealthy.')
+            _probe_listener(state, release)
+            return
+        except (ValueError, OSError, UnicodeError, TypeError):
+            if attempt == 29:
+                raise ValueError('The private proxy/TLS listener did not become ready within the bounded wait.') from None
             time.sleep(1)
 
 
@@ -439,6 +522,7 @@ def apply_update(*, installed_package, installed_runtime, update_directory, pack
             customer._docker(*_compose(candidate, paths['target_runtime'], candidate_state),
                              'up', '-d', '--pull', 'never', '--no-build', 'proxy')
             _health(candidate, paths['target_runtime'], candidate_state, payload['target_release'])
+            _proxy_health(candidate, paths['target_runtime'], candidate_state, payload['target_release'])
             # The backup was taken after applying2 ACK. Candidate DB contains
             # that sequence/nonce, so completed3 cannot skip status history.
             _receipt(transaction, state, secret, 'completed', payload['target_release'],
@@ -466,8 +550,16 @@ def apply_update(*, installed_package, installed_runtime, update_directory, pack
                     _phase(transaction, state, 'recovery_required')
                     _receipt(transaction, state, secret, 'failed', payload['source_release'], 'recovery_required')
                     return state['result']
-            customer.run_action(source_package, source_runtime, 'start', acknowledge_draft=True)
-            _health(source_package, source_runtime, source_state, payload['source_release'])
+            try:
+                customer.run_action(source_package, source_runtime, 'start', acknowledge_draft=True)
+                _health(source_package, source_runtime, source_state, payload['source_release'])
+                _proxy_health(source_package, source_runtime, source_state, payload['source_release'])
+            except (ValueError, OSError, KeyError, UnicodeError):
+                state['result'] = _result(state, 'failed', payload['source_release'], 'recovery_required')
+                _phase(transaction, state, 'recovery_required')
+                _receipt(transaction, state, secret, 'failed', payload['source_release'], 'recovery_required',
+                         acknowledge=(source_package, source_runtime, source_state))
+                return state['result']
             _receipt(transaction, state, secret, 'failed', payload['source_release'], error_code,
                      acknowledge=(source_package, source_runtime, source_state))
             _receipt(transaction, state, secret, 'rolled_back', payload['source_release'], error_code,
@@ -502,7 +594,7 @@ def recover_update(*, installed_package, installed_runtime, update_directory, pa
             return state['result']
         if state.get('phase') in ('activation_started', 'activation_uncertain'):
             raise ValueError('Possible activation writes require explicit data reconciliation; automatic rollback is refused.')
-        if state.get('phase') not in {'stopping-writers', 'backing-up', 'restoring', 'migrating', 'checking-candidate', 'recovery_required'}:
+        if state.get('phase') not in {'verified-package', 'stopping-writers', 'backing-up', 'restoring', 'migrating', 'checking-candidate', 'recovery_required'}:
             raise ValueError('This journal phase needs manual receipt/authority reconciliation before recovery.')
         source_package, source_runtime = paths['installed_package'], paths['installed_runtime']
         source_manifest, source_state = customer._runtime(source_package, source_runtime)
@@ -510,12 +602,27 @@ def recover_update(*, installed_package, installed_runtime, update_directory, pa
         payload = verify_request(state['request'], secret, request_id, check_expiry=False)
         if payload['source_release'] != source_manifest['release_id']:
             raise ValueError('The preserved source differs from the independent journal.')
+        if state['phase'] == 'verified-package':
+            # Withdrawal can occupy application sequence1 after host export but
+            # before verified1 ACK. No writer-stop phase has been entered. The
+            # conflicting host receipt is retained; no replacement or invented
+            # completed/rolled-back application event is produced.
+            if state.get('sequence') != 1 or state.get('last_status') != 'verified' or paths['target_runtime'].exists():
+                raise ValueError('Pre-ACK recovery requires an exact untouched cancellation; other authority states need reconciliation.')
+            proof = _cancelled_request(source_package, source_runtime, source_state, payload)
+            _health(source_package, source_runtime, source_state, payload['source_release'])
+            _proxy_health(source_package, source_runtime, source_state, payload['source_release'])
+            _atomic(transaction/'cancellation-proof.json', proof)
+            state['result'] = _result(state, 'cancelled', payload['source_release'], 'cancelled')
+            _phase(transaction, state, 'cancelled')
+            return state['result']
         if paths['target_runtime'].exists():
             candidate, _ = _package(paths['packages_root'], payload)
             _, candidate_state = customer._runtime(candidate, paths['target_runtime'])
             _stopped(candidate, paths['target_runtime'], candidate_state)
         customer.run_action(source_package, source_runtime, 'start', acknowledge_draft=True)
         _health(source_package, source_runtime, source_state, payload['source_release'])
+        _proxy_health(source_package, source_runtime, source_state, payload['source_release'])
         # Replay every immutable receipt in order. The backend may already be
         # ahead of an earlier replay, but only a matching later journaled state
         # is accepted; a withdrawal/cancelled event cannot silently authorize it.

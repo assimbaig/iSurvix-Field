@@ -67,7 +67,12 @@ It creates a verified quiesced SQLite/media snapshot, restores into the new
 runtime, migrates only that copy, checks retained human/application rows and
 evidence digests, starts only internal candidate web, then checks readiness and
 baked release identity. It durably records `activation_started` **before** opening
-the candidate proxy. Only a server-confirmed completion receipt yields
+the candidate proxy. Completion additionally requires the proxy to be running and
+healthy and an actual TLS request through its private-LAN listener to confirm
+readiness for the exact release. The process uses the configured host for SNI and
+certificate hostname checks and the supplied certificate chain for local trust;
+it connects directly to the validated LAN IP, without DNS or environment proxies.
+Only a server-confirmed completion receipt yields
 `completed`. The same completed request returns its durable result without
 rerunning Docker or creating another target.
 
@@ -79,7 +84,7 @@ root. A different request cannot bypass an unrecovered host transaction.
 ## Failure and interrupted-process recovery
 
 A pre-activation migration, integrity or health failure preserves the candidate
-and backup, restarts the old source, verifies its health and records failed then
+and backup, restarts the old source, verifies web and proxy/TLS readiness and records failed then
 rolled-back receipts. `apply` returns a JSON result; its exit code is zero only
 for `completed`, otherwise two. Consult the safe error code and private journal.
 Do not publish raw DBs, backups, account hashes or Docker logs.
@@ -100,13 +105,27 @@ idempotent. This version returns two for the rolled-back result, including an
 intentional successful recovery; inspect JSON `status` rather than calling it
 a completed upgrade.
 
+A healthy internal web process without a reachable, healthy TLS proxy is not
+successful service recovery. The journal retains `recovery_required` instead of
+claiming rollback succeeded. Candidate proxy failure after activation remains
+`activation_uncertain`; the old service is not automatically restarted.
+
 `activation_started` or `activation_uncertain` requires operator data
 reconciliation. **Do not restart the old proxy or discard either runtime**:
 the target may already contain new writes. Automatic rollback is refused.
 Preserve both data trees, backup, exact images and root journal; identify the
 authoritative current dataset, make a new verified backup and obtain a reviewed
-recovery plan. Receipt/authority conflicts before the first acknowledged applying
-phase also require operator reconciliation rather than bypassing withdrawal.
+recovery plan.
+
+If withdrawal occupied application sequence1 before the host's verified1
+acknowledgement, `recover` can close the host transaction as an authoritative
+`cancelled` no-op. It requires the untouched pre-stop journal phase, no candidate
+runtime, the exact current application request bindings, terminal
+`failed/cancelled` at sequence1, and healthy original web/proxy/TLS. The original
+conflicting host receipt and withdrawal audit are preserved. No writer is
+stopped/started and no completed or rolled-back application receipt is invented.
+The terminal host record then permits a later new authorized request. Unknown,
+mismatched or unhealthy-source cases stay gated for operator reconciliation.
 
 ## Verification limits
 

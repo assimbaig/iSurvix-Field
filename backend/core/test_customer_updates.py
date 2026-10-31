@@ -82,7 +82,7 @@ class CustomerUpdateTests(SimpleTestCase):
             'edition': 'customer', 'nonce': 'e'*32, 'maintenance_confirmed': True,
             'release_record_sha256': '', 'issued_at': now, 'expires_at': now+300}
         self.calls = []
-        self.running = {}
+        self.running = {self.source_runtime: True}
         self.fail_migration = False
         self.fail_activation = False
         self.withdrawn = False
@@ -91,6 +91,11 @@ class CustomerUpdateTests(SimpleTestCase):
         self.interrupt_migration = False
         self.revoke_after_image_load = False
         self.images_loaded = False
+        self.bad_proxy_target = False
+        self.bad_proxy_source = False
+        self.bad_tls_target = False
+        self.listener_probes = []
+        self.request_state_overrides = {}
 
     def bundle(self, destination, release):
         (destination/'release/deploy/customer').mkdir(parents=True)
@@ -133,6 +138,13 @@ class CustomerUpdateTests(SimpleTestCase):
             if self.revoke_after_image_load and self.images_loaded:
                 raise ValueError('Controlled requester revocation after package verification.')
             return json.dumps(self.signed()).encode()
+        if '-c' in args and 'ISURVIX_REQUEST_STATE_V1' in args[args.index('-c')+1]:
+            value = {key: self.payload[key] for key in self.updater.BINDINGS}
+            value.update(status='failed' if self.withdrawn else 'pending',
+                         error_code='cancelled' if self.withdrawn else '',
+                         last_sequence=1 if self.withdrawn else 0)
+            value.update(self.request_state_overrides)
+            return json.dumps(value).encode()
         if 'receipt' in args:
             if self.withdrawn:
                 raise ValueError('Controlled withdrawal: acknowledgement denied.')
@@ -142,7 +154,13 @@ class CustomerUpdateTests(SimpleTestCase):
         if 'stop' in args:
             self.running[runtime] = False
         if 'ps' in args:
-            return json.dumps([{'Service': 'web', 'State': 'running' if self.running.get(runtime) else 'exited'}]).encode()
+            active = self.running.get(runtime, False)
+            bad_proxy = self.bad_proxy_source if runtime == self.source_runtime else self.bad_proxy_target
+            rows = [{'Service': 'web', 'State': 'running' if active else 'exited',
+                     'Health': 'healthy' if active else ''},
+                    {'Service': 'proxy', 'State': 'running' if active and not bad_proxy else 'exited',
+                     'Health': 'healthy' if active and not bad_proxy else 'unhealthy'}]
+            return json.dumps(rows).encode()
         if 'up' in args:
             if 'proxy' in args and self.fail_activation:
                 raise ValueError('Controlled uncertain proxy activation.')
@@ -163,8 +181,14 @@ class CustomerUpdateTests(SimpleTestCase):
             return (release+'\n').encode()
         return b''
 
+    def probe(self, state, release):
+        self.listener_probes.append(release)
+        if self.bad_tls_target and release == self.target:
+            raise ValueError('Controlled TLS listener failure.')
+
     def apply(self, action='apply'):
-        with patch.object(self.updater.customer, '_docker', side_effect=self.docker), patch.object(self.updater.time, 'sleep'):
+        with patch.object(self.updater.customer, '_docker', side_effect=self.docker), patch.object(self.updater.time, 'sleep'), \
+                patch.object(self.updater, '_probe_listener', side_effect=self.probe, create=True):
             operation = self.updater.apply_update if action == 'apply' else self.updater.recover_update
             return operation(installed_package=self.source_package,
                 installed_runtime=self.source_runtime, update_directory=self.updates,
@@ -376,3 +400,80 @@ class CustomerUpdateTests(SimpleTestCase):
         with self.assertRaises(ValueError): self.apply()
         self.assertFalse(any('stop' in call for call in self.calls))
         self.assertFalse(self.target_runtime.exists())
+
+    def test_unhealthy_or_exited_proxy_never_reports_completed_after_activation(self):
+        self.bad_proxy_target = True
+        result = self.apply()
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(result['error_code'], 'activation_uncertain')
+        self.assertFalse(self.running.get(self.source_runtime, False))
+        self.assertTrue(self.target_runtime.exists())
+        records = sorted((self.updates/'receipts'/self.request_id).glob('*.json'))
+        self.assertNotIn('completed', [json.loads(path.read_text())['payload']['status'] for path in records])
+
+    def test_healthy_proxy_without_verified_tls_readiness_is_activation_uncertain(self):
+        self.bad_tls_target = True
+        result = self.apply()
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(result['error_code'], 'activation_uncertain')
+        self.assertIn(self.target, self.listener_probes)
+        self.assertFalse(self.running.get(self.source_runtime, False))
+
+    def test_rollback_cannot_claim_recovery_when_original_proxy_is_unhealthy(self):
+        self.fail_migration = True
+        self.bad_proxy_source = True
+        result = self.apply()
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(result['error_code'], 'recovery_required')
+        records = sorted((self.updates/'receipts'/self.request_id).glob('*.json'))
+        self.assertNotIn('rolled_back', [json.loads(path.read_text())['payload']['status'] for path in records])
+
+    def test_ack1_withdrawal_recovers_as_authoritative_cancelled_noop_then_allows_new_request(self):
+        self.withdrawn = True
+        with self.assertRaises(ValueError): self.apply()
+        receipt = self.updates/'receipts'/self.request_id/'000001.json'
+        original_receipt = receipt.read_bytes()
+        original_database = (self.source_runtime/'data/database.sqlite3').read_bytes()
+        before = len(self.calls)
+        result = self.apply(action='recover')
+        self.assertEqual(result['status'], 'cancelled')
+        self.assertEqual(result['error_code'], 'cancelled')
+        self.assertEqual(result['release_id'], self.source)
+        self.assertEqual(receipt.read_bytes(), original_receipt, 'Preserve the immutable conflict receipt for audit.')
+        self.assertEqual((self.source_runtime/'data/database.sqlite3').read_bytes(), original_database)
+        self.assertFalse(any('stop' in command or 'up' in command for command in self.calls[before:]))
+        self.assertFalse(self.target_runtime.exists())
+        replay_before = len(self.calls)
+        self.assertEqual(self.apply(action='recover'), result)
+        self.assertEqual(len(self.calls), replay_before)
+        self.withdrawn = False
+        self.request_id = str(uuid.uuid4())
+        self.payload['request_id'] = self.request_id
+        self.payload['request_key'] = str(uuid.uuid4())
+        self.assertEqual(self.apply()['status'], 'completed')
+
+    def test_pre_ack_recovery_rejects_unknown_or_mismatched_application_state(self):
+        self.withdrawn = True
+        with self.assertRaises(ValueError): self.apply()
+        self.withdrawn = False  # A timeout is not evidence of cancellation.
+        before = len(self.calls)
+        with self.assertRaises(ValueError): self.apply(action='recover')
+        self.assertFalse(any('stop' in command or 'up' in command for command in self.calls[before:]))
+        state = json.loads((self.journals/self.request_id/'journal.json').read_text())
+        self.assertEqual(state['phase'], 'verified-package')
+        self.assertFalse(self.target_runtime.exists())
+        self.withdrawn = True
+        self.request_state_overrides = {'nonce': 'f'*32}
+        with self.assertRaises(ValueError): self.apply(action='recover')
+        self.assertFalse(any('stop' in command or 'up' in command for command in self.calls[before:]))
+
+    def test_cancelled_noop_requires_healthy_current_source_without_starting_it(self):
+        self.withdrawn = True
+        with self.assertRaises(ValueError): self.apply()
+        self.bad_proxy_source = True
+        before = len(self.calls)
+        with self.assertRaises(ValueError): self.apply(action='recover')
+        self.assertFalse(any('stop' in command or 'up' in command for command in self.calls[before:]))
+        state = json.loads((self.journals/self.request_id/'journal.json').read_text())
+        self.assertEqual(state['phase'], 'verified-package')
+        self.assertFalse((self.journals/self.request_id/'cancellation-proof.json').exists())
