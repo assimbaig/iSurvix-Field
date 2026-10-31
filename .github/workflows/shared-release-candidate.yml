@@ -61,7 +61,33 @@ jobs:
           RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python deploy/release_gate.py check --repository "$GITHUB_REPOSITORY" --release-id "$RELEASE_SHA" --output "$RUNNER_TEMP/gate-final.json"
       - name: Bind proven upgrade support and both editions to the same image
-        run: python deploy/release_gate.py record --package "$RUNNER_TEMP/shared/package" --gate "$RUNNER_TEMP/gate.json" --fresh-gate "$RUNNER_TEMP/gate-final.json" --verification "$RUNNER_TEMP/proof/verification.json" --output "$RUNNER_TEMP/shared/release.json"
+        run: |
+          mkdir "$RUNNER_TEMP/shared/shared"
+          python deploy/release_gate.py record --package "$RUNNER_TEMP/shared/package" --gate "$RUNNER_TEMP/gate.json" --fresh-gate "$RUNNER_TEMP/gate-final.json" --verification "$RUNNER_TEMP/proof/verification.json" --output "$RUNNER_TEMP/shared/shared/release.json"
+      - name: Verify the produced artifact with the actual customer consumer
+        run: |
+          python - <<'PY'
+          import hashlib,importlib.util,json,os,shutil
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          artifact=root/'shared'
+          record=json.loads((artifact/'shared/release.json').read_text())
+          parent=root/'consumer-check'
+          parent.mkdir(mode=0o700)
+          # Hard-link only immutable CI artifacts; no runtime or customer files.
+          release=parent/record['source_commit']
+          shutil.copytree(artifact,release,copy_function=os.link)
+          spec=importlib.util.spec_from_file_location('installed_update_consumer','deploy/customer/updater.py')
+          consumer=importlib.util.module_from_spec(spec);spec.loader.exec_module(consumer)
+          payload={'target_release':record['source_commit'],'source_release':record['supported_from'][0],
+              'manifest_sha256':record['manifest_sha256'],'edition':'customer',
+              'release_record_sha256':hashlib.sha256((release/'shared/release.json').read_bytes()).hexdigest()}
+          package,manifest=consumer._package(parent,payload)
+          assert package==release/'package' and manifest['images']==record['images']
+          (artifact/'consumer-verification.json').write_text(json.dumps({'source_commit':record['source_commit'],
+              'manifest_sha256':record['manifest_sha256'],'static_customer_consumer_verified':True,
+              'docker_execution_in_this_step':False,'owner_release_approved':False},indent=2))
+          PY
       - name: Publish only the gated draft artifact; no release, merge or deployment
         uses: actions/upload-artifact@v4
         with:

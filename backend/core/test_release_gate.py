@@ -177,3 +177,38 @@ class SharedReleaseHTTPIntegration(SimpleTestCase):
                 self.gate.fetch_verified(REPO, SHA, 'synthetic-actions-read-token')
             self.assertEqual(json.loads(target.read_text()), saved)
             self.assertTrue(all('head_sha=' + SHA in path for path in state['paths']))
+
+
+class SharedArtifactConsumerIntegration(SimpleTestCase):
+    """The artifact layout emitted by CI must be consumable by the real updater."""
+    def setUp(self):
+        from . import test_customer_updates as fixtures
+        self.bundle = fixtures.CustomerUpdateTests.bundle.__get__(self)
+        self.catalog_write = fixtures.CustomerUpdateTests.catalog_write.__get__(self)
+        fixtures.CustomerUpdateTests.setUp(self)
+
+    def test_workflow_produced_release_record_is_found_by_customer_package_verifier(self):
+        gate = module()
+        workflow = (ROOT / '.github/workflows/shared-release-candidate.yml').read_text(encoding='utf-8')
+        import re
+        match = re.search(r'--output "\$RUNNER_TEMP/shared/([^"\s]+)"', workflow)
+        self.assertIsNotNone(match, 'The actual artifact producer must name its release-record output.')
+        relative = Path(match.group(1))
+        self.assertFalse(relative.is_absolute())
+        self.assertNotIn('..', relative.parts)
+        checks = gate.verified_runs([dict(id=index, run_number=index, run_attempt=1, head_sha=self.target,
+            path=path, status='completed', conclusion='success', updated_at='2026-10-31T10:00:00Z',
+            head_repository={'full_name': REPO}) for index, path in enumerate(gate.REQUIRED_WORKFLOWS, 1)], self.target, REPO)
+        manifest = self.updater.customer.verify_package(self.target_package)
+        digest = self.updater.customer._digest(self.target_package / 'manifest.json')['sha256']
+        proof = {'release': self.target, 'fresh_install': True, 'runtime_image_pulls': 0,
+                 'restart_preserved_db_and_media': True, 'upgrade_recovery_verified': True,
+                 'supported_from': [self.source], 'images': manifest['images'], 'manifest_sha256': digest}
+        record = gate.release_record(manifest, digest, checks, proof)
+        path = self.packages / self.target / relative
+        path.parent.mkdir(exist_ok=True)
+        gate.publish_record(path, record)
+        self.payload['release_record_sha256'] = self.updater.customer._digest(path)['sha256']
+        found, observed = self.updater._package(self.packages, self.payload)
+        self.assertEqual(found, self.target_package)
+        self.assertEqual(observed['images'], record['images'])
