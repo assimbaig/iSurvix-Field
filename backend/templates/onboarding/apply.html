@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}Record company application · iSurvix{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/onboarding.css' %}">{% endblock %}
+{% block content %}<main class="onboarding"><a href="{% url 'company_onboarding' %}">Back to company onboarding</a><h1>Record company application</h1><p>Platform-owner intake for a received application. This does not create an account, grant access or send email.</p><form method="post" class="onboarding-form">{% csrf_token %}{{ form.as_p }}<button type="submit">Record for review</button></form></main>{% endblock %}

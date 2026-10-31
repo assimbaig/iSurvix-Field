@@ -1,5 +1,19 @@
 # iSurvix Field: local Codex development brief
 
+## Latest: company onboarding - 31 October 2026
+
+Owner narrowed current development to Company access only (task06). Staging
+(tasks07-09), AI settings and pilot work are not active. Work is isolated in
+`.local/b3`, branch `feat/company-onboarding-20261031`. Task05 code is
+committed as81982db, draft PR26: https://github.com/assimbaig/iSurvix-Field/pull/26 .
+Its full suite ran1323:1322passed, zero failures, one unchanged Windows symlink
+privilege fixture error;19 frontend checks and independent QA/AppSec passed
+within documented scope. See PLATFORM_CUSTOMER_ADMIN_IMPLEMENTATION_20261031.md.
+No operational migration/deployment or native AI request. PR25 merged upstream
+as7d69e57. Fresh checkpoint165639: consistent DB/source/Git verified and3595
+protected files matched. Preserve existing approval-held security findings.
+Task06 is not yet verified; independent QA and separate AppSec must finish.
+
 ## Latest: task04 company-boundary implementation - 28 October 2026
 
 Company implementation is isolated in `.local/b1`, branch
