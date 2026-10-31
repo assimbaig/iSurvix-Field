@@ -1,0 +1,12 @@
+.git
+.local
+**/.local
+**/.env
+**/.env.*
+**/media
+**/*.sqlite3*
+**/node_modules
+**/__pycache__
+**/venv
+**/.venv
+**/*.log
