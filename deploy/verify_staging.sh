@@ -85,6 +85,11 @@ compose run --rm --no-deps web python manage.py collectstatic --noinput
 compose run --rm --no-deps web python manage.py check --deploy --fail-level WARNING
 validate_host
 compose up -d --wait --wait-timeout 180
+published_port="$(compose port proxy 8443 || true)"
+[[ "$published_port" == 127.0.0.1:8443 ]] || {
+  printf '%s\n' 'The proxy is healthy but its intended loopback TLS port was not published.' >&2; exit 1;
+}
+printf 'Verified proxy ingress mapping: %s\n' "$published_port"
 probe() { curl --fail --silent --show-error --cacert "$runtime/tls/fullchain.pem" --resolve "$STAGING_HOST:8443:127.0.0.1" "https://$STAGING_HOST:8443$1"; }
 probe /ops/health/ready/ >"$runtime/ready-before.json"
 probe /static/core/css/onboarding.css >"$runtime/static-proof.css"
@@ -106,6 +111,7 @@ for name in ['ready-before.json','ready-after.json']:
  'core_0054_upgrade_preserved_company':True,'restart_preserved_db_and_original':True,
  'quiesced_backup_and_new_target_restore':True,
  'tls_readiness':True,'static_delivery':True,'private_media_direct_denied':True,
+ 'proxy_loopback_port_published':True,
  'native_ai_invoked':False,'production_or_vps_deployed':False},indent=2)+'\n')
 PY
 printf '%s\n' 'Disposable Linux deployment checks passed; this is not target-VPS or public-launch acceptance.'

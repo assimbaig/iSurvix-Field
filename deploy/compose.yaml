@@ -55,10 +55,13 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-    networks: [application]
+    networks: [ingress, application]
 secrets:
   django_secret_key:
     file: ${ISURVIX_SECRET_FILE:?Use a private existing secret file}
 networks:
+  ingress:
+    driver: bridge
+    internal: false
   application:
     internal: true

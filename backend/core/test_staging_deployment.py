@@ -193,6 +193,25 @@ class StagingReleaseToolTests(SimpleTestCase):
             self.assertTrue(mounts[0].startswith('/tmp:'),name)
             self.assertIn('size=',mounts[0])
 
+    def test_published_proxy_has_ingress_bridge_while_web_remains_internal_only(self):
+        import yaml
+        config=yaml.safe_load((ROOT/'deploy/compose.yaml').read_text())
+        networks=config['networks'];services=config['services']
+        published=[]
+        for name,service in services.items():
+            if service.get('ports'):
+                published.append(name)
+                # Docker does not publish host ports for an endpoint attached
+                # only to internal networks; container health can still be green.
+                self.assertTrue(any(not (networks.get(network) or {}).get('internal',False)
+                                    for network in service.get('networks',[])),name)
+                self.assertTrue(all(binding.startswith('127.0.0.1:') for binding in service['ports']),name)
+        self.assertEqual(published,['proxy'])
+        self.assertFalse(services['web'].get('ports'))
+        self.assertTrue(services['web']['networks'])
+        self.assertTrue(all((networks.get(network) or {}).get('internal',False)
+                            for network in services['web']['networks']))
+
     def test_disposable_host_validation_uses_explicit_privileged_readonly_context(self):
         # Linux CI reproduced runner EACCES after the intended private0700 data
         # directory was chowned to10001. Exercise actual helper invocations;
