@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 def count_unique(values):
-    return len(values)
+    return len(set(values))
 
 
 def main():
