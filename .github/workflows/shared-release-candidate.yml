@@ -5,6 +5,12 @@ on:
     paths:
       - 'deploy/**'
       - 'backend/core/update*'
+      - 'backend/core/support*'
+      - 'backend/core/test_support*'
+      - 'backend/templates/support/**'
+      - 'backend/static/core/css/support*'
+      - 'backend/static/core/js/support*'
+      - 'scripts/support_repair.py'
       - 'backend/core/test_update*'
       - 'backend/core/test_customer*'
       - 'backend/core/test_release*'
