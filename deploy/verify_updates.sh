@@ -64,7 +64,7 @@ python - "$repository" "$output/package" <<'PY'
 from pathlib import Path
 import hashlib,sys
 source,package=map(Path,sys.argv[1:])
-for name in ('deploy/customer/updater.py','deploy/customer/customer.py'):
+for name in ('deploy/customer/updater.py','deploy/customer/customer.py','deploy/customer/upgrade_fixture.py'):
     assert hashlib.sha256((source/name).read_bytes()).digest()==hashlib.sha256((package/'release'/name).read_bytes()).digest()
 PY
 sudo /usr/bin/python3 "$helper" prepare --package "$work/source-package" --runtime "$work/runtime" --host customer.example.test --lan-ip 172.28.33.1 --secret-file "$output/private/django-secret" --tls-directory "$output/tls" --update-directory "$updates" --acknowledge-draft > "$work/prepare.json"
@@ -159,14 +159,24 @@ print(json.dumps({'release':os.environ['EXPECTED_RELEASE'],'tls_verified':True,'
 PY
 sudo /usr/bin/python3 - "$repository" "$work" "$output/package" "$baseline" "$target" <<'PY'
 from pathlib import Path
-import hashlib,json,sys
+from contextlib import closing
+import hashlib,json,sqlite3,sys
 sys.path.insert(0,str(Path(sys.argv[1])/'deploy/customer'));import upgrade_fixture
 work,package=map(Path,sys.argv[2:4]);before=json.loads((work/'retained-before.private.json').read_text())
 source=upgrade_fixture.assert_retained(before,work/'runtime/data/database.sqlite3')
 target=upgrade_fixture.assert_retained(before,work/'target-success/data/database.sqlite3')
+def schema(database):
+    with closing(sqlite3.connect(database.absolute().as_uri()+'?mode=ro',uri=True)) as connection:
+        row=connection.execute("select name from django_migrations where app='core' order by name desc limit 1").fetchone()
+        assert row is not None
+        return row[0]
+compatibility=json.loads((Path(sys.argv[1])/'deploy/customer/supported-upgrades.json').read_text())
+source_schema=schema(work/'runtime/data/database.sqlite3')
+target_schema=schema(work/'target-success/data/database.sqlite3')
+assert source_schema==compatibility['source_schema'] and target_schema==compatibility['target_schema']
 first=json.loads((work/'success-result.json').read_text());repeat=json.loads((work/'repeat-result.json').read_text())
 assert first==repeat and first['status']=='completed' and first['release_id']==sys.argv[5]
 manifest=json.loads((package/'manifest.json').read_text())
-result={'release':sys.argv[5],'supported_from':[sys.argv[4]],'installed_verifier_source':sys.argv[4],'reviewed_host_updater_source':sys.argv[5],'images':manifest['images'],'manifest_sha256':hashlib.sha256((package/'manifest.json').read_bytes()).hexdigest(),'upgrade_recovery_verified':True,'caught_failure_rolled_back':True,'interrupted_process_recovered':True,'replay_idempotent':True,'source_retention':source,'target_retention':target,'authenticated_updated_client':json.loads((work/'updated-client.json').read_text()),'earlier_schema_0056_automatic_update_supported':False,'native_ai_tested':False,'customer_deployed':False}
+result={'release':sys.argv[5],'supported_from':[sys.argv[4]],'source_schema':source_schema,'target_schema':target_schema,'installed_verifier_source':sys.argv[4],'reviewed_host_updater_source':sys.argv[5],'images':manifest['images'],'manifest_sha256':hashlib.sha256((package/'manifest.json').read_bytes()).hexdigest(),'upgrade_recovery_verified':True,'caught_failure_rolled_back':True,'interrupted_process_recovered':True,'replay_idempotent':True,'source_retention':source,'target_retention':target,'authenticated_updated_client':json.loads((work/'updated-client.json').read_text()),'earlier_schema_0056_automatic_update_supported':False,'native_ai_tested':False,'customer_deployed':False}
 (work/'upgrade-verification.json').write_text(json.dumps(result,indent=2))
 PY

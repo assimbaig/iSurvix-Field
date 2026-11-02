@@ -1,7 +1,14 @@
 {
-  "updated_utc": "2026-10-31T18:33:20.071165+00:00",
-  "verified": 11,
-  "total": 21,
+  "updated_utc": "2026-11-02T16:12:44.016Z",
+  "verified": 16,
+  "total": 27,
+  "status_counts": {
+    "Verified": 16,
+    "Blocked": 9,
+    "Not started": 0,
+    "In progress": 2
+  },
+  "status_scope": "Verified is development acceptance, not public/customer release.",
   "rows": [
     {
       "ID": "01",
@@ -37,7 +44,7 @@
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Identify crash cause and pass real image tests on the target PC.",
-      "Notes / evidence / PR": "Historical Linux Python139 lacks native core/backtrace and failing build environment. Five Windows named regressions pass but do not identify cause. Standard Ollama500 missing runner; project runtime completed3 image requests but0/3 labels correct. No repair/installation performed. See A12_NATIVE_INVESTIGATION_20261028."
+      "Notes / evidence / PR": "Investigation report exists, but original acceptance is not met: historical A12 root cause remains unestablished and last recorded source-backed native image-label checks passed0/3. Five named Windows regressions passed; this is not native accuracy proof. No fresh Ollama call or repair in this status audit. See A12_NATIVE_INVESTIGATION_20261028.md."
     },
     {
       "ID": "04",
@@ -80,24 +87,24 @@
       "Phase": "2",
       "Phase Name": "Cloud staging",
       "Task": "Prepare a reproducible production deployment",
-      "Status": "Blocked",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Clean staging install, restart and upgrade pass. Private media stays protected.",
-      "Notes / evidence / PR": "Deployment package implemented; actual disposable Linux CI41214056349 passed clean install,0054->0055 upgrade,TLS/static/media-denial,backup/restore and restart.20focused tests. Target VPS/private DNS/TLS access and security approvals still unavailable. Draft PR28 https://github.com/assimbaig/iSurvix-Field/pull/28; implementation7e88049. No target deployment."
+      "Notes / evidence / PR": "Rechecked original software acceptance: actual Linux clean installation, schema upgrade, restart, TLS and private-media controls passed; latest b86b8a2 staging CI41230120300 passed. Done for development acceptance. Earlier Blocked label included additional target/public-launch gates; these remain separately under09/15. No actual VPS deployment or security waiver. PR28/PR30."
     },
     {
       "ID": "08",
       "Phase": "2",
       "Phase Name": "Cloud staging",
       "Task": "Add operational visibility and recovery",
-      "Status": "Blocked",
+      "Status": "Verified",
       "Owner": "Dot",
       "Due date": "",
-      "Completed date": "",
+      "Completed date": "2026-10-31",
       "Acceptance check": "Worker failure, restart and backup restore preserve uploads and results.",
-      "Notes / evidence / PR": "Health/owner diagnostics and quiesced SQLite/media new-target recovery implemented. WAL functional defect fixed with executed RED/GREEN. Restored3537media/70tables from saved-data COPY;202-photo fixture restart retained71tables/406media hashes. Actual VPS/PC/offdevice drill and CS2log-retention approval remain blocked. PR28; see CLOUD_STAGING_ACCEPTANCE_20261031.json."
+      "Notes / evidence / PR": "Rechecked original software acceptance: owner diagnostics, worker interruption/restart/cache recovery and verified backup/restore retain uploads/results. Actual-copy3537media/70tables and71tables/406files restart proofs passed. Done for development acceptance; real-target/off-device drill and CS2log-retention hold remain separate release gates. PR28/PR30; STAGING_OPERATIONS_20261031.md."
     },
     {
       "ID": "09",
@@ -109,7 +116,7 @@
       "Due date": "",
       "Completed date": "",
       "Acceptance check": "Phone, upload, concurrency and workflow tests pass. Security review recorded.",
-      "Notes / evidence / PR": "Local39HTTPS browser+14restart/proxy checks passed,202unique syntheticphotos and human QA/TL/Client flow retained;12security cases+36HTTPS controls and independent WAL/configuration review passed in scope. CI Windows1407pass;Linux1405pass/2Windows-only skips. Local1406pass/1existingWinError1314.19frontend passed. Actual VPS/physicalphone/nativePC/offdevice and D1/D2/CS1/CS2 approval gates remain Blocked; no public launch. Draft PR28."
+      "Notes / evidence / PR": "Controlled HTTPS browser/upload/concurrency/workflow and recorded separate security review passed; latest b86b8a2 application/staging/customer/shared CI all passed. Physical-phone/full target journey acceptance remains unverified. Security review is recorded but held D1/D2/CS1/CS2 issues are not cleared. Final acceptance Blocked; PR28/PR30."
     },
     {
       "ID": "10",
@@ -229,7 +236,7 @@
       "Due date": "",
       "Completed date": "2026-10-31",
       "Acceptance check": "Release provenance is traceable. Failed tests block publication.",
-      "Notes / evidence / PR": "VERIFIED at6f5f40d: all exact-source app41228944646/staging41228944652/customer41228944635/shared41228944697 succeeded. Sharedartifact13052619886 binds source/manifest/same immutable images to both editions and passed actual updater consumer. Negative gates reject failed/missing/stale/foreign checks;12tracked+14bounded final security checks(overlap). Draft PR30; candidate_only, no owner release."
+      "Notes / evidence / PR": "VERIFIED at6f5f40d: all exact-source app41228944646/staging41228944652/customer41228944635/shared41228944697 succeeded. Sharedartifact13052619886 binds source/manifest/same immutable images to both editions and passed actual updater consumer. Negative gates reject failed/missing/stale/foreign checks;12tracked+14bounded final security checks(overlap). Draft PR30; candidate_only, no owner release. Current b86b8a2 follow-up also passed all four workflows; application41230120328/staging41230120300/customer41230120287/shared41230120299. Local preserved immutable candidate remains6f5f40d."
     },
     {
       "ID": "20",
@@ -241,7 +248,7 @@
       "Due date": "",
       "Completed date": "2026-10-31",
       "Acceptance check": "Verified update preserves data. Invalid packages and interrupted updates stop safely.",
-      "Notes / evidence / PR": "VERIFIED at6f5f40d: owner-only persisted Update Center, signed host apply/recover and immutable receipts.47actual saved-browser assertions plus actual Linux update/recovery;374rows/73tables and originals retained. CP1/CP2/UP1 explicitly approved and independently closed. Windows1611pass;Linux1609pass+2existingWindows-onlyskips;19frontendpass. PR30; no operational update."
+      "Notes / evidence / PR": "VERIFIED at6f5f40d: owner-only persisted Update Center, signed host apply/recover and immutable receipts.47actual saved-browser assertions plus actual Linux update/recovery;374rows/73tables and originals retained. CP1/CP2/UP1 explicitly approved and independently closed. Windows1611pass;Linux1609pass+2existingWindows-onlyskips;19frontendpass. PR30; no operational update. Current b86b8a2 follow-up also passed all four workflows; application41230120328/staging41230120300/customer41230120287/shared41230120299. Local preserved immutable candidate remains6f5f40d."
     },
     {
       "ID": "21",
@@ -253,7 +260,79 @@
       "Due date": "",
       "Completed date": "2026-10-31",
       "Acceptance check": "Demonstrate recovery from failed upgrade. Verify retained evidence hashes.",
-      "Notes / evidence / PR": "VERIFIED exact e37b280(schema0057)->6f5f40d(schema0057) supported pair: actual Linux caught migration failure rollback, hard interruption/recover, successful upgrade and idempotent replay passed.374retainedrows/73tables/digest and original evidence hashes agree.0056 automatic upgrades unsupported. All final exact-source CIpassed; PR30. Physical target/owner approval remain separate."
+      "Notes / evidence / PR": "VERIFIED exact e37b280(schema0057)->6f5f40d(schema0057) supported pair: actual Linux caught migration failure rollback, hard interruption/recover, successful upgrade and idempotent replay passed.374retainedrows/73tables/digest and original evidence hashes agree.0056 automatic upgrades unsupported. All final exact-source CIpassed; PR30. Physical target/owner approval remain separate. Current b86b8a2 follow-up also passed all four workflows; application41230120328/staging41230120300/customer41230120287/shared41230120299. Local preserved immutable candidate remains6f5f40d."
+    },
+    {
+      "ID": "22",
+      "Phase": "7",
+      "Phase Name": "GPT support",
+      "Task": "Build System Health & Support for authorized administrators",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-11-02",
+      "Acceptance check": "Authorized administrators see only currently permitted health, save immutable reports and export a two-member allowlisted offline diagnostic ZIP without secrets or evidence.",
+      "Notes / evidence / PR": "Bounded development acceptance at e5490a6038eac03a926a55de8cc3e669e15012bf; draft PR31 https://github.com/assimbaig/iSurvix-Field/pull/31. Real scoped health/report/export and role/revocation negatives verified.17 implementation backend tests and13 independent unit/HTTP checks passed. Actual saved report8f43f59c-9c2b-4e59-8efe-0877a0863e14 exports only manifest.json and diagnostics.json; secret canaries passed.48 root report-to-install browser assertions and28 independent live rechecks at1920/1366/390 passed; earlier42 browser checks overlap and are not summed. No GPT/API/model calls or operational migration. Exact-source CI and local1 privilege-error limits are stated above. See SUPPORT_REQUIREMENTS_20261102.md and SUPPORT_INDEPENDENT_QA_20261102.md."
+    },
+    {
+      "ID": "23",
+      "Phase": "7",
+      "Phase Name": "GPT support",
+      "Task": "Build the isolated repair workflow",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-11-02",
+      "Acceptance check": "Bind an actual saved report and exact source to a failing synthetic regression, protected offline Docker execution, passing patched tests and a real unmerged draft PR.",
+      "Notes / evidence / PR": "Verified only for the documented synthetic business adapter. Actual case8f43f59c-9c2b-4e59-8efe-0877a0863e14 binds BASE9365df1186d17cfb7a82a7d3ad7f8c815d93354e to TESTS1a0c7bf(3 actual tests:2 RED,1 pass), FIX983f8c7b78a545cfbd27437246bc11be1d7f7cdc(3 GREEN), real TEST-ONLY draft PR32 https://github.com/assimbaig/iSurvix-Field/pull/32 and actual offline Docker run41477079364. Artifact13157808151 SHA256461850434351ab07617b0dbfbf7fe6d2a3603f230fe5c91abe0fe329f158d205. Exported JSON members match exactly; the ZIP was repackaged and is not byte-identical.35 independent artifact/Git/database bindings passed. SS1 explicitly approved/repaired:25 functional,15 independent closure and13 retained security controls passed. Arbitrary Django repair fails closed until a protected reviewed adapter exists. Fixture PR32 must not merge; no operational patch applied. Feature implementation e5490a6, draft PR31; SUPPORT_REPAIR_OPERATOR_20261102.md and separate QA/security reports."
+    },
+    {
+      "ID": "24",
+      "Phase": "7",
+      "Phase Name": "GPT support",
+      "Task": "Implement approval and support-status tracking",
+      "Status": "Verified",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "2026-11-02",
+      "Acceptance check": "Persist immutable report and append-only status history linking tested PR, separate owner repair/release approvals and installation only against the actual approved runtime commit.",
+      "Notes / evidence / PR": "Same actual case8f43f59c-9c2b-4e59-8efe-0877a0863e14 retains6 immutable events through PR32 receipt, separate synthetic owner repair/release approvals and confirmed installation after a real isolated BASE-to-FIX runtime restart. BASE runtime installation was rejected400; actual approved FIX runtime then confirmed and persisted. Independent unit/HTTP/browser/database checks passed for current scope, CSRF, role/revocation, replay, stale version and audit rollback. Operator-attested receipt stays labelled; company Admin cannot approve repair/release. Controlled lab evidence is not production/customer deployment, exact owner production release or engineering approval. Current source e5490a6, draft PR31. See SUPPORT_INDEPENDENT_QA_20261102.md and SUPPORT_SECURITY_REVIEW_20261102.md."
+    },
+    {
+      "ID": "25",
+      "Phase": "8",
+      "Phase Name": "Handover",
+      "Task": "Execute complete release acceptance",
+      "Status": "Blocked",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Complete release acceptance requires the already documented pilot/target/security/licensing and exact-owner release gates.",
+      "Notes / evidence / PR": "Current executable code/CI and controlled acceptance will be rechecked after22-24. Full cloud/customer/native/physical/pilot/licensing/security/owner release acceptance still lacks external evidence/approval; no false completed gate."
+    },
+    {
+      "ID": "26",
+      "Phase": "8",
+      "Phase Name": "Handover",
+      "Task": "Deliver owner and customer operating guides",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Release-specific owner/customer guides and final handover acceptance remain outstanding.",
+      "Notes / evidence / PR": "Current SUPPORT_TEAM_GUIDE_20261102.md and SUPPORT_REPAIR_OPERATOR_20261102.md describe the real scoped report/export, protected synthetic repair profile, operator attestation, separate approvals and actual runtime binding. Existing deploy/customer/README.md, UPDATES.md, AI_SETTINGS_GUIDE_20261031.md, SHARED_RELEASE_DELIVERY_20261031.md and end-user manuals remain. Consolidated exact-release owner/customer handover and acceptance are outstanding; the controlled manual remainsv1.7. No final handover completion claimed."
+    },
+    {
+      "ID": "27",
+      "Phase": "8",
+      "Phase Name": "Handover",
+      "Task": "Close with an exact release and outstanding-work register",
+      "Status": "In progress",
+      "Owner": "Dot",
+      "Due date": "",
+      "Completed date": "",
+      "Acceptance check": "Owner-approved exact final release and closure of an accurate outstanding-work register.",
+      "Notes / evidence / PR": "Current tested feature candidate e5490a6038eac03a926a55de8cc3e669e15012bf is draft PR31; bounded saved-case repair demonstration is separate TEST-ONLY draft PR32. All5 exact-source CI gates passed:application41476832696/staging41476832605/customer41476832604/shared41476832664/repair41476832662. HostedWindows1672pass;Linux1670pass+2existingplatformskips; local1671pass+1existingWin1314fixtureerror remains disclosed. Customerartifact13157773844 SHA256efcc2b9529877695e466c490d910829c2e0fb58036023ccf4a3e4db4f77dc947 independently passed37 cross-artifact assertions for73 retained tables/374 rows. Earlier immutable6f5f40d candidate and accepted rows19–21 remain historical evidence. SS1 approved/repaired; A12/BR1/D1/D2/L1/CS1/CS2/AI1 unchanged.27-task register now16Verified/9Blocked/2Inprogress; exact owner-approved customer release, final documentation-head checks and signed handover closure remain outstanding."
     }
   ]
 }

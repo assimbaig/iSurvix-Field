@@ -1,5 +1,139 @@
 # iSurvix Field: local Codex development brief
 
+## Current: support acceptance and source gates passed - 2 November 2026
+
+Featurebranch `feat/gpt-support-workflow-20261102`, draftPR31, implementation
+9824a38 and owner-approved repairs e5490a6. All5exact-e549 hosted gates SUCCESS:
+application41476832696,staging41476832605,customer41476832604,
+shared41476832664,repair41476832662. HostedWindows1672passed/654.184s;
+Linux1670passed+2existing skips/504.225s; frontend/dependencies/migration clean.
+Local final2 ran1672/671.209s:1671passed,0failures,1existing L1Win1314symlink
+fixture error. All19frontend+12ancillary checks passed; executable source
+fingerprint unchanged. Do not relabel that local run green or fix heldL1.
+
+Tasks22–24 now have bounded functional/independent acceptance. The real saved
+synthetic case8f43f59c-9c2b-4e59-8efe-0877a0863e14→BASE9365df1→TESTS1a0c7bf
+(3tests:2assertionfailures/1pass)→FIX983f8c7(3pass)→actual TESTONLYdraftPR32
+→real offline Docker41477079364→same-case receipt/owner approvals→actual
+BASE-to-FIX labrestart→installedconfirmation. Sixevents retained; root48browser
+assertions, independent35artifact/Git/DB and28livebrowser assertions pass.
+ExportJSONmembers are byte-identical; CI's ZIPcontainer is repackaged/different.
+Generic arbitraryDjangorepair remains failclosed pending a reviewed external
+adapter; only documented synthetic businessadapter is supported. No paid GPT,
+automaticrepairgeneration, nativeAI or productioninstallation claim is made.
+
+The lab `.local/sl7` was stopped:ownedPID21484,8980closed,SQLiteok,6eventskept.
+Actualscreenshots and team/operator guides are in docs/development; private
+credentials stay out ofGit. Final preservation3595files/70tables/2auditreports
+unchanged; operationalmainfd365f1/schema0053 unchanged. Full Nov2checkpoint
+project-checkpoint-20261102-180503 retained; finalsourcebundle added separately.
+Task25 remains Blocked by native/physical/pilot/licensing/security/owner gates.
+Earlier8securityholds unchanged; SS1explicitlyapproved/repaired/independently
+closed. Read SUPPORT_DELIVERY_20261102.md and the27taskledger for exactscope.
+
+Documentation commits aftere549 do not change executable source. Observe their
+own newly scheduled exact-head CI separately; never claim a running gate passed.
+No merge,deployment,operationalmigration or modelservice was performed.
+
+## Earlier: approved SS1 repair and upgrade regression
+
+The owner explicitly approved SS1. Its host-controlled bounded business oracle
+is implemented:25functional tests and15independent closure checks passed;
+13retained security controls also passed. Original RED probes remain unchanged;
+legacy direct run_suite without an explicit protected executor now fails closed.
+Generic arbitrary Django repair execution is intentionally unsupported pending
+a separately reviewed adapter. The package inventory records SS1 repaired;
+the earlier eight security holds remain unchanged and unapproved.
+
+Draft PR31 exists, first implementation9824a38. Application and staging CI passed,
+as did the old benign repair rehearsal; the customer/shared gates failed because
+the real0057-to-0058 migration creates2content types and8default permissions.
+The updater rolled back safely. A narrowly bounded reviewed-host comparator fix
+and8new regression tests now pass all37affected tests. No old record or grant
+mutation is permitted. New-source full regression and actual Linux CI are next.
+The earlier full local run was deliberately cancelled after SS1 approval and
+must not be called a final pass. Synthetic lab `.local/sl7` has isolated users,
+project/database/media and NO operational records; no support case created yet.
+
+The next section is retained as the original pre-approval checkpoint, superseded
+by this status. Actual saved-case→export→DockerCI→real draftPR→receipt→controlled
+lab release/install demonstration remains pending. Task25 remains externally
+blocked; no operational migration, native AI, merge or deployment is authorised.
+
+## Earlier: support implementation and SS1 approval hold
+
+Active worktree `.local/b7`, branch `feat/gpt-support-workflow-20261102`, based on
+owner-merged PR30 `a811130`. The operational checkout remainsfd365f1/schema0053.
+Full established checkpoint `project-checkpoint-20261102-180503` passed ZIP CRC,
+SQLite integrity and added source/Git recovery verification. Five prior report
+edits were copied/preserved; `.local/b6` remains unchanged with its own edits.
+
+Tasks22/24: real scoped System Health & Support, immutable reports/events, safe
+two-file offline ZIP, owner-only receipt/repair/release decisions and actual
+runtime-release installation check. Additive0058 creates only support tables.
+No shell or model/network request runs from the web workspace. Existing ordinary
+diagnostics are reused; no live GPT service or paid API is falsely represented.
+
+Executed component TDD retained:17backend+9UI,17operator and2delivery-path/schema
+checks; affected navigation/access/update integration76passed. Independent QA13
+unit/HTTP and42actual desktop/mobile browser checks passed. Its Appearance overlap
+regression failed at three scroll positions, was fixed only on support pages,
+then all three positions had zero overlap and the42flows passed again. QA fixture
+8977 was stopped; its synthetic DB/screenshots/cookies are retained privately.
+
+Separate AppSec confirmed **SS1 Medium UNFIXED**: candidate application code can
+forge passing test stdout before unchanged assertions run.15independent security
+checks:13passed,2RED reproductions; no errors/skips/external calls. Explicit owner
+approval was requested asynchronously; do not fix until supplied. Adding SS1 to
+package approval_holds only records the finding. Old8holds remain unchanged.
+Read SUPPORT_SECURITY_REVIEW_20261102.md; original/stronger RED evidence retained.
+
+Full frozen-source regression is running at
+`.local/support-development-20261102/final/`. Actual Docker/real draft repair PR
+and saved-case→export→CI→receipt→approval→lab installation remain pending. Local
+Docker is unavailable and candidate execution fails closed. The source-to-target
+upgrade rehearsal now declares0057baselinee37b280→0058candidate and asserts actual
+source/target migration identities; actual Linux proof is pending this candidate.
+Task25 still needs real pilot/device/native/target/licensing/security/owner gates.
+
+Next: finish full checks; create draft feature PR; run actual isolated Linux CI.
+For task23 create a SEPARATE test-only support/repair-* branch with3commits: BASE
+buggyfixture, TESTS meaningful unit/integration plus the actual saved synthetic
+SupportCase export's manifest/diagnostics JSON, FIX onlycounter.py. Bind source
+release toBASE, actual saved caseUUID/reportSHA; run hosted Docker on exactFIX,
+then create an actual draftPR and import its linked receipt into that same case.
+Never insert a fake case afterward or merge the deliberately synthetic fixture.
+
+Codex startup warning was separate: optional OpenAI Developers
+openai-api-credit-promo hit a Cloudflare403. Targeted plugin policy disables that
+connector; effective CodexCLI list confirms disabled, config validates. Backup
+`.local/codex-mcp-repair-20261102-150256` is private. No upstream repair or full GUI
+restart was claimed; do not rotate keys or expose credentials to fix it.
+
+## Current: expanded27-task status audit -31October2026
+
+Checked sourceb86b8a238fde39b47fbed7e7b0d45d067b3eeb4d and liveGitHub:
+all4workflowsSUCCESS(app41230120328,staging41230120300,customer41230120287,
+shared41230120299). Current app tests:Windows1611PASS;Linux1609PASS+2existing
+Windows-onlyskips;pip/migrationchecksPASS. No fresh model/browser tests ran here.
+
+Ledger now27rows:13Verified(Done),9Blocked,3Notstarted,2Inprogress.
+Independent Agency status review corrected07/08:their ORIGINAL software acceptance
+is verified by actual tests/CI; actualVPS/offdevice/securityrelease remains a
+separate gate.03rootcause/nativeaccuracy and09physicalphone acceptance remain
+Blocked.19-21Done for the documented tested scope;22-24task-specific GPTsupport
+not implemented;25Blocked on final acceptance;26/27Inprogress(existing guides and
+exactcandidate/register, incomplete final handover). Do not label partialguides
+as absent or ordinaryopsdiagnostics as delivered GPTsupport.
+
+This was a status/evidence audit, not permission to implement22-27 or repair held
+findings. No application code, records, credentials, approvals, services or model
+changed. Expanded ledger/handoff corrections are local documentation changes;
+no new commit,push,merge or deployment in this audit. Operationalmainfd365f1/
+schema0053 remains separate. Prior11/21 and07-09broadBlocked statements below
+are historical and superseded for current task status by this27-row ledger.
+
+
 ## Current: final exact-source gates passed - 31 October2026
 
 Verified source6f5f40d2b7e296e626636c700b85547f95bcd6be, draftPR30, branch

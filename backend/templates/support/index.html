@@ -1,0 +1,47 @@
+{% extends 'base.html' %}{% load static %}
+{% block body_class %} support-workspace{% endblock %}
+{% block title %}System Health &amp; Support · iSurvix Field{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/support.css' %}">{% endblock %}
+{% block content %}
+<main class="support-page" aria-labelledby="support-title">
+  <header class="support-heading">
+    <div><p class="support-eyebrow">Administration</p><h1 id="support-title">System Health &amp; Support</h1></div>
+    <div class="support-toolbar"><a class="support-button support-secondary" href="#new-report">New report</a><a href="{% url 'governance_home' %}?view=administration">Back to administration</a></div>
+  </header>
+
+  <section class="support-section" aria-labelledby="support-health-heading">
+    <div class="support-section-heading"><div><h2 id="support-health-heading">{{ health.label|default:'Health summary' }}</h2><p class="support-muted">Release <code>{{ health.release|default:'unknown' }}</code></p></div><a class="support-button support-secondary" href="{% url 'support_index' %}" title="Reload current scoped health information">Refresh health</a></div>
+    {% if health_error %}<div class="support-error" role="alert">{{ health_error }}</div>{% endif %}
+    <div class="support-health-grid">
+      <table class="support-table support-health-checks"><caption class="support-sr-only">Health checks in your permitted scope</caption><thead><tr><th scope="col">Check</th><th scope="col">Result</th></tr></thead><tbody>
+      {% for check in health.checks %}<tr><th scope="row">{{ check.label }}</th><td>{{ check.status|default:'Not available' }}</td></tr>{% empty %}<tr><td colspan="2">Health checks are not available.</td></tr>{% endfor %}
+      </tbody></table>
+      <dl class="support-metrics">{% for metric in health.metrics %}<div><dt>{{ metric.label }}</dt><dd>{% if metric.value == None %}<span class="support-muted">Not available</span>{% else %}{{ metric.value }}{% endif %}</dd></div>{% empty %}<div><dt>Processing information</dt><dd class="support-muted">Not available</dd></div>{% endfor %}</dl>
+    </div>
+    <p class="support-note">Counts cover {{ health.label|default:'your permitted scope' }}. Refreshing does not start analysis or repairs. Diagnostic exports omit private evidence, credentials and raw logs.</p>
+  </section>
+
+  <div class="support-index-layout">
+    <section class="support-section support-reports" aria-labelledby="support-reports-heading">
+      <div class="support-section-heading"><h2 id="support-reports-heading">Saved reports</h2><span class="support-muted">Most recent first</span></div>
+      {% if cases %}<div class="support-table-scroll"><table class="support-table support-case-table"><thead><tr><th scope="col">Report</th><th scope="col">Issue / project</th><th scope="col">Support status</th><th scope="col">Created</th></tr></thead><tbody>
+      {% for item in cases %}<tr><td data-label="Report"><a class="support-report-id" href="{% url 'support_case_detail' item.pk %}" title="Open support report {{ item.pk }}">{{ item.pk|stringformat:'s'|slice:':8' }}</a></td><td data-label="Issue / project">{{ item.get_category_display }}<small>{{ item.project.name|default:'No project selected' }}</small></td><td data-label="Support status"><span class="support-state">{{ item.status_label }}</span></td><td data-label="Created"><time datetime="{{ item.created_at|date:'c' }}">{{ item.created_at|date:'d M Y H:i' }}</time></td></tr>{% endfor %}
+      </tbody></table></div>{% else %}<div class="support-empty"><strong>No support reports yet.</strong><p>Describe the issue to save a scoped diagnostic snapshot and begin its support history.</p></div>{% endif %}
+    </section>
+
+    <section class="support-section support-compose" id="new-report" aria-labelledby="support-create-heading">
+      <h2 id="support-create-heading">New support report</h2>
+      <p class="support-muted">Saving a report records the current diagnostic snapshot. It does not approve or install a repair.</p>
+      {% if form_error %}<div class="support-error" role="alert"><strong>The report was not saved.</strong><p>{{ form_error }}</p></div>{% endif %}
+      <form method="post" action="{% url 'support_case_create' %}" class="support-form">
+        {% csrf_token %}<input type="hidden" name="request_key" value="{{ request_key }}">
+        <label for="support-category">Issue type</label><select id="support-category" name="category" required>{% for value,label in category_choices %}<option value="{{ value }}"{% if submitted.category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <label for="support-project">Related project <span class="support-muted">(optional)</span></label><select id="support-project" name="project_id"><option value="">No project selected</option>{% for project in projects %}<option value="{{ project.pk }}"{% if submitted.project_id == project.pk|stringformat:'s' %} selected{% endif %}>{{ project.name }}</option>{% endfor %}</select>
+        <label for="support-description">What happened?</label><textarea id="support-description" name="description" rows="4" maxlength="2000" required aria-describedby="support-description-help">{{ submitted.description }}</textarea>
+        <small id="support-description-help" class="support-muted">Describe the steps and expected result. Leave passwords, keys and private evidence out. Your description is kept within the authorised support record.</small>
+        <button type="submit" class="support-button">Save report</button>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock %}

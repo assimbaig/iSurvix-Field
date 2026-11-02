@@ -41,8 +41,71 @@ def snapshot(database):
     return result
 
 
+def _support_metadata_additions(before, after, database):
+    """Recognize only Django's default metadata for the reviewed 0058 models.
+
+    This does not permit a grant, user/group change, altered old permission or
+    arbitrary new content type. Other migrations need their own reviewed rule.
+    The retained-row proof itself remains bound to the original snapshot.
+    """
+    metadata_tables = {'django_content_type', 'auth_permission'}
+    if not metadata_tables <= set(before) or not metadata_tables <= set(after):
+        return {}
+    new_tables = {
+        'core_supportcase': {'id', 'request_key', 'request_digest', 'category', 'description',
+            'source_release', 'report', 'report_digest', 'created_at', 'company_id', 'created_by_id', 'project_id'},
+        'core_supportevent': {'id', 'sequence', 'request_key', 'input_digest', 'kind', 'status',
+            'details', 'created_at', 'actor_id', 'case_id'},
+    }
+    if any(table in before for table in new_tables):
+        return {}
+    for table, columns in new_tables.items():
+        value = after.get(table)
+        if not value or value['primary'] != ['id'] or set(value['columns']) != columns or value['rows']:
+            return {}
+    expected_columns = {'django_content_type': {'id', 'app_label', 'model'},
+                        'auth_permission': {'id', 'name', 'content_type_id', 'codename'}}
+    for table, columns in expected_columns.items():
+        if set(before[table]['columns']) != columns or set(after[table]['columns']) != columns:
+            return {}
+        if before[table]['primary'] != ['id'] or after[table]['primary'] != ['id']:
+            return {}
+    models = {'supportcase': 'support case', 'supportevent': 'support event'}
+    def named_rows(value):
+        return [dict(zip(value['columns'], row)) for row in value['rows']]
+    old_types = named_rows(before['django_content_type'])
+    if any(row['app_label'] == 'core' and row['model'] in models for row in old_types):
+        return {}
+    old_ids = {row['id'] for row in old_types}
+    types = [row for row in named_rows(after['django_content_type']) if row['id'] not in old_ids]
+    if len(types) != 2 or {(row['app_label'], row['model']) for row in types} != {('core', name) for name in models}:
+        return {}
+    if any(type(row['id']) is not int or row['id'] <= 0 for row in types):
+        return {}
+    old_permission_ids = {row['id'] for row in named_rows(before['auth_permission'])}
+    permissions = [row for row in named_rows(after['auth_permission']) if row['id'] not in old_permission_ids]
+    expected_permissions = {(f"Can {action} {models[row['model']]}", row['id'], f"{action}_{row['model']}")
+                            for row in types
+                            for action in ('add', 'change', 'delete', 'view')}
+    if len(permissions) != 8 or any(type(row['id']) is not int or row['id'] <= 0 for row in permissions):
+        return {}
+    if {(row['name'], row['content_type_id'], row['codename']) for row in permissions} != expected_permissions:
+        return {}
+    try:
+        with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
+            applied = {row[0] for row in db.execute(
+                "select name from django_migrations where app='core' and name in (?,?)",
+                ('0057_server_update_requests', '0058_support_cases'))}
+    except sqlite3.Error:
+        return {}
+    if applied != {'0057_server_update_requests', '0058_support_cases'}:
+        return {}
+    return {'django_content_type': 2, 'auth_permission': 8}
+
+
 def assert_retained(before, database):
     after = snapshot(database)
+    metadata_additions = _support_metadata_additions(before, after, database)
     for table, original in before.items():
         current = after.get(table)
         if not current or current['primary'] != original['primary'] or current['columns'] != original['columns']:
@@ -53,7 +116,7 @@ def assert_retained(before, database):
         retained = {identity(row): row for row in current['rows']}
         if any(retained.get(identity(row)) != row for row in original['rows']):
             raise ValueError('An existing application row was removed or changed during upgrade/recovery.')
-        if table != 'core_governanceaudit' and len(current['rows']) != len(original['rows']):
+        if table != 'core_governanceaudit' and len(current['rows']) != len(original['rows']) + metadata_additions.get(table, 0):
             raise ValueError('An unrelated application table gained rows during maintenance.')
     canonical = json.dumps(before, sort_keys=True, separators=(',', ':')).encode()
     return {'retained_tables': len(before), 'retained_rows': sum(len(value['rows']) for value in before.values()),
