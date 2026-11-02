@@ -64,7 +64,7 @@ python - "$repository" "$output/package" <<'PY'
 from pathlib import Path
 import hashlib,sys
 source,package=map(Path,sys.argv[1:])
-for name in ('deploy/customer/updater.py','deploy/customer/customer.py'):
+for name in ('deploy/customer/updater.py','deploy/customer/customer.py','deploy/customer/upgrade_fixture.py'):
     assert hashlib.sha256((source/name).read_bytes()).digest()==hashlib.sha256((package/'release'/name).read_bytes()).digest()
 PY
 sudo /usr/bin/python3 "$helper" prepare --package "$work/source-package" --runtime "$work/runtime" --host customer.example.test --lan-ip 172.28.33.1 --secret-file "$output/private/django-secret" --tls-directory "$output/tls" --update-directory "$updates" --acknowledge-draft > "$work/prepare.json"

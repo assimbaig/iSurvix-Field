@@ -40,7 +40,7 @@ def generate_repository(target):
                'def count_unique(values):\n    return len(values)\n'
                'def main():\n'
                ' data=json.loads(Path(sys.argv[1]).read_text())\n'
-               ' values=[photo for item in data["links"] for photo in item["photo_ids"]]\n'
+               ' values=[item["photo_id"] for item in data["links"]]\n'
                ' Path(sys.argv[2]).write_text(json.dumps({"unique_photos":count_unique(values),"links":len(data["links"])}))\n'
                'if __name__=="__main__":main()\n')
     (fixture / 'counter.py').write_text(counter, encoding='utf-8')
@@ -58,10 +58,10 @@ def generate_repository(target):
                    ' def test_saved_links_cross_cli_boundary_without_changing_original_input(self):\n'
                    '  with tempfile.TemporaryDirectory() as directory:\n'
                    '   root=Path(directory);source=root/"links.json";target=root/"result.json"\n'
-                   '   source.write_text(json.dumps({"links":[{"point":"civil-1","photo_ids":["original-1"]},{"point":"tower-1","photo_ids":["original-1","original-2"]}]}))\n'
+                   '   source.write_text(json.dumps({"links":[{"photo_id":"original-1","field_id":"civil-1"},{"photo_id":"original-1","field_id":"tower-1"},{"photo_id":"original-2","field_id":"tower-1"}]}))\n'
                    '   original=source.read_bytes()\n'
                    '   subprocess.run([sys.executable,str(Path(__file__).with_name("counter.py")),str(source),str(target)],check=True)\n'
-                   '   self.assertEqual(json.loads(target.read_text()),{"unique_photos":2,"links":2})\n'
+                   '   self.assertEqual(json.loads(target.read_text()),{"unique_photos":2,"links":3})\n'
                    '   self.assertEqual(source.read_bytes(),original)\n')
     (fixture / 'test_integration.py').write_text(integration, encoding='utf-8')
     tool.git(target, 'add', '.')

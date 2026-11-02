@@ -42,12 +42,24 @@ Existing A12/BR1/D1/D2/L1/CS1/CS2/AI1 findings keep their approval status. This
 request does not authorise their repair, a public deployment or engineering
 approval. New findings from the separate security review must be reported first.
 
-Separate review confirmed **SS1 Medium**: candidate application code can forge a
-passing test summary before unchanged assertions run. The original and stronger
-application-only reproductions remain RED. SS1 is reported and unfixed; owner
-approval was requested separately. Adding it to the package hold inventory is
-disclosure, not remediation or acceptance. Controlled positive tests cannot
-override this finding. See `SUPPORT_SECURITY_REVIEW_20261102.md`.
+Separate review confirmed **SS1 Medium**: candidate application code could forge
+a passing test summary before unchanged assertions ran. The owner explicitly
+approved its repair. A trusted host controller now checks bounded business
+responses; candidate verdicts are ignored. Generic Django repair execution fails
+closed until a separately reviewed external adapter exists. The 25 functional
+tests and 15 independent attack/positive controls passed. Original RED probes
+are retained unchanged; their legacy no-executor API now fails closed rather
+than being presented as two green tests. Actual new-source Docker verification
+and the saved-case-to-PR demonstration remain pending. See the separate review.
+
+The first candidate's real Linux customer upgrade exposed a functional
+0057-to-0058 regression: Django adds two content types and eight default support
+permissions. The strict old comparator rejected these additions and safely
+rolled back. Eight new tests executed a real isolated migration and negative
+grant/mutation checks; all 37 affected metadata/retention/updater tests passed.
+Only those exact unassigned framework metadata rows are allowed; retained rows
+and every user/group grant remain protected. Re-run actual Linux upgrade CI on
+the fixed source before claiming upgrade acceptance.
 
 ## Separate Codex startup repair
 

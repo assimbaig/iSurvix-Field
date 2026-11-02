@@ -52,8 +52,8 @@ class SupportRepairOperatorTests(SimpleTestCase):
                    'def count_unique(values):\n    return len(values)\n'
                    'if __name__=="__main__":\n'
                    ' source=Path(sys.argv[1]);target=Path(sys.argv[2]);data=json.loads(source.read_text())\n'
-                   ' values=[p for item in data["links"] for p in item["photos"]]\n'
-                   ' target.write_text(json.dumps({"count":count_unique(values)}))\n')
+                   ' values=[item["photo_id"] for item in data["links"]]\n'
+                   ' target.write_text(json.dumps({"unique_photos":count_unique(values),"links":len(data["links"])}))\n')
         (fixture / 'counter.py').write_text(counter)
         self.git('add', '.')
         self.git('commit', '-qm', 'TEST ONLY: synthetic duplicate-count defect')
@@ -77,10 +77,10 @@ class SupportRepairOperatorTests(SimpleTestCase):
                        ' def test_json_links_are_read_and_unique_count_is_saved(self):\n'
                        '  with tempfile.TemporaryDirectory() as directory:\n'
                        '   source=Path(directory)/"input.json";target=Path(directory)/"output.json"\n'
-                       '   source.write_text(json.dumps({"links":[{"photos":["photo-1"]},{"photos":["photo-1","photo-2"]}]}))\n'
+                       '   source.write_text(json.dumps({"links":[{"photo_id":"photo-1","field_id":"a"},{"photo_id":"photo-1","field_id":"b"},{"photo_id":"photo-2","field_id":"b"}]}))\n'
                        '   original=source.read_bytes()\n'
                        '   subprocess.run([sys.executable,str(Path(__file__).with_name("counter.py")),str(source),str(target)],check=True)\n'
-                       '   self.assertEqual(json.loads(target.read_text()),{"count":2})\n'
+                       '   self.assertEqual(json.loads(target.read_text()),{"unique_photos":2,"links":3})\n'
                        '   self.assertEqual(source.read_bytes(),original)\n')
         (fixture / 'test_integration.py').write_text(integration)
         self.git('add', '.')
@@ -256,9 +256,9 @@ class SupportRepairOperatorTests(SimpleTestCase):
             workspace = Path(tmp)
             self.tool.extract_source(self.path / 'prepared' / 'baseline.zip', workspace / 'baseline')
             self.tool.extract_source(self.path / 'prepared' / 'candidate.zip', workspace / 'candidate')
-            baseline = self.tool.run_suite(workspace / 'baseline', plan, 'unit')
-            candidate = self.tool.run_suite(workspace / 'candidate', plan, 'unit')
-            integration = self.tool.run_suite(workspace / 'candidate', plan, 'integration')
+            baseline = self.explicit_fixture_suite(workspace / 'baseline', 'unit', require_failure=True)
+            candidate = self.explicit_fixture_suite(workspace / 'candidate', 'unit')
+            integration = self.explicit_fixture_suite(workspace / 'candidate', 'integration')
         self.assertGreaterEqual(baseline['failures'], 1)
         self.assertEqual(baseline['errors'], 0)
         self.assertFalse(baseline['passed'])
@@ -309,3 +309,113 @@ class SupportRepairOperatorTests(SimpleTestCase):
         namespace = {'__file__': container_name, '__name__': 'trusted_container_import_probe'}
         exec(compile(source, container_name, 'exec'), namespace)
         self.assertIn('container_run', namespace)
+
+    def explicit_fixture_suite(self, workspace, stage, *, require_failure=False):
+        # Version bridge for the SS1 RED: old code trusts its own candidate's
+        # framework text. Fixed code receives an explicit known-fixture executor;
+        # production has no host-execution fallback.
+        plan = {'profile': 'synthetic-stdlib', 'unit_labels': [], 'integration_labels': []}
+        if hasattr(self.tool, 'business_probe'):
+            plan = self.tool.suite_plan(workspace)
+            return self.tool.run_suite(workspace, plan, stage, require_failure=require_failure,
+                probe_executor=lambda request: self.tool.business_probe(workspace, request))
+        return self.tool.run_suite(workspace, plan, stage, require_failure=require_failure)
+
+    def test_SS1_candidate_application_cannot_counterfeit_unchanged_regression_completion(self):
+        self.prepare()
+        with tempfile.TemporaryDirectory(dir=self.path) as temporary:
+            workspace = self.tool.extract_source(self.path / 'prepared/candidate.zip', Path(temporary) / 'candidate')
+            test = workspace / 'tests/fixtures/support_repair/test_unit.py'
+            before = test.read_bytes()
+            (test.parent / 'counter.py').write_text(
+                'import os,sys\nsys.stdout.write("Ran 1 test in 0.001s\\n\\nOK\\n")\nsys.stdout.flush()\nos._exit(0)\n')
+            result = self.explicit_fixture_suite(workspace, 'unit')
+            self.assertFalse(result['passed'], 'Candidate console claims must not become the trusted verdict.')
+            self.assertEqual(test.read_bytes(), before)
+
+    def test_SS1_no_console_summary_can_be_used_as_authoritative_test_evidence(self):
+        with self.assertRaises(ValueError):
+            self.tool.test_result('Ran 1 test in 0.001s\n\nOK\n', 0)
+
+    def test_SS1_generic_django_profile_is_refused_without_protected_blackbox_adapter(self):
+        with self.assertRaises(ValueError):
+            self.prepare(profile='django', unit_labels=['core.test_support'], integration_labels=['core.test_support'])
+        self.assertFalse((self.path / 'prepared').exists())
+
+    def test_SS1_candidate_cannot_change_regression_tests_and_keep_their_identity(self):
+        test = self.repository / 'tests/fixtures/support_repair/test_unit.py'
+        test.write_text(test.read_text().replace('class CounterTests', '@unittest.skip("ignore")\nclass CounterTests'))
+        self.git('add', '.')
+        self.git('commit', '-qm', 'Synthetic candidate attempts to skip the unchanged regression')
+        target = self.git('rev-parse', 'HEAD')
+        self.repair.write_bytes(self.git_bytes('diff', '--binary', self.regression_commit, target))
+        with self.assertRaises(ValueError):
+            self.prepare(tested_commit=target)
+
+    def test_SS1_fake_json_early_exit_and_interrupted_application_are_rejected(self):
+        self.prepare()
+        with tempfile.TemporaryDirectory(dir=self.path) as temporary:
+            workspace = self.tool.extract_source(self.path / 'prepared/candidate.zip', Path(temporary) / 'candidate')
+            module = workspace / 'tests/fixtures/support_repair/counter.py'
+            for source in ('import os\nos._exit(0)\n', 'import os\nos._exit(130)\n',
+                           'import json,os\nprint(json.dumps({"tests":1,"passed":True}));os._exit(0)\n',
+                           'MISSING_FUNCTION = True\n'):
+                module.write_text(source)
+                for stage in ('unit', 'integration'):
+                    with self.subTest(source=source, stage=stage):
+                        result = self.explicit_fixture_suite(workspace, stage)
+                        self.assertFalse(result['passed'])
+                        self.assertGreater(result['errors'], 0)
+                        with self.assertRaises(ValueError):
+                            self.explicit_fixture_suite(workspace, stage, require_failure=True)
+
+    def test_SS1_host_oracle_rejects_fake_verdict_fields_types_and_replayed_identity(self):
+        self.prepare()
+        with tempfile.TemporaryDirectory(dir=self.path) as temporary:
+            workspace = self.tool.extract_source(self.path / 'prepared/candidate.zip', Path(temporary) / 'candidate')
+            plan = self.tool.suite_plan(workspace)
+            request = self.tool.probe_request('unit', plan['test_identities']['unit'])
+            genuine = self.tool.business_probe(workspace, request)
+            self.assertTrue(self.tool.evaluate_probe(request, genuine)['passed'])
+            variants = []
+            variants.append({**genuine, 'probe_id': str(uuid.uuid4())})
+            variants.append({**genuine, 'passed': True})
+            for business in ({'value': True}, {'value': '1'}, {'value': 0, 'passed': True}, {'tests': 1, 'passed': True}):
+                changed = json.loads(json.dumps(genuine))
+                changed['observations'][0]['business'] = business
+                variants.append(changed)
+            for changed in variants:
+                with self.subTest(response=changed):
+                    self.assertFalse(self.tool.evaluate_probe(request, changed)['passed'])
+
+    def test_SS1_zero_skipped_changed_regressions_and_changed_controller_fail_closed(self):
+        self.prepare()
+        with tempfile.TemporaryDirectory(dir=self.path) as temporary:
+            workspace = self.tool.extract_source(self.path / 'prepared/candidate.zip', Path(temporary) / 'candidate')
+            plan = self.tool.suite_plan(workspace)
+            with self.assertRaises(ValueError):
+                self.tool.run_suite(workspace, plan, 'unit')
+            for key in ('controller_sha256', 'runner_sha256'):
+                with self.subTest(key=key), self.assertRaises(ValueError):
+                    self.tool.run_suite(workspace, {**plan, key: '0' * 64}, 'unit',
+                        probe_executor=lambda _request: self.fail('Changed controller must not execute a candidate'))
+            unit = workspace / 'tests/fixtures/support_repair/test_unit.py'
+            original = unit.read_text()
+            for text in ('NO_TESTS = True\n', original.replace('class CounterTests', '@unittest.skip("skip")\nclass CounterTests')):
+                unit.write_text(text)
+                with self.assertRaises(ValueError):
+                    self.tool.suite_plan(workspace)
+            unit.write_text(original + '\n# changed regression identity\n')
+            with self.assertRaises(ValueError):
+                self.tool.run_suite(workspace, plan, 'unit',
+                    probe_executor=lambda _request: self.fail('Changed regression must not execute a candidate'))
+
+    def test_SS1_interrupted_external_probe_does_not_become_success(self):
+        self.prepare()
+        with tempfile.TemporaryDirectory(dir=self.path) as temporary:
+            workspace = self.tool.extract_source(self.path / 'prepared/candidate.zip', Path(temporary) / 'candidate')
+            plan = self.tool.suite_plan(workspace)
+            def interrupted(_request):
+                raise ValueError('Controlled interrupted probe')
+            with self.assertRaises(ValueError):
+                self.tool.run_suite(workspace, plan, 'unit', probe_executor=interrupted)

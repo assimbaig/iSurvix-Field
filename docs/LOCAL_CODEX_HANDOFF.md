@@ -1,6 +1,31 @@
 # iSurvix Field: local Codex development brief
 
-## Current: support implementation and SS1 approval hold - 2 November 2026
+## Current: approved SS1 repair and upgrade regression - 2 November 2026
+
+The owner explicitly approved SS1. Its host-controlled bounded business oracle
+is implemented:25functional tests and15independent closure checks passed;
+13retained security controls also passed. Original RED probes remain unchanged;
+legacy direct run_suite without an explicit protected executor now fails closed.
+Generic arbitrary Django repair execution is intentionally unsupported pending
+a separately reviewed adapter. The package inventory records SS1 repaired;
+the earlier eight security holds remain unchanged and unapproved.
+
+Draft PR31 exists, first implementation9824a38. Application and staging CI passed,
+as did the old benign repair rehearsal; the customer/shared gates failed because
+the real0057-to-0058 migration creates2content types and8default permissions.
+The updater rolled back safely. A narrowly bounded reviewed-host comparator fix
+and8new regression tests now pass all37affected tests. No old record or grant
+mutation is permitted. New-source full regression and actual Linux CI are next.
+The earlier full local run was deliberately cancelled after SS1 approval and
+must not be called a final pass. Synthetic lab `.local/sl7` has isolated users,
+project/database/media and NO operational records; no support case created yet.
+
+The next section is retained as the original pre-approval checkpoint, superseded
+by this status. Actual saved-case→export→DockerCI→real draftPR→receipt→controlled
+lab release/install demonstration remains pending. Task25 remains externally
+blocked; no operational migration, native AI, merge or deployment is authorised.
+
+## Earlier: support implementation and SS1 approval hold
 
 Active worktree `.local/b7`, branch `feat/gpt-support-workflow-20261102`, based on
 owner-merged PR30 `a811130`. The operational checkout remainsfd365f1/schema0053.

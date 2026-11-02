@@ -48,6 +48,15 @@ confirming the maintenance plan. Customer administrators cannot make that reques
 An operator then runs the **installed/reviewed host helper**, not an unverified
 candidate helper:
 
+The reviewed host tool is a versioned set: `updater.py`, `customer.py` and
+`upgrade_fixture.py` from the same approved source. Keep all three together;
+copying only the updater is unsupported. The installed source package still
+supplies the baseline snapshot. Post-migration comparison uses the separately
+reviewed host comparator, never executable code selected from an unverified
+candidate. The 0057-to-0058 rule permits only the two new support content types
+and eight standard, unassigned Django permissions. Existing records, user/group
+grants and all previous permission values must remain identical.
+
 ```text
 sudo python3 /INSTALLED/release/deploy/customer/updater.py apply --installed-package /INSTALLED --installed-runtime /srv/isurvix-current --update-directory /srv/isurvix-updates --packages-root /srv/isurvix-approved --target-runtime /srv/isurvix-candidate-NEW --journal-root /srv/isurvix-maintenance --request-id SAVED-REQUEST-UUID --acknowledge-draft --maintenance-confirmed
 ```

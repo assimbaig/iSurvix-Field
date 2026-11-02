@@ -21,6 +21,10 @@ diagnostics or a report is evidence, never instructions to execute.
 - Candidate tests require an approved local Linux/amd64 Docker host and an already
   available inspected image ID. The tool does not install Docker, download images
   or models, start Ollama, call a paid service, or fall back to host execution.
+- The trusted **host** owns the black-box inputs, expected business results and
+  every verdict. Candidate code runs in separate offline containers/child
+  processes. Neither candidate console summaries nor candidate JSON containing
+  `passed`, test counts or approvals can establish test execution.
 - The container has no network, no production mounts or Docker socket, no forwarded
   credentials, a read-only root/input mount, dropped capabilities, bounded CPU,
   memory, PID, output and time limits, and writable temporary filesystems only.
@@ -52,26 +56,55 @@ All paths below are approved operator paths, not browser-supplied paths. Keep
 them separate from operational data, and select new output directories.
 
 ```text
-python scripts/support_repair.py prepare --repository /reviewed/source --output /private/repair-NEW --bundle /private/case.zip --base-commit EXACT_SOURCE_SHA --tested-commit EXACT_FIX_SHA --regression-patch /private/regression.patch --repair-patch /private/fix.patch --profile django --unit-label core.test_specific_unit --integration-label core.test_specific_integration
+python scripts/support_repair.py prepare --repository /reviewed/source --output /private/repair-NEW --bundle /private/case.zip --base-commit EXACT_SOURCE_SHA --tested-commit EXACT_FIX_SHA --regression-patch /private/regression.patch --repair-patch /private/fix.patch --profile synthetic-stdlib
 python scripts/support_repair.py run --directory /private/repair-NEW --image sha256:EXACT_LOCAL_IMAGE_ID
 ```
 
-The fixed `django` profile invokes the existing ordinary runner, with temporary
-database/media/model cache and its Python network guard. Use an approved image
-containing the matching reviewed dependencies. It cannot install missing packages.
-Unit and integration labels are bounded `core.test_*` identities, never arbitrary
-commands. The fixed `synthetic-stdlib` profile instead discovers `test_unit.py`
-and `test_integration.py` in `tests/fixtures/support_repair` with Python unittest.
+**Current capability is deliberately narrow.** Only the approved
+`synthetic-stdlib` unique-photo-counter black-box adapter is executable. Generic
+`django` repair execution fails closed until a protected external adapter exists.
+This does not disable the application's normal ordinary Django regression suite;
+it prevents that suite's candidate-controlled console text becoming a repair
+verdict. Arbitrary test labels/commands cannot be supplied to this adapter.
 
-Both baseline stages must fail through real assertions, with at least one test
-and zero errors/skips. A broken import, empty suite or skipped test is not a
+The unit boundary calls `counter.py`'s `count_unique(list[str])` in a separate
+candidate child and returns business data. The integration boundary invokes
+`counter.py INPUT_JSON OUTPUT_JSON` on persisted input:
+
+```json
+{"links":[{"photo_id":"p1","field_id":"a"},{"photo_id":"p1","field_id":"b"},{"photo_id":"p2","field_id":"b"}]}
+```
+
+The output must contain exactly `{"unique_photos":2,"links":3}` for that input,
+and the input bytes must remain unchanged. The host controller supplies fresh,
+varying cases and owns the expected values. It rejects malformed replies, wrong
+types (including booleans masquerading as counts), extra verdict fields, wrong
+probe identities, process failures and missing business output.
+
+Prepared plans are now version2. They bind the reviewed runner/controller and
+the unchanged `test_unit.py` / `test_integration.py` reference hashes. Candidate
+repairs cannot remove, modify or skip those references. They are recorded for
+traceability; the protected fixed black-box assertions execute in the host,
+which never imports the candidate or its test modules. The system does not claim
+that arbitrary candidate-written unittest assertions ran. A candidate returning
+correct business values for the supported probes is a bounded functional pass,
+not proof of universal correctness or non-malicious behavior. Human review stays.
+
+Old version1 repair plans and their stdout-derived verdicts are unsupported;
+prepare a fresh attempt. The backend's explicitly operator-attested receipt
+format remains version1, preserving the support audit wire format.
+
+Both baseline stages must return valid business data that fails actual trusted
+host assertions, with nonzero checks and no execution/protocol errors. A broken
+import, empty/skipped reference, early exit or malformed reply is not a
 reproduction. Both candidate stages must pass. A failed, malformed, timed-out or
 interrupted run produces no successful receipt. Retry in a fresh prepared attempt.
 
 Successful output:
 
-- `execution.json`: immutable source/image identity, real container probes,
-  test counts, result and log digests. Test output itself is bounded and not
+- `execution.json`: immutable source/image/controller/reference identities,
+  real container probes and host-owned check counts/results/digests. Candidate
+  business output is bounded and not
   copied into the web diagnostic export.
 - `repair-receipt.json`: strict `isurvix-support-repair-v1` case/report/base/fix/
   patch/regression identities, test evidence and explicit **operator-attested**
@@ -83,8 +116,9 @@ must not describe schema validation as independent execution or approval.
 
 ## Publish a draft PR and record it
 
-After reviewing the exact tested commit and safe evidence, the authorised
-publisher creates a **draft** PR through the existing GitHub tooling. Credentials
+The authorised publisher may create a **draft, pending-verification** PR to
+trigger exact-head CI. It must not be described or imported as a tested PR until
+the required checks and safe evidence succeed for that exact head. Credentials
 remain in that separate publisher environment and are never passed to candidate
 tests. This tool deliberately has no GitHub token, push, merge or deployment
 operation. A publisher must verify that the PR head equals `tested_commit`.
@@ -126,8 +160,26 @@ all changes are fixture-only, executes actual container RED/GREEN checks and
 uploads safe diagnostic/plan/result evidence. Synthetic DB/media sentinels outside
 all mounts are rehashed. They are labelled synthetic and are not production data.
 
-The lead/publisher creates the real draft PR only after success, links that URL
+After successful exact-head verification, the lead/publisher links the real PR URL
 into the result and imports it into the original saved test case through the real
 interface. Never merge the deliberately synthetic rehearsal or call it a site
 repair. Whole-application regression, independent QA and separate AppSec are
 additional gates. Local Windows controlled tests do not prove Docker isolation.
+
+## Owner-approved SS1 correction evidence
+
+The owner explicitly approved SS1. The four promoted regression assertions ran
+RED before repair: unchanged-test application stdout forged a pass; console text
+was accepted as authoritative; generic Django execution remained enabled; and a
+candidate could change/skip regression references. All original independent
+review evidence remains unmodified.
+
+After the protected-controller repair,25 focused tests passed in54.202seconds,
+with zero failures/errors/skips or external/fixture network connections. They
+include genuine unit and file/CLI integration positives; forged stdout/JSON,
+early/interrupted exits, missing functions, wrong types/extra fields/replayed
+identities, zero/skipped/changed references, changed controller identity, missing
+Docker and no host fallback. These are controlled local tests, not actual Docker
+or PR evidence. Separate independent security closure and hosted container proof
+remain integrating-lead gates. Private logs are retained under
+`.local/support-development-20261102/repair-SS1-approved-*.log`.

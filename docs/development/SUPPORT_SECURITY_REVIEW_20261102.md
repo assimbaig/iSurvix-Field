@@ -1,12 +1,77 @@
 # System Health & Support: separate security review
 
+## Latest status: approved SS1 repair independently verified within the fixture scope
+
+The owner explicitly approved SS1 on 2 November 2026. A separate DevOps
+implementer repaired it; this AppSec reviewer changed no operator or application
+code. **SS1 is repaired with independently verified bounded closure.** This
+approval and closure do not change the eight earlier security holds.
+
+The host controller now owns the business assertions and stage verdicts. It
+never imports candidate code. Candidate code executes in child processes and
+returns bounded business observations; console summaries and candidate-authored
+test verdicts cannot prove success. Request identities, exact result schemas,
+integer types, unchanged input files, controller identity and immutable regression
+references are checked outside the candidate. The public operator supplies a
+Docker executor only. No implicit host execution fallback remains. Generic
+Django repair execution is explicitly unsupported until a protected external
+business adapter is implemented and reviewed.
+
+Independent closure executed at these frozen SHA256 identities, unchanged before
+and after the review:
+
+- `scripts/support_repair.py`:
+  `54c478b58bd86a334bc44dfa807d7d259653a5f7651225fe587b34359c90ec00`.
+- `scripts/support_repair_rehearsal.py`:
+  `2541cc5dc3aeed8a2225c5bf0edf9d16bb224fc7aebab222e9a31e4653c0ce26`.
+
+New independent `ss1_closure` probes: **15 passed, zero failures/errors/skips**,
+10.583 seconds. These execute actual known synthetic candidate subprocesses for
+both the unit interface and file/JSON CLI. They reject the original application
+import stdout forgery while leaving regression references unchanged, counterfeit
+verdict JSON, clean early exit, missing/import-failed interfaces, boolean answers,
+altered input files, stale responses and changed controller/regression identities.
+Correct fixture behavior passes; valid wrong answers reproduce a baseline
+assertion failure, while crashes and malformed responses do not.
+
+Retained independent scope/export/audit/approval/operator controls: **13 passed,
+zero failures/errors/skips**, 0.516 seconds. Both executions used the ordinary
+isolated backend runner and recorded zero external network attempts. They are
+separate evidence sets, not an inflated unique repository-suite total.
+
+Both original RED probe methods remain byte-for-byte unchanged by AST source
+hash. Rerunning those legacy direct API calls gives **one pass and one error**:
+the stronger old reproduction calls `run_suite` without the newly required
+external executor and receives `ValueError` before candidate execution. It is
+not reported as a green rerun. The new application-only forgery probe exercises
+the supported explicit fixture boundary and passes independently.
+
+Exact commands (private security directory added to `PYTHONPATH`):
+
+```text
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py ss1_closure --verbosity 2
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py security_support.IndependentSupportSecurity security_support.IndependentOperatorSecurity.test_archive_traversal_case_collision_and_file_prefix_are_rejected security_support.IndependentOperatorSecurity.test_no_credentials_or_application_settings_are_inherited security_support.IndependentOperatorSecurity.test_local_nonlinux_host_has_no_code_execution_fallback security_support.IndependentOperatorSecurity.test_plain_import_errors_and_skipped_runs_cannot_count_as_reproduction --verbosity 2
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py security_support.IndependentOperatorSecurity.test_candidate_process_must_not_forge_a_successful_test_run security_support.IndependentOperatorSecurity.test_candidate_application_import_must_not_forge_unchanged_regression_completion --verbosity 2
+```
+
+Private evidence: `SS1-approved-baseline.json`, `ss1_closure.py`,
+`SS1-independent-closure.log`, `SS1-retained-controls.log`,
+`SS1-original-probes-unchanged.log`, `SS1-closure-source-before.json`,
+`SS1-closure-source-after.json` and `SS1-closure-executions.json`. Initial RED logs
+and `SS1-observed.json` remain preserved. This reviewer did not execute Docker;
+actual Linux Docker isolation and the synthetic draft-PR rehearsal remain
+separate lead-owned CI gates. Bounded correct business behavior is not proof
+that arbitrary proposed code is universally correct or nonmalicious.
+
+## Historical initial review: confirmed finding before owner-approved repair
+
 2 November 2026. Independent Agency Application Security Engineer review of
 `.local/b7`, `feat/gpt-support-workflow-20261102`. Read `AGENTS.md`, development
 rules, handoff, support requirements and the installed AppSec definition.
 The reviewer owns only private probes/receipts and this report. No application,
 core test, workflow, operational data, service or approval was changed.
 
-**Disposition: SS1 / Medium is reproduced and UNFIXED, pending explicit owner
+**Initial disposition: SS1 / Medium is reproduced and UNFIXED, pending explicit owner
 approval.** The bounded review has 13 passing controls and two failing security
 assertions reproducing the same SS1 issue. No sandbox escape, cross-company
 access or automatic engineering approval was established. This is not an
