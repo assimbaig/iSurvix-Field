@@ -1,6 +1,41 @@
 # iSurvix Field: local Codex development brief
 
-## Current: approved SS1 repair and upgrade regression - 2 November 2026
+## Current: support acceptance and source gates passed - 2 November 2026
+
+Featurebranch `feat/gpt-support-workflow-20261102`, draftPR31, implementation
+9824a38 and owner-approved repairs e5490a6. All5exact-e549 hosted gates SUCCESS:
+application41476832696,staging41476832605,customer41476832604,
+shared41476832664,repair41476832662. HostedWindows1672passed/654.184s;
+Linux1670passed+2existing skips/504.225s; frontend/dependencies/migration clean.
+Local final2 ran1672/671.209s:1671passed,0failures,1existing L1Win1314symlink
+fixture error. All19frontend+12ancillary checks passed; executable source
+fingerprint unchanged. Do not relabel that local run green or fix heldL1.
+
+Tasks22–24 now have bounded functional/independent acceptance. The real saved
+synthetic case8f43f59c-9c2b-4e59-8efe-0877a0863e14→BASE9365df1→TESTS1a0c7bf
+(3tests:2assertionfailures/1pass)→FIX983f8c7(3pass)→actual TESTONLYdraftPR32
+→real offline Docker41477079364→same-case receipt/owner approvals→actual
+BASE-to-FIX labrestart→installedconfirmation. Sixevents retained; root48browser
+assertions, independent35artifact/Git/DB and28livebrowser assertions pass.
+ExportJSONmembers are byte-identical; CI's ZIPcontainer is repackaged/different.
+Generic arbitraryDjangorepair remains failclosed pending a reviewed external
+adapter; only documented synthetic businessadapter is supported. No paid GPT,
+automaticrepairgeneration, nativeAI or productioninstallation claim is made.
+
+The lab `.local/sl7` was stopped:ownedPID21484,8980closed,SQLiteok,6eventskept.
+Actualscreenshots and team/operator guides are in docs/development; private
+credentials stay out ofGit. Final preservation3595files/70tables/2auditreports
+unchanged; operationalmainfd365f1/schema0053 unchanged. Full Nov2checkpoint
+project-checkpoint-20261102-180503 retained; finalsourcebundle added separately.
+Task25 remains Blocked by native/physical/pilot/licensing/security/owner gates.
+Earlier8securityholds unchanged; SS1explicitlyapproved/repaired/independently
+closed. Read SUPPORT_DELIVERY_20261102.md and the27taskledger for exactscope.
+
+Documentation commits aftere549 do not change executable source. Observe their
+own newly scheduled exact-head CI separately; never claim a running gate passed.
+No merge,deployment,operationalmigration or modelservice was performed.
+
+## Earlier: approved SS1 repair and upgrade regression
 
 The owner explicitly approved SS1. Its host-controlled bounded business oracle
 is implemented:25functional tests and15independent closure checks passed;

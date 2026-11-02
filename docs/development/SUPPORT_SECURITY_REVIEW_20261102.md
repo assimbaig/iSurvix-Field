@@ -205,3 +205,44 @@ or production/model service was invoked by this reviewer. The existing eight
 held findings A12/BR1/D1/D2/L1/CS1/CS2/AI1 retain their approval status; CP1/CP2/UP1
 closures are not permission to repair SS1 or any earlier hold. No merge, push,
 customer release or operational approval was performed.
+
+
+## Separate review of the 0057-to-0058 retention compatibility repair
+
+The lead requested a read-only security review of the functional CI repair in
+`deploy/customer/updater.py` and `deploy/customer/upgrade_fixture.py`. The old
+installed release still supplies the baseline snapshot. Post-migration checks
+use the separately reviewed host comparator. Documentation requires the reviewed
+`updater.py`, `customer.py` and `upgrade_fixture.py` to stay together; the disposable
+upgrade verification binds that host tool set separately from candidate content.
+
+The compatibility allowance is narrow: two new support content types and eight
+exact standard Django permissions, with no grants. Existing rows, user/group
+grants, old permission values, column structure and primary keys remain checked.
+Both support tables must be new and empty; both reviewed migration records must
+exist. This is not permission to tolerate unrelated metadata or data mutation.
+
+Seven independent private adversarial checks used an actual isolated Django
+0057-to-0058 migration: **7 passed, zero failures/errors/skips**, 11.763 seconds,
+zero external attempts. They verified the positive retained digest and rejection
+of an old content-type rename, an old permission replacement, a new permission
+bound to an old content type, a new user grant, a populated new support table and
+missing migration records. The source database hash stayed unchanged. No new
+separate security finding was established by these checks.
+
+```text
+F:/iSurvix/iSurvix-Field/.local/venv/Scripts/python.exe scripts/run_backend_tests.py retention_closure --verbosity 2
+```
+
+`PYTHONPATH` included the private security directory. Evidence is
+`retention_closure.py`, `retention-migration-fixture.log`,
+`retention-independent-closure.log`, `retention-review-source-before.json` and
+`retention-review-source-after.json`. The reviewed updater, comparator and
+`deploy/verify_updates.sh` hashes were unchanged across execution. Two initial
+private fixture-construction errors used the wrong event PK type and omitted a
+required actor. Those fixture values alone were corrected; the rejection
+assertion and application remained unchanged. Both initial logs are retained as
+`retention-independent-first.log` and `retention-independent-second.log`.
+
+This bounded review does not establish actual Docker upgrade/recovery, physical
+server behavior, deployment approval or closure of the eight earlier holds.
