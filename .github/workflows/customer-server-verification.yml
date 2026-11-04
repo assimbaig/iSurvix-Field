@@ -68,8 +68,14 @@ jobs:
             ${{ runner.temp }}/isurvix-customer/update-rehearsal/caught-result.json
             ${{ runner.temp }}/isurvix-customer/update-rehearsal/recovery-result.json
             ${{ runner.temp }}/isurvix-customer/update-rehearsal/success-result.json
-            ${{ runner.temp }}/hostinger-delivery-rehearsal/verification.json
-            ${{ runner.temp }}/hostinger-delivery-rehearsal/compose.log
+      - name: Retain independent Hostinger delivery proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostinger-delivery-verification
+          retention-days: 7
+          if-no-files-found: error
+          path: ${{ runner.temp }}/hostinger-delivery-rehearsal/verification.json
       - name: Retain unapproved transferable candidate for owner review
         if: success()
         uses: actions/upload-artifact@v4

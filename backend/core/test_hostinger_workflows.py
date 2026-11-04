@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -92,6 +93,19 @@ class HostingerWorkflowTests(SimpleTestCase):
         publication = next(i for i, step in enumerate(steps) if step.get('name') == 'Retain unapproved transferable candidate for owner review')
         self.assertLess(checks[0], publication)
         self.assertIn('ISURVIX_DISPOSABLE_REHEARSAL=yes', steps[checks[0]]['run'])
+
+    def test_customer_verification_artifact_retains_its_existing_root_contract(self):
+        steps = self.workflow('customer-server-verification.yml')['jobs']['disposable-linux']['steps']
+        evidence = next(step for step in steps if step.get('with', {}).get('name') == 'customer-server-verification')
+        paths = [line.strip().replace('${{ runner.temp }}', '/runner-temp')
+                 for line in evidence['with']['path'].splitlines() if line.strip()]
+        common = Path(os.path.commonpath(paths))
+        verification = Path('/runner-temp/isurvix-customer/verification.json')
+        self.assertEqual(verification.relative_to(common).as_posix(), 'verification.json',
+                         'Shared release consumer must find verification.json at the artifact root')
+        native = [step for step in steps if step.get('with', {}).get('name') == 'hostinger-delivery-verification']
+        self.assertEqual(len(native), 1, 'Different evidence roots need separate artifacts')
+        self.assertIn('hostinger-delivery-rehearsal/verification.json', native[0]['with']['path'])
 
 
 class HostingerChannelTests(SimpleTestCase):
