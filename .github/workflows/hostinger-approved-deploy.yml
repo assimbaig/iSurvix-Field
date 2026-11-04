@@ -1,7 +1,6 @@
 name: Deploy owner-approved Hostinger beta
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [feat/ai-settings-routing-20261031]
 permissions:
   contents: read
@@ -10,10 +9,32 @@ concurrency:
   group: hostinger-beta-delivery
   cancel-in-progress: false
 jobs:
+  resolve:
+    if: github.repository == 'assimbaig/iSurvix-Field'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr: ${{ steps.merged-pr.outputs.pr }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve one actual merged PR before requesting protected credentials
+        id: merged-pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PUSH_SHA: ${{ github.sha }}
+        run: python deploy/hostinger/channel.py resolve-pr --commit "$PUSH_SHA" --github-output "$GITHUB_OUTPUT"
   deliver:
-    if: >-
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.head.repo.full_name == github.repository
+    needs: resolve
+    if: needs.resolve.result == 'success' && needs.resolve.outputs.pr != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     permissions:
@@ -26,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -38,7 +59,7 @@ jobs:
       - name: Request independently verified, immutable server delivery
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ needs.resolve.outputs.pr }}
           VPS_HOST: ${{ vars.HOSTINGER_VPS_HOST }}
           VPS_USER: ${{ vars.HOSTINGER_VPS_USER }}
           VPS_KNOWN_HOSTS: ${{ vars.HOSTINGER_VPS_KNOWN_HOSTS }}
@@ -85,7 +106,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: hostinger-deployment-${{ github.event.pull_request.number }}
+          name: hostinger-deployment-${{ needs.resolve.outputs.pr }}
           retention-days: 30
           if-no-files-found: error
           path: ${{ runner.temp }}/hostinger-delivery/receipt.json

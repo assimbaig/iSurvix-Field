@@ -1,5 +1,6 @@
 """Release-channel and actual workflow contracts; no credentials/network required."""
 import copy
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 import os
@@ -7,6 +8,8 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
+import urllib.request
 
 from django.test import SimpleTestCase
 from django.urls import reverse
@@ -58,12 +61,21 @@ class HostingerWorkflowTests(SimpleTestCase):
     def test_deployment_only_runs_for_merged_same_repository_live_branch_pr(self):
         workflow = self.workflow('hostinger-approved-deploy.yml')
         self.assertNotIn('pull_request_target', workflow['on'])
-        self.assertNotIn('push', workflow['on'])
-        self.assertEqual(workflow['on']['pull_request']['types'], ['closed'])
-        self.assertEqual(workflow['on']['pull_request']['branches'], [BRANCH])
+        self.assertNotIn('pull_request', workflow['on'])
+        self.assertEqual(workflow['on']['push']['branches'], [BRANCH])
+        resolver = workflow['jobs']['resolve']
+        self.assertNotIn('environment', resolver, 'Unresolved pushes cannot obtain receiver credentials')
+        self.assertNotIn('secrets.', json.dumps(resolver))
+        self.assertEqual(resolver['permissions'], {'contents': 'read', 'pull-requests': 'read'})
+        self.assertTrue(any('channel.py resolve-pr' in step.get('run', '') for step in resolver['steps']))
+        self.assertEqual(resolver['steps'][0]['with']['ref'], '${{ github.sha }}')
         job = workflow['jobs']['deliver']
-        self.assertIn('github.event.pull_request.merged == true', job['if'])
-        self.assertIn('github.event.pull_request.head.repo.full_name == github.repository', job['if'])
+        self.assertEqual(job['needs'], 'resolve')
+        self.assertIn("needs.resolve.result == 'success'", job['if'])
+        self.assertIn('needs.resolve.outputs.pr', job['if'])
+        self.assertEqual(job['steps'][0]['with']['ref'], '${{ github.sha }}')
+        receiver = next(step for step in job['steps'] if 'VPS_DEPLOY_KEY' in step.get('env', {}))
+        self.assertEqual(receiver['env']['PR_NUMBER'], '${{ needs.resolve.outputs.pr }}')
         self.assertEqual(workflow['concurrency']['cancel-in-progress'], 'false')
         self.assertEqual(job['environment']['name'], 'hostinger-beta')
         self.assertEqual(job['permissions'].get('pull-requests'), 'read',
@@ -72,6 +84,7 @@ class HostingerWorkflowTests(SimpleTestCase):
         self.assertIn('StrictHostKeyChecking=yes', text)
         self.assertNotIn('ssh-keyscan', text)
         self.assertNotIn('git pull', text)
+        self.assertNotIn('github.event.pull_request', text)
 
     def test_customer_upgrade_proves_actual_channel_baseline(self):
         workflow = self.workflow('customer-server-verification.yml')
@@ -146,3 +159,120 @@ class HostingerChannelTests(SimpleTestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual((path / 'outputs').read_text(),
                              'source_commit=' + 'a' * 40 + '\nsource_schema=0059_task_page_indexes\n')
+
+
+class MergedPushResolutionTests(SimpleTestCase):
+    sha = 'a' * 40
+
+    def merged_pr(self):
+        return {'number': 34, 'state': 'closed', 'merged': True,
+                'merged_at': '2026-11-04T21:30:00Z', 'merge_commit_sha': self.sha,
+                'head': {'repo': {'full_name': REPO}},
+                'base': {'ref': BRANCH, 'repo': {'full_name': REPO}}}
+
+    def resolve(self, records, details=None, sha=None):
+        def get(path):
+            if '/commits/' in path:
+                return records
+            return details if details is not None else self.merged_pr()
+        return channel_module().resolve_merged_pr(sha or self.sha, get)
+
+    def test_exact_merged_same_repository_pr_resolves(self):
+        self.assertEqual(self.resolve([{'number': 34}]), 34)
+
+    def test_direct_push_foreign_open_wrong_branch_and_other_merge_are_rejected(self):
+        cases = [[], [{'number': True}], [{'number': 34}, {'number': 34}],
+                 [{'number': 34}, {'number': 35}]]
+        for rows in cases:
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                self.resolve(rows)
+        for change in ({'state': 'open'}, {'merged': False}, {'merge_commit_sha': 'b' * 40},
+                       {'head': {'repo': {'full_name': 'foreign/repo'}}},
+                       {'base': {'ref': 'main', 'repo': {'full_name': REPO}}},
+                       {'base': {'ref': BRANCH, 'repo': {'full_name': 'foreign/repo'}}}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.resolve([{'number': 34}], dict(self.merged_pr(), **change))
+        with self.assertRaises(ValueError):
+            self.resolve([], sha='../../private')
+
+    def test_ambiguous_canonical_prs_and_boolean_identity_fail_closed(self):
+        channel = channel_module()
+        def ambiguous(path):
+            if '/commits/' in path:
+                return [{'number': 34}, {'number': 35}]
+            return dict(self.merged_pr(), number=int(path.rsplit('/', 1)[1]))
+        with self.assertRaises(ValueError):
+            channel.resolve_merged_pr(self.sha, ambiguous)
+        def boolean_identity(path):
+            return [{'number': 1}] if '/commits/' in path else dict(self.merged_pr(), number=True)
+        with self.assertRaises(ValueError):
+            channel.resolve_merged_pr(self.sha, boolean_identity)
+
+    def test_paginated_commit_associations_are_fully_checked(self):
+        channel = channel_module()
+        observed = []
+        def get(path):
+            observed.append(path)
+            if '/commits/' in path:
+                return [{'number': n} for n in range(1, 101)] if path.endswith('page=1') else []
+            number = int(path.rsplit('/', 1)[1])
+            return dict(self.merged_pr(), number=number,
+                        merge_commit_sha=self.sha if number == 34 else 'b' * 40)
+        self.assertEqual(channel.resolve_merged_pr(self.sha, get), 34)
+        self.assertTrue(any(path.endswith('page=2') for path in observed))
+        for invalid in ({'number': 34}, 'not-json-list', None):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                channel.resolve_merged_pr(self.sha, lambda path: invalid)
+
+    def test_cli_invalid_commit_never_writes_pr_output_or_logs_credentials(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'outputs'
+            result = subprocess.run([sys.executable, str(ROOT / 'deploy/hostinger/channel.py'),
+                                     'resolve-pr', '--commit', '../../untrusted',
+                                     '--github-output', str(output)], capture_output=True, text=True,
+                                    env=dict(os.environ, GITHUB_TOKEN='private-fixture-token'))
+            self.assertEqual(result.returncode, 2)
+            self.assertFalse(output.exists())
+            self.assertNotIn('private-fixture-token', result.stdout + result.stderr)
+
+    def test_real_http_fixture_delivers_json_and_errors_fail_without_token_disclosure(self):
+        channel = channel_module()
+        calls = []
+        pr = self.merged_pr()
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                calls.append((self.path, self.headers.get('Authorization')))
+                if '/commits/' in self.path:
+                    data = [{'number': 34}]
+                elif self.path.endswith('/pulls/34'):
+                    data = pr
+                elif self.path.endswith('/malformed'):
+                    self.send_response(200); self.end_headers(); self.wfile.write(b'{broken-json'); return
+                else:
+                    self.send_response(503); self.end_headers(); self.wfile.write(b'private-fixture-token'); return
+                self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers()
+                self.wfile.write(json.dumps(data).encode())
+            def log_message(self, *args):
+                pass
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
+        def fixture_open(request, timeout):
+            self.assertTrue(request.full_url.startswith('https://api.github.com/repos/' + REPO + '/'))
+            self.assertLessEqual(timeout, 20)
+            tail = request.full_url.removeprefix('https://api.github.com')
+            local = urllib.request.Request('http://127.0.0.1:' + str(server.server_port) + tail,
+                                           headers=dict(request.header_items()))
+            return urllib.request.urlopen(local, timeout=timeout)
+        try:
+            reader = channel.GitHubReader('private-fixture-token', open_request=fixture_open)
+            self.assertEqual(channel.resolve_merged_pr(self.sha, reader), 34)
+            self.assertEqual(calls[0][0], '/repos/' + REPO + '/commits/' + self.sha + '/pulls?per_page=100&page=1')
+            self.assertEqual(calls[1][0], '/repos/' + REPO + '/pulls/34')
+            self.assertTrue(all(auth == 'Bearer private-fixture-token' for _, auth in calls))
+            with self.assertRaises(ValueError) as failure:
+                reader('/repos/' + REPO + '/unavailable')
+            self.assertNotIn('private-fixture-token', str(failure.exception))
+            with self.assertRaises(ValueError):
+                reader('/repos/' + REPO + '/malformed')
+        finally:
+            server.shutdown(); server.server_close(); thread.join(timeout=2)

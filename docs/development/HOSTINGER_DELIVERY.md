@@ -16,6 +16,24 @@ authorized merger requires the latest owner review on that exact head to remain
 APPROVED. Fork, unmerged, wrong-branch, stale-branch, missing/revoked approval and
 failed/pending checks are rejected independently by the server.
 
+The delivery workflow runs only on a push to that maintained integration branch,
+using its trusted pushed commit, never a pull-request execution ref. An
+unprivileged first job calls GitHub's commit-associated PR API and then reads
+canonical PR details. Exactly one closed, merged, same-repository PR must target
+the integration branch and name that exact push as its merge commit. Direct
+pushes, missing/duplicate associations, foreign PRs and wrong merge identities
+fail before the protected environment or SSH key is requested. A successful
+resolution only identifies the PR; it does not replace the server's independent
+owner approval, current-branch, exact-head CI and artifact checks.
+
+Keep the `hostinger-beta` environment restricted to the integration branch only.
+No `refs/pull/*/merge` wildcard or unrestricted environment is needed. GitHub's
+pull-request environment rules evaluate PR execution references rather than the
+base branch; moving this workflow to the trusted branch push avoids granting
+environment credentials to unmerged PR workflows. Remove any temporary exact
+PR execution-ref rule after its one-off delivery has finished. Workflow reruns
+must still pass the receiver's current-source and approval checks.
+
 Use normal merge commits. The current branch head must equal the PR merge SHA,
 and GitHub's actual PR-head tree must equal its actual merge tree. If a merge
 adds base changes, rebase/update the PR and rerun CI. Deploy the already-tested
