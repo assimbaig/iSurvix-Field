@@ -1,5 +1,0 @@
-﻿{% extends 'base.html' %}{% load static %}
-{% block title %}Sign in · iSurvix{% endblock %}
-{% block body_class %} governance-page{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
-{% block content %}<main class="gw-shell gw-narrow"><header class="gw-topline"><div><p class="gw-eyebrow">ISURVIX FIELD</p><h1>Sign in to your workspace</h1><p class="gw-subtitle">Your account opens the tools and projects assigned to you.</p></div></header>{% for message in messages %}<div class="gw-notice" role="status">{{ message }}</div>{% endfor %}<section class="gw-card"><form method="post">{% csrf_token %}{{ form.as_p }}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}<button class="gw-primary" type="submit">Sign in</button></form></section><p class="gw-step">Joining a project? Use the private invitation link from your administrator to create your account.</p><p class="gw-step">There is no public registration. Your role is assigned by invitation.</p></main>{% endblock %}
