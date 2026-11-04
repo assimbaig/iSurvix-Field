@@ -14,8 +14,10 @@ These ignored files and all credentials/backups must remain outside Git.
 
 ## Current source and delivery
 
-Work is on `feat/hostinger-github-release-20261104`, PR #34:
-https://github.com/assimbaig/iSurvix-Field/pull/34
+Current follow-up branch: `feat/hostinger-trusted-push-20261105`.
+PR #34 (https://github.com/assimbaig/iSurvix-Field/pull/34) is merged. Its
+application release `dab9c55` was installed by the actual approved GitHub/VPS
+delivery run, with trusted HTTPS/readiness and provenance confirmed.
 The maintained integration branch is `feat/ai-settings-routing-20261031`.
 The old default `main` is historical; do not reset newer work to it.
 
@@ -25,12 +27,15 @@ The fixed iField destination is https://app.isurvix.com/login/.
 hosting. Never replace the full corporate site with that partial directory.
 Manifest bytes are fixed; Git attributes preserve LF on Windows and Linux.
 
-The existing VPS beta remains on its previously verified application release.
-A separately installed restricted receiver verifies owner-merged, same-repo
-PRs, all exact-source checks, immutable artifacts, proven upgrade support and
-runtime identity. The initial real automatic application update still requires
-owner review and a normal merge commit after green checks. Do not squash/rebase
-this delivery flow. See `docs/development/HOSTINGER_DELIVERY.md`.
+The restricted receiver verifies owner-merged, same-repo PRs, all exact-source
+checks, immutable artifacts, proven upgrade support and runtime identity.
+The original PR-event run was rejected by the base-only environment policy.
+An exact temporary rule admitted only the already merged PR34 for its successful
+retry; that rule was removed. No wildcard PR rule was applied.
+The follow-up uses a trusted integration-branch push, resolves its canonical
+merged PR in a read-only job, and only then requests protected credentials.
+Retain owner review and normal merge commits after green checks. Do not
+squash/rebase this delivery flow. See `docs/development/HOSTINGER_DELIVERY.md`.
 
 The receiver uses a dedicated nonroot SSH key, fixed sudo command, deadline,
 nonblocking admission, private journals, verified backup and new-target recovery.
@@ -67,7 +72,10 @@ changing live assets or weakening hashes.
 Unrelated native-AI, licensing, pilot, physical-device, capacity and production
 release holds remain separate. Earlier hold identifiers A12, BR1, D1, D2, L1,
 CS2 and AI1 are not cleared by this task; verify the retained reviews before
-changing them. The PC worker is not connected to the fresh
+changing them. BR1 remains an explicit trusted-base assumption: the integration
+branch has no protection/ruleset and the current sole repository collaborator
+is its owner. The follow-up does not authorize changing that governance policy.
+The PC worker is not connected to the fresh
 VPS beta. Do not download another model, add paid services or claim native
 accuracy/engineering compliance based on ordinary tests. Two informational
 operator observations are in the private independent review: missing empty SSH
