@@ -7,7 +7,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 import hashlib
 import json
+import os
 import re
+import subprocess
+import tempfile
 import unittest
 
 BASE = Path(__file__).resolve().parents[1]
@@ -57,6 +60,57 @@ class PublicWebsiteTests(unittest.TestCase):
             self.assertEqual(source.parent, BASE)
             self.assertEqual(source.stat().st_size, item['bytes'])
             self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), item['sha256'])
+
+    def test_git_checkout_with_autocrlf_preserves_exact_publication_bytes(self):
+        """Exercise real index/add/checkout conversion, not an attribute-string assertion."""
+        repository = BASE.parents[1]
+        scratch_root = repository / '.local/corporate-qa'
+        self.assertTrue(scratch_root.resolve().is_relative_to(repository.resolve()))
+        scratch_root.mkdir(parents=True, exist_ok=True)
+        manifest = json.loads((BASE / 'source-manifest.json').read_text())
+        environment = os.environ.copy()
+        for name in list(environment):
+            if (name in {'GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY',
+                         'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_CONFIG_PARAMETERS', 'GIT_CONFIG_COUNT'}
+                    or name.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))):
+                environment.pop(name)
+        environment['GIT_TERMINAL_PROMPT'] = '0'
+        with tempfile.TemporaryDirectory(prefix='git-line-endings-', dir=scratch_root) as temporary:
+            fixture = Path(temporary)
+            self.assertTrue(fixture.resolve().is_relative_to(scratch_root.resolve()))
+
+            def git(*arguments):
+                return subprocess.run(['git', *arguments], cwd=fixture, env=environment,
+                                      capture_output=True, text=True, check=True, timeout=30)
+
+            git('init', '--quiet')
+            git('config', 'core.autocrlf', 'true')
+            # Do not let a user-specific attributes file mask the repository regression.
+            empty_attributes = fixture / '.empty-global-attributes'
+            empty_attributes.write_bytes(b'')
+            git('config', 'core.attributesFile', str(empty_attributes))
+            paths = []
+            for item in manifest['files']:
+                relative = Path('website/corporate') / item['path']
+                target = fixture / relative
+                self.assertTrue(target.resolve().is_relative_to(fixture.resolve()))
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((BASE / item['path']).read_bytes())
+                paths.append(relative.as_posix())
+            attributes = repository / '.gitattributes'
+            if attributes.is_file():
+                (fixture / '.gitattributes').write_bytes(attributes.read_bytes())
+                paths.append('.gitattributes')
+            git('add', '--', *paths)
+            # Remove only the eight explicitly listed disposable asset copies.
+            for item in manifest['files']:
+                (fixture / 'website/corporate' / item['path']).unlink()
+            git('checkout-index', '--all', '--force')
+            for item in manifest['files']:
+                with self.subTest(path=item['path']):
+                    restored = (fixture / 'website/corporate' / item['path']).read_bytes()
+                    self.assertEqual(len(restored), item['bytes'])
+                    self.assertEqual(hashlib.sha256(restored).hexdigest(), item['sha256'])
 
     def test_homepage_is_the_only_corporate_sign_in_entry(self):
         for name, source in self.pages.items():
