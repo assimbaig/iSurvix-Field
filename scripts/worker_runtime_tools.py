@@ -171,7 +171,7 @@ def collect_diagnostics(*, project_root, model, photo_url, text_url, powershell_
         pass
     local = project_root / '.local'
     directory = local / 'diagnostics'
-    if local.is_symlink() or directory.is_symlink():
+    if any(path.is_symlink() or path.is_junction() for path in (local, directory)):
         raise ValueError('Choose the existing project directory for private diagnostics.')
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     _secure(directory, directory=True)

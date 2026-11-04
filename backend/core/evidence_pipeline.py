@@ -135,9 +135,9 @@ def prepare_observation(photo, model, context, check, progress=None, *, raw=None
     return observation
 
 def latest_context(checklist):
-    for job in checklist.photo_jobs.order_by('-pk'):
-        if job.schema == checklist.schema_snapshot and job.progress.get('evidence_context'):
-            return job.progress['evidence_context']
+    for job in checklist.photo_jobs.order_by('-pk').values('schema','progress').iterator(chunk_size=100):
+        if job['schema'] == checklist.schema_snapshot and job['progress'].get('evidence_context'):
+            return job['progress']['evidence_context']
     return None
 
 def processing_context(checklist, model, adopt=False):

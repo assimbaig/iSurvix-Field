@@ -1,0 +1,5 @@
+{% if pagination and pagination.page.paginator.count %}<nav class="gw-actions" aria-label="{{ pagination.label }}">
+{% if pagination.previous_url %}<a class="gw-action" href="{{ pagination.previous_url }}">Previous</a>{% endif %}
+<span class="gw-muted">{{ pagination.page.start_index }}–{{ pagination.page.end_index }} of {{ pagination.page.paginator.count }} · Page {{ pagination.page.number }} of {{ pagination.page.paginator.num_pages }}</span>
+{% if pagination.next_url %}<a class="gw-action" href="{{ pagination.next_url }}">Next</a>{% endif %}
+</nav>{% endif %}

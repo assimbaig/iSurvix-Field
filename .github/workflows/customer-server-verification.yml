@@ -9,7 +9,7 @@ on:
       - 'backend/core/test_customer*'
       - 'backend/core/support*'
       - 'backend/core/test_support*'
-      - 'backend/core/migrations/0058_support*'
+      - 'backend/core/migrations/**'
       - 'backend/templates/support/**'
       - 'backend/static/core/css/support*'
       - 'backend/static/core/js/support*'

@@ -11,8 +11,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.db import IntegrityError, OperationalError, transaction
-from django.db.models import F, Q
+from django.db.models import F,Q,Exists,OuterRef,Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -102,15 +103,46 @@ def scoped_projects(actor):
     return accessible_projects(actor)
 
 
+def workspace_page(request,queryset,parameter,label,per_page=25,anchor='',view=None):
+    """Bound the rendered collection while keeping every record reachable."""
+    page=Paginator(queryset,per_page).get_page(request.GET.get(parameter))
+    def link(number):
+        query=request.GET.copy();query[parameter]=number
+        if view:query['view']=view
+        # Validation errors can be rendered from a POST-only action URL.
+        return reverse('governance_home')+'?'+query.urlencode()+('#'+anchor if anchor else '')
+    navigation={'page':page,'label':label,
+        'previous_url':link(page.previous_page_number()) if page.has_previous() else '',
+        'next_url':link(page.next_page_number()) if page.has_next() else ''}
+    return page,navigation
+
+
+def workspace_members(actor,projects,super_admin):
+    """SQL equivalent of the old union of users_for_project(include_inactive).
+
+    Inactive accounts remain administratively visible; a revoked/expired grant
+    cannot be revived by Profile.project. Account mutation guards stay separate.
+    """
+    users=User.objects.all()
+    if super_admin:return users.filter(is_superuser=False)
+    company=company_id_for(actor)
+    affiliation=(Q(profile__company__isnull=True,profile__project__company__isnull=True)
+                 if company is None else Q(profile__company_id=company)|
+                 Q(profile__company__isnull=True,profile__project__company_id=company))
+    grants=ProjectMembership.objects.filter(user_id=OuterRef('pk'),project__in=projects,
+        is_active=True).filter(Q(expires_at__isnull=True)|Q(expires_at__gt=timezone.now()))
+    primary_record=ProjectMembership.objects.filter(user_id=OuterRef('pk'),project_id=OuterRef('profile__project_id'))
+    return users.filter(affiliation).alias(_workspace_grant=Exists(grants),
+        _workspace_primary=Exists(primary_record)).filter(Q(_workspace_grant=True)|
+        Q(profile__project__in=projects,_workspace_primary=False))
+
+
 def workspace_context(request,**extra):
     actor=request.user
     role=role_for(actor)
     scope_projects=accessible_projects(actor).select_related('company','administrator','checklist_template').order_by('company__name','name')
     super_admin=is_super_admin(actor)
-    if role==Profile.Roles.ADMIN:
-        for project in scope_projects:
-            project.client_candidates=ClientOrganization.objects.filter(company_id=company_id_for(actor),industry__code=project.industry)
-    active_view=request.GET.get('view','dashboard' if super_admin else 'my_work')
+    active_view=extra.get('active_view',request.GET.get('view','dashboard' if super_admin else 'my_work'))
     if super_admin and active_view in {'my_work','administration','reviews','reports'}:active_view='dashboard'
     allowed_views={'dashboard','industries','clients','projects','sites'} if super_admin else {'my_work','projects','reviews','reports','administration'}
     if active_view not in allowed_views:raise Http404()
@@ -129,10 +161,6 @@ def workspace_context(request,**extra):
     else:
         chosen=None
         projects=scope_projects
-    if is_super_admin(actor):
-        projects=list(projects)
-        for project in projects:
-            project.admin_candidates=ProjectAdministratorForm(project=project).fields['administrator'].queryset
     surveys=Checklist.objects.filter(project__in=projects).select_related('project','user').order_by('project__name','site_id','pk')
     assignments=WorkAssignment.objects.filter(project__in=projects).select_related('project','assigned_to','checklist')
     if role==Profile.Roles.ENGINEER:
@@ -153,7 +181,9 @@ def workspace_context(request,**extra):
         assignments=assignments.filter(checklist__in=surveys)
     admin=is_super_admin(actor) or role==Profile.Roles.ADMIN
     if active_view=='administration' and not admin:raise PermissionDenied('Administration requires a scoped administrative role.')
-    if role==Profile.Roles.CLIENT:
+    if active_view!='reviews':
+        review_queue=Checklist.objects.none()
+    elif role==Profile.Roles.CLIENT:
         review_queue=[survey for survey in surveys if survey.can_client_decide]
     elif role==Profile.Roles.ADMIN:
         # Only the named frozen v1 approver may finish an outstanding legacy
@@ -169,20 +199,32 @@ def workspace_context(request,**extra):
     invites=(ProjectInvitation.objects.all() if super_admin else ProjectInvitation.objects.filter(
         Q(company_id=company_id_for(actor))|Q(company__isnull=True),project__in=projects
     )).select_related('project','company','created_by') if admin else ProjectInvitation.objects.none()
-    member_ids={user.pk for project in projects for user in users_for_project(project,include_inactive=True)} if admin else set()
-    members=User.objects.filter(pk__in=member_ids).select_related('profile','profile__project','profile__company').order_by('username')
-    if is_super_admin(actor):
-        members=User.objects.filter(is_superuser=False).select_related('profile','profile__project','profile__company').order_by('username')
-    members=list(members)
-    actor_ids=set(scope_projects.values_list('pk',flat=True))
-    for member in members:
-        member.scope_memberships=list(member.project_memberships.filter(project_id__in=actor_ids).select_related('project','project__company'))
-        company=company_id_for(member)
-        member.grant_projects=scope_projects.filter(company_id=company) if company is not None else scope_projects
-        active_ids=set(member.project_memberships.filter(is_active=True).values_list('project_id',flat=True))
-        if member.profile.project_id and not member.project_memberships.filter(project_id=member.profile.project_id).exists():
-            active_ids.add(member.profile.project_id)
-        member.can_manage_account=is_super_admin(actor) or active_ids.issubset(actor_ids)
+    members=[]
+    members_page=None
+    members_pagination=None
+    if admin and active_view==('dashboard' if super_admin else 'administration'):
+        roster=workspace_members(actor,projects,super_admin).select_related(
+            'profile','profile__project','profile__company','profile__admin_industry').prefetch_related(
+                Prefetch('project_memberships',queryset=ProjectMembership.objects.select_related(
+                    'project','project__company'),to_attr='_workspace_grants')).order_by('username','pk')
+        people_search=request.GET.get('people_q','').strip()[:200]
+        if people_search:
+            roster=roster.filter(Q(username__icontains=people_search)|Q(email__icontains=people_search)|
+                Q(first_name__icontains=people_search)|Q(last_name__icontains=people_search))
+        members_page,members_pagination=workspace_page(request,roster,'people_page','Team member pages',24,'team',active_view)
+        members=list(members_page.object_list)
+        available_projects=list(scope_projects)
+        actor_ids={project.pk for project in available_projects}
+        for member in members:
+            recorded=member._workspace_grants
+            member.scope_memberships=[grant for grant in recorded if grant.project_id in actor_ids]
+            profile=member.profile
+            company=profile.company_id or (profile.project.company_id if profile.project_id else None)
+            member.grant_projects=[project for project in available_projects if company is None or project.company_id==company]
+            active_ids={grant.project_id for grant in recorded if grant.is_active}
+            if profile.project_id and not any(grant.project_id==profile.project_id for grant in recorded):
+                active_ids.add(profile.project_id)
+            member.can_manage_account=super_admin or active_ids.issubset(actor_ids)
     context={'active_view':active_view,'selected_industry':selected_industry,'industry_choices':list(IndustryCatalog.objects.filter(code__in=accessible_projects(actor).values_list('industry',flat=True)).values_list('code','name')) if not super_admin else list(IndustryCatalog.objects.values_list('code','name')),'can_administer':admin,'review_queue':review_queue,'reports':surveys.filter(status=Checklist.Status.FINAL),'can_qualify':role==Profile.Roles.TEAM_LEAD,'role':role,'role_label':dict(Profile.Roles.choices).get(role,'Unassigned'),
         'is_super_admin':is_super_admin(actor),'is_project_admin':role==Profile.Roles.ADMIN,
         'can_create_project':bool(role==Profile.Roles.ADMIN and not super_admin and not actor.profile.admin_industry_pending and actor.profile.admin_industry_id and actor.profile.admin_industry.is_active and company_id_for(actor)),
@@ -191,7 +233,12 @@ def workspace_context(request,**extra):
         'projects':projects,'scope_projects':scope_projects,'project_filter':scope_projects,'selected_project_id':str(chosen.pk) if chosen else '',
         'scope_label':chosen.name if chosen else 'All assigned projects','companies':Company.objects.all() if is_super_admin(actor) else Company.objects.filter(pk=company_id_for(actor)),
         'clientorg_form':ClientOrganizationForm(),'client_organization_form':ClientOrganizationForm(),'client_organizations':ClientOrganization.objects.all() if super_admin else ClientOrganization.objects.filter(company_id=company_id_for(actor),industry_id=getattr(actor.profile,'admin_industry_id',None)),'company_form':CompanyForm(),'surveys':surveys,'assignments':assignments,'invitations':invites,'members':members,
-        'admin_industry_form':AdminIndustryForm(),'project_form':ProjectForm(actor=actor),'invite_form':InvitationForm(actor=actor),'assignment_form':AssignmentForm(actor=actor)}
+        'admin_industry_form':AdminIndustryForm(),
+        'project_form':ProjectForm(actor=actor) if role==Profile.Roles.ADMIN and active_view=='projects' else None,
+        'invite_form':InvitationForm(actor=actor) if admin and active_view==('dashboard' if super_admin else 'administration') else None,
+        'assignment_form':None,'members_page':members_page,'members_pagination':members_pagination,
+        'members_search':request.GET.get('people_q','').strip()[:200],
+        'members_search_filters':[(key,value) for key,value in request.GET.items() if key not in {'people_q','people_page','view'}]+[('view',active_view)]}
     engineer_home=role==Profile.Roles.ENGINEER and active_view=='my_work'
     if engineer_home:
         unlinked_assignments=assignments.filter(checklist__isnull=True)
@@ -221,17 +268,46 @@ def workspace_context(request,**extra):
         imported_ids=ClientOrganization.objects.exclude(legacy_company_id=None).values_list('legacy_company_id',flat=True)
         legacy_ids=[event.details.get('company_id') for event in GovernanceAudit.objects.filter(action='company_created') if isinstance(event.details,dict) and str(event.details.get('company_id','')).isdigit()]
         context['legacy_client_records']=Company.objects.filter(pk__in=legacy_ids,projects__isnull=True,profiles__isnull=True).exclude(pk__in=imported_ids).distinct()
+    if active_view in {'my_work','projects'} and not super_admin and not engineer_home:
+        survey_page,survey_navigation=workspace_page(request,surveys,'sites_page','Checklist site pages',view=active_view)
+        work_page,work_navigation=workspace_page(request,assignments.order_by('-created_at','-pk'),'work_page','Assigned task pages',view=active_view)
+        context.update(surveys=survey_page.object_list,surveys_page=survey_page,surveys_pagination=survey_navigation,
+            assignments=work_page.object_list,assignments_page=work_page,assignments_pagination=work_navigation)
+    if active_view=='reports' and not super_admin:
+        report_page,report_navigation=workspace_page(request,surveys.filter(status=Checklist.Status.FINAL),'report_page','Report pages',view=active_view)
+        context.update(reports=report_page.object_list,reports_pagination=report_navigation)
+    if active_view=='reviews' and not super_admin:
+        review_page,review_navigation=workspace_page(request,review_queue,'review_page','Review queue pages',view=active_view)
+        context.update(review_queue=review_page.object_list,reviews_pagination=review_navigation)
+    if active_view=='sites' and super_admin:
+        site_page,site_navigation=workspace_page(request,assignments.order_by('-created_at','-pk'),
+            'site_page','Administrative site pages',view=active_view)
+        context.update(sites=site_page.object_list,sites_page=site_page,sites_pagination=site_navigation)
+    if active_view in {'projects','administration'}:
+        project_page,project_navigation=workspace_page(request,projects,'project_page','Project pages',view=active_view)
+        visible_projects=list(project_page.object_list)
+        for project in visible_projects:
+            if super_admin:
+                project.admin_candidates=ProjectAdministratorForm(project=project).fields['administrator'].queryset
+            elif role==Profile.Roles.ADMIN:
+                project.client_candidates=ClientOrganization.objects.filter(company_id=company_id_for(actor),industry__code=project.industry)
+        context.update(projects=visible_projects,projects_pagination=project_navigation)
     context.update(extra)
     return context
 
 
 def workspace_response(request,status=200,**context):
-    if is_super_admin(request.user) and status>=400 and 'active_view' not in context:
-        for key,view in [('industry_form','industries'),('project_form','projects'),('invite_form','dashboard')]:
+    super_admin=is_super_admin(request.user)
+    if status>=400 and 'active_view' not in context:
+        error_views=([('industry_form','industries'),('project_form','projects'),
+            ('invite_form','dashboard'),('admin_industry_form','dashboard')] if super_admin else
+            [('project_form','projects'),('invite_form','administration'),
+             ('clientorg_form','administration')] if role_for(request.user)==Profile.Roles.ADMIN else [])
+        for key,view in error_views:
             if key in context:
                 context['active_view']=view
                 break
-    response=render(request,'dashboards/super_admin_workspace.html' if is_super_admin(request.user) else 'dashboards/governance_workspace.html',workspace_context(request,**context),status=status)
+    response=render(request,'dashboards/super_admin_workspace.html' if super_admin else 'dashboards/governance_workspace.html',workspace_context(request,**context),status=status)
     response['Cache-Control']='private, no-store'
     return response
 

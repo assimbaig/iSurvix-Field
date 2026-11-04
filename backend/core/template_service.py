@@ -249,7 +249,7 @@ def export_custom_excel(checklist):
     ws['B4'] = safe_excel_text(checklist.schema_snapshot.get('title', 'Site survey'))
     ws['B4'].font = Font(size=17, bold=True)
     ws['B5'], ws['C5'] = 'Site ID', safe_excel_text(checklist.site_id)
-    ws['B6'], ws['C6'] = 'Template revision', str(checklist.checklist_template)
+    ws['B6'], ws['C6'] = 'Template revision', safe_excel_text(str(checklist.checklist_template))
     ws['B7'], ws['C7'] = 'Status', checklist.get_status_display()
     ws['B8'], ws['C8'] = 'Review comment', safe_excel_text(checklist.comment)
     ws['B9'], ws['C9'] = 'Reviewed by', safe_excel_text(checklist.comment_by.get_username() if checklist.comment_by else '')

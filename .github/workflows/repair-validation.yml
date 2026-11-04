@@ -35,6 +35,8 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: backend/requirements.txt
+      - name: Install reviewed package installer
+        run: python -m pip install -r deploy/requirements.bootstrap.txt
       - run: python -m pip install -r backend/requirements.txt
       - run: python -m pip check
       - name: Isolated unit and HTTP integration tests

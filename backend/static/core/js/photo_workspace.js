@@ -14,6 +14,8 @@
   const pendingAnalysis=new Set();
   const selection = new Set();
   let state = {photos: [], jobs: [], drafts: []}, current = null, refreshing = false;
+  const historyBusy={jobs:false,drafts:false},historyErrors={jobs:'',drafts:''},historyExpanded={jobs:false,drafts:false};
+  let historyEpoch=0;
   const token = app.querySelector('[name=csrfmiddlewaretoken]').value;
   const base = window.location.pathname.replace(/\/?$/, '/');
   const uiText = text => String(text ?? '').replace(/metadata/gi,'AI Analysis');
@@ -37,6 +39,58 @@
     if (!response.ok) { const error=new Error(uiText(data.error || `Request failed (${response.status}).`));error.status=response.status;throw error; }
     if (!response.headers.get('content-type')?.includes('application/json')) throw new Error(data.error);
     return data;
+  }
+  function mergeHistoryRows(recent,older,preferIncoming=false){
+    const rows=new Map();
+    for(const row of recent)if(row&&Number.isSafeInteger(row.id)&&!rows.has(row.id))rows.set(row.id,row);
+    for(const row of older)if(row&&Number.isSafeInteger(row.id)&&(!rows.has(row.id)||preferIncoming))rows.set(row.id,row);
+    return Array.from(rows.values());
+  }
+  function publishedState(){
+    // Other widgets must never interpret a retained history snapshot as live
+    // processing or an actionable current proposal.
+    return {...state,jobs:state.jobs.filter(row=>!row._history_snapshot),
+      drafts:state.drafts.filter(row=>!row._history_snapshot)};
+  }
+  function currentProcessingJob(){
+    const count=state.analysis?.active_job_count;
+    if(typeof count==='number'&&Number.isFinite(count)&&count===0)return null;
+    if(state.analysis?.active_job)return state.analysis.active_job;
+    const jobs=state.jobs.filter(row=>!row._history_snapshot);
+    return jobs.find(job=>job.status==='running')||jobs.find(job=>job.status==='queued')||null;
+  }
+  function shouldPoll(){
+    const count=state.analysis?.active_job_count;
+    return typeof count==='number'&&Number.isFinite(count)&&count>=0?count>0:!!currentProcessingJob();
+  }
+  function renderProcessingStage(){
+    const active=currentProcessingJob(),latest=state.jobs.find(row=>!row._history_snapshot);
+    if(el('photo-processing-stages'))el('photo-processing-stages').dataset.stage=active?.progress?.stage||
+      (latest?.status==='failed'?'failed':state.analysis?.review_ready&&latest?.status==='completed'?'completed':'queued');
+  }
+  function renderHistoryControls(){
+    for(const collection of ['jobs','drafts']){
+      const button=el(`photo-${collection}-more`),status=el(`photo-${collection}-history-status`),page=state.history?.[collection];
+      if(!button||!status)continue;
+      button.hidden=!page?.has_more;button.disabled=historyBusy[collection];
+      const count=Array.isArray(state[collection])?state[collection].length:0;
+      status.textContent=historyErrors[collection]||(!page?'':`${historyBusy[collection]?'Loading more… ':''}${count} of ${page.total} saved ${collection} loaded.${historyExpanded[collection]?' Older rows are a saved snapshot; Refresh checks their latest state.':''}`);
+    }
+  }
+  async function loadHistory(collection){
+    if(!['jobs','drafts'].includes(collection)||historyBusy[collection])return;
+    const page=state.history?.[collection];if(!page?.has_more||!page.next_cursor)return;
+    historyBusy[collection]=true;historyErrors[collection]='';renderHistoryControls();
+    const epoch=historyEpoch;
+    try{
+      const result=await request(`state/?history=${collection}&cursor=${encodeURIComponent(page.next_cursor)}`);
+      if(epoch!==historyEpoch)return;
+      if(!Array.isArray(result[collection])||!result.history?.[collection])throw new Error('Unexpected history response.');
+      state[collection]=mergeHistoryRows(state[collection],result[collection],true);
+      state.history={...state.history,[collection]:result.history[collection]};
+      historyExpanded[collection]=true;render();
+    }catch(error){if(epoch===historyEpoch)historyErrors[collection]=`More ${collection} could not be loaded. Retry: ${error.message}`;}
+    finally{historyBusy[collection]=false;renderHistoryControls();}
   }
   function counts() { el('photo-selection').textContent = `${selection.size} selected · ${state.photos.length}/${photoLimit} uploaded`; }
   function renderVisualMetadata(photo){
@@ -87,13 +141,18 @@
     if(el('photo-position'))el('photo-position').textContent=current?(filtered.findIndex(p=>p.id===current)+1)+' / '+filtered.length:'No photo selected';
     counts();
     const selected=state.photos.find(p=>p.id===current);renderVisualMetadata(selected);if(el('photo-metadata-status'))el('photo-metadata-status').textContent=selected?.metadata_ready===true?'AI Analysis is ready. Review the suggested checklist links.':selected?.metadata_ready===false?'AI Analysis is pending for this photo.':'';
-    const active=state.jobs.find(j=>j.status==='running')||state.jobs.find(j=>j.status==='queued');if(el('photo-processing-stages'))el('photo-processing-stages').dataset.stage=active?.progress?.stage||(state.jobs[0]?.status==='failed'?'failed':state.analysis?.review_ready&&state.jobs[0]?.status==='completed'?'completed':'queued');
+    renderProcessingStage();
     const jobs = el('photo-jobs'); jobs.replaceChildren();
     if (!state.jobs.length) jobs.append(node('p', 'No processing jobs yet.'));
     const analyzedIds=new Set(state.analysis?.analyzed_photo_ids||[]);
     for (const j of state.jobs) {
       const superseded=j.status==='failed'&&Array.isArray(j.photo_ids)&&j.photo_ids.length>0&&j.photo_ids.every(id=>analyzedIds.has(id));
       const row=node('div',undefined,'photo-job');row.dataset.jobId=j.id;
+      if(j._history_snapshot){
+        row.dataset.historySnapshot='true';
+        row.append(node('strong',`Job ${j.id} · Saved snapshot`),node('p',`Last recorded: ${j.status} · ${j.completed||0}/${j.total||0}. Current processing is shown above; Refresh checks this older record.`,'photo-muted'));
+        jobs.append(row);continue;
+      }
       if(superseded){
         row.append(node('strong',`Job ${j.id} · Earlier failed attempt`),node('p','Earlier failed attempt · photos analyzed by a later job','photo-muted'));
         const history=node('details'),summary=node('summary','View original attempt');history.append(summary,node('p',`${j.completed}/${j.total} photos processed in this earlier attempt.`));if(j.error)history.append(node('p',j.error));row.append(history);jobs.append(row);continue;
@@ -110,6 +169,7 @@
     for (const d of state.drafts) {
       const card = node('article', undefined, 'photo-draft');
       card.append(node('h3', d.label || d.field_id), node('p', `Field ${d.field_id} · ${d.status} · Uncertainty: ${d.uncertainty}`));
+      if(d._history_snapshot)card.append(node('p','Saved history snapshot. Applying an answer rechecks the current saved source and approval locks.','photo-muted'));
       card.append(node('pre', d.value === null ? 'Insufficient evidence — no answer proposed.' : JSON.stringify(d.value, null, 2)), node('p', d.reason));
       if (d.missing_information) card.append(node('p', `Information needed: ${d.missing_information}`));
       for (const anomaly of d.anomalies || []) card.append(node('p', `Suspected anomaly: ${anomaly.description}${anomaly.bbox ? ' · Normalized bounds: ' + anomaly.bbox.join(', ') : ''}`));
@@ -118,7 +178,8 @@
       if (!readOnly && d.status === 'pending' && d.value !== null) { const accept = node('button', 'Accept proposed answer'); accept.type = 'button'; accept.onclick = () => { if (window.confirm(`Apply this proposed answer to ${d.label || d.field_id}? This changes the saved answer and does not approve the section.`)) act(accept, `drafts/${d.id}/accept/`, {}); }; card.append(accept); }
       drafts.append(card);
     }
-    document.dispatchEvent(new CustomEvent('photo-state', {detail:state}));
+    renderHistoryControls();
+    document.dispatchEvent(new CustomEvent('photo-state', {detail:publishedState()}));
   }
   async function queueUploadedGroup(){
     if(readOnly||engineer||checklistProcessingEnabled||queueBusy||!pendingAnalysis.size)return;
@@ -127,10 +188,26 @@
     catch(error){ids.forEach(id=>pendingAnalysis.delete(id));message('Originals uploaded, but analysis did not start: '+error.message+' Use Analyze unprocessed photos to retry.');}
     finally{queueBusy=false;}
   }
-  async function refresh() {
+  async function refresh(options={}) {
     if (refreshing || document.hidden) return;
+    const preserve=options.preserveHistory===true;
+    if(preserve&&Object.values(historyBusy).some(Boolean))return;
+    if(!preserve)historyEpoch++;
+    const previous=state;
     refreshing = true;
-    try { state = await request('state/');if(Number.isInteger(state.max_photos)&&state.max_photos>0)photoLimit=state.max_photos;render(); } catch (e) { message(e.message); }
+    try {
+      const refreshed=await request('state/');
+      for(const collection of ['jobs','drafts']){
+        if(preserve&&historyExpanded[collection]&&refreshed.history?.[collection]){
+          const freshIDs=new Set(refreshed[collection].map(row=>row.id));
+          const snapshots=previous[collection].map(row=>freshIDs.has(row.id)?row:{...row,_history_snapshot:true});
+          refreshed[collection]=mergeHistoryRows(refreshed[collection],snapshots);
+          refreshed.history[collection]={...refreshed.history[collection],has_more:previous.history[collection].has_more,
+            next_cursor:previous.history[collection].next_cursor,next_url:previous.history[collection].next_url};
+        }else{historyExpanded[collection]=false;historyErrors[collection]='';}
+      }
+      state=refreshed;if(Number.isInteger(state.max_photos)&&state.max_photos>0)photoLimit=state.max_photos;render();
+    } catch (e) { message(e.message); }
     finally { refreshing = false; }
   }
   async function act(button, path, payload) {
@@ -179,14 +256,16 @@
   };
   el('photo-select-all').onclick = () => { const clear = selection.size === state.photos.length; selection.clear(); if (!clear) state.photos.forEach(p => selection.add(p.id)); render(); };
   el('photo-refresh').onclick = refresh;
+  for(const collection of ['jobs','drafts'])if(el(`photo-${collection}-more`))el(`photo-${collection}-more`).onclick=()=>loadHistory(collection);
   el('photo-fullscreen').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await el('photo-viewer').requestFullscreen(); } catch { message('Fullscreen is unavailable in this browser. Open the original photo instead.'); } };
   el('catalog-mode').onclick = () => { const ungrouped = el('photo-sites').classList.toggle('photo-ungrouped'); if (ungrouped) el('photo-sites').querySelectorAll('details').forEach(item => { item.open = true; }); el('catalog-mode').textContent = ungrouped ? 'Group projects' : 'Ungroup projects'; };
   // Appearance is controlled centrally by the bottom-left system menu.
   if(el('photo-more'))el('photo-more').onclick=()=>{visibleLimit+=36;render();};
-  window.photoWorkspace={request,refresh,getState:()=>state,getCurrent:()=>current,isUploading:()=>uploadBusy||!!activeUploadToken,hasPendingUploads:()=>uploadFailed||!!(cameraFiles?.length||el('photo-files')?.files.length),message,readOnly,selectPhoto:id=>{const photo=state.photos.find(p=>p.id===id);if(photo){const index=visiblePhotos().findIndex(p=>p.id===id);if(index>=visibleLimit){visibleLimit=Math.ceil((index+1)/36)*36;render();}showPhoto(photo);}},getVisiblePhotos:visiblePhotos,filterField:id=>{activeField=id||null;visibleLimit=36;render();}};
+  window.photoWorkspace={request,refresh,getState:publishedState,getCurrent:()=>current,isUploading:()=>uploadBusy||!!activeUploadToken,hasPendingUploads:()=>uploadFailed||!!(cameraFiles?.length||el('photo-files')?.files.length),message,readOnly,selectPhoto:id=>{const photo=state.photos.find(p=>p.id===id);if(photo){const index=visiblePhotos().findIndex(p=>p.id===id);if(index>=visibleLimit){visibleLimit=Math.ceil((index+1)/36)*36;render();}showPhoto(photo);}},getVisiblePhotos:visiblePhotos,filterField:id=>{activeField=id||null;visibleLimit=36;render();}};
   window.addEventListener('pagehide',()=>{
     if(!activeUploadToken)return;
     fetch(base+'upload-session/',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json','X-CSRFToken':token,'Accept':'application/json'},body:JSON.stringify({action:'interrupt',token:activeUploadToken})}).catch(()=>{});
   });
-  refresh(); setInterval(refresh, 6000); document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  refresh(); setInterval(()=>{if(shouldPoll())refresh({preserveHistory:true});}, 6000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh({preserveHistory:true}); });
 })();
