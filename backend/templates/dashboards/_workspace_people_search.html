@@ -1,0 +1,6 @@
+<form method="get" action="{% url 'governance_home' %}" class="gw-actions" role="search" aria-label="Search all team accounts">
+{% for key,value in members_search_filters %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+<label for="workspace-people-search">Search all team accounts</label>
+<input id="workspace-people-search" type="search" name="people_q" value="{{ members_search }}" maxlength="200" placeholder="Name, username or email">
+<button type="submit">Search</button>
+</form>

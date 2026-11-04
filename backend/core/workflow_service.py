@@ -69,11 +69,12 @@ def workflow_stage(checklist):
     return 'engineer'
 
 
-def workflow_label(checklist):
-    from .review_route_service import route_for,LABELS
-    route=route_for(checklist)
-    if route:return 'Activity closed' if route.stage=='closed' else (LABELS[route.stage]+' clarification required' if route.mode=='clarification' else 'Awaiting '+LABELS[route.stage])
-    stage=workflow_stage(checklist)
+def _route_label(route):
+    from .review_route_service import LABELS
+    return 'Activity closed' if route.stage=='closed' else (LABELS[route.stage]+' clarification required' if route.mode=='clarification' else 'Awaiting '+LABELS[route.stage])
+
+
+def _stage_label(checklist,stage):
     if stage=='closed':
         return 'Activity closed - no client review configured' if checklist.client_review_required is False else 'Activity closed'
     if stage=='quality_engineer':
@@ -89,6 +90,33 @@ def workflow_label(checklist):
     if stage=='team_lead':
         return 'Awaiting Team Lead review'
     return 'Engineer corrections required' if checklist.status==Checklist.Status.REJECTED else 'Engineer preparation'
+
+
+def workflow_label(checklist):
+    from .review_route_service import route_for
+    route=route_for(checklist)
+    if route:return _route_label(route)
+    return _stage_label(checklist,workflow_stage(checklist))
+
+
+def display_workflow(checklist):
+    """Render an explicitly loaded list-page snapshot, never authorize a write.
+
+    The ordinary workflow_stage/label and decision services still read current
+    authority from the database. Task/workspace lists explicitly opt into this
+    helper after loading their related route and policy in the current request.
+    """
+    cache=checklist._state.fields_cache
+    if 'review_route_record' in cache:
+        route=cache['review_route_record']
+        if route:return route.stage,_route_label(route)
+        if checklist.status in {Checklist.Status.DRAFT,Checklist.Status.REJECTED}:
+            # A frozen independent revision can be present on historical routes.
+            policy=cache.get('review_policy')
+            if checklist.governance_mode!='independent' or 'review_policy' in cache and not (policy and policy.current_revision_id):
+                return 'engineer',_stage_label(checklist,'engineer')
+    stage=workflow_stage(checklist)
+    return stage,workflow_label(checklist)
 
 
 def sync_assignment(checklist):

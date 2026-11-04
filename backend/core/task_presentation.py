@@ -2,8 +2,9 @@
 from .workflow_service import workflow_stage
 
 
-def workflow_steps(checklist):
-    stage=workflow_stage(checklist)
+def workflow_steps(checklist,stage=None):
+    # Passing stage is a list-page display snapshot, not authority to decide.
+    if stage is None:stage=workflow_stage(checklist)
     route=getattr(checklist,'review_route_record',None)
     policy=getattr(checklist,'review_policy',None)
     keys=['engineer','quality_engineer','team_lead']

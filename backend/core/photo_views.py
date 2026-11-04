@@ -1,16 +1,20 @@
 """Authenticated, CSRF protected photo pilot endpoints."""
 import json
+import re
 import uuid
+from urllib.parse import urlencode
 from copy import deepcopy
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import JsonResponse, FileResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.cache import never_cache
 from functools import wraps
 from .models import Checklist, PhotoEvidence, PhotoJob, PhotoDraft
 from .template_views import survey_access, require_field_editable
@@ -90,6 +94,66 @@ def body(request):
 
 def url(checklist, photo, variant):
     return reverse('photo_evidence', args=[checklist.pk,photo.pk,variant])
+
+
+PHOTO_HISTORY_PAGE_SIZE = 50
+DRAFT_HISTORY_FIELDS = ('id', 'photo_id', 'field_id', 'label', 'value', 'reason',
+    'uncertainty', 'status', 'missing_information', 'anomalies')
+
+
+def photo_history_page(checklist, collection, cursor=None):
+    """Keyset pages retain every saved record without repeating it in progress polls.
+
+    Running jobs and pending drafts remain actionable ahead of handled history.
+    The cursor contains priority and stable primary key, never an object URL or
+    a project identifier supplied by the caller. Authorization is performed by
+    the state view before this scoped query is reached.
+    """
+    if collection not in {'jobs', 'drafts'}:
+        raise ValueError('Unknown photo history collection.')
+    phases = {0, 1, 2} if collection == 'jobs' else {0, 1}
+    position = None
+    if cursor is not None:
+        if not re.fullmatch(r'[012]:[1-9][0-9]{0,18}', cursor):
+            raise ValueError('Invalid photo history cursor.')
+        phase, ident = map(int, cursor.split(':'))
+        if phase not in phases or ident > 9223372036854775807:
+            raise ValueError('Invalid photo history cursor.')
+        position = phase, ident
+    if collection == 'jobs':
+        query = checklist.photo_jobs.all()
+        priority = Case(When(status='running', then=Value(0)),
+            When(status='queued', then=Value(1)), default=Value(2), output_field=IntegerField())
+        fields = ('id', 'schema', 'status', 'error', 'completed', 'total', 'attempts', 'progress')
+    else:
+        query = PhotoDraft.objects.filter(job__checklist=checklist)
+        priority = Case(When(status='pending', then=Value(0)),
+            default=Value(1), output_field=IntegerField())
+        fields = DRAFT_HISTORY_FIELDS
+    total = query.count()
+    query = query.annotate(_history_priority=priority)
+    if position:
+        phase, ident = position
+        query = query.filter(Q(_history_priority__gt=phase) |
+            Q(_history_priority=phase, pk__lt=ident))
+    rows = list(query.order_by('_history_priority', '-pk').values(*fields, '_history_priority')[:PHOTO_HISTORY_PAGE_SIZE + 1])
+    has_more = len(rows) > PHOTO_HISTORY_PAGE_SIZE
+    rows = rows[:PHOTO_HISTORY_PAGE_SIZE]
+    next_cursor = f"{rows[-1]['_history_priority']}:{rows[-1]['id']}" if has_more else None
+    metadata = {'total': total, 'returned': len(rows), 'has_more': has_more,
+        'next_cursor': next_cursor, 'next_url': reverse('photo_state', args=[checklist.pk]) + '?' +
+        urlencode({'history': collection, 'cursor': next_cursor}) if next_cursor else None}
+    if collection == 'jobs':
+        links = {}
+        for job_id, photo_id in PhotoJob.photos.through.objects.filter(
+                photojob_id__in=[row['id'] for row in rows]).values_list('photojob_id', 'photoevidence_id').order_by('photojob_id', 'photoevidence_id'):
+            links.setdefault(job_id, []).append(photo_id)
+        for row in rows:
+            row['current_schema'] = row.pop('schema') == checklist.schema_snapshot
+            row['photo_ids'] = links.get(row['id'], [])
+    for row in rows:
+        row.pop('_history_priority')
+    return rows, metadata
 
 
 def client_photo_state(checklist):
@@ -227,6 +291,7 @@ def workspace(request, checklist_id):
     return render(request,'dashboards/photo_workspace.html',{'client_evidence_view':client,'checklist_processing_enabled':enabled(checklist),'can_use_evidence_learning':internal,'evidence_learning_url':reverse('evidence_learning',args=[checklist.pk]),'site_info_fields':site_information_fields(checklist),'site_info_save_url':reverse('checklist_site_information',args=[checklist.pk]),'site_info_updated_at':checklist.updated_at.isoformat(),'checklist':checklist,'can_process_photos':access['can_edit'],'photos':checklist.photo_evidence.all(),'jobs':checklist.photo_jobs.none() if client else checklist.photo_jobs.all(),'drafts':PhotoDraft.objects.none() if client else PhotoDraft.objects.filter(job__checklist=checklist),'surveys':allowed_surveys(request).select_related('project').order_by('project__name','site_id','pk'),'model':'' if client else settings.OLLAMA_MODEL,**qa_context})
 
 @require_GET
+@never_cache
 @api_errors
 def state(request, checklist_id):
     access=survey_access(request,checklist_id)
@@ -238,16 +303,24 @@ def state(request, checklist_id):
         response=JsonResponse(client_photo_state(c))
         response['Cache-Control']='private, no-store'
         return response
+    history_kind = request.GET.get('history')
+    if history_kind is not None:
+        rows, metadata = photo_history_page(c, history_kind, request.GET.get('cursor'))
+        return JsonResponse({history_kind: rows, 'history': {'page_size': PHOTO_HISTORY_PAGE_SIZE,
+            history_kind: metadata}})
+    if 'cursor' in request.GET:
+        raise ValueError('Choose a photo history collection before its cursor.')
     from .field_photo_service import field_catalog,mapping_state,coverage,schema_digest,analysis_state,metadata_workflow
     from .photo_metadata import metadata_is_current
     photos=list(c.photo_evidence.select_related('uploaded_by').order_by('pk'))
     ready={p.pk:metadata_is_current(p,settings.OLLAMA_MODEL) for p in photos}
     analysis={**analysis_state(c),'metadata_ready_count':sum(ready.values())}
-    jobs=[{'current_schema':job.schema==c.schema_snapshot,**{key:getattr(job,key) for key in ('id','status','error','completed','total','attempts','progress')},'photo_ids':[photo.pk for photo in job.photos.all()]} for job in c.photo_jobs.order_by('-pk').prefetch_related('photos')]
+    jobs, job_history = photo_history_page(c, 'jobs')
+    drafts, draft_history = photo_history_page(c, 'drafts')
     analysis['workflow']=metadata_workflow(c,photos,ready,analysis,jobs)
     from .evidence_pipeline import saved_state
     evidence_analysis=saved_state(c,access['can_edit'],reverse('evidence_learning',args=[c.pk]))
-    return JsonResponse({'evidence_analysis':evidence_analysis,'max_photos':photo_limit(),'analysis':analysis,'field_catalog':field_catalog(c),'mappings':mapping_state(c),'coverage':coverage(c),'schema_digest':schema_digest(c),'photos':[{'id':p.pk,'filename':p.filename,'group':p.group,'uploaded_by':p.uploaded_by.get_username() if p.uploaded_by_id else None,'uploaded_at':p.created_at.isoformat(),'metadata_ready':ready[p.pk],'visual_metadata':p.analysis_metadata if ready[p.pk] else None,'preview_url':url(c,p,'preview'),'original_url':url(c,p,'original'),'metadata':p.metadata,'advisories':p.advisories} for p in photos], 'jobs':jobs, 'drafts':list(PhotoDraft.objects.filter(job__checklist=c).order_by('-pk').values('id','photo_id','field_id','label','value','reason','uncertainty','status','missing_information','anomalies'))})
+    return JsonResponse({'evidence_analysis':evidence_analysis,'max_photos':photo_limit(),'analysis':analysis,'field_catalog':field_catalog(c),'mappings':mapping_state(c),'coverage':coverage(c),'schema_digest':schema_digest(c),'photos':[{'id':p.pk,'filename':p.filename,'group':p.group,'uploaded_by':p.uploaded_by.get_username() if p.uploaded_by_id else None,'uploaded_at':p.created_at.isoformat(),'metadata_ready':ready[p.pk],'visual_metadata':p.analysis_metadata if ready[p.pk] else None,'preview_url':url(c,p,'preview'),'original_url':url(c,p,'original'),'metadata':p.metadata,'advisories':p.advisories} for p in photos], 'jobs':jobs, 'drafts':drafts, 'history':{'page_size':PHOTO_HISTORY_PAGE_SIZE,'jobs':job_history,'drafts':draft_history}})
 
 @require_POST
 @api_errors

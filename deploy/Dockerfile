@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 WORKDIR /app
 COPY backend/requirements.txt /app/backend/requirements.txt
 COPY deploy/requirements.staging.txt /app/deploy/requirements.staging.txt
-RUN python -m pip install --no-cache-dir -c /app/deploy/requirements.staging.txt -r /app/backend/requirements.txt \
+COPY deploy/requirements.bootstrap.txt /app/deploy/requirements.bootstrap.txt
+RUN python -m pip install --no-cache-dir -r /app/deploy/requirements.bootstrap.txt \
+    && python -m pip install --no-cache-dir -c /app/deploy/requirements.staging.txt -r /app/backend/requirements.txt \
     && python -m pip check \
     && python -m pip freeze --all > /app/DEPENDENCIES.lock \
     && dpkg-query -W > /app/OS-PACKAGES.lock

@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q,F,Value,CharField
+from django.db.models import Q,F,Value,CharField,Count
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -61,11 +61,11 @@ class TaskFilters(forms.Form):
         super().__init__(*args,**kwargs)
         if not engineer:self.fields.pop('work')
         self.fields['project'].queryset=projects.order_by('name')
-        self.fields['industry'].choices=[('','All assigned industries'),*IndustryCatalog.objects.filter(code__in=projects.values_list('industry',flat=True)).values_list('code','name')]
+        catalogs=list(IndustryCatalog.objects.filter(code__in=projects.values_list('industry',flat=True)).values_list('code','name','workflow_family'))
+        self.fields['industry'].choices=[('','All assigned industries'),*[(code,name) for code,name,family in catalogs]]
         statuses=dict([*Checklist.Status.choices,*WorkAssignment.Status.choices])
         self.fields['status'].choices=[('','All stored statuses'),*statuses.items()]
-        from .industry_service import industry_family
-        industries={industry_family(code) for code in projects.values_list('industry',flat=True)}
+        industries={family for code,name,family in catalogs}
         modules=[choice for choice in Checklist.WorkflowType.choices if choice[0].startswith('telecom') and 'telecom' in industries or choice[0].startswith('construction') and 'construction' in industries]
         self.fields['module'].choices=[('','All modules'),*modules,('unclassified','Unclassified assignment')]
         self.fields['assignee'].queryset=User.objects.filter(Q(pk__in=checklists.values('user_id'))|Q(pk__in=assignments.values('assigned_to_id'))).order_by('username')
@@ -75,7 +75,7 @@ class TaskFilters(forms.Form):
         if data.get('date_from') and data.get('date_to') and data['date_from']>data['date_to']:self.add_error('date_to','Choose an end date on or after the start date.')
         return data
 
-def filtered_rows(checklists,assignments,data,client=False):
+def filtered_sources(checklists,assignments,data,client=False):
     checklists=checklists.order_by().annotate(task_pk=F('pk'),task_site=F('site_id'),task_project_id=F('project_id'),task_project=F('project__name'),task_user_id=F('user_id'),task_user=F('user__username'),task_status=F('status'),task_module=F('workflow_type'),task_created=F('created_at'),task_updated=F('updated_at'),task_description=Value('',output_field=CharField()) if client else Coalesce('work_assignment__description',Value(''),output_field=CharField()),task_kind=Value('checklist',output_field=CharField()))
     assignments=assignments.order_by().annotate(task_pk=F('pk'),task_site=F('site_id'),task_project_id=F('project_id'),task_project=F('project__name'),task_user_id=F('assigned_to_id'),task_user=F('assigned_to__username'),task_status=F('status'),task_module=Value('',output_field=CharField()),task_created=F('created_at'),task_updated=F('created_at'),task_description=F('description'),task_kind=Value('assignment',output_field=CharField()))
     def apply(query):
@@ -102,7 +102,26 @@ def filtered_rows(checklists,assignments,data,client=False):
         if data.get('date_from'):query=query.filter(task_created__date__gte=data['date_from'])
         if data.get('date_to'):query=query.filter(task_created__date__lte=data['date_to'])
         return query.values(*FIELDS)
-    return apply(checklists).union(apply(assignments)).order_by(*SORTS[data.get('sort') or 'updated'])
+    return apply(checklists),apply(assignments)
+
+
+def filtered_rows(checklists,assignments,data,client=False):
+    first,second=filtered_sources(checklists,assignments,data,client)
+    return first.union(second).order_by(*SORTS[data.get('sort') or 'updated'])
+
+
+def scoped_counts(checklists,assignments,data,conditions,client=False):
+    """One conditional aggregate per model, preserving every active filter.
+
+    The explorer UNION contains disjoint model identities. Distinct model PKs
+    retain its deduplication semantics without repeating a UNION for each badge.
+    """
+    result={'total':0,**{key:0 for key in conditions}}
+    for source in filtered_sources(checklists,assignments,data,client):
+        measured=source.aggregate(total=Count('pk',distinct=True),**{
+            key:Count('pk',filter=condition,distinct=True) for key,condition in conditions.items()})
+        for key,value in measured.items():result[key]+=value
+    return result
 
 def csv_cell(value):
     text=str(value if value is not None else '')
@@ -144,9 +163,10 @@ def explorer(request):
     for row in page:
         c=objects.get(row['task_pk']) if row['task_kind']=='checklist' else None
         if c:
-            row['stage']=c.workflow_label
+            from .workflow_service import display_workflow
+            display_stage,row['stage']=display_workflow(c)
             from .task_presentation import workflow_steps
-            row['workflow_steps']=workflow_steps(c)
+            row['workflow_steps']=workflow_steps(c,stage=display_stage)
             row['site_name']=(c.intake_metadata or {}).get('site_information',{}).get('site_name','')
             route='roadmap_activity' if c.governance_mode=='independent' else 'custom_checklist' if c.schema_snapshot else 'checklist_detail'
             row['review_url']=reverse(route,args=[c.pk])+'?'+urlencode({'return_to':back})
@@ -174,16 +194,25 @@ def explorer(request):
     if valid:
         if engineer:
             bucket_base={**data,'status':'','work':''}
-            engineer_task_buckets=[{'label':'All tasks','count':filtered_rows(checklists,assignments,bucket_base,client).count(),'url':filter_link(work='',status=''),'active':not data.get('work')}]
+            bucket_counts=scoped_counts(checklists,assignments,bucket_base,{
+                key:Q(task_status__in=statuses) for key,(label,statuses) in ENGINEER_WORK_BUCKETS.items()},client)
+            engineer_task_buckets=[{'label':'All tasks','count':bucket_counts['total'],'url':filter_link(work='',status=''),'active':not data.get('work')}]
             for key,(label,statuses) in ENGINEER_WORK_BUCKETS.items():
-                engineer_task_buckets.append({'label':label,'count':filtered_rows(checklists,assignments,{**bucket_base,'work':key},client).count(),'url':filter_link(work=key,status=''),'active':data.get('work')==key})
+                engineer_task_buckets.append({'label':label,'count':bucket_counts[key],'url':filter_link(work=key,status=''),'active':data.get('work')==key})
         all_status={**data,'status':''}
-        status_counts=[{'label':'All statuses','count':filtered_rows(checklists,assignments,all_status,client).count(),'url':filter_link(status=''),'active':not data.get('status')}]
-        for value,label in form.fields['status'].choices[1:]:
-            count=filtered_rows(checklists,assignments,{**data,'status':value},client).count()
+        status_values=form.fields['status'].choices[1:]
+        status_totals=scoped_counts(checklists,assignments,all_status,{
+            'status_'+str(index):Q(task_status=value) for index,(value,label) in enumerate(status_values)},client)
+        status_counts=[{'label':'All statuses','count':status_totals['total'],'url':filter_link(status=''),'active':not data.get('status')}]
+        for index,(value,label) in enumerate(status_values):
+            count=status_totals['status_'+str(index)]
             if count or data.get('status')==value:status_counts.append({'label':label,'count':count,'url':filter_link(status=value),'active':data.get('status')==value})
-        for value,label in form.fields['module'].choices:
-            module_tabs.append({'label':label,'count':filtered_rows(checklists,assignments,{**data,'module':value},client).count(),'url':filter_link(module=value),'active':data.get('module','')==value})
+        module_values=form.fields['module'].choices
+        module_totals=scoped_counts(checklists,assignments,{**data,'module':''},{
+            'module_'+str(index):Q(task_module='' if value=='unclassified' else value)
+            for index,(value,label) in enumerate(module_values) if value},client)
+        for index,(value,label) in enumerate(module_values):
+            module_tabs.append({'label':label,'count':module_totals['module_'+str(index)] if value else module_totals['total'],'url':filter_link(module=value),'active':data.get('module','')==value})
     sort_links={}
     sort_aria={key:'none' for key in ['site','project','module','status','updated']}
     current_sort=data.get('sort') or 'updated'

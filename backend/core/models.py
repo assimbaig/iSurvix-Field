@@ -277,6 +277,9 @@ class Checklist(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
+	class Meta:
+		indexes = [models.Index(fields=['project', '-updated_at', 'id'], name='ck_project_updated_page')]
+
 	def save(self, *args, **kwargs):
 		if self.pk and self.status == self.Status.SUBMITTED:
 			previous_status = type(self).objects.filter(pk=self.pk).values_list('status', flat=True).first()
@@ -409,6 +412,7 @@ class WorkAssignment(models.Model):
 
 	class Meta:
 		ordering = ['-created_at']
+		indexes = [models.Index(fields=['project', 'checklist', '-created_at', 'id'], name='wa_project_task_page')]
 
 	def __str__(self) -> str:
 		return f"{self.site_id} - {self.assigned_to.username} ({self.get_status_display()})"

@@ -97,11 +97,11 @@ def prepare_image(upload):
     if len(raw) > MAX_BYTES:
         raise ValidationError('Each photo must be 5 MB or smaller.')
     try:
-        image = Image.open(BytesIO(raw))
+        image = Image.open(BytesIO(raw), formats=['JPEG', 'PNG', 'WEBP'])
         if image.format not in {'JPEG', 'PNG', 'WEBP'} or image.width * image.height > 24000000:
             raise ValidationError('Use a JPEG, PNG or WebP of at most 24 megapixels.')
         image.verify()
-        image = Image.open(BytesIO(raw))
+        image = Image.open(BytesIO(raw), formats=['JPEG', 'PNG', 'WEBP'])
         image.load()
         metadata = {'format': image.format, 'width': image.width, 'height': image.height}
         exif = image.getexif()

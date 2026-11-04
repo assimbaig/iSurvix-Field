@@ -12,6 +12,7 @@ from unittest import skipUnless
 from django.contrib.auth.models import User
 from django.test import TestCase, Client, override_settings
 from .models import Checklist, ChecklistTemplate, Profile, Project
+from .test_fixture_process import run_fixture_process
 
 
 @override_settings(ROOT_URLCONF='checklist.urls_local', LOCAL_AI_ENABLED=True, OLLAMA_BASE_URL='http://127.0.0.1:11434', OLLAMA_MODEL='qwen3.5:4b', OLLAMA_TIMEOUT=5)
@@ -176,27 +177,36 @@ class LocalAITests(TestCase):
             harness=fixture/'harness.ps1'
             harness.write_text('''param([string]$RealLauncher,[string]$FixtureRoot,[int]$ExistingVisionReady=0)
 $ErrorActionPreference='Stop'
+$clock=[System.Diagnostics.Stopwatch]::StartNew()
+function Write-FixturePhase([string]$Phase) {
+    [Console]::Error.WriteLine(('IFIELD_FIXTURE_PHASE={0} elapsed_ms={1}' -f $Phase,$clock.ElapsedMilliseconds))
+}
+Write-FixturePhase 'host-entry'
 $tokens=$null;$errors=$null
 $tree=[System.Management.Automation.Language.Parser]::ParseFile($RealLauncher,[ref]$tokens,[ref]$errors)
 if ($errors.Count) { throw 'Launcher syntax is invalid.' }
 $blocks=$tree.FindAll({param($node) $node -is [System.Management.Automation.Language.TryStatementAst] -and $node.Body.Extent.Text.Contains('Start-PhotoAI.ps1')},$true)
 if ($blocks.Count -ne 1) { throw 'Find the dedicated local runtime startup block.' }
+Write-FixturePhase 'parser-complete'
 $projectRoot=$FixtureRoot;$Model='qwen3.5:4b'
 $existingVisionReady=[bool]$ExistingVisionReady
 $env:ISURVIX_OLLAMA_URL='http://127.0.0.1:11434'
 $body=$blocks[0].Body.Extent.Text
+Write-FixturePhase 'branch-entry'
 . ([scriptblock]::Create($body.Substring(1,$body.Length-2)))
+Write-FixturePhase 'branch-complete'
 @{text=$env:ISURVIX_OLLAMA_URL;photo=$env:ISURVIX_PHOTO_OLLAMA_URL}|ConvertTo-Json -Compress
+Write-FixturePhase 'json-complete'
 ''')
             for ready,port in [(True,11434),(False,11435)]:
                 with self.subTest(existing_vision_ready=ready):
                     marker=fixture/'scripts'/'started.txt'
                     if marker.exists():marker.unlink()
-                    result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+                    result=run_fixture_process([shutil.which('powershell.exe'),'-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
                         '-File',str(harness),'-RealLauncher',str(root/'Start-iSurvix.ps1'),'-FixtureRoot',str(fixture),
-                        '-ExistingVisionReady',str(int(ready))],
-                        stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=30)
+                        '-ExistingVisionReady',str(int(ready))],fixture,timeout=30)
                     self.assertEqual(result.returncode,0,result.stderr)
+                    self.assertIn('IFIELD_FIXTURE_PHASE=json-complete',result.stderr)
                     self.assertEqual(json.loads(result.stdout.strip().splitlines()[-1]),
                         {'text':f'http://127.0.0.1:{port}','photo':f'http://127.0.0.1:{port}'})
                     self.assertEqual(marker.exists(),not ready,'A healthy installed service must not launch the second runtime')

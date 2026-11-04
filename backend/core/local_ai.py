@@ -72,8 +72,14 @@ def local_context(request):
         design.update(layout='enterprise', palette='navy', code='enterprise-1')
     from .access import accessible_projects
     projects = list(accessible_projects(request.user).order_by('name')) if design else []
-    from .industry_service import industry_family
-    industries = {industry_family(project) for project in projects}
+    # The selector retains every permitted project. Only its module families are
+    # batched; no authority or project list is cached between requests.
+    industries=set()
+    if projects and role!=Profile.Roles.SUPER_ADMIN:
+        from .models import IndustryCatalog
+        codes={project.industry for project in projects}
+        families=dict(IndustryCatalog.objects.filter(code__in=codes).values_list('code','workflow_family'))
+        industries={families.get(project.industry) or 'other' for project in projects}
     modules = [
         {'code': code, 'label': label, 'industry': industry}
         for code, label, industry in [

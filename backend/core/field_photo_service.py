@@ -2,6 +2,7 @@
 import hashlib
 import json
 from collections import defaultdict
+from itertools import islice
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -142,17 +143,34 @@ def analysis_state(checklist):
     current_matching=set()
     from .photo_metadata import MATCHER_VERSION
     active=0
-    for job in PhotoJob.objects.filter(checklist=checklist).prefetch_related('photos'):
-        if job.schema!=checklist.schema_snapshot:
-            continue
-        active+=job.status in {'queued','running'}
-        job_ids={p.pk for p in job.photos.all()}
-        valid_ids={pid for pid in job.processed_photo_ids if type(pid)==int and pid in job_ids and pid in source_ids}
-        analyzed.update(valid_ids)
-        if job.progress.get('matcher_version')==MATCHER_VERSION:current_matching.update(pid for pid in job.progress.get('matched_photo_ids',[]) if type(pid)==int and pid in valid_ids)
+    active_job=None
+    # Retained jobs can be numerous. Stream only summary columns, then fetch
+    # actual source relationships for the current bounded batch. Never load all
+    # historical schemas/baselines/PhotoEvidence objects into the response path.
+    jobs=PhotoJob.objects.filter(checklist=checklist).order_by('-pk').values(
+        'id','schema','status','processed_photo_ids','progress').iterator(chunk_size=100)
+    while batch:=list(islice(jobs,100)):
+        current=[job for job in batch if job['schema']==checklist.schema_snapshot]
+        candidates={job['id']:{pid for pid in job['processed_photo_ids'] if type(pid)==int and pid in source_ids} for job in current}
+        job_sources=defaultdict(set)
+        relevant=[ident for ident,ids in candidates.items() if ids]
+        if relevant:
+            for ident,pid in PhotoJob.photos.through.objects.filter(photojob_id__in=relevant,
+                    photoevidence_id__in=source_ids).values_list('photojob_id','photoevidence_id').iterator(chunk_size=500):
+                job_sources[ident].add(pid)
+        for job in current:
+            if job['status'] in {'queued','running'}:
+                active+=1
+                if active_job is None or job['status']=='running' and active_job['status']!='running':
+                    active_job={'id':job['id'],'status':job['status'],'current_schema':True,
+                        'progress':{'stage':job['progress'].get('stage')}}
+            valid_ids=candidates[job['id']]&job_sources[job['id']]
+            analyzed.update(valid_ids)
+            if job['progress'].get('matcher_version')==MATCHER_VERSION:
+                current_matching.update(pid for pid in job['progress'].get('matched_photo_ids',[]) if type(pid)==int and pid in valid_ids)
     unprocessed=source_ids-analyzed
     pending=placements(checklist).filter(status='proposed').count()
-    return {'current_matching_photo_ids':sorted(current_matching),'analyzed_photo_ids':sorted(analyzed),'unprocessed_photo_ids':sorted(unprocessed),'active_job_count':active,'pending_mapping_count':pending,'review_ready':not unprocessed and not active,'photo_count':len(source_ids)}
+    return {'current_matching_photo_ids':sorted(current_matching),'analyzed_photo_ids':sorted(analyzed),'unprocessed_photo_ids':sorted(unprocessed),'active_job_count':active,'active_job':active_job,'pending_mapping_count':pending,'review_ready':not unprocessed and not active,'photo_count':len(source_ids)}
 
 
 def metadata_workflow(checklist,photos,metadata_ready,analysis,jobs):
@@ -172,7 +190,7 @@ def metadata_workflow(checklist,photos,metadata_ready,analysis,jobs):
     review=sorted((set(proposed)|set(unmatched))&source_ids)
     multiple=sorted(pid for pid,count in proposed.items() if count>1)
     ready_count=sum(bool(metadata_ready.get(pid)) for pid in source_ids)
-    active=[job for job in jobs if job['status'] in {'queued','running'} and job.get('current_schema',True)]
+    active=([analysis['active_job']] if analysis['active_job'] else []) if 'active_job' in analysis else [job for job in jobs if job['status'] in {'queued','running'} and job.get('current_schema',True)]
     if not source_ids:stage='awaiting_upload'
     elif active:
         current=next((job for job in active if job['status']=='running'),None)

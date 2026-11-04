@@ -199,12 +199,17 @@ class RuntimeAdversarialTests(runtime_fixture.WorkerRuntimeToolTests):
         self.assertNotIn(self.secret,str(result))
     def test_diagnostic_directory_symlink_is_rejected_without_touching_target(self):
         import tempfile
+        from .test_directory_redirect_fixture import directory_redirect
         local=self.directory/'.local';local.mkdir()
         with tempfile.TemporaryDirectory(prefix='pr21-outside-') as outside:
-            (local/'diagnostics').symlink_to(outside,target_is_directory=True)
-            with self.assertRaises(ValueError):
-                self.tools.collect_diagnostics(project_root=self.directory,model=runtime_fixture.MODEL,photo_url=self.url,text_url=self.url)
-            self.assertEqual(list(Path(outside).iterdir()),[])
+            # Exercise an actual filesystem redirect on every platform. Native
+            # symlinks stay first; only WinError1314 uses a genuine junction.
+            with directory_redirect(local/'diagnostics', Path(outside)) as redirect:
+                self.assertTrue(redirect.is_symlink() or redirect.is_junction())
+                self.assertTrue(redirect.samefile(outside))
+                with self.assertRaises(ValueError):
+                    self.tools.collect_diagnostics(project_root=self.directory,model=runtime_fixture.MODEL,photo_url=self.url,text_url=self.url)
+                self.assertEqual(list(Path(outside).iterdir()),[])
 for _name in dir(runtime_fixture.WorkerRuntimeToolTests):
     if _name.startswith('test_') and _name not in RuntimeAdversarialTests.__dict__:setattr(RuntimeAdversarialTests,_name,None)
 del _name
