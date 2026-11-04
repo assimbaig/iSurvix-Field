@@ -1,0 +1,91 @@
+name: Deploy owner-approved Hostinger beta
+on:
+  pull_request:
+    types: [closed]
+    branches: [feat/ai-settings-routing-20261031]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: hostinger-beta-delivery
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    environment:
+      name: hostinger-beta
+      url: https://app.isurvix.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: deployments/hostinger-beta
+          path: .delivery-channel
+      - name: Request independently verified, immutable server delivery
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          VPS_HOST: ${{ vars.HOSTINGER_VPS_HOST }}
+          VPS_USER: ${{ vars.HOSTINGER_VPS_USER }}
+          VPS_KNOWN_HOSTS: ${{ vars.HOSTINGER_VPS_KNOWN_HOSTS }}
+          VPS_DEPLOY_KEY: ${{ secrets.HOSTINGER_VPS_DEPLOY_KEY }}
+        run: |
+          python - <<'PY'
+          import json,os,re,subprocess
+          from pathlib import Path
+          host=os.environ['VPS_HOST']; user=os.environ['VPS_USER']
+          assert re.fullmatch(r'[a-zA-Z0-9.-]{1,253}',host)
+          assert re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}',user)
+          root=Path(os.environ['RUNNER_TEMP'])/'hostinger-delivery'
+          root.mkdir(mode=0o700)
+          key=root/'key'; known=root/'known_hosts'
+          try:
+              key.write_text(os.environ['VPS_DEPLOY_KEY']+'\n');key.chmod(0o600)
+              known.write_text(os.environ['VPS_KNOWN_HOSTS']+'\n');known.chmod(0o600)
+              request={'pr':int(os.environ['PR_NUMBER']),'github_token':os.environ['GITHUB_TOKEN']}
+              result=subprocess.run(['ssh','-T','-i',str(key),'-o','IdentitiesOnly=yes',
+                  '-o','BatchMode=yes','-o','StrictHostKeyChecking=yes',
+                  '-o','UserKnownHostsFile='+str(known),'-o','ConnectTimeout=20',
+                  user+'@'+host,'deliver'],input=json.dumps(request),text=True,
+                  capture_output=True,timeout=1800)
+              if result.returncode:
+                  # Server errors may contain provider transport details. Keep tokens private.
+                  raise SystemExit('Hostinger delivery failed; consult its private operator journal. Live records were not reset.')
+              receipt=json.loads(result.stdout)
+              assert receipt['status'] in {'completed','already_running'}
+              (root/'receipt.json').write_text(json.dumps(receipt));print('Server confirmed '+receipt['status'])
+          finally:
+              key.unlink(missing_ok=True)
+          PY
+      - name: Record only confirmed public release provenance
+        run: |
+          python deploy/hostinger/channel.py record --previous .delivery-channel/channel.json --receipt "$RUNNER_TEMP/hostinger-delivery/receipt.json" --output .delivery-channel/channel.json
+          git -C .delivery-channel config user.name github-actions[bot]
+          git -C .delivery-channel config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C .delivery-channel add channel.json
+          if ! git -C .delivery-channel diff --cached --quiet; then
+            git -C .delivery-channel commit -m "Record verified Hostinger deployment"
+            git -C .delivery-channel push origin HEAD:deployments/hostinger-beta
+          fi
+      - name: Retain nonsecret server receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostinger-deployment-${{ github.event.pull_request.number }}
+          retention-days: 30
+          if-no-files-found: error
+          path: ${{ runner.temp }}/hostinger-delivery/receipt.json

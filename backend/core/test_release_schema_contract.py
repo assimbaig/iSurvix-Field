@@ -1,6 +1,7 @@
 """Prevent a candidate's update rehearsal from claiming a stale schema target."""
 import json
 from pathlib import Path
+import yaml
 
 from django.db.migrations.loader import MigrationLoader
 from django.test import SimpleTestCase
@@ -20,4 +21,9 @@ class ReleaseSchemaContractTests(SimpleTestCase):
         for name in ['staging-verification.yml', 'customer-server-verification.yml']:
             with self.subTest(workflow=name):
                 workflow = (ROOT / '.github/workflows' / name).read_text()
-                self.assertIn("'backend/core/migrations/**'", workflow)
+                triggers = yaml.load(workflow, Loader=yaml.BaseLoader)['on']
+                self.assertIn('pull_request', triggers)
+                # CS1 removed the old migration-only whitelist. An unrestricted
+                # PR gate includes every migration, UI and operations change.
+                self.assertEqual(triggers['pull_request'] or {}, {},
+                                 'Every PR must run migration/deployment gates without filters')

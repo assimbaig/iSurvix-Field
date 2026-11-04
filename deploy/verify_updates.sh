@@ -11,11 +11,14 @@ if [[ "$mode" == prepare ]]; then
   [[ $# == 5 && ! -e "$work" ]] || exit 2
   mkdir -m 700 "$work"
   baseline="$(python - "$repository" <<'PY'
-import json,re,sys
+import json,os,re,sys
 from pathlib import Path
 record=json.loads((Path(sys.argv[1])/'deploy/customer/supported-upgrades.json').read_text())
 assert record['format']=='isurvix-upgrade-verification-v1'
-source=record['baseline_source_commit'];assert re.fullmatch('[a-f0-9]{40}',source)
+source=os.environ.get('ISURVIX_UPGRADE_BASELINE') or record['baseline_source_commit']
+schema=os.environ.get('ISURVIX_UPGRADE_SOURCE_SCHEMA') or record['source_schema']
+assert bool(os.environ.get('ISURVIX_UPGRADE_BASELINE'))==bool(os.environ.get('ISURVIX_UPGRADE_SOURCE_SCHEMA'))
+assert re.fullmatch('[a-f0-9]{40}',source) and re.fullmatch(r'\d{4}_[a-z0-9_]+',schema)
 print(source)
 PY
 )"
@@ -29,8 +32,9 @@ PY
   python "$repository/scripts/build_customer_package.py" --repository "$work/source" --release-id "$baseline" --app-image "$source_image" --nginx-image "$5" --output "$work/source-package" > "$work/source-package-build.json"
   python - "$work" "$baseline" "$target" <<'PY'
 from pathlib import Path
-import json,sys
-Path(sys.argv[1],'versions.json').write_text(json.dumps({'baseline':sys.argv[2],'target':sys.argv[3]}))
+import json,os,sys
+source_schema=os.environ.get('ISURVIX_UPGRADE_SOURCE_SCHEMA')
+Path(sys.argv[1],'versions.json').write_text(json.dumps({'baseline':sys.argv[2],'target':sys.argv[3], 'expected_source_schema':source_schema}))
 PY
   # This rehearsal-owned source image must also load from its transfer archive.
   docker image rm "$source_image" > "$work/source-image-removal.log"
@@ -173,7 +177,8 @@ def schema(database):
 compatibility=json.loads((Path(sys.argv[1])/'deploy/customer/supported-upgrades.json').read_text())
 source_schema=schema(work/'runtime/data/database.sqlite3')
 target_schema=schema(work/'target-success/data/database.sqlite3')
-assert source_schema==compatibility['source_schema'] and target_schema==compatibility['target_schema']
+versions=json.loads((work/'versions.json').read_text())
+assert source_schema==(versions.get('expected_source_schema') or compatibility['source_schema']) and target_schema==compatibility['target_schema']
 first=json.loads((work/'success-result.json').read_text());repeat=json.loads((work/'repeat-result.json').read_text())
 assert first==repeat and first['status']=='completed' and first['release_id']==sys.argv[5]
 manifest=json.loads((package/'manifest.json').read_text())

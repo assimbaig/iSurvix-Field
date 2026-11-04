@@ -1,0 +1,49 @@
+{
+  "format": "isurvix-corporate-partial-v1",
+  "revision": 4,
+  "website_origin": "https://isurvix.com",
+  "application_login": "https://app.isurvix.com/login/",
+  "publication": "Explicit allowlist only; preserve every unlisted website file and cached previous assets.",
+  "files": [
+    {
+      "path": "index.html",
+      "bytes": 31576,
+      "sha256": "57970ef20f680290d80b1673406b7f4f93abc80e560753e0703838649bf7263c"
+    },
+    {
+      "path": "platform-login-v4.css",
+      "bytes": 3973,
+      "sha256": "26b9c47faff40e3359213dff4e37ded64650c4d0512bc291c4c71ae49f19986b"
+    },
+    {
+      "path": "platform-login.js",
+      "bytes": 1375,
+      "sha256": "333f4afa82189e44cb34c3d1a7e4fa615fc0c511c94e922f29b46e5be89033fa"
+    },
+    {
+      "path": "ifield.html",
+      "bytes": 13288,
+      "sha256": "f1b5e02ea25f4d497e393232cad5c4234c2e3c1a20132fe559af597324848b40"
+    },
+    {
+      "path": "ifield-info.css",
+      "bytes": 2224,
+      "sha256": "0cffc05b4a27f69ac4df8e7c54cc8b98b896d77ccd56e199694fe04b76135b85"
+    },
+    {
+      "path": "products.html",
+      "bytes": 12457,
+      "sha256": "29f4cea72354e00909f789faf6c1e3426ca1faee633ba2b413719177b51bd6e8"
+    },
+    {
+      "path": "solutions.html",
+      "bytes": 17928,
+      "sha256": "c7ff9b886b96aa3ae191d8d11024def51fea626760cfff0efd33105a4b32bd44"
+    },
+    {
+      "path": "isurvix-survey.html",
+      "bytes": 13288,
+      "sha256": "f1b5e02ea25f4d497e393232cad5c4234c2e3c1a20132fe559af597324848b40"
+    }
+  ]
+}

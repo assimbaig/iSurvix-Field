@@ -1,0 +1,11 @@
+{
+  "host": "app.isurvix.com",
+  "lineage": "/etc/letsencrypt/live/app.isurvix.com",
+  "tls_directory": "/etc/isurvix-staging/tls",
+  "environment_file": "/etc/isurvix-staging/staging.env",
+  "compose_files": [
+    "/srv/isurvix-stage/candidate/fe7116c9df68f637c288280d05bbf3f9350b4737/package/release/deploy/compose.yaml",
+    "/etc/isurvix-staging/ingress/public-login.direct443.override.yaml"
+  ],
+  "project": "isurvix-staging"
+}

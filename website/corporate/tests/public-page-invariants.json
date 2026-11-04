@@ -1,0 +1,10 @@
+{
+  "homepage_main_sha256": "1ecfc3bcc5b41640350da664aa0bbef49b8d7c1acec3a582fb2b76e8fa9779a6",
+  "homepage_footer_sha256": "ddbceeae19b1690fe9a71d565eb2118d289eea628e3511d06d765f9e18687e39",
+  "ifield_header_sha256": "81f2cb951ae71d93d640ab5b76d96006b5bab934aa0e914ae7e407561007e545",
+  "ifield_footer_sha256": "ec3d0e9c910da684e4768ee24f1b8673dad8e0e67b28551a38fced80ab2ee11a",
+  "catalog_outside_ifield_article_sha256": {
+    "products.html": "a4a35cd3dc991bb747f59ea70c8952f2d8a059c7e8cd39e18a9f1d9e94cc347d",
+    "solutions.html": "2494037593960c9f745a735de21c27a33f8244b51bed58acaa892444453c4a79"
+  }
+}
