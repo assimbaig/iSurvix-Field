@@ -1,0 +1,29 @@
+{
+  "name": "isurvix-http-edge",
+  "services": {
+    "http": {
+      "image": "sha256:88f52f3d58a505b7e1ad96ca6969478517bcccb58418e75a54223271a64da7df",
+      "pull_policy": "never",
+      "user": "101:101",
+      "read_only": true,
+      "init": true,
+      "restart": "unless-stopped",
+      "cap_drop": ["ALL"],
+      "security_opt": ["no-new-privileges:true"],
+      "ports": ["0.0.0.0:80:8080"],
+      "entrypoint": ["/bin/sh", "-c"],
+      "command": ["mkdir -p /tmp/nginx/logs /tmp/nginx/temp && exec nginx -p /tmp/nginx/ -c /etc/nginx/nginx.conf -g 'daemon off;'"],
+      "volumes": [
+        "/etc/isurvix-staging/ingress/http.conf:/etc/nginx/nginx.conf:ro",
+        "/var/lib/isurvix-acme:/var/www/acme:ro"
+      ],
+      "tmpfs": ["/tmp:uid=101,gid=101,mode=0700,size=33554432"],
+      "healthcheck": {
+        "test": ["CMD", "nginx", "-p", "/tmp/nginx/", "-c", "/etc/nginx/nginx.conf", "-t", "-q"],
+        "interval": "30s",
+        "timeout": "5s",
+        "retries": 3
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "format": "isurvix-hostinger-policy-v1",
+  "enabled": false,
+  "repository": "assimbaig/iSurvix-Field",
+  "branch": "feat/ai-settings-routing-20261031",
+  "owner": "assimbaig",
+  "host": "app.isurvix.com",
+  "project": "isurvix-staging",
+  "root": "/var/lib/isurvix-delivery",
+  "environment_file": "/etc/isurvix-staging/staging.env",
+  "compose_files": [
+    "/srv/isurvix-stage/candidate/fe7116c9df68f637c288280d05bbf3f9350b4737/package/release/deploy/compose.yaml",
+    "/etc/isurvix-staging/ingress/public-login.direct443.override.yaml"
+  ],
+  "initial_data": "/var/lib/isurvix-staging"
+}

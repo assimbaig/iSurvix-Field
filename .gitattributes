@@ -9,3 +9,7 @@
 /samples/drawings/integration-verification-20261021/*.json -text whitespace=cr-at-eol
 /samples/drawings/release-hardening-20261021/*.dxf binary
 /samples/drawings/release-hardening-20261021/*.json -text whitespace=cr-at-eol
+# Corporate upload manifests bind these exact LF bytes on Windows and Linux.
+/website/corporate/*.html text eol=lf
+/website/corporate/*.css text eol=lf
+/website/corporate/*.js text eol=lf

@@ -1,0 +1,17 @@
+{
+  "services": {
+    "web": {
+      "environment": {
+        "DJANGO_CSRF_TRUSTED_ORIGINS": "https://app.isurvix.com,https://app.isurvix.com:8443",
+        "DJANGO_SETTINGS_MODULE": "ifield_settings",
+        "PYTHONPATH": "/run/isurvix-config"
+      },
+      "volumes": [
+        "/etc/isurvix-staging/ingress/ifield_settings.py:/run/isurvix-config/ifield_settings.py:ro"
+      ]
+    },
+    "proxy": {
+      "ports": ["0.0.0.0:443:8443"]
+    }
+  }
+}

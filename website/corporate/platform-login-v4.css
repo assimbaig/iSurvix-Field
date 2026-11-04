@@ -1,0 +1,50 @@
+/* Homepage header revision 4: compact Login label. New cache URL; original nav-contact dark pill reused. */
+.page-index .header-inner { width: calc(100% - 48px); max-width: none; margin-inline: 24px; gap: 24px; justify-content: flex-start; }
+.page-index .header-inner > #navigation { margin-left: auto; }
+.page-index .platform-login { position: relative; flex: 0 0 auto; margin-left: 0; }
+.page-index .platform-login summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  min-height: 36px; margin: 0; padding: 8px 12px; border: 0;
+  border-radius: 30px; background: var(--forest, #1f2e25); color: #fff;
+  font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.35;
+  cursor: pointer; list-style: none;
+}
+.page-index .platform-login summary::-webkit-details-marker { display: none; }
+.page-index .platform-login summary svg { width: 10px; height: 10px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.page-index .platform-login[open] summary { background: #3c5236; }
+.page-index .platform-login[open] summary svg { transform: rotate(180deg); }
+.page-index .platform-login-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; width: 310px;
+  max-width: calc(100vw - 36px); padding: 6px; border: 1px solid #ccd7c4;
+  border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #2333231f; z-index: 30;
+}
+.page-index .platform-login-panel strong { display: block; font-size: 13px; line-height: 1.45; }
+.page-index .platform-login-panel small { display: block; margin-top: 2px; font-size: 11px; line-height: 1.5; color: #59674f; }
+.page-index .platform-login-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 10px; border-radius: 4px; background: #f1f5eb; color: #233d27; }
+.page-index .platform-login-field:hover { background: #e5eddb; }
+.page-index .platform-login-action { flex-shrink: 0; font-size: 12px; font-weight: 600; }
+.page-index .platform-login-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 10px; border-top: 1px solid #e6ebe1; }
+.page-index .platform-login-unavailable > span { flex-shrink: 0; font-size: 11px; color: #626d5c; }
+.page-index .platform-login summary:focus-visible,
+.page-index .platform-login a:focus-visible { outline: 3px solid #3f6f28; outline-offset: 3px; }
+/* Shared mobile nav positioning must not float the homepage's body index over its hero. */
+.page-index main .coverage-index { position: static; }
+@media (max-width: 1100px) {
+  .page-index .header-inner { gap: 12px; }
+  .page-index .brand > span { display: none; }
+  .page-index .menu-toggle { display: flex; flex-direction: column; justify-content: center; gap: 6px; width: 42px; height: 42px; padding: 11px; border: 1px solid #d1dac8; border-radius: 6px; background: transparent; margin-left: auto; }
+  .page-index .menu-toggle span { height: 1px; width: 18px; background: #273b25; }
+  .page-index #navigation { display: none; position: absolute; top: 100%; left: 0; width: 100%; padding: 18px; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: 0 12px 16px #24301c0d; align-items: stretch; flex-direction: column; gap: 0; }
+  .page-index #navigation.is-open { display: flex; }
+  .page-index #navigation > a { padding: 13px 8px; }
+  .page-index #navigation .nav-contact { margin-top: 8px; justify-content: space-between; }
+}
+@media (max-width: 480px) {
+  .page-index .header-inner { width: calc(100% - 36px); margin-inline: 18px; gap: 10px; }
+  .page-index .brand { flex: 0 1 auto; min-width: 0; }
+  .page-index .brand img { width: 132px; min-width: 96px; }
+  .page-index .menu-toggle { width: 44px; height: 44px; padding: 12px; flex-shrink: 0; }
+  .page-index .platform-login summary { max-width: none; min-height: 44px; gap: 6px; padding: 10px 12px; font-size: 12px; }
+  .page-index .platform-login summary svg { width: 10px; height: 10px; }
+}
+

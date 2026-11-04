@@ -41,6 +41,8 @@ jobs:
       - run: python -m pip check
       - name: Isolated unit and HTTP integration tests
         run: python scripts/run_backend_tests.py --verbosity 1
+      - name: Corporate website source and compact login checks
+        run: python -m unittest discover -s website/corporate/tests -p "test_*.py" -v
       - name: Check migration drift
         run: python backend/manage.py makemigrations --check --dry-run --settings=checklist.settings_local
 
