@@ -5,10 +5,14 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import sqlite3
 import shutil
 import tempfile
+import threading
+import time
+import unittest
 from urllib.error import HTTPError
 from unittest.mock import patch
 from zipfile import ZipFile
@@ -185,6 +189,49 @@ class RuntimePolicyTests(SimpleTestCase):
             host.dc=command
             with self.subTest(state=state):
                 with self.assertRaises(ValueError):host.stop()
+    def test_ssh_session_limit_is_account_scoped_and_global_context_is_restored(self):
+        text=(ROOT/'deploy/hostinger/sshd-deploy.conf.example').read_text()
+        self.assertIn('Match User ifield-delivery',text)
+        self.assertIn('    MaxSessions 1\n',text)
+        self.assertTrue(text.rstrip().endswith('Match all'))
+        self.assertNotIn('PermitUserEnvironment',text)
+
+
+@unittest.skipUnless(os.name=='posix','Production select/os.read pipe deadlines require POSIX; Linux CI runs these real-pipe cases.')
+class NativeRequestDeadlineTests(SimpleTestCase):
+    def setUp(self):
+        self.delivery=module();parent=ROOT/'.local/test-fixtures';parent.mkdir(parents=True,exist_ok=True)
+        self.temp=tempfile.TemporaryDirectory(prefix='delivery-request-pipe-',dir=parent);self.root=Path(self.temp.name)
+    def tearDown(self):self.temp.cleanup()
+    def test_stalled_incomplete_pipe_has_hard_body_deadline(self):
+        read,write=os.pipe();os.write(write,b'{"pr":34')
+        try:
+            with os.fdopen(read,'rb',buffering=0) as stream:
+                start=time.monotonic()
+                with self.assertRaisesRegex(ValueError,'request_body_deadline'):self.delivery.read_request(stream,body_timeout=0.15)
+                self.assertLess(time.monotonic()-start,1.5)
+        finally:os.close(write)
+    def test_partial_body_and_eof_are_read_without_losing_bytes(self):
+        read,write=os.pipe();payload=b'{"pr":34,"github_token":"fixture-token-1234567890"}'
+        def produce():
+            os.write(write,payload[:10]);time.sleep(0.02);os.write(write,payload[10:]);os.close(write)
+        thread=threading.Thread(target=produce);thread.start()
+        with os.fdopen(read,'rb',buffering=0) as stream:self.assertEqual(self.delivery.read_request(stream,body_timeout=1)['pr'],34)
+        thread.join(timeout=1);self.assertFalse(thread.is_alive())
+    def test_only_one_receiver_can_wait_for_a_body(self):
+        read,write=os.pipe();entered=threading.Event();errors=[]
+        raw=os.fdopen(read,'rb',buffering=0)
+        class Stream:
+            def fileno(self):entered.set();return raw.fileno()
+        def first():
+            try:self.delivery.receive({'root':str(self.root)},Stream(),lambda request:None,body_timeout=0.4)
+            except ValueError as error:errors.append(str(error))
+        thread=threading.Thread(target=first);thread.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            with self.assertRaisesRegex(ValueError,'another_delivery_is_active'):self.delivery.receive({'root':str(self.root)},io.BytesIO(b'{"pr":34,"github_token":"fixture-token-1234567890"}'),lambda request:None)
+            thread.join(timeout=2);self.assertFalse(thread.is_alive());self.assertEqual(errors,['request_body_deadline'])
+        finally:os.close(write);raw.close();thread.join(timeout=2)
 
 
 class DisposableHostRehearsalGuardTests(SimpleTestCase):
@@ -240,6 +287,8 @@ class FixtureHost:
     def public_health(self,env):
         self.calls.append('public-health')
         if self.fail=='late-health' and env['ISURVIX_RELEASE_ID']==HEAD:raise ValueError('Controlled candidate external confirmation failure')
+        if self.fail=='late-sqlite' and env['ISURVIX_RELEASE_ID']==HEAD:
+            with closing(sqlite3.connect(Path(env['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3')) as db:db.execute('select nonexistent_health_column from decisions').fetchall()
         if self.running!=env['ISURVIX_RELEASE_ID'] or not self.public:raise ValueError('Actual fixture runtime does not match')
     def running_health(self,env):return self.public_health(env)
 
@@ -354,3 +403,40 @@ class SavedDataHostingerDeliveryTests(SimpleTestCase):
         result=self.engine.run(self.candidate)
         self.assertEqual(result['status'],'rolled_back');self.assertEqual(self.host.running,OLD)
         self.assertEqual(self.rows(self.delivery.read_env(self.environment)['ISURVIX_DATA_DIRECTORY']),[(1,'HUMAN_APPROVED')])
+    def test_actual_candidate_sqlite_corruption_before_publication_rolls_back(self):
+        original=self.host.static_and_check
+        def corrupt(env):
+            original(env)
+            if env['ISURVIX_RELEASE_ID']==HEAD:(Path(env['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3').write_bytes(b'SYNTHETIC corrupt candidate database')
+        self.host.static_and_check=corrupt
+        result=self.engine.run(self.candidate)
+        self.assertEqual(result['status'],'rolled_back');self.assertEqual(result['release'],OLD)
+        self.assertEqual(self.rows(self.data),[(1,'HUMAN_APPROVED')])
+        self.assertEqual(self.rows(self.delivery.read_env(self.environment)['ISURVIX_DATA_DIRECTORY']),[(1,'HUMAN_APPROVED')])
+        self.assertEqual((self.data/'media/original.jpg').read_bytes(),b'unchanged-photo-original')
+    def test_actual_late_sqlite_error_freezes_and_preserves_new_human_rows(self):
+        self.host.fail='late-sqlite'
+        original_open=self.host.open_public
+        def open_and_write(env):
+            original_open(env)
+            if env['ISURVIX_RELEASE_ID']==HEAD:
+                with closing(sqlite3.connect(Path(env['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3')) as db,db:db.execute("insert into decisions values(2,'HUMAN_ACCEPTED_AFTER_OPEN')")
+        self.host.open_public=open_and_write
+        result=self.engine.run(self.candidate)
+        self.assertEqual(result['status'],'operator_recovery_required');self.assertFalse(self.host.public)
+        self.assertEqual(self.rows(self.delivery.read_env(self.environment)['ISURVIX_DATA_DIRECTORY']),[(1,'HUMAN_APPROVED'),(2,'HUMAN_ACCEPTED_AFTER_OPEN')])
+        self.assertEqual(self.rows(self.data),[(1,'HUMAN_APPROVED')])
+        current=self.delivery.read_env(self.environment)
+        with self.assertRaisesRegex(ValueError,'operator_recovery_required'):self.engine.run(self.candidate)
+        self.assertEqual(self.delivery.read_env(self.environment),current)
+        self.assertEqual(self.rows(current['ISURVIX_DATA_DIRECTORY']),[(1,'HUMAN_APPROVED'),(2,'HUMAN_ACCEPTED_AFTER_OPEN')])
+    def test_sqlite_failure_while_forming_completed_receipt_never_rewinds(self):
+        def corrupt_receipt(phase,state):
+            if phase=='completed':(Path(state['target_env']['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3').write_bytes(b'SYNTHETIC corrupt after public opening')
+        self.engine.hook=corrupt_receipt
+        result=self.engine.run(self.candidate)
+        self.assertEqual(result['status'],'operator_recovery_required');self.assertIsNone(result['core_schema']);self.assertFalse(self.host.public)
+        current=self.delivery.read_env(self.environment)
+        self.assertEqual(current['ISURVIX_RELEASE_ID'],HEAD)
+        self.assertEqual((Path(current['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3').read_bytes(),b'SYNTHETIC corrupt after public opening')
+        self.assertEqual(self.rows(self.data),[(1,'HUMAN_APPROVED')])

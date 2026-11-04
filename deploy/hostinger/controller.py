@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import select
 import shutil
 import socket
 import ssl
@@ -68,8 +69,24 @@ def _json(raw):
     except (UnicodeError,json.JSONDecodeError):raise DeliveryError('invalid_json') from None
 
 
-def read_request(stream):
-    raw=stream.read(8193)
+def read_request(stream,*,body_timeout=10):
+    if isinstance(stream,io.BytesIO):raw=stream.read(8193)
+    else:
+        if os.name!='posix' or not isinstance(body_timeout,(int,float)) or not 0<body_timeout<=10:raise DeliveryError('production_request_stream_requires_posix')
+        try:descriptor=stream.fileno()
+        except (OSError,ValueError,AttributeError):raise DeliveryError('request_stream_unavailable') from None
+        deadline=time.monotonic()+body_timeout;buffer=bytearray()
+        while len(buffer)<8193:
+            remaining=deadline-time.monotonic()
+            if remaining<=0:raise DeliveryError('request_body_deadline')
+            try:
+                ready,_,_=select.select([descriptor],[],[],remaining)
+                if not ready:raise DeliveryError('request_body_deadline')
+                chunk=os.read(descriptor,min(4096,8193-len(buffer)))
+            except OSError:raise DeliveryError('request_stream_unavailable') from None
+            if not chunk:break
+            buffer.extend(chunk)
+        raw=bytes(buffer)
     if not raw or len(raw)>8192:raise DeliveryError('request_size')
     value=_json(raw)
     if not isinstance(value,dict) or set(value)!={'pr','github_token'} or type(value['pr']) is not int or not 1<=value['pr']<=999999:raise DeliveryError('request_shape')
@@ -274,6 +291,12 @@ def lock(root):
             else:stream.seek(0);msvcrt.locking(stream.fileno(),msvcrt.LK_UNLCK,1)
 
 
+def receive(policy,stream,dispatch,*,body_timeout=10):
+    # Acquire before accepting any body bytes: a valid SSH key cannot create
+    # unbounded simultaneous root processes waiting on incomplete input.
+    with lock(policy['root']):return dispatch(read_request(stream,body_timeout=body_timeout))
+
+
 class Engine:
     def __init__(self,root,environment,host,*,hook=None,authority_check=None):
         self.root=consumer._no_links(root);self.environment=consumer._no_links(environment);self.host=host;self.hook=hook;self.authority_check=authority_check
@@ -284,10 +307,13 @@ class Engine:
     def write_env(self,values):atomic(self.environment,render_env(values).encode())
     def result(self,state,status):
         current=read_env(self.environment);schema=None
-        with closing(sqlite3.connect((Path(current['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3').absolute().as_uri()+'?mode=ro',uri=True)) as database:
-            if database.execute("select 1 from sqlite_master where type='table' and name='django_migrations'").fetchone():
-                row=database.execute("select name from django_migrations where app='core' order by name desc limit 1").fetchone()
-                schema=row[0] if row else None
+        try:
+            with closing(sqlite3.connect((Path(current['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3').absolute().as_uri()+'?mode=ro',uri=True)) as database:
+                if database.execute("select 1 from sqlite_master where type='table' and name='django_migrations'").fetchone():
+                    row=database.execute("select name from django_migrations where app='core' order by name desc limit 1").fetchone()
+                    schema=row[0] if row else None
+        except sqlite3.DatabaseError:
+            if status!='operator_recovery_required':raise
         return {'format':'isurvix-hostinger-receipt-v1','status':status,'pr':state['pr'],'source_release':state['previous_env']['ISURVIX_RELEASE_ID'],'release':current['ISURVIX_RELEASE_ID'],'head_sha':state['head_sha'],'merge_sha':state['merge_sha'],'manifest_sha256':state['manifest_sha256'],'artifact_id':state.get('artifact_id'),'artifact_sha256':state.get('artifact_sha256'),'images':{'app':current['ISURVIX_APP_IMAGE'],'nginx':current['ISURVIX_NGINX_IMAGE']},'core_schema':schema}
     def freeze(self,state):
         self.host.stop();self.phase(state,'operator_recovery_required')
@@ -318,7 +344,7 @@ class Engine:
                 if saved['phase'] not in ('completed','rolled_back'):
                     if saved['phase']=='public_opening':return self.freeze(saved)
                     try:self.rollback(saved)
-                    except (ValueError,OSError):return self.freeze(saved)
+                    except (ValueError,OSError,sqlite3.DatabaseError):return self.freeze(saved)
                     return self.result(saved,'recovered')
             if current['ISURVIX_RELEASE_ID'] not in candidate.get('supported_from',[]):raise DeliveryError('source_upgrade_not_proven')
             _sha(candidate['head_sha']);_sha(candidate['merge_sha']);_sha(candidate['manifest_sha256'],64)
@@ -348,10 +374,10 @@ class Engine:
                 # Persist BEFORE the listener could accept any human/API write.
                 self.phase(state,'public_opening');self.host.open_public(target);self.host.public_health(target)
                 self.phase(state,'completed');return self.result(state,'completed')
-            except (ValueError,OSError,subprocess.SubprocessError):
-                if state['phase']=='public_opening':return self.freeze(state)
+            except (ValueError,OSError,subprocess.SubprocessError,sqlite3.DatabaseError):
+                if state['phase'] in ('public_opening','completed'):return self.freeze(state)
                 try:return self.rollback(state)
-                except (ValueError,OSError,subprocess.SubprocessError):return self.freeze(state)
+                except (ValueError,OSError,subprocess.SubprocessError,sqlite3.DatabaseError):return self.freeze(state)
 
 
 def _health_body(raw,release):
@@ -483,8 +509,8 @@ def main():
         if os.name!='posix' or os.geteuid()!=0 or not sys.flags.isolated:raise DeliveryError('isolated_root_controller_required')
         if os.environ.get('SSH_ORIGINAL_COMMAND','') not in ('','deliver'):raise DeliveryError('forced_command_only')
         policy=load_policy('/etc/isurvix-delivery/policy.json')
-        request=read_request(sys.stdin.buffer);client=GitHub(request.pop('github_token'))
-        with lock(policy['root']):
+        def dispatch(request):
+            client=GitHub(request.pop('github_token'))
             authority=authorize(client,request['pr']);candidate=acquire(client,authority,Path(policy['root'])/'artifacts')
             # Recheck source/approval/checks immediately before maintenance.
             if authorize(client,request['pr'])!=authority:raise DeliveryError('authority_changed_before_maintenance')
@@ -492,7 +518,8 @@ def main():
             def still_authorized():
                 if authorize(client,request['pr'])!=authority:raise DeliveryError('authority_changed_before_publication')
                 require_checks(client,authority['head_sha'])
-            host=Host(policy);result=Engine(policy['root'],policy['environment_file'],host,authority_check=still_authorized).run(candidate,lock_held=True)
+            host=Host(policy);return Engine(policy['root'],policy['environment_file'],host,authority_check=still_authorized).run(candidate,lock_held=True)
+        result=receive(policy,sys.stdin.buffer,dispatch)
         print(json.dumps(result,sort_keys=True))
         return 0 if result['status'] in ('completed','already_running') else 2
     except Exception:

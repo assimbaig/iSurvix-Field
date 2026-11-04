@@ -101,6 +101,18 @@ Pin the independently confirmed SSH host key; never use StrictHostKeyChecking=no
 The dedicated SSH private key belongs only in the approved deployment secret
 store and the owner's protected recovery custody; it is not a root key.
 
+Owner-approved HD-S1 hardening: the server takes its nonblocking delivery lock
+BEFORE waiting for any body byte. POSIX select/os.read enforces a fixed10-second
+body deadline and8193-byte rejection boundary, handling partial reads/EOF without
+unbounded buffering. Only one receiver can wait for a body; the dedicated SSH
+Match block also limits MaxSessions to1 and ends with Match all. Validate the
+actual target OpenSSH include context with sshd -t; text tests alone do not prove
+that the host's include placement accepts all subsequent global directives.
+PermitUserEnvironment is a GLOBAL directive on the target OpenSSH version;
+keep it out of this Match block and verify `sshd -T` reports
+`permituserenvironment no` before enabling the account. Validate supported
+per-user forwarding restrictions with the actual parser as well.
+
 ## Maintenance, persistence and rollback
 
 The root policy pins repository, branch, hostname, project, existing private
@@ -150,6 +162,13 @@ the new DB/media. It MUST NOT automatically rewind human records to the earlier
 backup. The owner must inspect/reconcile those retained records before an exact
 operator-approved recovery. This is a deliberate data-preservation stop, not a
 zero-downtime promise.
+
+Owner-approved HD-R2 handling includes actual sqlite3.DatabaseError failures,
+not merely ValueError. Pre-opening corruption triggers the same verified
+new-target rollback; a database error after public-opening or while forming a
+completed receipt freezes the target and retains its bytes/new human rows.
+An unreadable frozen database reports no invented schema value. Further delivery
+requests reject the operator-recovery hold without rewinding accepted records.
 
 The active data pointer may move to a new private delivery data/recovered
 directory. It retains all verified records/originals; the original data path and
