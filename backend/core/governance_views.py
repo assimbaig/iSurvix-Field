@@ -137,6 +137,15 @@ def workspace_members(actor,projects,super_admin):
         Q(profile__project__in=projects,_workspace_primary=False))
 
 
+def prepare_workspace_display(checklist):
+    """Attach a list-rendering snapshot; decision services keep fresh DB reads."""
+    if checklist is None:return
+    from .workflow_service import display_workflow
+    checklist.display_workflow_stage,checklist.display_workflow_label=display_workflow(checklist)
+    policy=getattr(checklist,'review_policy',None)
+    checklist.display_workflow_version=policy.workflow_version if policy else None
+
+
 def workspace_context(request,**extra):
     actor=request.user
     role=role_for(actor)
@@ -161,8 +170,12 @@ def workspace_context(request,**extra):
     else:
         chosen=None
         projects=scope_projects
-    surveys=Checklist.objects.filter(project__in=projects).select_related('project','user').order_by('project__name','site_id','pk')
-    assignments=WorkAssignment.objects.filter(project__in=projects).select_related('project','assigned_to','checklist')
+    surveys=Checklist.objects.filter(project__in=projects).select_related('project','user',
+        'review_route_record','review_policy__current_revision','quality_reviewer').defer(
+            'review_policy__current_revision__snapshot').order_by('project__name','site_id','pk')
+    assignments=WorkAssignment.objects.filter(project__in=projects).select_related('project','assigned_to','checklist',
+        'checklist__review_route_record','checklist__review_policy__current_revision','checklist__quality_reviewer').defer(
+            'checklist__review_policy__current_revision__snapshot')
     if role==Profile.Roles.ENGINEER:
         surveys=surveys.filter(user=actor)
         assignments=assignments.filter(assigned_to=actor)
@@ -292,6 +305,14 @@ def workspace_context(request,**extra):
             elif role==Profile.Roles.ADMIN:
                 project.client_candidates=ClientOrganization.objects.filter(company_id=company_id_for(actor),industry__code=project.industry)
         context.update(projects=visible_projects,projects_pagination=project_navigation)
+    # Only already-paginated, rendered collections are evaluated here. This is
+    # deliberately separate from every mutation/authorization entry point.
+    if not super_admin:
+        visible_checklists=(context['surveys'] if active_view in {'my_work','projects'} and not engineer_home else
+            context['reports'] if active_view=='reports' else context['review_queue'] if active_view=='reviews' else [])
+        for checklist in visible_checklists:prepare_workspace_display(checklist)
+        if active_view=='my_work' and not engineer_home:
+            for work in context['assignments']:prepare_workspace_display(work.checklist)
     context.update(extra)
     return context
 

@@ -39,7 +39,9 @@ def verified_runs(runs, release_id, repository):
     _sha(release_id)
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repository):
         raise ValueError('Use the expected owner/repository identity.')
-    latest = {}
+    latest = {path: {} for path in REQUIRED_WORKFLOWS}
+    terminal_conclusions = {}
+    run_paths = {}
     for run in runs:
         if not isinstance(run, dict) or run.get('path') not in REQUIRED_WORKFLOWS:
             continue
@@ -49,23 +51,49 @@ def verified_runs(runs, release_id, repository):
         path = run['path']
         if any(type(run.get(key)) is not int or run[key] < 1 for key in ('id', 'run_number', 'run_attempt')):
             raise ValueError('A required workflow has incomplete provenance.')
+        if run['id'] in run_paths and run_paths[run['id']] != path:
+            raise ValueError('A required run identity names contradictory workflow paths.')
+        run_paths[run['id']] = path
         try:
             updated = datetime.fromisoformat(run['updated_at'].replace('Z', '+00:00'))
             if updated.tzinfo is None:
                 raise ValueError()
         except (KeyError, TypeError, AttributeError, ValueError):
             raise ValueError('A required workflow has no reliable update time.') from None
-        # Re-running an older run number can be more recent than another run.
-        order = (updated, run['run_attempt'], run['run_number'], run['id'])
-        if path not in latest or order > latest[path][0]:
-            latest[path] = order, run
+        # A completed attempt cannot acquire a different outcome merely by
+        # receiving a later timestamp. Preserve this evidence across snapshots
+        # even when a newer attempt has already appeared on another page.
+        if run.get('status') == 'completed':
+            identity = (path, run['id'], run['run_attempt'])
+            if identity in terminal_conclusions and terminal_conclusions[identity] != run.get('conclusion'):
+                raise ValueError('A required workflow has contradictory terminal conclusions; publication is blocked.')
+            terminal_conclusions[identity] = run.get('conclusion')
+        # Independent push/PR runs must all pass. An updated older success must
+        # never hide another run that is still active or has failed. Only a
+        # newer attempt of the SAME run can supersede that run's old failure.
+        order = (run['run_attempt'], updated)
+        previous = latest[path].get(run['id'])
+        if previous is not None:
+            previous_order, previous_run = previous
+            if previous_run['run_number'] != run['run_number']:
+                raise ValueError('A required workflow has contradictory run provenance.')
+            if order == previous_order and any(
+                    previous_run.get(key) != run.get(key) for key in ('status', 'conclusion')):
+                raise ValueError('A required workflow has contradictory status snapshots; publication is blocked.')
+        if previous is None or order > previous[0]:
+            latest[path][run['id']] = order, run
     result = {}
     for path in REQUIRED_WORKFLOWS:
-        run = latest.get(path, (None, {}))[1]
-        if run.get('status') != 'completed':
+        effective = list(latest[path].values())
+        for _, run in effective:
+            if run.get('status') == 'completed' and run.get('conclusion') != 'success':
+                raise ValueError('A required same-source check is unsuccessful; candidate publication is blocked.')
+        if not effective or any(run.get('status') != 'completed' for _, run in effective):
             raise ChecksPending('A required same-source check is missing or unfinished; candidate publication is blocked.')
-        if run.get('conclusion') != 'success':
-            raise ValueError('A required same-source check is missing, unfinished or unsuccessful; candidate publication is blocked.')
+        # Retain the existing single canonical artifact-run identity and v1
+        # record shape, after every independent latest attempt is verified.
+        _, run = max(effective, key=lambda item: (
+            item[0][1], item[1]['run_attempt'], item[1]['run_number'], item[1]['id']))
         result[path] = {'run_id': run['id'], 'run_attempt': run['run_attempt'],
                         'source_commit': release_id, 'status': 'completed', 'conclusion': 'success',
                         'url': f'https://github.com/{repository}/actions/runs/{run["id"]}'}
@@ -75,12 +103,16 @@ def verified_runs(runs, release_id, repository):
 def _checks(checks, release_id):
     if not isinstance(checks, dict) or set(checks) != set(REQUIRED_WORKFLOWS):
         raise ValueError('All required same-source checks must be present.')
+    run_ids = set()
     for value in checks.values():
         if (not isinstance(value, dict) or value.get('source_commit') != release_id
                 or value.get('status') != 'completed' or value.get('conclusion') != 'success'
                 or type(value.get('run_id')) is not int or value['run_id'] < 1
                 or type(value.get('run_attempt')) is not int or value['run_attempt'] < 1):
             raise ValueError('A required same-source check is not verified.')
+        if value['run_id'] in run_ids:
+            raise ValueError('Each required workflow must have its own verified run identity.')
+        run_ids.add(value['run_id'])
 
 
 def confirm_gate_pair(original, fresh):

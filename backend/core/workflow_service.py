@@ -103,7 +103,8 @@ def display_workflow(checklist):
     """Render an explicitly loaded list-page snapshot, never authorize a write.
 
     The ordinary workflow_stage/label and decision services still read current
-    authority from the database. Only the task explorer opts into this helper.
+    authority from the database. Task/workspace lists explicitly opt into this
+    helper after loading their related route and policy in the current request.
     """
     cache=checklist._state.fields_cache
     if 'review_route_record' in cache:
