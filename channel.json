@@ -2,14 +2,14 @@
   "format": "isurvix-hostinger-channel-v1",
   "repository": "assimbaig/iSurvix-Field",
   "branch": "feat/ai-settings-routing-20261031",
-  "source_commit": "fe7116c9df68f637c288280d05bbf3f9350b4737",
-  "merge_commit": "d352c50a85cb2812b3f7cd2873f9aeb8a6bf3691",
+  "source_commit": "dab9c5566531b0f3f030cd2ed861cb90f863433a",
+  "merge_commit": "305fe83290cbe33f65651b5c2024d7ec69f96dc3",
   "source_schema": "0059_task_page_indexes",
-  "manifest_sha256": "5e33c483e68170eb2debef3c54ea2af3f6e5f5f0e61fd49239a55fe40efd4ac7",
-  "artifact_id": 13349396565,
-  "artifact_sha256": "d80fdcc46e078b9edbbaf2a4702da652377af672581158cc17b82591a7bc5c12",
+  "manifest_sha256": "34bd60707013c985407204d63756d27ef416edc1a41ada5c2aff1473aa99cc8e",
+  "artifact_id": 13364103413,
+  "artifact_sha256": "32ef5f6e40994c953f9ac2fe7f19e52aa2728ca8fa4a7f9fa3671d13185b0059",
   "images": {
-    "app": "sha256:90f8ef0f98cc3244ec46213a30fc8c0602e4b3513d61c42a7340092fad47fac7",
+    "app": "sha256:74d64cb5c04390b12acd220fea0f072a561db393a270a8459fd02c381af19613",
     "nginx": "sha256:88f52f3d58a505b7e1ad96ca6969478517bcccb58418e75a54223271a64da7df"
   }
 }
