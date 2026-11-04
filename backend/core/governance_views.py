@@ -305,6 +305,17 @@ def workspace_context(request,**extra):
             elif role==Profile.Roles.ADMIN:
                 project.client_candidates=ClientOrganization.objects.filter(company_id=company_id_for(actor),industry__code=project.industry)
         context.update(projects=visible_projects,projects_pagination=project_navigation)
+    if not super_admin and not engineer_home:
+        # Summary figures describe the complete authorized/filter scope. Reuse
+        # cached paginator counts where available; never count visible slices or
+        # materialize hidden task collections just to display their totals.
+        context['workspace_totals']={
+            'assignments':context['assignments_page'].paginator.count if 'assignments_page' in context else assignments.count(),
+            'checklists':context['surveys_page'].paginator.count if 'surveys_page' in context else surveys.count(),
+            'projects':context['projects_pagination']['page'].paginator.count if 'projects_pagination' in context else projects.count(),
+        }
+        if role==Profile.Roles.CLIENT:
+            context['workspace_totals']['final_deliverables']=surveys.filter(status=Checklist.Status.FINAL).count()
     # Only already-paginated, rendered collections are evaluated here. This is
     # deliberately separate from every mutation/authorization entry point.
     if not super_admin:
