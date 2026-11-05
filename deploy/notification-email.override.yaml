@@ -1,0 +1,24 @@
+{
+  "services": {
+    "web": {
+      "environment": {
+        "ISURVIX_NOTIFICATION_EMAIL_ENABLED": "True",
+        "ISURVIX_NOTIFICATION_CREDENTIALS_FILE": "/run/private/ifield-notification.json",
+        "ISURVIX_NOTIFICATION_PUBLIC_ORIGIN": "${ISURVIX_NOTIFICATION_PUBLIC_ORIGIN:?Set the reviewed public HTTPS application origin}"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/etc/isurvix-staging/ifield-notification.json",
+          "target": "/run/private/ifield-notification.json",
+          "read_only": true,
+          "bind": {"create_host_path": false}
+        }
+      ],
+      "networks": ["application", "notification-egress"]
+    }
+  },
+  "networks": {
+    "notification-egress": {"driver": "bridge", "internal": false}
+  }
+}

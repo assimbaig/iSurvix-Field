@@ -15,6 +15,7 @@ from .access import is_super_admin
 from .governance_views import audit, issue_guard, lock_governance
 from .models import Company, CompanyApplication, IndustryCatalog, Profile, ProjectInvitation
 from .privileged_audit import change_details, snapshot_invitation
+from .invitation_email import prepare_invitation_token, queue_invitation_email
 
 
 def _name(value):
@@ -145,7 +146,7 @@ def invite_application(actor, application_id):
     if ProjectInvitation.objects.filter(email__iexact=application.email, accepted_at__isnull=True,
             revoked_at__isnull=True, expires_at__gt=now).exists():
         raise ValidationError('A current invitation already uses this email. Resolve it in People and invitations first.')
-    token = secrets.token_urlsafe(32)
+    token, delivery_id = prepare_invitation_token()
     invitation = ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),
         email=application.email, role=Profile.Roles.ADMIN, company=application.company,
         admin_industry=industry, created_by=actor, expires_at=now + timedelta(hours=72))
@@ -157,4 +158,5 @@ def invite_application(actor, application_id):
     application.invited_at = now
     application.save(update_fields=['invitation', 'status', 'invited_at'])
     _record(actor, 'invited', application, CompanyApplication.Status.PROVISIONED)
+    queue_invitation_email(invitation, delivery_id)
     return application, token

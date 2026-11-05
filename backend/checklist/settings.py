@@ -197,3 +197,8 @@ LOGGING['handlers']['safe_server_console'] = {
 LOGGING['loggers']['django.server'] = {
     'handlers': ['safe_server_console'], 'level': 'INFO', 'propagate': False,
 }
+# Invitation email is explicitly enabled only after Microsoft 365 authorization.
+DEFAULT_FROM_EMAIL = 'iSurvix iField Notifications <ifield.notify@isurvix.com>'
+NOTIFICATION_EMAIL_ENABLED = os.environ.get('ISURVIX_NOTIFICATION_EMAIL_ENABLED', 'False') == 'True'
+NOTIFICATION_EMAIL_CREDENTIALS_FILE = os.environ.get('ISURVIX_NOTIFICATION_CREDENTIALS_FILE', '')
+NOTIFICATION_EMAIL_PUBLIC_ORIGIN = os.environ.get('ISURVIX_NOTIFICATION_PUBLIC_ORIGIN', 'https://app.isurvix.com')

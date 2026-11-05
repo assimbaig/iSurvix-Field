@@ -14,7 +14,28 @@ These ignored files and all credentials/backups must remain outside Git.
 
 ## Current source and delivery
 
-Current follow-up branch: `feat/hostinger-trusted-push-20261105`.
+Current work branch: `feat/invitation-email-20261105`, based on `bf3ca39`.
+PR35 is merged and the live app was verified at `bf3ca39`. This branch prepares
+Microsoft 365 invitation delivery from **ifield.notify@isurvix.com**; it is not
+deployed or activated. See `docs/development/INVITATION_EMAIL.md`.
+The shared mailbox and single-tenant registration exist. Private registration
+details/credentials are under `.local/private/email/`; do not print or commit them.
+The latest live authentication check returned HTTP401/AADSTS7000215. The saved
+secret appears ID-shaped; the owner must supply the active secret **Value** for
+this app privately. Scoped Exchange `Application Mail.Send` and live delivery
+remain unverified. No real invitation email was sent during implementation.
+The owner approved new EM-S1/EM-S2 repairs; independent security retests passed.
+Earlier holds below remain separate. Private evidence and final-run status:
+`.local/email-configuration-20261105/STATE.json`.
+Final local regression:1897 backend tests,1891 passed/6 platform skips;
+105 isolated Linux checks passed,21 frontend scripts passed with installed Edge,
+and12 independent saved-record/11 actual browser checks passed. Both approved
+Low findings were fixed and independently retested. Real Microsoft token
+authentication still fails as described above; inbox delivery is not verified.
+Before a0060 hosted upgrade, update the trusted controller/retention helper from
+the reviewed source; retain owner review and the existing two-service runtime.
+
+Previous follow-up branch: `feat/hostinger-trusted-push-20261105`.
 PR #34 (https://github.com/assimbaig/iSurvix-Field/pull/34) is merged. Its
 application release `dab9c55` was installed by the actual approved GitHub/VPS
 delivery run, with trusted HTTPS/readiness and provenance confirmed.
@@ -46,6 +67,10 @@ Corporate shared-hosting publication is separate from VPS application delivery.
 ## Local records and recovery
 
 Local database is `.local/survey.sqlite3`; originals are `.local/media/`.
+This task added local migration0060 after a disposable-copy proof. All14,490
+existing rows across79 prior tables were retained; the new outbox is empty.
+Checkpoint: `.local/backups/email-configuration-20261105-182253` contains the
+verified pre-task database and source bundle. Original evidence was not changed.
 The existing database was upgraded from core0053 to0059 after a disposable-copy
 proof. All 14,434 prior rows/old column values across69 tables were retained.
 All 3,537 original media files were compared byte-for-byte by SHA256 against
