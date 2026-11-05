@@ -20,20 +20,42 @@ Microsoft 365 invitation delivery from **ifield.notify@isurvix.com**; it is not
 deployed or activated. See `docs/development/INVITATION_EMAIL.md`.
 The shared mailbox and single-tenant registration exist. Private registration
 details/credentials are under `.local/private/email/`; do not print or commit them.
-The latest live authentication check returned HTTP401/AADSTS7000215. The saved
-secret appears ID-shaped; the owner must supply the active secret **Value** for
-this app privately. Scoped Exchange `Application Mail.Send` and live delivery
-remain unverified. No real invitation email was sent during implementation.
-The owner approved new EM-S1/EM-S2 repairs; independent security retests passed.
+Live Microsoft application authentication now passes with the replacement Value
+saved privately. Do not ask the owner to paste a secret into chat. The actual
+guarded Exchange administrator sign-in worked; a permission-binding conflict
+still needs read-only inspection and positive/negative mailbox-scope verification.
+Recorded partial progress is not proof that a tenant change did not occur.
+No real invitation email was sent during implementation. The owner approved
+EM-S1/EM-S2 and local setup-tool EM-S3 repairs; independent security retests passed.
 Earlier holds below remain separate. Private evidence and final-run status:
 `.local/email-configuration-20261105/STATE.json`.
-Final local regression:1897 backend tests,1891 passed/6 platform skips;
+Baseline04dd local regression:1897 backend tests,1891 passed/6 platform skips;
 105 isolated Linux checks passed,21 frontend scripts passed with installed Edge,
 and12 independent saved-record/11 actual browser checks passed. Both approved
-Low findings were fixed and independently retested. Real Microsoft token
-authentication still fails as described above; inbox delivery is not verified.
-Before a0060 hosted upgrade, update the trusted controller/retention helper from
-the reviewed source; retain owner review and the existing two-service runtime.
+Low findings were fixed and independently retested. Microsoft token
+authentication passes; inbox delivery is not verified. All four04dd GitHub checks
+passed. Those results do not cover newer uncommitted workflow-notification work.
+The two reviewed04dd trusted helpers were checkpointed and installed on the VPS;
+policy/runtime/application version remained unchanged. A private UID10001/0400
+credential is staged, with permitted/denied reader checks; mail remains disabled.
+
+The owner expanded notifications to task/reviewer assignment, submission,
+approval/rejection, daily summaries and authorized full-report links. Additive
+migration0061 and the shared background worker implement this extension. The first
+full Windows run passed1956 tests with6 platform skips; independent workflow QA
+passed23 checks and separate notification security review passed19 checks. A final
+combined run/CI must include those added security regressions. See
+`docs/development/WORKFLOW_EMAIL_NOTIFICATIONS.md`. The current operational local
+database is now0061 after a coherent-copy migration proof and strict retained-row
+verification. The new outbox is empty and local email remains disabled. All14,354
+policy-retained rows across76 tables matched before/after; excluded maintenance
+tables follow the documented retention policy. The pre0061 backup is private.
+Do not deploy this candidate before exact-source release verification and owner
+approval. Recovery checkpoint:
+`.local/backups/workflow-email-20261105T203601Z` (verified source bundle/coherent DB).
+Before a0061 hosted upgrade, install the reviewed candidate retention helper;
+the currently installed helper admits0060 only. Keep owner review, strict retained
+rows/permissions/evidence checks and the existing two-service runtime.
 
 Previous follow-up branch: `feat/hostinger-trusted-push-20261105`.
 PR #34 (https://github.com/assimbaig/iSurvix-Field/pull/34) is merged. Its

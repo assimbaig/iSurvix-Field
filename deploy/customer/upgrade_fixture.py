@@ -64,6 +64,14 @@ def _support_metadata_additions(before, after, database):
                 'id', 'invitation_id', 'status', 'attempts', 'available_at', 'lease_id',
                 'lease_expires_at', 'error_code', 'accepted_at', 'created_at', 'updated_at'}),
         }),
+        ({'0060_invitation_email_delivery', '0061_workflow_email_delivery'}, {
+            'workflowemaildelivery': ('core_workflowemaildelivery', 'workflow email delivery', {
+                'id', 'dedupe_key', 'event_key', 'kind', 'project_id', 'company_id',
+                'checklist_id', 'assignment_id', 'recipient_id', 'expected_role', 'source_audit_id',
+                'source_processing_event_id', 'drawing_set_id', 'digest_day',
+                'status', 'attempts', 'available_at', 'lease_id', 'lease_expires_at',
+                'error_code', 'accepted_at', 'created_at', 'updated_at'}),
+        }),
     ]
     models = {}
     required_migrations = set()

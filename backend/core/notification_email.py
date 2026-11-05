@@ -169,7 +169,7 @@ class GraphMailClient:
         except (ValueError, TypeError, UnicodeError):
             raise NotificationEmailError('authentication_invalid_response') from None
 
-    def send(self, recipient, subject, body):
+    def send(self, recipient, subject, body, *, before_send=None):
         try:
             if not isinstance(recipient, str) or len(recipient) > 254 or any(c in recipient for c in '\r\n\x00'):
                 raise ValueError
@@ -182,6 +182,22 @@ class GraphMailClient:
             raise NotificationEmailError('message_invalid') from None
 
         token = self._token()
+        if before_send is not None:
+            # The workflow worker can recheck live scope after OAuth and replace
+            # its notification snapshot immediately before the actual send POST.
+            prepared = before_send()
+            if prepared is not None:
+                try:
+                    recipient, subject, body = prepared
+                    validate_email(recipient)
+                    if (not isinstance(recipient, str) or len(recipient) > 254
+                            or any(c in recipient for c in '\r\n\x00')
+                            or not isinstance(subject, str) or not 1 <= len(subject) <= 200
+                            or any(c in subject for c in '\r\n\x00')
+                            or not isinstance(body, str) or len(body.encode('utf-8')) > _MAX_BODY_BYTES):
+                        raise ValueError
+                except (ValueError, TypeError, ValidationError, UnicodeError):
+                    raise NotificationEmailError('message_invalid') from None
         payload = {'message': {
             'from': {'emailAddress': {'address': SENDER, 'name': DISPLAY_NAME}},
             'toRecipients': [{'emailAddress': {'address': recipient}}],

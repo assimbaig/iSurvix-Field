@@ -41,6 +41,7 @@ def guarded_write(view):
     return wrapped
 
 
+@transaction.atomic
 def audit(actor,action,project=None,**details):
     return GovernanceAudit.objects.create(actor=actor,actor_name=getattr(actor,'username',''),action=action,project=project,details=details)
 

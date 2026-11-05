@@ -582,3 +582,4 @@ from .ai_processing_models import AIProcessingSettings, AIProcessingPolicy, AIPr
 from .update_models import ServerUpdateRequest, ServerUpdateEvent  # noqa: E402,F401
 from .support_models import SupportCase, SupportEvent  # noqa: E402,F401
 from .invitation_email_models import InvitationEmailDelivery  # noqa: E402,F401
+from .workflow_email_models import WorkflowEmailDelivery  # noqa: E402,F401
