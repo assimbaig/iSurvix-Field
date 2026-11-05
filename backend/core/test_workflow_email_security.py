@@ -341,4 +341,3 @@ class WorkflowEmailSecurityTests(TestCase):
             allowed = self.client.get(url)
             self.assertEqual(allowed.status_code, 200)
             allowed.close()
-
