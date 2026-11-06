@@ -181,27 +181,126 @@ def _validate_new_notice_table(before, after, database):
         raise ValueError('New release notice default permissions are missing or invalid.')
 
 
+def _validate_checklist_template_company_scope(before, after, database):
+    """Allow only migration 0063's additive owner field and deterministic backfill."""
+    table = 'core_checklisttemplate'
+    previous = before.get(table)
+    current = after.get(table)
+    if not previous or not current or 'company_id' in previous['columns']:
+        return None
+    if current['columns'] != previous['columns'] + ['company_id'] or current['primary'] != previous['primary']:
+        raise ValueError('Checklist template schema changed beyond the approved company scope field.')
+    try:
+        with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
+            applied = db.execute(
+                "select 1 from django_migrations where app='core' and name=?",
+                ('0063_checklist_template_company_scope',)).fetchone()
+            template_info = db.execute('pragma table_info(' + _identifier(table) + ')').fetchall()
+            company_info = db.execute('pragma table_info("core_company")').fetchall()
+            foreign_keys = db.execute('pragma foreign_key_list(' + _identifier(table) + ')').fetchall()
+    except sqlite3.Error:
+        raise ValueError('Checklist template company scope migration evidence is unavailable.') from None
+    column = next((row for row in template_info if row[1] == 'company_id'), None)
+    company_pk = next((row for row in company_info if row[1] == 'id' and row[5] == 1), None)
+    company_foreign_keys = [row for row in foreign_keys if row[3] == 'company_id']
+    if (not applied or not column or not company_pk or column[2].lower() != company_pk[2].lower()
+            or column[3] != 0 or column[4] is not None or len(company_foreign_keys) != 1
+            or tuple(company_foreign_keys[0][2:]) != ('core_company', 'company_id', 'id',
+                                                       'NO ACTION', 'NO ACTION', 'NONE')):
+        raise ValueError('Checklist template company scope migration or foreign key is unverified.')
+
+    def rows_by_id(value):
+        columns = value['columns']
+        if columns.count('id') != 1:
+            raise ValueError('Checklist template rows do not have stable identities.')
+        return {row[columns.index('id')]: dict(zip(columns, row)) for row in value['rows']}
+
+    old_templates = rows_by_id(previous)
+    new_templates = rows_by_id(current)
+    if set(old_templates) != set(new_templates):
+        raise ValueError('Checklist template records changed during the company scope migration.')
+    expected_companies = {template_id: set() for template_id in old_templates}
+
+    def table_rows(name):
+        value = before.get(name)
+        if not value:
+            raise ValueError('Company scope ownership references are unavailable.')
+        return [dict(zip(value['columns'], row)) for row in value['rows']]
+
+    projects = table_rows('core_project')
+    project_by_id = {row['id']: row for row in projects}
+    for project in projects:
+        template_id = project.get('checklist_template_id')
+        company_id = project.get('company_id')
+        if template_id in expected_companies and company_id is not None:
+            expected_companies[template_id].add(company_id)
+    for checklist in table_rows('core_checklist'):
+        template_id = checklist.get('checklist_template_id')
+        project = project_by_id.get(checklist.get('project_id'))
+        if template_id in expected_companies and project and project.get('company_id') is not None:
+            expected_companies[template_id].add(project['company_id'])
+
+    assigned = 0
+    for template_id, original in old_templates.items():
+        definition = original.get('definition')
+        if isinstance(definition, str):
+            try:
+                definition = json.loads(definition)
+            except (TypeError, ValueError):
+                definition = {}
+        expected = None
+        if not (isinstance(definition, dict) and definition.get('standard_catalog')):
+            owners = expected_companies[template_id]
+            if len(owners) == 1:
+                expected = next(iter(owners))
+                assigned += 1
+        updated = new_templates[template_id]
+        if any(updated.get(column) != value for column, value in original.items()):
+            raise ValueError('Existing checklist template data changed during the company scope migration.')
+        if updated.get('company_id') != expected:
+            raise ValueError('Checklist template company scope does not match unambiguous project ownership.')
+    return {'expected_companies': {key: (next(iter(value)) if len(value) == 1 else None)
+                                   for key, value in expected_companies.items()},
+            'assigned_count': assigned}
+
+
 def assert_retained(before, database):
     after = snapshot(database)
     _validate_new_notice_table(before, after, database)
+    company_scope = _validate_checklist_template_company_scope(before, after, database)
     metadata_additions = _support_metadata_additions(before, after, database)
     for table, original in before.items():
         current = after.get(table)
-        if not current or current['primary'] != original['primary'] or current['columns'] != original['columns']:
+        allowed_company_scope = table == 'core_checklisttemplate' and company_scope is not None
+        if (not current or current['primary'] != original['primary']
+                or (current['columns'] != original['columns'] and not allowed_company_scope)):
             raise ValueError('Retained application schema changed unexpectedly.')
         indices = [original['columns'].index(key) for key in original['primary']]
         def identity(row):
             return json.dumps([row[index] for index in indices], sort_keys=True, separators=(',', ':'))
         retained = {identity(row): row for row in current['rows']}
-        if any(retained.get(identity(row)) != row for row in original['rows']):
+        if allowed_company_scope:
+            current_columns = current['columns']
+            current_rows = [dict(zip(current_columns, row)) for row in current['rows']]
+            for row in current_rows:
+                row.pop('company_id', None)
+            normalized = [[row[column] for column in original['columns']] for row in current_rows]
+            current_ids = {row[original['columns'].index('id')] for row in normalized}
+            old_ids = {row[original['columns'].index('id')] for row in original['rows']}
+            if current_ids != old_ids or normalized != original['rows']:
+                raise ValueError('Existing checklist template data changed during the company scope migration.')
+        elif any(retained.get(identity(row)) != row for row in original['rows']):
             raise ValueError('An existing application row was removed or changed during upgrade/recovery.')
         if table != 'core_governanceaudit' and len(current['rows']) != len(original['rows']) + metadata_additions.get(table, 0):
             raise ValueError('An unrelated application table gained rows during maintenance.')
     canonical = json.dumps(before, sort_keys=True, separators=(',', ':')).encode()
-    return {'retained_tables': len(before), 'retained_rows': sum(len(value['rows']) for value in before.values()),
+    result = {'retained_tables': len(before), 'retained_rows': sum(len(value['rows']) for value in before.values()),
             'retained_rows_sha256': hashlib.sha256(canonical).hexdigest(),
             'excluded_maintenance_tables': sorted(EXCLUDED),
             'allowed_authentication_change': 'auth_user.last_login', 'audit_policy': 'existing rows identical; append allowed'}
+    if company_scope is not None:
+        result['company_scoped_templates'] = company_scope['assigned_count']
+    return result
 
 
 def seed(*, engineer_password=None):
