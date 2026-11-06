@@ -7,7 +7,7 @@ const checks=[];const cases=[];const check=(name,pass)=>{checks.push({name,passe
 const intersect=(a,b)=>a&&b&&Math.min(a.x+a.width,b.x+b.width)>Math.max(a.x,b.x)&&Math.min(a.y+a.height,b.y+b.height)>Math.max(a.y,b.y);
 async function preparedPage(context){
  const page=await context.newPage();
- if(!published)for(const file of ['index.html','platform-login-v4.css','corporate-refresh-v1.css'])await page.route(url=>url.origin==='https://isurvix.com'&&url.pathname==='/'+file,route=>route.fulfill({status:200,contentType:file.endsWith('.css')?'text/css':'text/html; charset=utf-8',body:fs.readFileSync(path.join(base,file))}));
+ if(!published)for(const file of ['index.html','platform-login-v4.css','corporate-refresh-v1.css','corporate-refresh-v2.css'])await page.route(url=>url.origin==='https://isurvix.com'&&url.pathname==='/'+file,route=>route.fulfill({status:200,contentType:file.endsWith('.css')?'text/css':'text/html; charset=utf-8',body:fs.readFileSync(path.join(base,file))}));
  return page;
 }
 (async()=>{const browser=await chromium.launch({channel:process.platform==='win32'?'msedge':undefined,headless:true});let failure;try{
@@ -42,8 +42,8 @@ async function preparedPage(context){
   await page.screenshot({path:path.join(output,`${prefix}-closed-${viewport.width}x${viewport.height}.png`)});
   await summary.focus();await page.keyboard.press('Enter');check(`${viewport.width}: keyboard opens disclosure`,await disclosure.evaluate(el=>el.open));
   const login=disclosure.locator('a[href="https://app.isurvix.com/login/"]');
-  check(`${viewport.width}: live iField link fixed despite next query`,await login.isVisible()&&await disclosure.locator('a').count()===1);
-  check(`${viewport.width}: future entries remain noninteractive`,await disclosure.locator('.platform-login-unavailable').count()===3&&await disclosure.locator('.platform-login-unavailable a,.platform-login-unavailable button').count()===0);
+  check(`${viewport.width}: live iField link fixed despite next query`,await login.isVisible()&&await disclosure.locator('a').count()===3);
+  check(`${viewport.width}: three verified platform logo links only`,await disclosure.locator('.platform-login-product').count()===3&&await disclosure.locator('.platform-login-product img').count()===3&&(await disclosure.locator('.platform-login-panel').innerText()).trim()==='');
   const panel=await disclosure.locator('.platform-login-panel').boundingBox();check(`${viewport.width}: menu not clipped`,panel.x>=0&&panel.x+panel.width<=viewport.width+1);
   await page.screenshot({path:path.join(output,`${prefix}-open-${viewport.width}x${viewport.height}.png`)});
   await page.keyboard.press('Tab');check(`${viewport.width}: keyboard reaches iField`,await login.evaluate(el=>el===document.activeElement));

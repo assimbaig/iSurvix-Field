@@ -22,3 +22,10 @@
 .page-index .platform-login-panel .product-brand-logo{width:42px;height:22px;flex-basis:42px}
 .page-index .platform-login-action,.page-index .platform-login-unavailable>span{font-size:10px}
 @media(max-width:1100px){.page-index .platform-login-field{min-height:44px}}
+
+/* Owner-approved logo-only platform picker: names remain accessible. */
+.page-index .platform-login-panel{width:164px;padding:5px}
+.page-index .platform-login-product{height:48px;min-height:48px;box-sizing:border-box;justify-content:center;padding:3px 10px;border-radius:4px;background:#fff}
+.page-index .platform-login-product+.platform-login-product{border-top:1px solid #e6ebe1}
+.page-index .platform-login-product:hover{background:#f1f5eb}
+.page-index .platform-login-panel .product-brand-logo{width:124px;height:40px;max-width:100%;flex:0 1 124px;object-fit:contain;object-position:center;margin:0}

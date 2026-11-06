@@ -26,7 +26,7 @@ PUBLICATION_FILES = {
     'engineering-intelligence.html', 'custom-engineering.html', 'products.html',
     'isurvix-survey.html', 'privacy.html', 'corporate-refresh-v1.css', '.htaccess',
     'assets/ifield-logo.webp', 'assets/igeoview-logo.webp', 'assets/imoneta-logo.webp',
-    'sitemap.xml',
+    'sitemap.xml', 'corporate-refresh-v2.css',
 }
 
 
@@ -159,14 +159,18 @@ class PublicWebsiteTests(unittest.TestCase):
                 self.assertNotIn('platform-login-v4.css', source)
                 self.assertNotIn('platform-login.js', source)
 
-    def test_future_platforms_are_explicitly_unavailable_without_fake_login_links(self):
+    def test_platform_picker_uses_only_verified_logo_links_and_accessible_names(self):
         panel = re.search(r'<div id="platform-login-options".*?</details>', self.home, re.S).group()
-        self.assertEqual(panel.count('class="platform-login-unavailable"'), 3)
-        self.assertEqual(panel.count('Coming soon'), 3)
-        for platform in ['iGeoView', 'iMoneta', 'Engineering Intelligence']:
-            self.assertIn(platform, panel)
-        links = [attributes.get('href') for tag, attributes in Document(panel).tags if tag == 'a']
-        self.assertEqual(links, [LOGIN])
+        anchors = [attributes for tag, attributes in Document(panel).tags if tag == 'a']
+        self.assertEqual([item['href'] for item in anchors], [LOGIN,
+            'https://www.igeoview.app/auth', 'https://www.imoneta.app/auth'])
+        self.assertEqual([item['aria-label'] for item in anchors],
+            ['Login to iField', 'Login to iGeoView', 'Login to iMoneta'])
+        self.assertTrue(all(item.get('title') == item['aria-label'] for item in anchors))
+        images = [attributes for tag, attributes in Document(panel).tags if tag == 'img']
+        self.assertEqual([item['src'] for item in images],
+            ['assets/ifield-logo.webp', 'assets/igeoview-logo.webp', 'assets/imoneta-logo.webp'])
+        self.assertEqual(re.sub(r'<[^>]+>', '', panel).strip(), '')
 
     def test_public_pages_do_not_collect_credentials_or_embed_the_private_app(self):
         for name, source in self.pages.items():

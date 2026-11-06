@@ -57,8 +57,8 @@
     },
     {
       "path": "index.html",
-      "bytes": 32211,
-      "sha256": "cb3f0e212936ffcdf8b45b801053752b921323dbb943f21a1b93cf5797945fe9"
+      "bytes": 31984,
+      "sha256": "4e1127bf4b321390d2b91b440cbf1c6a38bb40e480f44ce90a34a495f826187c"
     },
     {
       "path": "industries.html",
@@ -92,8 +92,8 @@
     },
     {
       "path": "corporate-refresh-v1.css",
-      "bytes": 2845,
-      "sha256": "9b8cda8f68bbb9f4b19ee2a634074613f5e02085932c305ef74f6c0ee08fc5b2"
+      "bytes": 3451,
+      "sha256": "10335c753e729102d08ab550c864ffcd3e64e5b50f39f3e6b79de24d334e3dda"
     },
     {
       "path": ".htaccess",
@@ -119,6 +119,11 @@
       "path": "assets/imoneta-logo.webp",
       "bytes": 19924,
       "sha256": "324ca2cda1ba8b1679ad4aa6ac4d00058319803665028b9fcd1f57310039e4a1"
+    },
+    {
+      "path": "corporate-refresh-v2.css",
+      "bytes": 3451,
+      "sha256": "10335c753e729102d08ab550c864ffcd3e64e5b50f39f3e6b79de24d334e3dda"
     }
   ]
 }

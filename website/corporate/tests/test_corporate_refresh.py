@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 from threading import Thread
 import unittest
+from urllib.parse import urlsplit
 from urllib.request import urlopen
 
 BASE = Path(__file__).resolve().parents[1]
@@ -22,6 +23,24 @@ class Tags(HTMLParser):
 
 
 class CorporateRefreshTests(unittest.TestCase):
+    def test_platform_dropdown_has_three_accessible_logo_only_native_platform_links(self):
+        source = (BASE / 'index.html').read_text(encoding='utf-8')
+        panel = re.search(r'<div id="platform-login-options".*?</details>', source, re.S).group()
+        links = [attrs for tag, attrs in Tags(panel).tags if tag == 'a']
+        self.assertEqual(len(links), 3, 'All three existing platforms have usable login links')
+        self.assertEqual({urlsplit(attrs['href']).hostname for attrs in links},
+                         {'app.isurvix.com', 'www.imoneta.app', 'www.igeoview.app'})
+        self.assertEqual({attrs['href'] for attrs in links},
+                         {'https://app.isurvix.com/login/', 'https://www.imoneta.app/auth',
+                          'https://www.igeoview.app/auth'})
+        self.assertTrue(all(attrs.get('aria-label') and attrs.get('title') for attrs in links))
+        for anchor in re.findall(r'<a\b.*?</a>', panel, re.S):
+            tags = Tags(anchor).tags
+            self.assertEqual(sum(tag == 'img' for tag, _ in tags), 1)
+            self.assertTrue(all(attrs.get('alt') for tag, attrs in tags if tag == 'img'))
+            self.assertEqual(re.sub(r'<[^>]*>', '', anchor).strip(), '', 'Logo links have no visible extra text')
+        self.assertNotIn('Coming soon', panel)
+
     def test_homepage_has_specific_company_value_heading_not_only_generic_eyebrow(self):
         source = (BASE / 'index.html').read_text(encoding='utf-8')
         headings = re.findall(r'<h1\b[^>]*>(.*?)</h1>', source, re.S)
