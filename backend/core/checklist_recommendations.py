@@ -102,7 +102,9 @@ def create_recommended(actor, name, industry, workflow, expected, selected, cust
             if not by_section[section['id']]: raise ValidationError('Add at least one checkpoint to '+section['title']+'.')
             definition['sections'].append({'id':section['id'],'title':section['title'],'fields':by_section[section['id']]})
         validate_definition(definition)
+        from .access import company_id_for
         template=ChecklistTemplate.objects.create(name=valid_name(name),definition=definition,created_by=actor,
+            company_id=company_id_for(actor),
             client_left_name='',client_right_name='')
         audit(actor,'checklist_recommendations_accepted',template_id=template.pk,sections=len(sections),points=sum(len(s['fields']) for s in definition['sections']),catalog_digest=expected)
         return template

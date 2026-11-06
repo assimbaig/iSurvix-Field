@@ -80,6 +80,7 @@ def create_blank(actor,name,industry,workflow):
             {'id':'general','title':'General information','fields':[
                 {'id':'site_id','label':'Site ID','type':'text','system':'site_id','required':True}]}]}
         template=ChecklistTemplate.objects.create(name=valid_name(name),definition=definition,created_by=actor,
+            company_id=company_id_for(actor),
             client_left_name='',client_right_name='')
         audit(actor,'checklist_wizard_create',template_id=template.pk)
         return template
@@ -94,6 +95,7 @@ def replicate(actor,source_id,name):
         definition=deepcopy(source.definition)
         definition['wizard_context']=identity(actor,context['industry'],context['workflow_type'])
         template=ChecklistTemplate.objects.create(name=valid_name(name),definition=definition,created_by=actor,
+            company_id=company_id_for(actor),
             checklist_required=source.checklist_required,company_logo=source.company_logo.name,
             client_left_name=source.client_left_name,client_right_name=source.client_right_name,
             client_left_logo=source.client_left_logo.name,client_right_logo=source.client_right_logo.name)
@@ -178,6 +180,7 @@ def commit_import(actor,batch_id,expected_digest):
             target.save(update_fields=['definition']);templates=[target]
         else:
             templates=[ChecklistTemplate.objects.create(name=item['name'],definition=deepcopy(item['definition']),created_by=actor,
+                       company_id=company_id_for(actor),
                        client_left_name='',client_right_name='')
                        for item in batch.payload['checklists']]
         batch.created_template_ids=[item.pk for item in templates];batch.committed_at=timezone.now()

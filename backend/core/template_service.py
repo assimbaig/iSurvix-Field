@@ -201,10 +201,13 @@ def missing_required(checklist, evidence_checklist=None):
 @transaction.atomic
 def duplicate_revision(template, user):
     from .models import ChecklistTemplate
+    from .access import company_id_for, role_for
+    from .models import Profile
     # Lock the stable first revision to serialize revision-number allocation.
     list(ChecklistTemplate.objects.select_for_update().filter(family_id=template.family_id).order_by('version')[:1])
     next_version = (ChecklistTemplate.objects.filter(family_id=template.family_id).aggregate(n=Max('version'))['n'] or 0) + 1
-    return ChecklistTemplate.objects.create(family_id=template.family_id, version=next_version, name=template.name, definition=deepcopy(template.definition), checklist_required=template.checklist_required, company_logo=template.company_logo.name, client_left_name=template.client_left_name, client_right_name=template.client_right_name, client_left_logo=template.client_left_logo.name, client_right_logo=template.client_right_logo.name, created_by=user)
+    company_id=company_id_for(user) if role_for(user)==Profile.Roles.ADMIN else None
+    return ChecklistTemplate.objects.create(family_id=template.family_id, version=next_version, name=template.name, definition=deepcopy(template.definition), checklist_required=template.checklist_required, company_id=company_id, company_logo=template.company_logo.name, client_left_name=template.client_left_name, client_right_name=template.client_right_name, client_left_logo=template.client_left_logo.name, client_right_logo=template.client_right_logo.name, created_by=user)
 
 
 def report_value(value):

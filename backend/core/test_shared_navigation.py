@@ -70,6 +70,8 @@ class SharedHeaderContractTests(SimpleTestCase):
                 if role=='ADMIN':
                     dashboard=next(link for link in links if link['text']=='Dashboard')
                     self.assertEqual(parse_qs(urlsplit(dashboard['href']).query)['view'],['dashboard'])
+                    checklist_link=next(link for link in links if link['text']=='Checklists')
+                    self.assertEqual(checklist_link['href'],reverse('checklist_library'))
                 settings_links=[link for link in links if link['href']==reverse('ai_settings_index')]
                 self.assertEqual(len(settings_links),1 if role in ('ADMIN','SUPER_ADMIN') else 0)
 

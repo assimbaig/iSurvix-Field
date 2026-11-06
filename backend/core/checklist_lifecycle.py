@@ -7,11 +7,12 @@ from .models import ChecklistTemplate
 
 def require_editable(actor, template):
     from .template_views import template_scope
-    from .access import managed_project_ids
+    from .access import managed_project_ids,company_id_for
     if not template_scope(actor).filter(pk=template.pk).exists():
-        raise PermissionDenied('This checklist is outside your project scope.')
+        raise PermissionDenied('This checklist is outside your company scope.')
+    company_owned=template.company_id is not None and template.company_id==company_id_for(actor)
     projects=managed_project_ids(actor)
-    if template.projects.exclude(pk__in=projects).exists() or template.checklists.exclude(project_id__in=projects).exists():
+    if not company_owned and (template.projects.exclude(pk__in=projects).exists() or template.checklists.exclude(project_id__in=projects).exists()):
         raise PermissionDenied('Replicate this shared source into your own draft.')
     if template.published or template.disabled or template.checklists.exists():
         raise ValidationError('Only enabled, unpublished, unused drafts can be edited. Unpublish an unused version or replicate a used checklist.')
@@ -30,9 +31,10 @@ def lifecycle(actor, template_id, action, expected):
         if expected != template_edit_digest(template):
             raise ValidationError('This checklist changed in another window. Refresh the table and try again.')
         # A source shared with a project outside the Admin scope must be copied.
-        from .access import managed_project_ids
+        from .access import managed_project_ids,company_id_for
         projects = managed_project_ids(actor)
-        if template.projects.exclude(pk__in=projects).exists() or template.checklists.exclude(project_id__in=projects).exists():
+        company_owned=template.company_id is not None and template.company_id==company_id_for(actor)
+        if not company_owned and (template.projects.exclude(pk__in=projects).exists() or template.checklists.exclude(project_id__in=projects).exists()):
             raise PermissionDenied('Replicate this shared source before making changes.')
         used = template.checklists.exists()
         if action in {'unpublish', 'delete'} and used:
@@ -64,7 +66,9 @@ def table_rows(actor):
     rows = []
     for template in template_scope(actor).prefetch_related('projects', 'checklists').order_by('-created_at'):
         work = list(template.checklists.all())
-        shared = any(p.pk not in projects for p in template.projects.all()) or any(c.project_id not in projects for c in work)
+        from .access import company_id_for
+        company_owned=template.company_id is not None and template.company_id==company_id_for(actor)
+        shared = (not company_owned) and (any(p.pk not in projects for p in template.projects.all()) or any(c.project_id not in projects for c in work))
         can_manage = not shared
         rows.append({'id':template.pk,'name':template.name,'version':template.version,
             'published':template.published,'disabled':template.disabled,'owned':template.created_by_id==actor.pk,

@@ -21,21 +21,38 @@ from .template_service import default_definition, duplicate_revision, export_cus
 
 
 def is_template_admin(request):
-    from .access import is_super_admin,role_for,accessible_projects
-    return not is_super_admin(request.user) and role_for(request.user)==Profile.Roles.ADMIN and accessible_projects(request.user).exists()
+    from .access import is_super_admin,role_for,accessible_projects,company_id_for
+    return (not is_super_admin(request.user) and role_for(request.user)==Profile.Roles.ADMIN and
+            (company_id_for(request.user) is not None or accessible_projects(request.user).exists()))
 
 
 def template_scope(user):
-    from .access import is_super_admin,role_for,managed_project_ids
+    from .access import is_super_admin,role_for,managed_project_ids,company_id_for
     if is_super_admin(user):
         return ChecklistTemplate.objects.none()
     if role_for(user)!=Profile.Roles.ADMIN:
         return ChecklistTemplate.objects.none()
     projects=managed_project_ids(user)
-    if not projects.exists():
-        return ChecklistTemplate.objects.none()
-    personal=Q(created_by=user,projects__isnull=True,checklists__isnull=True)
-    return ChecklistTemplate.objects.filter(personal|Q(projects__pk__in=projects)|Q(checklists__project_id__in=projects)).distinct()
+    company_id=company_id_for(user)
+    # Company-owned drafts are available to that company's Admins before any
+    # project exists. Legacy project-linked records remain visible only within
+    # the current project grant; explicitly marked published standards stay shared.
+    company_owned=Q(company_id=company_id) if company_id is not None else Q(pk__in=[])
+    personal=Q(company__isnull=True,created_by=user,projects__isnull=True,checklists__isnull=True)
+    creator_scope=(Q(created_by__isnull=True) |
+                   Q(created_by__profile__company_id=company_id) |
+                   Q(created_by__profile__company__isnull=True,created_by__profile__project__company_id=company_id))
+    foreign_linked_templates=ChecklistTemplate.objects.filter(
+        (Q(projects__company_id__isnull=False) & ~Q(projects__company_id=company_id)) |
+        (Q(checklists__project__company_id__isnull=False) & ~Q(checklists__project__company_id=company_id))
+    ).values('pk')
+    project_sources=(Q(company__isnull=True,projects__pk__in=projects) |
+                     Q(company__isnull=True,checklists__project_id__in=projects)) & creator_scope & ~Q(pk__in=foreign_linked_templates)
+    # A NULL tenant is not proof that a published template is platform-wide:
+    # legacy multi-company or otherwise ambiguous templates also remain NULL
+    # after migration. Share only explicitly marked standard catalog entries.
+    shared_published=Q(company__isnull=True,published=True,definition__has_key='standard_catalog')
+    return ChecklistTemplate.objects.filter(company_owned|personal|project_sources|shared_published).distinct()
 
 
 def project_scope(user):
@@ -81,8 +98,10 @@ def template_builder(request, template_id=None, wizard_mode=False):
         try:
             action = request.POST.get('action')
             if action in {'create_original', 'create_blank'}:
+                from .access import company_id_for
                 definition = default_definition() if action == 'create_original' else {'title': 'Custom checklist', 'sections': [{'id': 'general', 'title': 'General information', 'fields': [{'id': 'site_id', 'label': 'Site ID', 'type': 'text', 'system': 'site_id', 'required': True}]}]}
                 template = ChecklistTemplate.objects.create(name=definition['title'], definition=definition, created_by=request.user,
+                    company_id=company_id_for(request.user),
                     client_left_name='',client_right_name='')
                 return redirect(route, template_id=template.id)
             if not template:

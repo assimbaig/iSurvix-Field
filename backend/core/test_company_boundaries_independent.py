@@ -234,6 +234,14 @@ class IndependentCompanyBoundaryTests(TestCase):
 
     def test_private_draft_and_branding_are_scoped_without_hiding_shared_published_standard(self):
         from .models import ChecklistTemplate
+        # The fixture template is shared by projects in both companies; mark it
+        # as an explicit platform catalog source so its global visibility is
+        # positively established rather than inferred from a missing owner.
+        definition=deepcopy(self.template.definition)
+        definition['standard_catalog']={'key':'telecom_survey_default','version':1,
+            'industry':'telecom','workflow_type':'telecom_survey','stages':[],'rooms':[]}
+        ChecklistTemplate.objects.filter(pk=self.template.pk).update(definition=definition)
+        self.template.refresh_from_db()
         draft=ChecklistTemplate.objects.create(name='PRIVATE-B-DRAFT-739',definition={'title':'Private template','sections':[{'id':'private_section','title':'Private section','fields':[{'id':'private_label','label':'Private label','type':'text'}]}]},
                                               created_by=self.people_b[Profile.Roles.ADMIN],published=False)
         draft.company_logo.save('private-b-company.png',ContentFile(Path(self.photo_b.original.path).read_bytes()))
@@ -284,3 +292,20 @@ class IndependentCompanyBoundaryTests(TestCase):
         self.assertEqual(status,409,'A project-bound private checklist is retained company content even without activity history.')
         unused.refresh_from_db();self.assertEqual(unused.company_id,self.company.pk)
         self.assertEqual(self.response(self.people_b[Profile.Roles.ADMIN],reverse('checklist_wizard_edit',args=[private.pk]))[0],404)
+
+    def test_ambiguous_legacy_published_template_is_not_shared_across_companies(self):
+        from .models import ChecklistTemplate
+        ambiguous=ChecklistTemplate.objects.create(name='AMBIGUOUS-LEGACY-PUBLISHED',
+            definition=deepcopy(self.schema),published=True,created_by=None)
+        Project.objects.create(name='A-LEGACY-USE',company=self.company,industry='telecom',checklist_template=ambiguous)
+        Project.objects.create(name='B-LEGACY-USE',company=self.company_b,industry='telecom',checklist_template=ambiguous)
+        actor=self.people_b[Profile.Roles.ADMIN]
+        self.assertEqual(self.response(actor,reverse('checklist_wizard_edit',args=[ambiguous.pk]))[0],404)
+        self.assertEqual(self.response(actor,reverse('checklist_wizard_export',args=[ambiguous.pk]))[0],404)
+
+    def test_creatorless_unclassified_published_template_is_not_assumed_platform_owned(self):
+        from .models import ChecklistTemplate
+        legacy=ChecklistTemplate.objects.create(name='UNCLASSIFIED-CREATORLESS-LEGACY',
+            definition=deepcopy(self.schema),published=True,created_by=None)
+        actor=self.people_b[Profile.Roles.ADMIN]
+        self.assertEqual(self.response(actor,reverse('checklist_wizard_edit',args=[legacy.pk]))[0],404)

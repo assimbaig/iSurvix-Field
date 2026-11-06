@@ -10,6 +10,7 @@ import uuid
 
 class ChecklistTemplate(models.Model):
 	"""An editable draft or an immutable, published checklist revision."""
+	company = models.ForeignKey('Company', null=True, blank=True, on_delete=models.PROTECT, related_name='checklist_templates')
 	checklist_required = models.BooleanField(default=False, help_text='Opt in survey types to AI checklist and drawing preparation. Inspection modules are excluded.')
 	company_logo = models.ImageField(upload_to='client_logos/', blank=True)
 	family_id = models.UUIDField(default=uuid.uuid4, editable=False)
@@ -142,6 +143,8 @@ class Project(models.Model):
 			if previous_template != self.checklist_template_id:
 				raise ValidationError('Projects may select enabled, published checklist revisions only.')
 		if self.checklist_template_id:
+			if self.checklist_template.company_id is not None and self.checklist_template.company_id!=self.company_id:
+				raise ValidationError('A company checklist can only be assigned within its owning company.')
 			from .standard_checklist_service import validate_standard_project
 			validate_standard_project(self.checklist_template,self)
 		return super().save(*args, **kwargs)
