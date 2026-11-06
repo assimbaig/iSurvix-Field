@@ -64,15 +64,14 @@ class SuperAdminConsoleTests(TestCase):
         self.assertEqual(strict.post(reverse('governance_industry'),{'code':'energy','name':'Energy'}).status_code,403)
         self.assertFalse(IndustryCatalog.objects.filter(code='energy').exists())
     def test_five_views_global_counts_and_no_operational_payload(self):
-        for view in ['dashboard','industries','clients','projects','sites']:
+        for view in ['dashboard','companies','system','industries','clients','projects','sites']:
             response=self.client.get(reverse('governance_home'),{'view':view})
             self.assertEqual(response.status_code,200)
             nav=re.search(r'<nav[^>]*class="[^"]*\bplatform-nav\b[^"]*"[^>]*>(.*?)</nav>',response.content.decode(),re.S).group(1)
-            # Company AI administration adds a scoped entry, not an operational
-            # console view. Keep the full navigation contract exact.
-            self.assertEqual(re.findall(r'<a[^>]*>(.*?)</a>',nav,re.S),['Dashboard','Industries','Clients','Projects','Sites','Checklist Wizard','AI Settings'])
-            self.assertIn('href="'+reverse('checklist_wizard')+'"',nav)
-            self.assertIn('href="'+reverse('ai_settings_index')+'"',nav)
+            # The approved three-destination shell consolidates tools in System;
+            # their routes and administrative protections remain independently tested.
+            self.assertEqual(re.findall(r'<a[^>]*>(.*?)</a>',nav,re.S),['Dashboard','Companies','System'])
+            self.assertIn('href="'+reverse('governance_home')+'?view=system"',nav)
             self.assertEqual(response.context['active_view'],view)
             self.assertFalse(response.context['can_assign'])
             for key in ['surveys','assignments','review_queue','reports']:self.assertFalse(response.context[key])
@@ -80,6 +79,15 @@ class SuperAdminConsoleTests(TestCase):
             self.assertEqual(response.context['counts']['projects'],Project.objects.count())
             self.assertEqual(response.context['counts']['sites'],WorkAssignment.objects.count())
             self.assertEqual(response.context['counts']['clients'],ClientOrganization.objects.count())
+        system=self.client.get(reverse('governance_home'),{'view':'system'})
+        for route in ['checklist_wizard','ai_settings_index','operations_status','support_index',
+                      'governance_audit','governance_reset','update_center']:
+            with self.subTest(system_tool=route):
+                self.assertContains(system,'href="'+reverse(route)+'"')
+                self.assertEqual(self.client.get(reverse(route)).status_code,200)
+        for view in ['industries','clients','projects','sites']:
+            self.assertContains(system,'href="?view='+view+'"')
+        self.assertEqual(self.client.get(reverse('checklist_wizard')).status_code,200)
         response=self.client.get(reverse('governance_home'),{'view':'sites'})
         self.assertEqual([x.pk for x in response.context['sites']],[self.assignment.pk])
         self.assertContains(response,'CONSOLE-TEST')

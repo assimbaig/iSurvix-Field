@@ -258,7 +258,13 @@ class IndependentCompanyBoundaryTests(TestCase):
         actor=User.objects.create_user('independent_platform_operator',is_superuser=True,is_staff=True)
         actor.profile.role=Profile.Roles.SUPER_ADMIN;actor.profile.save()
         status,body=self.response(actor,reverse('governance_home'))
-        self.assertEqual(status,200);self.assertIn(self.company_b.name.encode(),body)
+        self.assertEqual(status,200);self.assertIn(b'Company Management Desk',body)
+        # Platform-wide company records now live in Companies, not the compact
+        # dashboard. This administrative visibility does not grant evidence access.
+        status,body=self.response(actor,reverse('governance_home')+'?view=companies')
+        self.assertEqual(status,200)
+        self.assertIn(self.company.name.encode(),body)
+        self.assertIn(self.company_b.name.encode(),body)
         for checklist,photo in [(self.checklist,self.photo),(self.checklist_b,self.photo_b)]:
             for url in [reverse('custom_checklist',args=[checklist.pk]),
                         reverse('photo_evidence',args=[checklist.pk,photo.pk,'original']),

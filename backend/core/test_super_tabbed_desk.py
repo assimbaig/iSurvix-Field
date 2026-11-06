@@ -1,4 +1,4 @@
-"""SA02 administrative desk does not grant operational authority or leak its audit."""
+"""The company desk preserves administrative scope, bounded audit and errors."""
 from django.contrib.auth.models import User
 from django.test import TestCase,override_settings
 from django.urls import reverse
@@ -26,13 +26,15 @@ class SuperTabbedDeskTests(TestCase):
         response=self.client.get(reverse('governance_home'))
         self.assertEqual(response.status_code,200)
         self.assertTemplateUsed(response,'dashboards/super_admin_workspace.html')
-        self.assertContains(response,'data-super-design="SA-02"')
-        self.assertContains(response,'id="sa-desk-content"')
-        recent=list(response.context['recent_audit'])
+        self.assertContains(response,'data-company-desk')
+        self.assertContains(response,'Recent administrative changes')
+        recent=list(response.context['superadmin_desk']['recent_audit'])
         self.assertGreater(len(recent),0)
         self.assertEqual(len(recent),12)
         self.assertEqual(recent[0].action,'sa02_event_19')
         self.assertEqual([event.pk for event in recent],sorted([event.pk for event in recent],reverse=True))
+        self.assertContains(response,'sa02_event_19')
+        self.assertNotContains(response,'sa02_event_0</td>')
         for actor in [self.admin,self.engineer]:
             self.client.force_login(actor)
             response=self.client.get(reverse('governance_home'))
@@ -42,7 +44,7 @@ class SuperTabbedDeskTests(TestCase):
             self.assertNotContains(response,'sa02_event_19')
     def test_five_super_views_remain_administrative_and_operational_urls_denied(self):
         self.client.force_login(self.super)
-        for view in ['dashboard','industries','clients','projects','sites']:
+        for view in ['dashboard','companies','system','industries','clients','projects','sites']:
             with self.subTest(view=view):
                 response=self.client.get(reverse('governance_home'),{'view':view})
                 self.assertEqual(response.status_code,200)
@@ -54,13 +56,15 @@ class SuperTabbedDeskTests(TestCase):
             self.assertEqual(self.client.get(reverse(route,args=[self.survey.pk])).status_code,403)
         self.assertEqual(self.client.post(reverse('governance_assign'),{}).status_code,403)
         self.survey.refresh_from_db();self.assertEqual(self.survey.status,Checklist.Status.DRAFT)
-    def test_invalid_invitation_returns_dashboard_with_actionable_error(self):
+    def test_invalid_invitation_returns_system_with_actionable_error(self):
         self.client.force_login(self.super)
         response=self.client.post(reverse('governance_invite'),{'email':'not-an-email','role':Profile.Roles.ADMIN,'project':self.project.pk,'admin_industry':self.industry.pk})
         self.assertEqual(response.status_code,400)
-        self.assertEqual(response.context['active_view'],'dashboard')
+        self.assertEqual(response.context['active_view'],'system')
         self.assertIn('email',response.context['invite_form'].errors)
         self.assertContains(response,'Enter a valid email address.',status_code=400)
-        self.assertContains(response,'data-desk-panel="invite"',status_code=400)
+        self.assertRegex(response.content.decode(),r'<details[^>]*id="people"[^>]*\bopen\b')
+        self.assertRegex(response.content.decode(),r'<details[^>]*id="invite"[^>]*\bopen\b')
+        self.assertContains(response,'action="'+reverse('governance_invite')+'"',status_code=400)
         roles=[value for value,label in response.context['invite_form'].fields['role'].choices]
         self.assertNotIn(Profile.Roles.CLIENT,roles)
