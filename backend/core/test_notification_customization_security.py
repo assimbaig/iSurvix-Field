@@ -1,5 +1,6 @@
 """Independent AppSec checks with isolated records; no real mail calls."""
-from datetime import datetime, time, timezone as utc, date
+from datetime import datetime, time, timezone as utc, date, timedelta
+from collections import Counter
 from unittest.mock import patch
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings, Client
@@ -109,3 +110,53 @@ class NotificationCustomizationSecurityTests(TestCase):
         digest.refresh_from_db()
         self.assertEqual(digest.status,'cancelled')
         self.assertEqual(digest.error_code,'recipient_unavailable')
+
+    def schedule_change(self,origin,destination,first_hour,next_hour):
+        from .custom_notifications import save_settings,delivery_window,authorized_events
+        from .workflow_email import queue_daily_digests
+        first=datetime(2026,11,6,first_hour,tzinfo=utc.utc)
+        second=datetime(2026,11,7,next_hour,tzinfo=utc.utc)
+        with patch('core.custom_notifications.timezone.now',return_value=first.replace(hour=8)):
+            self.config(zone=origin)
+        self.c.status='SUBMITTED';self.c.save(update_fields=['status','updated_at'])
+        source_ids=[]
+        for stamp in (first-timedelta(minutes=30),first+timedelta(minutes=30),second-timedelta(minutes=30),second+timedelta(minutes=30)):
+            audit=self.event('survey_submitted')
+            job=WorkflowEmailDelivery.objects.get(kind='submission',recipient=self.qa,source_audit=audit)
+            WorkflowEmailDelivery.objects.filter(pk=job.pk).update(created_at=stamp,status='accepted')
+            source_ids.append(job.pk)
+        queue_daily_digests(first+timedelta(minutes=1))
+        with patch('core.custom_notifications.timezone.now',return_value=first+timedelta(minutes=2)):
+            save_settings(self.admin,self.company,expected_version=1,templates={},combined_daily_enabled=True,daily_time=time(18),timezone_name=destination)
+        queue_daily_digests(second+timedelta(minutes=1))
+        queue_daily_digests(second+timedelta(days=1,minutes=1))
+        queue_daily_digests(second+timedelta(days=1,minutes=1))
+        digests=list(WorkflowEmailDelivery.objects.filter(kind='daily_combined',recipient=self.qa).order_by('digest_day'))
+        self.assertEqual(len(digests),3)
+        windows=[delivery_window(job)[:2] for job in digests]
+        self.assertEqual(windows[0][1],windows[1][0])
+        self.assertEqual(windows[1][1],windows[2][0])
+        observed=Counter(job.pk for start,end in windows for job in authorized_events(self.qa,self.company.pk,start,end))
+        self.assertEqual(observed,Counter(source_ids))
+
+    def test_riyadh_to_karachi_cutoff_counts_each_event_once(self):
+        self.schedule_change('Asia/Riyadh','Asia/Karachi',15,13)
+
+    def test_karachi_to_riyadh_cutoff_counts_each_event_once(self):
+        self.schedule_change('Asia/Karachi','Asia/Riyadh',13,15)
+
+    def test_valid_timezone_and_cutoff_edit_can_exceed_48_hours_without_cancelling_report(self):
+        from .custom_notifications import save_settings
+        from .workflow_email import queue_daily_digests,_fresh
+        first=datetime(2026,11,5,19,tzinfo=utc.utc)
+        with patch('core.custom_notifications.timezone.now',return_value=first):
+            self.config(zone='Asia/Karachi')
+        CompanyNotificationSettings.objects.filter(company=self.company).update(
+            daily_time=time(0),last_digest_day=date(2026,11,6),last_digest_end=first)
+        save_settings(self.admin,self.company,expected_version=1,templates={},combined_daily_enabled=True,
+            daily_time=time(23,59),timezone_name='Asia/Riyadh')
+        self.submit()
+        WorkflowEmailDelivery.objects.filter(kind='submission').update(created_at=first+timedelta(hours=1),status='accepted')
+        queue_daily_digests(datetime(2026,11,7,21,tzinfo=utc.utc))
+        digest=WorkflowEmailDelivery.objects.get(kind='daily_combined',recipient=self.qa)
+        self.assertIsNotNone(_fresh(digest))

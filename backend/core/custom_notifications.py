@@ -1,6 +1,6 @@
 ﻿"""Safe company customization; never a template-language or raw audit renderer."""
 from collections import Counter
-from datetime import datetime,timedelta
+from datetime import datetime,timedelta,timezone as utc
 from string import Formatter
 from zoneinfo import ZoneInfo,ZoneInfoNotFoundError
 import hashlib,json,uuid
@@ -69,7 +69,7 @@ def save_settings(actor,company,*,expected_version,templates,combined_daily_enab
     previous={'version':config.version,'combined_daily_enabled':config.combined_daily_enabled,'daily_time':config.daily_time.isoformat(),'timezone_name':config.timezone_name,'template_kinds':sorted(config.templates)} if config else None
     if config is None:config=CompanyNotificationSettings(company=company,version=0)
     if combined_daily_enabled and (not config.combined_daily_enabled or not config.digest_started_at):
-        config.digest_started_at=timezone.now();config.last_digest_day=None
+        config.digest_started_at=timezone.now();config.last_digest_day=None;config.last_digest_end=None
     config.version+=1;config.templates=templates;config.combined_daily_enabled=combined_daily_enabled
     config.daily_time=daily_time;config.timezone_name=timezone_name;config.updated_by=actor;config.full_clean();config.save()
     GovernanceAudit.objects.create(actor=actor,actor_name=actor.username,action='notification_settings.updated',details={'company_id':company.pk,'before':previous,'after':{'version':config.version,'combined_daily_enabled':config.combined_daily_enabled,'daily_time':config.daily_time.isoformat(),'timezone_name':config.timezone_name,'template_kinds':sorted(templates)},'templates_sha256':hashlib.sha256(json.dumps(templates,sort_keys=True).encode()).hexdigest()})
@@ -106,7 +106,7 @@ def delivery_window(delivery):
     parts=delivery.event_key.split('|')
     if len(parts)!=4 or parts[0]!=f'combined:{delivery.company_id}:{delivery.digest_day.isoformat()}':raise ValidationError('Combined report window is invalid.')
     start,end=map(datetime.fromisoformat,parts[1:3])
-    if not start.tzinfo or not end.tzinfo or not start<end or end-start>timedelta(days=2):raise ValidationError('Combined report window is invalid.')
+    if not start.tzinfo or not end.tzinfo or not start<end or end-start>timedelta(days=4):raise ValidationError('Combined report window is invalid.')
     return start,end,parts[3]
 
 
@@ -161,9 +161,16 @@ def queue_combined(now):
                 activation=(config.digest_started_at or config.updated_at).astimezone(ZoneInfo(config.timezone_name)).date()
                 day=config.last_digest_day+timedelta(days=1) if config.last_digest_day else activation
                 if day>completed:break
-                count+=_queue_combined_day(config,day)
+                _,end=business_window(config,day)
+                # A schedule edit changes the next end, never the UTC boundary
+                # already covered by the prior day (including an empty day).
+                # If an extreme offset change moves an end backwards, advance
+                # only its date cursor until there is a positive UTC interval.
+                if config.last_digest_end is None or end>config.last_digest_end:
+                    count+=_queue_combined_day(config,day)
+                    config.last_digest_end=end.astimezone(utc.utc)
                 config.last_digest_day=day
-                config.save(update_fields=['last_digest_day'])
+                config.save(update_fields=['last_digest_day','last_digest_end'])
     return count
 
 
@@ -171,6 +178,7 @@ def _queue_combined_day(config,day):
     from .workflow_email import _audit
     from .models import InvitationEmailDelivery
     start,end=business_window(config,day)
+    if config.last_digest_end is not None:start=config.last_digest_end
     recipients=set(WorkflowEmailDelivery.objects.filter(company_id=config.company_id,created_at__gte=start,created_at__lt=end).exclude(kind__in=['daily','daily_combined']).exclude(status='cancelled').values_list('recipient_id',flat=True))
     invite_emails=InvitationEmailDelivery.objects.filter(models.Q(invitation__company_id=config.company_id)|models.Q(invitation__company__isnull=True,invitation__project__company_id=config.company_id),created_at__gte=start,created_at__lt=end).exclude(status='cancelled').values_list('invitation__email',flat=True)
     for email in invite_emails:recipients.update(User.objects.filter(email__iexact=email).values_list('pk',flat=True))

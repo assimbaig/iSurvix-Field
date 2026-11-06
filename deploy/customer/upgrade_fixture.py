@@ -80,7 +80,7 @@ def _support_metadata_additions(before, after, database):
     ]
     groups.append(({'0063_checklist_template_company_scope','0064_company_notification_settings'}, {
         'companynotificationsettings': ('core_companynotificationsettings','company notification settings', {
-            'id','version','templates','combined_daily_enabled','daily_time','timezone_name','digest_started_at','last_digest_day','updated_at','company_id','updated_by_id'}),
+            'id','version','templates','combined_daily_enabled','daily_time','timezone_name','digest_started_at','last_digest_day','last_digest_end','updated_at','company_id','updated_by_id'}),
     }))
     models = {}
     required_migrations = set()
@@ -186,7 +186,7 @@ def _validate_new_notice_table(before, after, database):
         raise ValueError('New release notice default permissions are missing or invalid.')
 
 
-def _validate_new_notification_settings(before,after,database):
+def _validate_new_notification_settings(before,after,database,source_database=None):
     table='core_companynotificationsettings';model='companynotificationsettings'
     if table in before:return
     types=after.get('django_content_type',{})
@@ -199,10 +199,29 @@ def _validate_new_notification_settings(before,after,database):
             if table in after or candidates:raise ValueError('Notification settings migration evidence is unavailable.') from None
             return
         if table not in after and not candidates and not applied:return
+        if table not in after and candidates and not applied:
+            # Backward migration fixtures retain ContentType/Permission rows.
+            # Treat them as old retained records only with both source and
+            # target proving that0064 itself is absent, and exact same rows.
+            def named_rows(snapshot,name):
+                value=snapshot.get(name,{})
+                return [dict(zip(value.get('columns',[]),row)) for row in value.get('rows',[])]
+            old_candidates=[row for row in named_rows(before,'django_content_type') if row.get('app_label')=='core' and row.get('model')==model]
+            def permission_rows(snapshot,type_ids):
+                return [row for row in named_rows(snapshot,'auth_permission') if row.get('content_type_id') in type_ids]
+            if source_database is None or candidates!=old_candidates or permission_rows(before,{row['id'] for row in old_candidates})!=permission_rows(after,{row['id'] for row in candidates}):
+                raise ValueError('Preexisting notification metadata cannot be verified as unchanged legacy records.')
+            try:
+                with closing(sqlite3.connect(Path(source_database).absolute().as_uri()+'?mode=ro',uri=True)) as source:
+                    source_applied=source.execute("select 1 from django_migrations where app='core' and name='0064_company_notification_settings'").fetchone()
+                    source_table=source.execute("select 1 from sqlite_master where type='table' and name=?",(table,)).fetchone()
+            except sqlite3.Error:raise ValueError('Source notification migration evidence is unavailable.') from None
+            if source_applied or source_table:raise ValueError('Source notification table and migration state are inconsistent.')
+            return
         value=after.get(table)
         expected=[('id','integer',1,None,1),('version','integer unsigned',1,None,0),('templates','text',1,None,0),
             ('combined_daily_enabled','bool',1,None,0),('daily_time','time',1,None,0),('timezone_name','varchar(80)',1,None,0),
-            ('digest_started_at','datetime',0,None,0),('last_digest_day','date',0,None,0),('updated_at','datetime',1,None,0),('company_id','bigint',1,None,0),('updated_by_id','integer',0,None,0)]
+            ('digest_started_at','datetime',0,None,0),('last_digest_day','date',0,None,0),('last_digest_end','datetime',0,None,0),('updated_at','datetime',1,None,0),('company_id','bigint',1,None,0),('updated_by_id','integer',0,None,0)]
         info=[(row[1],row[2].lower(),row[3],row[4],row[5]) for row in db.execute('pragma table_info('+_identifier(table)+')')]
         fks={tuple(row[2:]) for row in db.execute('pragma foreign_key_list('+_identifier(table)+')')}
         required_fks={('auth_user','updated_by_id','id','NO ACTION','NO ACTION','NONE'),('core_company','company_id','id','NO ACTION','NO ACTION','NONE')}
@@ -210,7 +229,7 @@ def _validate_new_notification_settings(before,after,database):
     # This is an unreleased CreateModel-only addition. Its whole reviewed SQL
     # contract matters: presence checks alone admit extra restrictive CHECKs,
     # hidden defaults, changed deferrability, or other unreviewed constraints.
-    expected_sql='CREATE TABLE "core_companynotificationsettings" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "version" integer unsigned NOT NULL CHECK ("version" >= 0), "templates" text NOT NULL CHECK ((JSON_VALID("templates") OR "templates" IS NULL)), "combined_daily_enabled" bool NOT NULL, "daily_time" time NOT NULL, "timezone_name" varchar(80) NOT NULL, "digest_started_at" datetime NULL, "last_digest_day" date NULL, "updated_at" datetime NOT NULL, "company_id" bigint NOT NULL UNIQUE REFERENCES "core_company" ("id") DEFERRABLE INITIALLY DEFERRED, "updated_by_id" integer NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED)'
+    expected_sql='CREATE TABLE "core_companynotificationsettings" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "version" integer unsigned NOT NULL CHECK ("version" >= 0), "templates" text NOT NULL CHECK ((JSON_VALID("templates") OR "templates" IS NULL)), "combined_daily_enabled" bool NOT NULL, "daily_time" time NOT NULL, "timezone_name" varchar(80) NOT NULL, "digest_started_at" datetime NULL, "last_digest_day" date NULL, "last_digest_end" datetime NULL, "updated_at" datetime NOT NULL, "company_id" bigint NOT NULL UNIQUE REFERENCES "core_company" ("id") DEFERRABLE INITIALLY DEFERRED, "updated_by_id" integer NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED)'
     canonical=lambda value:re.sub(r'\s+',' ',value).strip().upper()
     if not table_sql or canonical(table_sql[0])!=canonical(expected_sql):
         raise ValueError('Notification settings table constraints differ from the reviewed exact contract.')
@@ -383,7 +402,7 @@ def assert_retained(before, database, *, source_database=None):
     _reject_unreviewed_application_triggers(database)
     after = snapshot(database)
     _validate_new_notice_table(before, after, database)
-    notification_settings_added=_validate_new_notification_settings(before,after,database)
+    notification_settings_added=_validate_new_notification_settings(before,after,database,source_database=source_database)
     company_scope = _validate_checklist_template_company_scope(before, after, database)
     if company_scope is not None or notification_settings_added:
         if source_database is None:

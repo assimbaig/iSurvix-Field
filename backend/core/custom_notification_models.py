@@ -12,5 +12,6 @@ class CompanyNotificationSettings(models.Model):
     timezone_name=models.CharField(max_length=80,default='Asia/Riyadh')
     digest_started_at=models.DateTimeField(null=True,blank=True)
     last_digest_day=models.DateField(null=True,blank=True)
+    last_digest_end=models.DateTimeField(null=True,blank=True)
     updated_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL)
     updated_at=models.DateTimeField(auto_now=True)

@@ -227,6 +227,7 @@ class MultiDayDigestRecoveryTests(TestCase):
         with patch('core.workflow_email._audit',side_effect=RuntimeError('Controlled transactional failure')):
             with self.assertRaises(RuntimeError):queue_daily_digests(instant)
         self.assertIsNone(CompanyNotificationSettings.objects.get(company=self.company).last_digest_day)
+        self.assertIsNone(CompanyNotificationSettings.objects.get(company=self.company).last_digest_end)
         self.assertFalse(WorkflowEmailDelivery.objects.filter(kind='daily_combined').exists())
         queue_daily_digests(instant)
         self.assertEqual(WorkflowEmailDelivery.objects.filter(kind='daily_combined').count(),3)
@@ -267,3 +268,72 @@ class CompanyNotificationEventTests(TestCase):
         self.assertIn('Authorized notification events: 1.',body)
         self.assertNotIn('/governance/invite/',body)
         self.assertNotIn('a'*64,body)
+
+@override_settings(NOTIFICATION_EMAIL_ENABLED=True,WORKFLOW_NOTIFICATION_EMAIL_ENABLED=True,WORKFLOW_EMAIL_DAILY_ENABLED=True,NOTIFICATION_EMAIL_PUBLIC_ORIGIN='https://testserver',PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
+class NotificationScheduleBoundaryTests(TestCase):
+    setUp=CustomNotificationTests.setUp
+    user=CustomNotificationTests.user
+    event=CustomNotificationTests.event
+    submit=CustomNotificationTests.submit
+    model=CustomNotificationTests.model
+    def transition(self,first_zone,next_zone,first_time=time(18),next_time=time(18)):
+        from datetime import timedelta
+        from zoneinfo import ZoneInfo
+        from .custom_notifications import save_settings,delivery_window
+        from .workflow_email import queue_daily_digests,_message,_fresh
+        day=datetime(2026,11,1,0,tzinfo=utc.utc)
+        with patch('core.custom_notifications.timezone.now',return_value=day):
+            config=save_settings(self.admin,self.company,expected_version=0,templates={},combined_daily_enabled=True,daily_time=first_time,timezone_name=first_zone)
+        old_end=datetime.combine(day.date(),first_time,tzinfo=ZoneInfo(first_zone)).astimezone(utc.utc)
+        new_end=datetime.combine(day.date(),next_time,tzinfo=ZoneInfo(next_zone)).astimezone(utc.utc)
+        middle=min(old_end,new_end)+(max(old_end,new_end)-min(old_end,new_end))/2
+        source_times=[min(old_end,new_end)-timedelta(hours=1),middle,min(old_end,new_end)+timedelta(days=1,hours=-1)]
+        self.submit();self.event('survey_submitted');self.event('survey_submitted')
+        for instant,job in zip(source_times,WorkflowEmailDelivery.objects.filter(kind='submission').order_by('created_at','pk')):
+            WorkflowEmailDelivery.objects.filter(pk=job.pk).update(created_at=instant,status='accepted')
+        queue_daily_digests(day.replace(hour=20))
+        first=WorkflowEmailDelivery.objects.get(kind='daily_combined',digest_day=day.date(),recipient=self.qa)
+        first_key=first.event_key
+        WorkflowEmailDelivery.objects.filter(pk=first.pk).update(status='accepted')
+        config.refresh_from_db()
+        with patch('core.custom_notifications.timezone.now',return_value=day.replace(hour=21)):
+            save_settings(self.admin,self.company,expected_version=config.version,templates={},combined_daily_enabled=True,daily_time=next_time,timezone_name=next_zone)
+        queue_daily_digests(day.replace(day=2,hour=20));queue_daily_digests(day.replace(day=2,hour=20))
+        jobs=list(WorkflowEmailDelivery.objects.filter(kind='daily_combined',recipient=self.qa).order_by('digest_day'))
+        windows=[delivery_window(job)[:2] for job in jobs]
+        memberships=[sum(int(start<=instant<end) for start,end in windows) for instant in source_times]
+        self.assertEqual(memberships,[1,1,1])
+        self.assertEqual(len(jobs),2)
+        self.assertEqual(windows[0][1],windows[1][0])
+        first.refresh_from_db();self.assertEqual(first.event_key,first_key)
+        config.refresh_from_db();self.assertEqual(config.last_digest_end,windows[-1][1])
+    def test_riyadh_to_karachi_counts_each_event_once(self):self.transition('Asia/Riyadh','Asia/Karachi')
+    def test_karachi_to_riyadh_counts_each_event_once(self):self.transition('Asia/Karachi','Asia/Riyadh')
+    def test_earlier_daily_cutoff_counts_each_event_once(self):self.transition('UTC','UTC',time(18),time(16))
+    def test_later_daily_cutoff_counts_each_event_once(self):self.transition('UTC','UTC',time(16),time(18))
+    def test_empty_day_boundary_is_retained_when_schedule_changes(self):
+        from .custom_notifications import save_settings,delivery_window
+        from .workflow_email import queue_daily_digests
+        day=datetime(2026,11,1,0,tzinfo=utc.utc)
+        with patch('core.custom_notifications.timezone.now',return_value=day):
+            config=save_settings(self.admin,self.company,expected_version=0,templates={},combined_daily_enabled=True,daily_time=time(18),timezone_name='Asia/Riyadh')
+        queue_daily_digests(day.replace(hour=20))
+        self.assertFalse(WorkflowEmailDelivery.objects.filter(kind='daily_combined').exists())
+        config.refresh_from_db();empty_end=config.last_digest_end
+        self.assertEqual(empty_end,day.replace(hour=15))
+        self.submit();WorkflowEmailDelivery.objects.filter(kind='submission').update(created_at=day.replace(hour=16))
+        save_settings(self.admin,self.company,expected_version=config.version,templates={},combined_daily_enabled=True,daily_time=time(18),timezone_name='Asia/Karachi')
+        queue_daily_digests(day.replace(day=2,hour=20))
+        digest=WorkflowEmailDelivery.objects.get(kind='daily_combined',recipient=self.qa)
+        self.assertEqual(delivery_window(digest)[0],empty_end)
+
+class ExtremeNotificationScheduleWindowTests(TestCase):
+    def test_valid_iana_offset_and_cutoff_change_can_span_more_than_three_days(self):
+        from types import SimpleNamespace
+        from zoneinfo import ZoneInfo
+        from .custom_notifications import delivery_window
+        start=datetime(2026,11,1,0,tzinfo=ZoneInfo('Pacific/Kiritimati'))
+        end=datetime(2026,11,2,23,59,tzinfo=ZoneInfo('Etc/GMT+12'))
+        delivery=SimpleNamespace(company_id=1,digest_day=end.date(),event_key='combined:1:'+end.date().isoformat()+'|'+start.isoformat()+'|'+end.isoformat()+'|Etc/GMT+12')
+        actual_start,actual_end,_=delivery_window(delivery)
+        self.assertEqual(actual_end.astimezone(utc.utc)-actual_start.astimezone(utc.utc),end.astimezone(utc.utc)-start.astimezone(utc.utc))

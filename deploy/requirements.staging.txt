@@ -19,3 +19,6 @@ pypdfium2==5.14.0
 # Absolute-deadline Microsoft notification transport; already verified locally.
 httpx==0.28.1
 httpcore==1.0.9
+
+# Company notification business-day timezone data; matches reviewed backend pin.
+tzdata==2026.5

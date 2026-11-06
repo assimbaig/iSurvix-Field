@@ -25,6 +25,7 @@ class Migration(migrations.Migration):
                 ('timezone_name', models.CharField(default='Asia/Riyadh', max_length=80)),
                 ('digest_started_at', models.DateTimeField(blank=True, null=True)),
                 ('last_digest_day', models.DateField(blank=True, null=True)),
+                ('last_digest_end', models.DateTimeField(blank=True, null=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('company', models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='notification_settings', to='core.company')),
                 ('updated_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),

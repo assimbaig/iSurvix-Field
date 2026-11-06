@@ -37,3 +37,20 @@ class CustomNotificationUpgradeTests(SimpleTestCase):
             proof,before,target,old=self.fixture()
             with closing(sqlite3.connect(target)) as db,db:db.execute(mutation)
             with self.subTest(mutation=mutation),self.assertRaises(ValueError):proof.assert_retained(before,target,source_database=old)
+
+    def test_legacy_metadata_skip_requires_unchanged_rows_and_both_old_migration_states(self):
+        for mutation in ('unchanged','changed_permission','target_marker','source_marker','no_source_proof'):
+            proof,_,target,_=self.fixture()
+            with closing(sqlite3.connect(target)) as db,db:
+                db.executescript("DROP TABLE core_companynotificationsettings; DELETE FROM django_migrations WHERE app='core' AND name='0064_company_notification_settings';")
+            source=self.root/('legacy-'+mutation+'.sqlite3');shutil.copyfile(target,source)
+            before=proof.snapshot(source)
+            if mutation=='changed_permission':
+                with closing(sqlite3.connect(target)) as db,db:db.execute("UPDATE auth_permission SET name='Changed authority' WHERE codename='view_companynotificationsettings'")
+            if mutation in ('source_marker','target_marker'):
+                path=source if mutation=='source_marker' else target
+                with closing(sqlite3.connect(path)) as db,db:db.execute("INSERT INTO django_migrations(app,name,applied) VALUES('core','0064_company_notification_settings','2026-11-06')")
+            with self.subTest(mutation=mutation):
+                if mutation=='unchanged':proof.assert_retained(before,target,source_database=source)
+                else:
+                    with self.assertRaises(ValueError):proof.assert_retained(before,target,source_database=None if mutation=='no_source_proof' else source)
