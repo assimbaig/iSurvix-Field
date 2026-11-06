@@ -335,6 +335,9 @@ class SavedDataHostingerDeliveryTests(SimpleTestCase):
     def test_failed_migration_rolls_back_into_another_new_verified_data_target(self):
         self.host.fail='migration';result=self.engine.run(self.candidate)
         self.assertEqual(result['status'],'rolled_back')
+        self.assertEqual(self.active().get('failure_phase'),'migrating')
+        self.assertEqual(self.active().get('failure_type'),'ValueError')
+        self.assertNotIn('Controlled migration failure',json.dumps(self.active()))
         current=self.delivery.read_env(self.environment);restored=Path(current['ISURVIX_DATA_DIRECTORY'])
         self.assertNotEqual(restored,self.data);self.assertEqual(current['ISURVIX_RELEASE_ID'],OLD)
         self.assertEqual(self.rows(restored),[(1,'HUMAN_APPROVED')]);self.assertEqual(self.rows(self.data),[(1,'HUMAN_APPROVED')])

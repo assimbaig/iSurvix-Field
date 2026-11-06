@@ -374,8 +374,14 @@ class Engine:
                 # Persist BEFORE the listener could accept any human/API write.
                 self.phase(state,'public_opening');self.host.open_public(target);self.host.public_health(target)
                 self.phase(state,'completed');return self.result(state,'completed')
-            except (ValueError,OSError,subprocess.SubprocessError,sqlite3.DatabaseError):
-                if state['phase'] in ('public_opening','completed'):return self.freeze(state)
+            except (ValueError,OSError,subprocess.SubprocessError,sqlite3.DatabaseError) as error:
+                # Keep bounded diagnostics in the private journal without storing
+                # exception text, which can contain paths or provider responses.
+                failed_phase=state['phase']
+                state['failure_phase']=failed_phase
+                state['failure_type']=type(error).__name__
+                self.phase(state,'failure_recorded')
+                if failed_phase in ('public_opening','completed'):return self.freeze(state)
                 try:return self.rollback(state)
                 except (ValueError,OSError,subprocess.SubprocessError,sqlite3.DatabaseError):return self.freeze(state)
 
