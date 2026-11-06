@@ -16,6 +16,15 @@ authorized merger requires the latest owner review on that exact head to remain
 APPROVED. Fork, unmerged, wrong-branch, stale-branch, missing/revoked approval and
 failed/pending checks are rejected independently by the server.
 
+Production changes require two human checkpoints: owner review and merge of the
+exact source PR, then approval of the protected `hostinger-beta` GitHub
+Environment before the delivery job can access the VPS key. Configure that
+Environment with required reviewers, prevent self-approval, and restrict it to
+the maintained release branch. Workflow YAML can select the Environment but
+cannot enforce its reviewer policy; verify the repository settings after any
+repository/environment recreation. No arbitrary branch, commit or server path
+may be supplied to dispatch a release.
+
 The delivery workflow runs only on a push to that maintained integration branch,
 using its trusted pushed commit, never a pull-request execution ref. An
 unprivileged first job calls GitHub's commit-associated PR API and then reads
