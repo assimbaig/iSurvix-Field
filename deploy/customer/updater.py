@@ -652,7 +652,8 @@ def apply_update(*, installed_package, installed_runtime, update_directory, pack
             # Compatibility rules come from this separately reviewed host tool,
             # not the frozen source comparator or executable candidate content.
             reviewed_retention = _module(Path(__file__).with_name('upgrade_fixture.py'), 'reviewed_host_retention')
-            proof = reviewed_retention.assert_retained(before, paths['target_runtime']/'data/database.sqlite3')
+            proof = reviewed_retention.assert_retained(
+                before, paths['target_runtime']/'data/database.sqlite3', source_database=backup/'database.sqlite3')
             _atomic(transaction/'retention-proof.json', proof)
             actual_media = customer._files(paths['target_runtime']/'data/media')
             if {'media/'+key: customer._digest(value) for key, value in actual_media.items()} != evidence:

@@ -326,7 +326,9 @@ class Engine:
             if consumer._digest(Path(state['backup'])/'manifest.json')['sha256']!=state['backup_manifest_sha256'] or consumer._digest(Path(state['transaction'])/'retained-records.json')['sha256']!=state['retained_snapshot_sha256']:raise DeliveryError('recovery_proof_changed')
             restored=self.root/('recovered-'+uuid.uuid4().hex)
             backup.restore_backup(state['backup'],restored);self.host.prepare_data(restored)
-            retention.assert_retained(consumer._json(Path(state['transaction'])/'retained-records.json'),restored/'database.sqlite3')
+            retention.assert_retained(
+                consumer._json(Path(state['transaction'])/'retained-records.json'), restored/'database.sqlite3',
+                source_database=Path(state['backup'])/'database.sqlite3')
             previous['ISURVIX_DATA_DIRECTORY']=str(restored)
         self.write_env(previous);self.host.static_and_check(previous);self.host.start_private(previous);self.host.private_health(previous);self.host.open_public(previous);self.host.public_health(previous)
         state['recovered_env']=previous;self.phase(state,'rolled_back')
@@ -366,7 +368,10 @@ class Engine:
                 state['backup_complete']=True;state['media_inventory']={key:value for key,value in verified['files'].items() if key.startswith('media/')};self.phase(state,'backed_up')
                 self.phase(state,'restoring');backup.restore_backup(state['backup'],target['ISURVIX_DATA_DIRECTORY']);self.host.prepare_data(target['ISURVIX_DATA_DIRECTORY'])
                 self.write_env(target);self.host.preflight(target);self.phase(state,'migrating');self.host.migrate(target);self.host.static_and_check(target)
-                retention.assert_retained(consumer._json(transaction/'retained-records.json'),Path(target['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3')
+                retention.assert_retained(
+                    consumer._json(transaction/'retained-records.json'),
+                    Path(target['ISURVIX_DATA_DIRECTORY'])/'database.sqlite3',
+                    source_database=Path(state['backup'])/'database.sqlite3')
                 media=consumer._files(Path(target['ISURVIX_DATA_DIRECTORY'])/'media')
                 if {'media/'+key:consumer._digest(path) for key,path in media.items()}!=state['media_inventory']:raise DeliveryError('evidence_changed_during_migration')
                 self.host.start_private(target);self.host.private_health(target);self.phase(state,'private_ready')

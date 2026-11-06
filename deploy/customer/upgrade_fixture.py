@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import sqlite3
 
 
@@ -186,15 +187,24 @@ def _validate_checklist_template_company_scope(before, after, database):
     table = 'core_checklisttemplate'
     previous = before.get(table)
     current = after.get(table)
-    if not previous or not current or 'company_id' in previous['columns']:
-        return None
-    if current['columns'] != previous['columns'] + ['company_id'] or current['primary'] != previous['primary']:
-        raise ValueError('Checklist template schema changed beyond the approved company scope field.')
     try:
         with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
             applied = db.execute(
                 "select 1 from django_migrations where app='core' and name=?",
                 ('0063_checklist_template_company_scope',)).fetchone()
+    except sqlite3.Error:
+        if not previous or not current or 'company_id' not in current['columns']:
+            return None
+        raise ValueError('Checklist template company scope migration evidence is unavailable.') from None
+    if applied and (not previous or not current or 'company_id' not in current['columns']):
+        raise ValueError('Migration 0063 is recorded but the checklist template company column is missing.')
+    if (not previous or not current or 'company_id' in previous['columns']
+            or 'company_id' not in current['columns']):
+        return None
+    if current['columns'] != previous['columns'] + ['company_id'] or current['primary'] != previous['primary']:
+        raise ValueError('Checklist template schema changed beyond the approved company scope field.')
+    try:
+        with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
             template_info = db.execute('pragma table_info(' + _identifier(table) + ')').fetchall()
             company_info = db.execute('pragma table_info("core_company")').fetchall()
             foreign_keys = db.execute('pragma foreign_key_list(' + _identifier(table) + ')').fetchall()
@@ -203,7 +213,7 @@ def _validate_checklist_template_company_scope(before, after, database):
     column = next((row for row in template_info if row[1] == 'company_id'), None)
     company_pk = next((row for row in company_info if row[1] == 'id' and row[5] == 1), None)
     company_foreign_keys = [row for row in foreign_keys if row[3] == 'company_id']
-    if (not applied or not column or not company_pk or column[2].lower() != company_pk[2].lower()
+    if (not applied or not column or not company_pk or column[2].lower() != 'bigint'
             or column[3] != 0 or column[4] is not None or len(company_foreign_keys) != 1
             or tuple(company_foreign_keys[0][2:]) != ('core_company', 'company_id', 'id',
                                                        'NO ACTION', 'NO ACTION', 'NONE')):
@@ -264,10 +274,69 @@ def _validate_checklist_template_company_scope(before, after, database):
             'assigned_count': assigned}
 
 
-def assert_retained(before, database):
+def _reject_unreviewed_application_triggers(database):
+    """Do not accept hidden SQLite behavior outside the retained row snapshot."""
+    try:
+        with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
+            triggers = db.execute(
+                "select name from sqlite_master where type='trigger' and tbl_name not like 'sqlite_%'"
+            ).fetchall()
+    except sqlite3.Error:
+        raise ValueError('SQLite trigger inventory is unavailable for retention verification.') from None
+    if triggers:
+        raise ValueError('Unreviewed SQLite triggers prevent verified data retention.')
+
+
+def _application_indexes(database, table):
+    with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
+        result = []
+        for row in db.execute('pragma index_list(' + _identifier(table) + ')').fetchall():
+            name = row[1]
+            columns = [(item[2], bool(item[3])) for item in db.execute(
+                'pragma index_xinfo(' + _identifier(name) + ')').fetchall() if item[5]]
+            result.append({'name': name, 'unique': bool(row[2]), 'origin': row[3],
+                           'partial': bool(row[4]), 'columns': columns})
+    return result
+
+
+def _validate_application_indexes(source_database, target_database):
+    """Allow only indexes explicitly introduced by the reviewed 0059/0063 migrations."""
+    source_tables = set(snapshot(source_database))
+    target_tables = set(snapshot(target_database))
+    expected_template_name = re.compile(r'^core_checklisttemplate_company_id_[a-f0-9]{8}$')
+    expected = {
+        ('core_checklist', 'ck_project_updated_page', False, 'c', False,
+         (('project_id', False), ('updated_at', True), ('id', False))),
+        ('core_workassignment', 'wa_project_task_page', False, 'c', False,
+         (('project_id', False), ('checklist_id', False), ('created_at', True), ('id', False))),
+    }
+    for table in sorted(source_tables & target_tables):
+        before = _application_indexes(source_database, table)
+        after = _application_indexes(target_database, table)
+        removed = [index for index in before if index not in after]
+        added = [index for index in after if index not in before]
+        if removed:
+            raise ValueError('An existing application index was removed during verified upgrade.')
+        for index in added:
+            signature = (table, index['name'], index['unique'], index['origin'],
+                         index['partial'], tuple(index['columns']))
+            company_fk = (table == 'core_checklisttemplate'
+                          and expected_template_name.fullmatch(index['name'])
+                          and not index['unique'] and index['origin'] == 'c'
+                          and not index['partial'] and index['columns'] == [('company_id', False)])
+            if signature not in expected and not company_fk:
+                raise ValueError('Application index changes exceed the reviewed migration allowlist.')
+
+
+def assert_retained(before, database, *, source_database=None):
+    _reject_unreviewed_application_triggers(database)
     after = snapshot(database)
     _validate_new_notice_table(before, after, database)
     company_scope = _validate_checklist_template_company_scope(before, after, database)
+    if company_scope is not None:
+        if source_database is None:
+            raise ValueError('Source database is required to verify checklist template indexes.')
+        _validate_application_indexes(source_database, database)
     metadata_additions = _support_metadata_additions(before, after, database)
     for table, original in before.items():
         current = after.get(table)
