@@ -13,3 +13,7 @@
 /website/corporate/*.html text eol=lf
 /website/corporate/*.css text eol=lf
 /website/corporate/*.js text eol=lf
+
+# Public security configuration and sitemap bind reviewed publication bytes.
+/website/corporate/.htaccess text eol=lf
+/website/corporate/sitemap.xml text eol=lf

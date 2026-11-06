@@ -15,9 +15,18 @@ import unittest
 
 BASE = Path(__file__).resolve().parents[1]
 LOGIN = 'https://app.isurvix.com/login/'
-FILES = {
+ENTRY_FILES = {
     'index.html', 'platform-login-v4.css', 'platform-login.js', 'ifield.html',
     'ifield-info.css', 'products.html', 'solutions.html', 'isurvix-survey.html',
+}
+PUBLICATION_FILES = {
+    'index.html', 'solutions.html', 'engineering.html', 'portfolio.html',
+    'clients.html', 'company.html', 'ifield.html', 'igeoview.html',
+    'house-inspection.html', 'contact.html', 'industries.html', 'imoneta.html',
+    'engineering-intelligence.html', 'custom-engineering.html', 'products.html',
+    'isurvix-survey.html', 'privacy.html', 'corporate-refresh-v1.css', '.htaccess',
+    'assets/ifield-logo.webp', 'assets/igeoview-logo.webp', 'assets/imoneta-logo.webp',
+    'sitemap.xml',
 }
 
 
@@ -45,19 +54,19 @@ class PublicWebsiteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.pages = {name: (BASE / name).read_text(encoding='utf-8')
-                     for name in FILES if name.endswith('.html')}
+                     for name in ENTRY_FILES if name.endswith('.html')}
         cls.home = cls.pages['index.html']
         cls.product = cls.pages['ifield.html']
         cls.invariants = json.loads((BASE / 'tests/public-page-invariants.json').read_text())
 
-    def test_publication_manifest_lists_only_eight_public_files_with_exact_bytes(self):
+    def test_publication_manifest_lists_only_reviewed_public_files_with_exact_bytes(self):
         manifest = json.loads((BASE / 'source-manifest.json').read_text())
         self.assertEqual(manifest['format'], 'isurvix-corporate-partial-v1')
-        self.assertEqual({item['path'] for item in manifest['files']}, FILES)
-        self.assertEqual(len(manifest['files']), len(FILES))
+        self.assertEqual({item['path'] for item in manifest['files']}, PUBLICATION_FILES)
+        self.assertEqual(len(manifest['files']), len(PUBLICATION_FILES))
         for item in manifest['files']:
             source = BASE / item['path']
-            self.assertEqual(source.parent, BASE)
+            self.assertTrue(source.resolve().is_relative_to(BASE.resolve()))
             self.assertEqual(source.stat().st_size, item['bytes'])
             self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), item['sha256'])
 
@@ -102,7 +111,7 @@ class PublicWebsiteTests(unittest.TestCase):
                 (fixture / '.gitattributes').write_bytes(attributes.read_bytes())
                 paths.append('.gitattributes')
             git('add', '--', *paths)
-            # Remove only the eight explicitly listed disposable asset copies.
+            # Remove only explicitly listed disposable asset copies.
             for item in manifest['files']:
                 (fixture / 'website/corporate' / item['path']).unlink()
             git('checkout-index', '--all', '--force')
@@ -135,8 +144,9 @@ class PublicWebsiteTests(unittest.TestCase):
 
     def test_header_keeps_existing_navigation_and_branding(self):
         header = segment('header', self.home)
-        for target in ['solutions.html', 'engineering.html', 'portfolio.html', 'clients.html', 'company.html']:
+        for target in ['solutions.html', 'engineering.html', 'portfolio.html', 'company.html']:
             self.assertIn(f'href="{target}"', header)
+        self.assertNotIn('href="clients.html"', header)
         self.assertIn('isurvix-logo-approved.png', header)
 
     def test_homepage_only_loads_versioned_platform_assets(self):

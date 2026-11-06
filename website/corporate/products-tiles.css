@@ -1,0 +1,19 @@
+/* Products only: four equal tiles; reset inherited editorial grid spans. */
+.page-products .products-page .product-grid.portfolio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row;gap:24px;align-items:stretch}
+.page-products .products-page .product-grid>.product-card:nth-child(n){grid-column:auto;grid-row:auto;display:flex;flex-direction:column;min-width:0;min-height:0;width:auto}
+.page-products .products-page .product-card>.product-art{flex:0 0 260px;height:260px;min-height:0;width:100%;border-right:0;border-bottom:1px solid var(--line)}
+.page-products .products-page .product-copy{display:flex;flex-direction:column;flex:1;padding:24px;min-width:0}
+.page-products .products-page .product-copy h3{font-size:26px;line-height:1.2}
+.page-products .products-page .product-copy>p{font-size:14px;line-height:1.65;max-width:none}
+.page-products .products-page .product-tags{flex-wrap:wrap}
+.page-products .products-page .product-copy>.card-links{margin-top:auto;padding-top:18px}
+.page-products .products-page .survey-sheet{top:34px}
+.page-products .products-page .map-search{top:30px}
+.page-products .products-page .map-pin{top:125px}
+.page-products .products-page .map-label{top:205px}
+.page-products .products-page .money-panel{top:40px}
+.page-products .products-page .finance-chip{bottom:25px}
+.page-products .products-page .engineering-float-one{top:64px;right:18px}
+.page-products .products-page .engineering-float-two{bottom:35px;left:18px}
+@media(max-width:1000px){.page-products .products-page .product-grid.portfolio-grid{gap:20px}.page-products .products-page .product-copy{padding:22px}.page-products .products-page .product-copy h3{font-size:24px}}
+@media(max-width:640px){.page-products .products-page .product-grid.portfolio-grid{grid-template-columns:minmax(0,1fr);gap:22px}.page-products .products-page .product-card>.product-art{flex-basis:250px;height:250px}.page-products .products-page .product-copy{padding:22px}.page-products .products-page .product-copy h3{font-size:25px}}

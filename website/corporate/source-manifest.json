@@ -1,49 +1,124 @@
 {
   "format": "isurvix-corporate-partial-v1",
-  "revision": 4,
+  "revision": 5,
   "website_origin": "https://isurvix.com",
   "application_login": "https://app.isurvix.com/login/",
-  "publication": "Explicit allowlist only; preserve every unlisted website file and cached previous assets.",
+  "publication": "Explicit allowlist only; preserve every unlisted live file and previous assets. Assets first, HTML next, headers last.",
   "files": [
     {
-      "path": "index.html",
-      "bytes": 31576,
-      "sha256": "57970ef20f680290d80b1673406b7f4f93abc80e560753e0703838649bf7263c"
+      "path": "clients.html",
+      "bytes": 5917,
+      "sha256": "2003f7c93a9f26aedd49fb849a993c1408665793aade5b55b1e5ade123c726d9"
     },
     {
-      "path": "platform-login-v4.css",
-      "bytes": 3973,
-      "sha256": "26b9c47faff40e3359213dff4e37ded64650c4d0512bc291c4c71ae49f19986b"
+      "path": "company.html",
+      "bytes": 16185,
+      "sha256": "35de6a19824208d27220a52a9a2b4beeacbbb88c693123774b22c423228e91d5"
     },
     {
-      "path": "platform-login.js",
-      "bytes": 1375,
-      "sha256": "333f4afa82189e44cb34c3d1a7e4fa615fc0c511c94e922f29b46e5be89033fa"
+      "path": "contact.html",
+      "bytes": 10166,
+      "sha256": "c403b8c70da40876d74a8fbdec13b807a8e825706345159332ec75d63177af84"
+    },
+    {
+      "path": "custom-engineering.html",
+      "bytes": 11008,
+      "sha256": "cfeb5efb642a2456cb79e352b96b5ba324b51c2ca1431be8cdefec030b058482"
+    },
+    {
+      "path": "engineering-intelligence.html",
+      "bytes": 9679,
+      "sha256": "15e9431e2c85ca1e42dc5a0b2ef184a5686853d0c7527307957280d53614280d"
+    },
+    {
+      "path": "engineering.html",
+      "bytes": 29026,
+      "sha256": "557eff602501cef4a42b78a2006a2a1b91169601bc87fc0695938b1d8182c403"
+    },
+    {
+      "path": "house-inspection.html",
+      "bytes": 9273,
+      "sha256": "1787a2c6afc33355dadb144702389fc50ba0d7d7d04bdb7944d345d76a91017e"
     },
     {
       "path": "ifield.html",
-      "bytes": 13288,
-      "sha256": "f1b5e02ea25f4d497e393232cad5c4234c2e3c1a20132fe559af597324848b40"
+      "bytes": 13578,
+      "sha256": "c2462617821cd6de4e55797bed02b77d65176a8920a620bbc931248777f02adf"
     },
     {
-      "path": "ifield-info.css",
-      "bytes": 2224,
-      "sha256": "0cffc05b4a27f69ac4df8e7c54cc8b98b896d77ccd56e199694fe04b76135b85"
+      "path": "igeoview.html",
+      "bytes": 9947,
+      "sha256": "d64764cfb86aeca12e5b0b7de670ae4cbcdaca7505098c3a6b0f7bad5e81881d"
     },
     {
-      "path": "products.html",
-      "bytes": 12457,
-      "sha256": "29f4cea72354e00909f789faf6c1e3426ca1faee633ba2b413719177b51bd6e8"
+      "path": "imoneta.html",
+      "bytes": 9720,
+      "sha256": "6f137a6b4a2c1b7696845212d38981348e520f2f9475ce9ea38c6eed08b6481a"
     },
     {
-      "path": "solutions.html",
-      "bytes": 17928,
-      "sha256": "c7ff9b886b96aa3ae191d8d11024def51fea626760cfff0efd33105a4b32bd44"
+      "path": "index.html",
+      "bytes": 32199,
+      "sha256": "c9e8412f7234f6246fd476a41e84f38d119ddc618e066514c212e995be5866b6"
+    },
+    {
+      "path": "industries.html",
+      "bytes": 10997,
+      "sha256": "9243d4c32e84e9eb1159daf24a2b8490cdaea46cfcb3fa6103f2cd53b9169e4a"
     },
     {
       "path": "isurvix-survey.html",
-      "bytes": 13288,
-      "sha256": "f1b5e02ea25f4d497e393232cad5c4234c2e3c1a20132fe559af597324848b40"
+      "bytes": 13578,
+      "sha256": "c2462617821cd6de4e55797bed02b77d65176a8920a620bbc931248777f02adf"
+    },
+    {
+      "path": "portfolio.html",
+      "bytes": 17927,
+      "sha256": "7bbdb7ea1633addd249aebb8428287db13cdbe0881d20071c33c10c01f98fde5"
+    },
+    {
+      "path": "privacy.html",
+      "bytes": 7567,
+      "sha256": "f1de3438837475bc542d112c202150b9d753c22fac55ecacbda260a78f846ebc"
+    },
+    {
+      "path": "products.html",
+      "bytes": 12931,
+      "sha256": "11bfa400411d0f2f3701bf8c8a6f135c5a4f7d8eb6c57119f87c1f5dafc12a1a"
+    },
+    {
+      "path": "solutions.html",
+      "bytes": 18402,
+      "sha256": "36b88842ea98b557e9f949b991b11044d6974daa75d675d0b38877b9d4814789"
+    },
+    {
+      "path": "corporate-refresh-v1.css",
+      "bytes": 2147,
+      "sha256": "aca8abb97303037afca2dcaf0321f8650d30d9bafeadaa2512953025c3b90742"
+    },
+    {
+      "path": ".htaccess",
+      "bytes": 644,
+      "sha256": "f633c8c7b9d6bface3f3c5262c857807141153bf8119e6eb41a4ecd0ea9b62c3"
+    },
+    {
+      "path": "sitemap.xml",
+      "bytes": 1018,
+      "sha256": "c69ba3f0f6091faa0f07158d3425e1942d291b68ae11ff4781707797e39f1e41"
+    },
+    {
+      "path": "assets/ifield-logo.webp",
+      "bytes": 32010,
+      "sha256": "c029e2d2f518a3d6453b18448e5a4acee8a25bdb77e9d5068915262ab9c095da"
+    },
+    {
+      "path": "assets/igeoview-logo.webp",
+      "bytes": 18886,
+      "sha256": "164178932b80da6c9d94953d3782f4dee4f9c873ea53c2f23d5a595721b42525"
+    },
+    {
+      "path": "assets/imoneta-logo.webp",
+      "bytes": 19924,
+      "sha256": "324ca2cda1ba8b1679ad4aa6ac4d00058319803665028b9fcd1f57310039e4a1"
     }
   ]
 }

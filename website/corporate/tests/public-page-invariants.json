@@ -1,10 +1,11 @@
 {
-  "homepage_main_sha256": "1ecfc3bcc5b41640350da664aa0bbef49b8d7c1acec3a582fb2b76e8fa9779a6",
-  "homepage_footer_sha256": "ddbceeae19b1690fe9a71d565eb2118d289eea628e3511d06d765f9e18687e39",
-  "ifield_header_sha256": "81f2cb951ae71d93d640ab5b76d96006b5bab934aa0e914ae7e407561007e545",
-  "ifield_footer_sha256": "ec3d0e9c910da684e4768ee24f1b8673dad8e0e67b28551a38fced80ab2ee11a",
+  "homepage_main_sha256": "90f58ffdd1a9d58151cd927010627ddac3586e49fc7d2ad6de86e0d86b4e008e",
+  "homepage_footer_sha256": "6c9ecd56764f8fc08f0a5a34b58b2d0738ef1cc2219ebfbb191f9b27d6900420",
+  "ifield_header_sha256": "37dea97572d60836b08ab91f17ed1cdc2626b3cdf4d39048ddf9d56b5d954737",
+  "ifield_footer_sha256": "2241117439e951f3ce638e2105230c7b0dc59500381110b8febf395584510f95",
   "catalog_outside_ifield_article_sha256": {
-    "products.html": "a4a35cd3dc991bb747f59ea70c8952f2d8a059c7e8cd39e18a9f1d9e94cc347d",
-    "solutions.html": "2494037593960c9f745a735de21c27a33f8244b51bed58acaa892444453c4a79"
-  }
+    "products.html": "2e11d062185568b66b611a2ecd8ec79cebdd704f171f8b701be9d63508216b84",
+    "solutions.html": "75d0c78dad48eff040be50d182e9e5e8856490c56bc7897078c9c3e3fdc6a78e"
+  },
+  "reviewed_change_note": "2026-11-06 owner-approved corporate refresh: real product logos, meaningful home heading, no primary placeholder Clients, privacy footer, and precise iField availability. Exact hashes retained to detect subsequent unreviewed drift."
 }
