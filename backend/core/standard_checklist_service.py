@@ -56,14 +56,22 @@ def validate_standard_project(template,project,workflow_type=None):
         raise ValidationError('Choose the standard checklist for this activity workflow before assigning the task.')
 
 def permitted_industries(actor):
-    from .access import is_super_admin,role_for,accessible_projects
+    from .access import is_super_admin,role_for,accessible_projects,company_id_for
     from .models import Profile
     if is_super_admin(actor):return {'telecom','construction'}
     if role_for(actor)!=Profile.Roles.ADMIN:
         raise PermissionDenied('Standard checklist management requires a Project Admin or Super Admin.')
+    profile=getattr(actor,'profile',None)
+    if profile is None or profile.admin_industry_pending:
+        raise PermissionDenied('Your company industry assignment is pending.')
+    # An Admin can author company checklists before the first project exists.
+    # Industry remains the immutable company-level boundary for this workspace.
+    if company_id_for(actor) is not None and profile.admin_industry_id:
+        from .industry_service import industry_family
+        return {industry_family(profile.admin_industry.code)}
     projects=accessible_projects(actor)
     if not projects.exists():raise PermissionDenied('An active project administration grant is required.')
-    assigned=actor.profile.admin_industry
+    assigned=profile.admin_industry
     from .industry_service import industry_family
     return {industry_family(assigned)} if assigned else {industry_family(code) for code in projects.values_list('industry',flat=True)}
 

@@ -128,6 +128,24 @@ class ChecklistWizardTests(TestCase):
         self.assertIn(self.post('create_blank',name='Wrong industry',industry='construction',workflow_type='construction_inspection').status_code,[400,403])
         self.assertFalse(ChecklistTemplate.objects.filter(name='Wrong industry').exists())
 
+    def test_company_admin_can_create_without_projects_and_cannot_see_foreign_company_drafts(self):
+        self.admin.profile.project=None
+        self.admin.profile.save(update_fields=['project'])
+        self.assertEqual(self.client.get(reverse('checklist_wizard')).status_code,200)
+        response=self.post('create_blank',name='Company umbrella draft',industry='telecom',workflow_type='telecom_survey')
+        self.assertEqual(response.status_code,302,response.content)
+        draft=ChecklistTemplate.objects.get(name='Company umbrella draft')
+        self.assertEqual(draft.company_id,self.company.pk)
+        foreign=ChecklistTemplate.objects.create(name='Foreign umbrella draft',definition=default_definition(),
+            created_by=self.other_admin,company=self.other_company)
+        from .checklist_lifecycle import table_rows
+        self.assertNotIn(foreign.pk,[item['id'] for item in table_rows(self.admin)])
+        self.assertEqual(self.client.get(reverse('checklist_wizard_edit',args=[foreign.pk])).status_code,404)
+        coworker=self.person('same_company_admin',Profile.Roles.ADMIN)
+        coworker.profile.project=None;coworker.profile.save(update_fields=['project'])
+        self.client.force_login(coworker)
+        self.assertEqual(self.client.get(reverse('checklist_wizard_edit',args=[draft.pk])).status_code,200)
+
     def test_copy_and_edit_are_scoped_and_published_source_remains_immutable(self):
         before=self.before()
         response=self.post('replicate',source_id=self.source.pk,name='Independent source copy')
@@ -198,8 +216,11 @@ class ChecklistWizardTests(TestCase):
         self.admin.profile.company=self.company;self.admin.profile.save()
         from .models import ProjectMembership
         ProjectMembership.objects.create(user=self.admin,project=self.project,is_active=False)
-        self.assertEqual(self.commit(batch).status_code,403)
-        self.assertEqual(ChecklistTemplate.objects.count(),count)
+        response=self.commit(batch)
+        self.assertEqual(response.status_code,302,response.content)
+        created=ChecklistTemplate.objects.filter(name__startswith='Workbook ').order_by('name')
+        self.assertEqual(created.count(),2)
+        self.assertEqual(set(created.values_list('company_id',flat=True)),{self.company.pk})
 
     def test_invalid_row_formula_and_approval_columns_report_real_errors_without_partial_import(self):
         from .models import ChecklistImportBatch

@@ -168,7 +168,7 @@ import hashlib,json,sqlite3,sys
 sys.path.insert(0,str(Path(sys.argv[1])/'deploy/customer'));import upgrade_fixture
 work,package=map(Path,sys.argv[2:4]);before=json.loads((work/'retained-before.private.json').read_text())
 source=upgrade_fixture.assert_retained(before,work/'runtime/data/database.sqlite3')
-target=upgrade_fixture.assert_retained(before,work/'target-success/data/database.sqlite3')
+target=upgrade_fixture.assert_retained(before,work/'target-success/data/database.sqlite3',source_database=work/'runtime/data/database.sqlite3')
 def schema(database):
     with closing(sqlite3.connect(database.absolute().as_uri()+'?mode=ro',uri=True)) as connection:
         row=connection.execute("select name from django_migrations where app='core' order by name desc limit 1").fetchone()
