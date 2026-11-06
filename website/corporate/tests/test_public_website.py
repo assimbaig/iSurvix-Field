@@ -26,7 +26,7 @@ PUBLICATION_FILES = {
     'engineering-intelligence.html', 'custom-engineering.html', 'products.html',
     'isurvix-survey.html', 'privacy.html', 'corporate-refresh-v1.css', '.htaccess',
     'assets/ifield-logo.webp', 'assets/igeoview-logo.webp', 'assets/imoneta-logo.webp',
-    'sitemap.xml', 'corporate-refresh-v2.css',
+    'sitemap.xml', 'corporate-refresh-v2.css', 'corporate-refresh-v3.css',
 }
 
 

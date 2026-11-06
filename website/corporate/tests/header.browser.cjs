@@ -7,7 +7,7 @@ const checks=[];const cases=[];const check=(name,pass)=>{checks.push({name,passe
 const intersect=(a,b)=>a&&b&&Math.min(a.x+a.width,b.x+b.width)>Math.max(a.x,b.x)&&Math.min(a.y+a.height,b.y+b.height)>Math.max(a.y,b.y);
 async function preparedPage(context){
  const page=await context.newPage();
- if(!published)for(const file of ['index.html','platform-login-v4.css','corporate-refresh-v1.css','corporate-refresh-v2.css'])await page.route(url=>url.origin==='https://isurvix.com'&&url.pathname==='/'+file,route=>route.fulfill({status:200,contentType:file.endsWith('.css')?'text/css':'text/html; charset=utf-8',body:fs.readFileSync(path.join(base,file))}));
+ if(!published)for(const file of ['index.html','platform-login-v4.css','corporate-refresh-v1.css','corporate-refresh-v2.css','corporate-refresh-v3.css'])await page.route(url=>url.origin==='https://isurvix.com'&&url.pathname==='/'+file,route=>route.fulfill({status:200,contentType:file.endsWith('.css')?'text/css':'text/html; charset=utf-8',body:fs.readFileSync(path.join(base,file))}));
  return page;
 }
 (async()=>{const browser=await chromium.launch({channel:process.platform==='win32'?'msedge':undefined,headless:true});let failure;try{

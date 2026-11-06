@@ -1,0 +1,37 @@
+/* Reviewed public-site refresh: new URL preserves cached prior styles. */
+.product-brand-logo{display:block;width:136px;height:54px;object-fit:contain;object-position:left center;margin-bottom:10px;max-width:100%}
+.product-copy .product-brand-logo{width:120px;height:48px;margin-bottom:8px}
+.page-index .showcase-copy>.product-brand-logo{width:126px;height:48px;margin-bottom:12px;padding:6px 9px;box-sizing:border-box;border-radius:5px;background:#f7f8f5;object-position:center}
+.page-index .platform-login summary{min-height:30px;height:30px;padding:4px 10px;box-sizing:border-box;font-size:12px;line-height:20px;gap:5px}
+.page-index .platform-login-panel .product-brand-logo{width:58px;height:28px;margin:0;flex:0 0 58px;object-position:center}
+.page-index .platform-login-field{gap:9px}.page-index .platform-login-field>span:first-of-type{flex:1;min-width:0}
+.page-index .platform-login-unavailable{gap:9px}.page-index .platform-login-unavailable strong{flex:1}
+.page-index .showcase-top h1{font-size:clamp(11px,1.2vw,15px);line-height:1.5;letter-spacing:.035em;text-transform:none}
+.privacy-footer{padding-block:12px 18px;border-top:1px solid var(--line);font-size:12px}
+.privacy-information{max-width:900px;padding-bottom:40px}.privacy-information article{padding-block:22px;border-top:1px solid var(--line)}
+.privacy-information h2{font-size:24px;line-height:1.25;margin-bottom:12px}.privacy-information p{font-size:15px;line-height:1.7;margin-block:10px;color:#4a594c}.privacy-information a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:1100px){.page-index .platform-login summary{height:44px;min-height:44px;padding:10px 12px}}
+@media(max-width:800px){.home-vision-preview.compact-vision-strip{padding-block:22px;min-height:0;height:auto}.compact-vision-strip>div{display:block;min-height:0}.compact-vision-strip h2{font-size:27px;margin:10px 0}.compact-vision-strip .text-link{margin-top:12px}.page-index .premium-next{min-height:0;padding-block:26px}.page-index .showcase-top h1{max-width:32ch}.privacy-information h2{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.product-brand-logo{transition:none}}
+
+/* Compact platform disclosure: small rows, explicit unavailable labels. */
+.page-index .platform-login-panel{width:250px;padding:4px;max-width:calc(100vw - 36px)}
+.page-index .platform-login-field,.page-index .platform-login-unavailable{min-height:38px;padding:6px 7px;gap:6px;box-sizing:border-box}
+.page-index .platform-login-panel strong{font-size:11.5px;line-height:1.3}
+.page-index .platform-login-panel small{display:none}
+.page-index .platform-login-panel .product-brand-logo{width:42px;height:22px;flex-basis:42px}
+.page-index .platform-login-action,.page-index .platform-login-unavailable>span{font-size:10px}
+@media(max-width:1100px){.page-index .platform-login-field{min-height:44px}}
+
+/* Owner-approved logo-only platform picker: names remain accessible. */
+.page-index .platform-login-panel{width:164px;padding:5px}
+.page-index .platform-login-product{height:48px;min-height:48px;box-sizing:border-box;justify-content:center;padding:3px 10px;border-radius:4px;background:#fff}
+.page-index .platform-login-product+.platform-login-product{border-top:1px solid #e6ebe1}
+.page-index .platform-login-product:hover{background:#f1f5eb}
+.page-index .platform-login-panel .product-brand-logo{width:124px;height:40px;max-width:100%;flex:0 1 124px;object-fit:contain;object-position:center;margin:0}
+
+/* Smaller logo picker; desktop density with mobile touch targets. */
+.page-index .platform-login-panel{width:120px;padding:4px}
+.page-index .platform-login-product{height:34px;min-height:34px;padding:2px 5px}
+.page-index .platform-login-panel .product-brand-logo{width:90px;height:28px;flex:0 1 90px}
+@media(max-width:1100px){.page-index .platform-login-product{height:44px;min-height:44px}}
