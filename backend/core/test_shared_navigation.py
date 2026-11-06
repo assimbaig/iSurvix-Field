@@ -59,7 +59,7 @@ class SharedHeaderContractTests(SimpleTestCase):
 
     def test_existing_role_link_sets_are_preserved_without_quality_capabilities(self):
         expected={'ENGINEER':['My tasks'],
-            'ADMIN':['Tasks','Overview','Your projects','Review queue','Reports','Administration','Checklists','AI Settings'],
+            'ADMIN':['Tasks','Dashboard','Your projects','Review queue','Reports','Administration','Checklists','AI Settings'],
             'TEAM_LEAD':['Tasks','Overview','Projects & sites','Review queue','Reports'],
             'CLIENT':['Tasks','Overview','Projects & sites','Review queue','Reports'],
             'SUPER_ADMIN':['Dashboard','Industries','Clients','Projects','Sites','Checklist Wizard','AI Settings']}
@@ -67,6 +67,9 @@ class SharedHeaderContractTests(SimpleTestCase):
             with self.subTest(role=role):
                 links=self.nav(role=role)
                 self.assertEqual([l['text'] for l in links],labels)
+                if role=='ADMIN':
+                    dashboard=next(link for link in links if link['text']=='Dashboard')
+                    self.assertEqual(parse_qs(urlsplit(dashboard['href']).query)['view'],['dashboard'])
                 settings_links=[link for link in links if link['href']==reverse('ai_settings_index')]
                 self.assertEqual(len(settings_links),1 if role in ('ADMIN','SUPER_ADMIN') else 0)
 

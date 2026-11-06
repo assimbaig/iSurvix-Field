@@ -32,7 +32,11 @@ class WorkspaceScopedTotalTests(TestCase):
             for project in cls.projects for index in range(14)])
 
     def request(self,actor=None,**query):
-        self.client.force_login(actor or self.admin)
+        principal=actor or self.admin
+        # Company overview is now Admin's landing page. These unchanged totals
+        # and pagination assertions cover the preserved operational task list.
+        if principal.profile.role==Profile.Roles.ADMIN:query.setdefault('view','my_work')
+        self.client.force_login(principal)
         response=self.client.get(reverse('governance_home'),query)
         self.assertEqual(response.status_code,200)
         return response

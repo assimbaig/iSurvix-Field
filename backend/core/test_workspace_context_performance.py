@@ -76,7 +76,7 @@ class WorkspaceContextPerformanceTests(TestCase):
             for task in tasks])
         self.client.force_login(self.admin)
         with CaptureQueriesContext(connection) as queries:
-            response=self.client.get(reverse('governance_home'))
+            response=self.client.get(reverse('governance_home'),{'view':'my_work'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(len(response.context['surveys']),25)
         self.assertContains(response,'Awaiting Engineer')

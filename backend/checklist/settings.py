@@ -79,6 +79,7 @@ TEMPLATES = [
                 # Role navigation is shared by hosted and local workspaces.
                 # The context preserves LOCAL_AI_ENABLED without enabling inference.
                 'core.local_ai.local_context',
+                'core.release_notice.release_notice_context',
             ],
         },
     },

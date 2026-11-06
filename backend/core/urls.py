@@ -6,8 +6,10 @@ from . import standard_checklist_views
 from . import checklist_wizard_views
 from .legacy_routes import protected_legacy
 from .private_files import checklist_file
+from .release_notice import acknowledge as acknowledge_release_notice
 
 urlpatterns = [
+    path('release-notices/ack/',acknowledge_release_notice,name='release_notice_acknowledge'),
     path('support/', include('core.support_urls')),
     path('ops/updates/', include('core.update_urls')),
     path('governance/ai-settings/', include('core.ai_settings_urls')),

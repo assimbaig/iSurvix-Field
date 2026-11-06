@@ -14,6 +14,48 @@ These ignored files and all credentials/backups must remain outside Git.
 
 ## Current source and delivery
 
+Current work branch: `feat/admin-company-overview-20261106`, based on merged
+PR36 commit `980d786`. The owner selected Company overview option A after three
+completed design previews. The actual company Admin dashboard now uses scoped
+saved-record totals and existing Project, Task, Client and Invitation actions.
+Other role defaults, technical approval rules and explicit `?view=my_work`
+behavior remain in place. The owner-approved AD-S1 malformed-project-ID guard
+was fixed and independently retested; its regression remains in the suite.
+
+The owner added all-role **What's New** notices for each installed release.
+Migration0062 adds per-account/per-release acknowledgements only. A remembered
+notice suppresses the current version; new release identities always prompt
+again. Unchecked/X/Escape dismissal is limited to the current login. Keep the
+curated content in `core/release_note_content.py` truthful for every release.
+Read `docs/manual/ADMIN_COMPANY_OVERVIEW.md` and
+`docs/development/ADMIN_DASHBOARD_AND_RELEASE_NOTICES.md`.
+
+Source/data recovery checkpoint:
+`.local/backups/admin-dashboard-20261106T115009Z` (verified source bundle,
+coherent database/disposable restore and all3537 media files with hashes and
+ZIP CRC). A second protected working-source ZIP/patch preserves the completed
+Admin view before the notice addition. A coherent disposable0061→0062 proof
+retained all14,359 policy-retained rows across77 prior tables, with an empty new
+acknowledgement table. Consult `.local/ACTIVE_CODEX_STATE.json` and the private
+task ledger for actual local migration, full regression, independent review,
+PR and runtime status; code or documentation alone is not delivery evidence.
+
+PR36 was explicitly owner-approved, merged and deployed. Its source972a71d is
+live and healthy; guarded GitHub delivery run42207475930 confirmed it after an
+idempotent retry. Email stays disabled: Microsoft organization customization
+completed and the exact mailbox scope exists, but the final sending-role grant
+failed. The owner objected to repeated `info@isurvix.com` administrator sign-ins.
+**Do not reopen a Microsoft sign-in merely to check progress.** All native setup
+sessions closed; retain the private recovery receipts and inspect offline until
+the owner is ready for a single final, properly instrumented setup session.
+
+Notice migration0062 also requires the reviewed exact-table retention-helper
+prerequisite before hosted delivery. Do not weaken the trusted receiver,
+old-row/permission/evidence checks or owner approval gate. Nothing in the Admin
+or notice work authorizes an automatic PR merge or production deployment.
+
+## Prior invitation-email implementation notes (historical)
+
 Current work branch: `feat/invitation-email-20261105`, based on `bf3ca39`.
 PR35 is merged and the live app was verified at `bf3ca39`. This branch prepares
 Microsoft 365 invitation delivery from **ifield.notify@isurvix.com**; it is not
