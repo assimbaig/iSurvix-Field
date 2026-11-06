@@ -128,8 +128,9 @@ class SharedHeaderPageTests(TestCase):
         self.client.force_login(self.users[Profile.Roles.SUPER_ADMIN])
         result=self.client.get(reverse('governance_home'),{'view':'system'})
         self.assertEqual(result.status_code,200)
-        for destination in ('checklist_library','ai_settings_index','governance_audit','governance_reset','operations_status','support_index','update_center'):
+        for destination in ('checklist_wizard','notification_settings_index','ai_settings_index','governance_audit','governance_reset','operations_status','support_index','update_center'):
             with self.subTest(destination=destination):self.assertContains(result,'href="'+reverse(destination)+'"')
+        self.assertEqual(self.client.get(reverse('checklist_wizard')).status_code,200)
         self.assertContains(result,'action="'+reverse('governance_invite')+'"')
         for view in ('industries','clients','projects','sites'):
             self.assertContains(result,'href="?view='+view+'"')

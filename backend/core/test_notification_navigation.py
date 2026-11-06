@@ -20,6 +20,7 @@ class NotificationNavigationTests(TestCase):
         self.assertTrue(('href="' + reverse('notification_settings_index') + '"').encode() in response.content, 'System must link to notification settings')
         response = self.client.get(reverse('notification_settings_index'))
         self.assertContains(response, 'aria-current="page">System')
+        self.assertContains(response, '<span>Notification settings</span>', html=True)
 
     def test_company_admin_finds_own_settings_from_administration(self):
         self.client.force_login(self.admin)
