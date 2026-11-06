@@ -1,9 +1,9 @@
 // Synthetic CSS geometry check; authenticated routing/role checks live in Django tests.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright');
 const root=path.join(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,'backend/static/core/css',n),'utf8');
-const files=['style.css','platform_navigation.css','role_layout.css','enterprise.css','appearance.css','workspace_navigation.css','button_depth.css'];
+const files=['style.css','platform_navigation.css','role_layout.css','enterprise.css','appearance.css','workspace_navigation.css','button_depth.css','release_notice.css'];
 const nav={QUALITY_ENGINEER:['My reviews','Projects & sites','Overview','Review activity','Reports'],
- ADMIN:['Tasks','Overview','Your projects','Review queue','Reports','Administration','Checklists'],
+ ADMIN:['Tasks','Dashboard','Your projects','Review queue','Reports','Administration','Checklists'],
  TEAM_LEAD:['Tasks','Overview','Projects & sites','Review queue','Reports'],
  CLIENT:['Tasks','Overview','Projects & sites','Review queue','Reports'],ENGINEER:['My tasks'],
  SUPER_ADMIN:['Dashboard','Industries','Clients','Projects','Sites','Checklist Wizard']};

@@ -152,21 +152,30 @@ def workspace_context(request,**extra):
     role=role_for(actor)
     scope_projects=accessible_projects(actor).select_related('company','administrator','checklist_template').order_by('company__name','name')
     super_admin=is_super_admin(actor)
-    active_view=extra.get('active_view',request.GET.get('view','dashboard' if super_admin else 'my_work'))
+    from .admin_dashboard import dashboard_return_scope
+    dashboard_return=dashboard_return_scope(request)
+    active_view=extra.get('active_view',request.GET.get('view','dashboard' if super_admin or role==Profile.Roles.ADMIN else 'my_work'))
     if super_admin and active_view in {'my_work','administration','reviews','reports'}:active_view='dashboard'
     allowed_views={'dashboard','industries','clients','projects','sites'} if super_admin else {'my_work','projects','reviews','reports','administration'}
+    if role==Profile.Roles.ADMIN:allowed_views.add('dashboard')
     if active_view not in allowed_views:raise Http404()
-    selected_industry=request.GET.get('industry','')
+    admin_home=not super_admin and role==Profile.Roles.ADMIN and active_view=='dashboard'
+    if admin_home:
+        # The overview needs selector labels, not every template's field JSON.
+        scope_projects=scope_projects.select_related(None).select_related('company','administrator')
+    selected_industry=dashboard_return['industry'] if dashboard_return is not None else request.GET.get('industry','')
     if selected_industry and not IndustryCatalog.objects.filter(code=selected_industry).exists():raise Http404()
     if selected_industry:scope_projects=scope_projects.filter(industry=selected_industry)
-    selected=request.GET.get('project','')
+    selected=dashboard_return['project'] if dashboard_return is not None else request.GET.get('project','')
     if not selected and role in {Profile.Roles.ENGINEER,Profile.Roles.TEAM_LEAD,Profile.Roles.CLIENT,Profile.Roles.QUALITY_ENGINEER}:
         primary=scope_projects.filter(pk=getattr(actor.profile,'project_id',None)).first() or scope_projects.first()
         selected=str(primary.pk) if primary else ''
     if selected and selected!='all':
-        if not selected.isascii() or not selected.isdigit():
+        if not 1<=len(selected)<=19 or not selected.isascii() or not selected.isdigit():
             raise Http404()
-        chosen=get_object_or_404(scope_projects,pk=int(selected))
+        project_id=int(selected)
+        if not 0<project_id<=9223372036854775807:raise Http404()
+        chosen=get_object_or_404(scope_projects,pk=project_id)
         projects=scope_projects.filter(pk=chosen.pk)
     else:
         chosen=None
@@ -193,7 +202,7 @@ def workspace_context(request,**extra):
     if role==Profile.Roles.QUALITY_ENGINEER:
         surveys=surveys.filter(Q(governance_mode=Checklist.GovernanceMode.LEGACY,quality_reviewer=actor)|Q(governance_mode=Checklist.GovernanceMode.INDEPENDENT,review_policy__workflow_version=2,review_policy__l2_reviewer=actor))
         assignments=assignments.filter(checklist__in=surveys)
-    admin=is_super_admin(actor) or role==Profile.Roles.ADMIN
+    admin=super_admin or role==Profile.Roles.ADMIN
     if active_view=='administration' and not admin:raise PermissionDenied('Administration requires a scoped administrative role.')
     if active_view!='reviews':
         review_queue=Checklist.objects.none()
@@ -240,16 +249,16 @@ def workspace_context(request,**extra):
                 active_ids.add(profile.project_id)
             member.can_manage_account=super_admin or active_ids.issubset(actor_ids)
     context={'active_view':active_view,'selected_industry':selected_industry,'industry_choices':list(IndustryCatalog.objects.filter(code__in=accessible_projects(actor).values_list('industry',flat=True)).values_list('code','name')) if not super_admin else list(IndustryCatalog.objects.values_list('code','name')),'can_administer':admin,'review_queue':review_queue,'reports':surveys.filter(status=Checklist.Status.FINAL),'can_qualify':role==Profile.Roles.TEAM_LEAD,'role':role,'role_label':dict(Profile.Roles.choices).get(role,'Unassigned'),
-        'is_super_admin':is_super_admin(actor),'is_project_admin':role==Profile.Roles.ADMIN,
+        'is_super_admin':super_admin,'is_project_admin':role==Profile.Roles.ADMIN,
         'can_create_project':bool(role==Profile.Roles.ADMIN and not super_admin and not actor.profile.admin_industry_pending and actor.profile.admin_industry_id and actor.profile.admin_industry.is_active and company_id_for(actor)),
         'is_client':role==Profile.Roles.CLIENT,'can_client_approve':not super_admin and role in {Profile.Roles.ADMIN,Profile.Roles.CLIENT},
         'can_invite':admin,'can_assign':not super_admin and role in {Profile.Roles.ADMIN,Profile.Roles.TEAM_LEAD},
         'projects':projects,'scope_projects':scope_projects,'project_filter':scope_projects,'selected_project_id':str(chosen.pk) if chosen else '',
-        'scope_label':chosen.name if chosen else 'All assigned projects','companies':Company.objects.all() if is_super_admin(actor) else Company.objects.filter(pk=company_id_for(actor)),
+        'scope_label':chosen.name if chosen else 'All assigned projects','companies':Company.objects.all() if super_admin else Company.objects.filter(pk=company_id_for(actor)),
         'clientorg_form':ClientOrganizationForm(),'client_organization_form':ClientOrganizationForm(),'client_organizations':ClientOrganization.objects.all() if super_admin else ClientOrganization.objects.filter(company_id=company_id_for(actor),industry_id=getattr(actor.profile,'admin_industry_id',None)),'company_form':CompanyForm(),'surveys':surveys,'assignments':assignments,'invitations':invites,'members':members,
         'admin_industry_form':AdminIndustryForm(),
-        'project_form':ProjectForm(actor=actor) if role==Profile.Roles.ADMIN and active_view=='projects' else None,
-        'invite_form':InvitationForm(actor=actor) if admin and active_view==('dashboard' if super_admin else 'administration') else None,
+        'project_form':ProjectForm(actor=actor) if role==Profile.Roles.ADMIN and active_view in {'projects','dashboard'} else None,
+        'invite_form':InvitationForm(actor=actor) if admin and (active_view==('dashboard' if super_admin else 'administration') or admin_home) else None,
         'assignment_form':None,'members_page':members_page,'members_pagination':members_pagination,
         'members_search':request.GET.get('people_q','').strip()[:200],
         'members_search_filters':[(key,value) for key,value in request.GET.items() if key not in {'people_q','people_page','view'}]+[('view',active_view)]}
@@ -306,7 +315,7 @@ def workspace_context(request,**extra):
             elif role==Profile.Roles.ADMIN:
                 project.client_candidates=ClientOrganization.objects.filter(company_id=company_id_for(actor),industry__code=project.industry)
         context.update(projects=visible_projects,projects_pagination=project_navigation)
-    if not super_admin and not engineer_home:
+    if not super_admin and not engineer_home and not admin_home:
         # Summary figures describe the complete authorized/filter scope. Reuse
         # cached paginator counts where available; never count visible slices or
         # materialize hidden task collections just to display their totals.
@@ -326,11 +335,29 @@ def workspace_context(request,**extra):
         if active_view=='my_work' and not engineer_home:
             for work in context['assignments']:prepare_workspace_display(work.checklist)
     context.update(extra)
+    if admin_home:
+        from .admin_dashboard import build_admin_dashboard
+        context['admin_dashboard']=build_admin_dashboard(request,projects)
+        for key,prefix in [('project_form','ad-project-%s'),('clientorg_form','ad-client-%s'),('invite_form','ad-invite-%s')]:
+            if context.get(key) is not None:context[key].auto_id=prefix
+        if context.get('project_form') is not None:
+            field=context['project_form'].fields['checklist_template']
+            field.queryset=field.queryset.only('pk','name','version')
     return context
 
 
 def workspace_response(request,status=200,**context):
     super_admin=is_super_admin(request.user)
+    from .admin_dashboard import dashboard_return_scope
+    dashboard_return=dashboard_return_scope(request)
+    if dashboard_return is not None:
+        context.setdefault('active_view','dashboard')
+        for key,dialog in [('project_form','project'),('clientorg_form','client'),('invite_form','invite')]:
+            if key in context:
+                context['admin_dashboard_open_dialog']=dialog
+                break
+    if context.get('invite_url') and role_for(request.user)==Profile.Roles.ADMIN:
+        context['admin_dashboard_open_dialog']='invite'
     if status>=400 and 'active_view' not in context:
         error_views=([('industry_form','industries'),('project_form','projects'),
             ('invite_form','dashboard'),('admin_industry_form','dashboard')] if super_admin else
@@ -409,6 +436,9 @@ def projects(request):
               company_id=project.company_id,industry=project.industry,review_layers=project.review_layers,
               **change_details(request.user,'project',project.pk,None,snapshot_project(project),project=project))
     messages.success(request,'Project created.')
+    from .admin_dashboard import dashboard_return_url
+    dashboard_url=dashboard_return_url(request,created_project=project)
+    if dashboard_url:return redirect(dashboard_url)
     return redirect(reverse('governance_home')+'?view=projects&project='+str(project.pk))
 
 
@@ -771,7 +801,8 @@ def company(request):
         organization.save()
         audit(request.user,'client_organization_created',client_organization_id=organization.pk,company_id=organization.company_id,industry_id=organization.industry_id,name=organization.name,
               **change_details(request.user,'client_organization',organization.pk,None,snapshot_client_organization(organization),company_id=organization.company_id))
-    return redirect('governance_home')
+    from .admin_dashboard import dashboard_return_url
+    return redirect(dashboard_return_url(request) or reverse('governance_home'))
 
 
 @login_required(login_url='/login/')

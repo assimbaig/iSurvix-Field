@@ -1,0 +1,16 @@
+<dialog id="ifield-release-notice" class="release-notice" aria-labelledby="release-notice-title" aria-describedby="release-notice-version" data-release-id="{{ release_notice.release_id }}" data-cache-nonce="{{ release_notice.cache_nonce }}" data-actor-key="{{ release_notice.actor_key }}" data-ack-url="{{ release_notice.ack_url }}">
+  <header class="release-notice-header">
+    <div><p class="release-notice-kicker">iField update</p><h2 id="release-notice-title" tabindex="-1">{{ release_notice.title }}</h2><p class="release-notice-version" id="release-notice-version">{{ release_notice.version }} &middot; <time datetime="{{ release_notice.date }}">{{ release_notice.date }}</time></p></div>
+    <button type="button" data-release-close aria-label="Close for this login only" title="Close for this login only">&times;</button>
+  </header>
+  <ul class="release-notice-changes">{% for change in release_notice.changes %}<li>{{ change }}</li>{% endfor %}</ul>
+  <form id="release-notice-form" method="post" action="{{ release_notice.ack_url }}">
+    {% csrf_token %}
+    <label class="release-notice-preference" for="release-notice-remember"><input id="release-notice-remember" type="checkbox" checked> <span>Don't show this update again</span></label>
+    <p class="release-notice-help">This applies to this update only. New releases will appear again.</p>
+    {% if release_notice.storage_available == False %}<p class="release-notice-help" role="status">Saving preferences is temporarily unavailable. You can continue for this login.</p>{% endif %}
+    <p class="release-notice-status" data-release-status role="status" aria-live="polite"></p>
+    <p class="release-notice-error" data-release-error role="alert" hidden></p>
+    <footer><button type="button" data-release-session>Continue for this login</button><button type="submit" class="release-notice-primary" data-release-submit>Continue</button></footer>
+  </form>
+</dialog>

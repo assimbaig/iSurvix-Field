@@ -72,6 +72,10 @@ def _support_metadata_additions(before, after, database):
                 'status', 'attempts', 'available_at', 'lease_id', 'lease_expires_at',
                 'error_code', 'accepted_at', 'created_at', 'updated_at'}),
         }),
+        ({'0061_workflow_email_delivery', '0062_release_notice_acknowledgement'}, {
+            'releasenoticeacknowledgement': ('core_releasenoticeacknowledgement', 'release notice acknowledgement', {
+                'id', 'user_id', 'release_key', 'acknowledged_at'}),
+        }),
     ]
     models = {}
     required_migrations = set()
@@ -127,8 +131,59 @@ def _support_metadata_additions(before, after, database):
     return {'django_content_type': len(models), 'auth_permission': 4 * len(models)}
 
 
+def _validate_new_notice_table(before, after, database):
+    """Prove the reviewed notice addition even when metadata row deltas are zero.
+
+    An invalid allowance is not evidence of 'no additions'. Existing notice
+    tables still use the ordinary strict old-schema/row checks below. Older
+    supported upgrades without any notice table/metadata/migration are unchanged.
+    """
+    table = 'core_releasenoticeacknowledgement'
+    model = 'releasenoticeacknowledgement'
+    if table in before:
+        return
+    types = after.get('django_content_type', {})
+    type_columns = types.get('columns', [])
+    type_rows = [dict(zip(type_columns, row)) for row in types.get('rows', [])]
+    notice_types = [row for row in type_rows if row.get('app_label') == 'core' and row.get('model') == model]
+    required = {'0061_workflow_email_delivery', '0062_release_notice_acknowledgement'}
+    try:
+        with closing(sqlite3.connect(Path(database).absolute().as_uri() + '?mode=ro', uri=True)) as db:
+            applied = {row[0] for row in db.execute(
+                "select name from django_migrations where app='core' and name in (?,?)", sorted(required))}
+    except sqlite3.Error:
+        if table in after or notice_types:
+            raise ValueError('New release notice migration evidence is unavailable.') from None
+        return
+    if table not in after and not notice_types and '0062_release_notice_acknowledgement' not in applied:
+        return
+    value = after.get(table)
+    if (not value or value['primary'] != ['id'] or value['rows']
+            or set(value['columns']) != {'id', 'user_id', 'release_key', 'acknowledged_at'}
+            or applied != required):
+        raise ValueError('New release notice table or migration is not the reviewed empty addition.')
+    metadata_columns = {'django_content_type': {'id', 'app_label', 'model'},
+                        'auth_permission': {'id', 'name', 'content_type_id', 'codename'}}
+    for name, columns in metadata_columns.items():
+        if (name not in before or name not in after or before[name]['primary'] != ['id']
+                or after[name]['primary'] != ['id'] or set(before[name]['columns']) != columns
+                or set(after[name]['columns']) != columns):
+            raise ValueError('New release notice metadata cannot be verified.')
+    if len(notice_types) != 1 or type(notice_types[0].get('id')) is not int or notice_types[0]['id'] <= 0:
+        raise ValueError('New release notice content type is missing or invalid.')
+    type_id = notice_types[0]['id']
+    permission_rows = [dict(zip(after['auth_permission']['columns'], row)) for row in after['auth_permission']['rows']]
+    permissions = [row for row in permission_rows if row['content_type_id'] == type_id]
+    expected = {(f'Can {action} release notice acknowledgement', f'{action}_{model}')
+                for action in ('add', 'change', 'delete', 'view')}
+    if (len(permissions) != 4 or any(type(row['id']) is not int or row['id'] <= 0 for row in permissions)
+            or {(row['name'], row['codename']) for row in permissions} != expected):
+        raise ValueError('New release notice default permissions are missing or invalid.')
+
+
 def assert_retained(before, database):
     after = snapshot(database)
+    _validate_new_notice_table(before, after, database)
     metadata_additions = _support_metadata_additions(before, after, database)
     for table, original in before.items():
         current = after.get(table)
