@@ -62,7 +62,7 @@ class SharedHeaderContractTests(SimpleTestCase):
             'ADMIN':['Tasks','Dashboard','Your projects','Review queue','Reports','Administration','Checklists','AI Settings'],
             'TEAM_LEAD':['Tasks','Overview','Projects & sites','Review queue','Reports'],
             'CLIENT':['Tasks','Overview','Projects & sites','Review queue','Reports'],
-            'SUPER_ADMIN':['Dashboard','Industries','Clients','Projects','Sites','Checklist Wizard','AI Settings']}
+            'SUPER_ADMIN':['Dashboard','Companies','System']}
         for role,labels in expected.items():
             with self.subTest(role=role):
                 links=self.nav(role=role)
@@ -72,8 +72,10 @@ class SharedHeaderContractTests(SimpleTestCase):
                     self.assertEqual(parse_qs(urlsplit(dashboard['href']).query)['view'],['dashboard'])
                     checklist_link=next(link for link in links if link['text']=='Checklists')
                     self.assertEqual(checklist_link['href'],reverse('checklist_library'))
+                if role=='SUPER_ADMIN':
+                    self.assertEqual([parse_qs(urlsplit(link['href']).query).get('view') for link in links],[['dashboard'],['companies'],['system']])
                 settings_links=[link for link in links if link['href']==reverse('ai_settings_index')]
-                self.assertEqual(len(settings_links),1 if role in ('ADMIN','SUPER_ADMIN') else 0)
+                self.assertEqual(len(settings_links),1 if role=='ADMIN' else 0)
 
     def test_engineer_task_record_keeps_my_tasks_active(self):
         links=self.nav(role='ENGINEER',checklist=SimpleNamespace(project=SimpleNamespace(industry='telecom')))
@@ -120,3 +122,15 @@ class SharedHeaderPageTests(TestCase):
                     [l['text'] for l in HeaderLinks(responses[1].content.decode()).links])
                 self.assertEqual([l['text'] for l in HeaderLinks(responses[1].content.decode()).links
                     if l['active']=='page'],[])
+
+
+    def test_super_admin_system_retains_existing_administrative_actions(self):
+        self.client.force_login(self.users[Profile.Roles.SUPER_ADMIN])
+        result=self.client.get(reverse('governance_home'),{'view':'system'})
+        self.assertEqual(result.status_code,200)
+        for destination in ('checklist_library','ai_settings_index','governance_audit','governance_reset','operations_status','support_index','update_center'):
+            with self.subTest(destination=destination):self.assertContains(result,'href="'+reverse(destination)+'"')
+        self.assertContains(result,'action="'+reverse('governance_invite')+'"')
+        for view in ('industries','clients','projects','sites'):
+            self.assertContains(result,'href="?view='+view+'"')
+            with self.subTest(view=view):self.assertEqual(self.client.get(reverse('governance_home'),{'view':view}).status_code,200)

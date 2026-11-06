@@ -156,7 +156,7 @@ def workspace_context(request,**extra):
     dashboard_return=dashboard_return_scope(request)
     active_view=extra.get('active_view',request.GET.get('view','dashboard' if super_admin or role==Profile.Roles.ADMIN else 'my_work'))
     if super_admin and active_view in {'my_work','administration','reviews','reports'}:active_view='dashboard'
-    allowed_views={'dashboard','industries','clients','projects','sites'} if super_admin else {'my_work','projects','reviews','reports','administration'}
+    allowed_views={'dashboard','companies','system','industries','clients','projects','sites'} if super_admin else {'my_work','projects','reviews','reports','administration'}
     if role==Profile.Roles.ADMIN:allowed_views.add('dashboard')
     if active_view not in allowed_views:raise Http404()
     admin_home=not super_admin and role==Profile.Roles.ADMIN and active_view=='dashboard'
@@ -225,7 +225,7 @@ def workspace_context(request,**extra):
     members=[]
     members_page=None
     members_pagination=None
-    if admin and active_view==('dashboard' if super_admin else 'administration'):
+    if admin and (active_view in {'dashboard','system'} if super_admin else active_view=='administration'):
         roster=workspace_members(actor,projects,super_admin).select_related(
             'profile','profile__project','profile__company','profile__admin_industry').prefetch_related(
                 Prefetch('project_memberships',queryset=ProjectMembership.objects.select_related(
@@ -258,7 +258,7 @@ def workspace_context(request,**extra):
         'clientorg_form':ClientOrganizationForm(),'client_organization_form':ClientOrganizationForm(),'client_organizations':ClientOrganization.objects.all() if super_admin else ClientOrganization.objects.filter(company_id=company_id_for(actor),industry_id=getattr(actor.profile,'admin_industry_id',None)),'company_form':CompanyForm(),'surveys':surveys,'assignments':assignments,'invitations':invites,'members':members,
         'admin_industry_form':AdminIndustryForm(),
         'project_form':ProjectForm(actor=actor) if role==Profile.Roles.ADMIN and active_view in {'projects','dashboard'} else None,
-        'invite_form':InvitationForm(actor=actor) if admin and (active_view==('dashboard' if super_admin else 'administration') or admin_home) else None,
+        'invite_form':InvitationForm(actor=actor) if admin and ((active_view in {'dashboard','system'} if super_admin else active_view=='administration') or admin_home) else None,
         'assignment_form':None,'members_page':members_page,'members_pagination':members_pagination,
         'members_search':request.GET.get('people_q','').strip()[:200],
         'members_search_filters':[(key,value) for key,value in request.GET.items() if key not in {'people_q','people_page','view'}]+[('view',active_view)]}
@@ -287,7 +287,7 @@ def workspace_context(request,**extra):
         context['assignments']=WorkAssignment.objects.none()
         context['review_queue']=Checklist.objects.none()
         context['reports']=Checklist.objects.none()
-    if super_admin:
+    if super_admin and active_view=='clients':
         imported_ids=ClientOrganization.objects.exclude(legacy_company_id=None).values_list('legacy_company_id',flat=True)
         legacy_ids=[event.details.get('company_id') for event in GovernanceAudit.objects.filter(action='company_created') if isinstance(event.details,dict) and str(event.details.get('company_id','')).isdigit()]
         context['legacy_client_records']=Company.objects.filter(pk__in=legacy_ids,projects__isnull=True,profiles__isnull=True).exclude(pk__in=imported_ids).distinct()
@@ -335,6 +335,9 @@ def workspace_context(request,**extra):
         if active_view=='my_work' and not engineer_home:
             for work in context['assignments']:prepare_workspace_display(work.checklist)
     context.update(extra)
+    if super_admin and active_view in {'dashboard','companies','system'}:
+        from .superadmin_dashboard import build_superadmin_desk
+        context['superadmin_desk']=build_superadmin_desk(request)
     if admin_home:
         from .admin_dashboard import build_admin_dashboard
         context['admin_dashboard']=build_admin_dashboard(request,projects)
@@ -348,6 +351,7 @@ def workspace_context(request,**extra):
 
 def workspace_response(request,status=200,**context):
     super_admin=is_super_admin(request.user)
+    if super_admin and context.get('invite_url'):context.setdefault('active_view','system')
     from .admin_dashboard import dashboard_return_scope
     dashboard_return=dashboard_return_scope(request)
     if dashboard_return is not None:
@@ -360,7 +364,7 @@ def workspace_response(request,status=200,**context):
         context['admin_dashboard_open_dialog']='invite'
     if status>=400 and 'active_view' not in context:
         error_views=([('industry_form','industries'),('project_form','projects'),
-            ('invite_form','dashboard'),('admin_industry_form','dashboard')] if super_admin else
+            ('invite_form','system'),('admin_industry_form','system')] if super_admin else
             [('project_form','projects'),('invite_form','administration'),
              ('clientorg_form','administration')] if role_for(request.user)==Profile.Roles.ADMIN else [])
         for key,view in error_views:
