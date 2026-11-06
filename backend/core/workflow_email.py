@@ -97,6 +97,11 @@ def _stage_users(checklist, stage):
 def _kind(audit):
     if not isinstance(audit.details, dict):
         return None
+    from .custom_notifications import PROJECT_ACTIONS,COMPANY_ACTIONS
+    if audit.action in COMPANY_ACTIONS and audit.project_id is None:
+        return 'company_update'
+    if audit.action in PROJECT_ACTIONS:
+        return 'project_update'
     if audit.action in _SUBMISSIONS:
         return 'submission'
     if audit.action in _APPROVALS:
@@ -165,11 +170,19 @@ def queue_audit_event(source):
     if audit is None or not isinstance(audit.details, dict):
         return 0
     kind = _kind(audit)
+    if kind == 'company_update':
+        from .custom_notifications import queue_company_event
+        return queue_company_event(audit)
     if kind is None or audit.project_id is None:
         return 0
     if audit.action in {'task_assigned', 'task_assignment_changed'}:
         assignment = WorkAssignment.objects.filter(pk=audit.details.get('assignment_id'), project=audit.project).first()
         return queue_assignment(assignment, audit) if assignment else 0
+    if kind == 'project_update':
+        recipients=set(_project_users(audit.project,{Profile.Roles.ADMIN}).values_list('pk',flat=True))
+        target=audit.details.get('user_id') or audit.details.get('administrator_id')
+        if type(target) is int:recipients.add(target)
+        return sum(_queue(audit.project,user,event_key=f'audit:{audit.pk}',kind=kind,source_audit=audit) is not None for user in User.objects.filter(pk__in=recipients))
     checklist = Checklist.objects.select_related('project').filter(pk=audit.details.get('checklist_id'), project_id=audit.project_id).first()
     if checklist is None:
         return 0
@@ -250,10 +263,14 @@ def _visible_unstarted(user, project):
 def queue_daily_digests(now=None):
     now = (now or timezone.now()).astimezone(utc.utc)
     hour = getattr(settings, 'WORKFLOW_EMAIL_DAILY_HOUR', 15)
-    if not enabled() or not getattr(settings, 'WORKFLOW_EMAIL_DAILY_ENABLED', True) or now.hour < hour:
+    if not enabled() or not getattr(settings, 'WORKFLOW_EMAIL_DAILY_ENABLED', True):
         return 0
-    count = 0
-    for project in Project.objects.order_by('pk').iterator(chunk_size=50):
+    from .custom_notifications import queue_combined
+    from .models import CompanyNotificationSettings
+    count = queue_combined(now)
+    if now.hour < hour:return count
+    combined_companies=CompanyNotificationSettings.objects.filter(combined_daily_enabled=True).values_list('company_id',flat=True)
+    for project in Project.objects.exclude(company_id__in=combined_companies).order_by('pk').iterator(chunk_size=50):
         already = set(WorkflowEmailDelivery.objects.filter(kind='daily', project=project,
             digest_day=now.date()).values_list('recipient_id', flat=True))
         for user in _project_users(project).iterator(chunk_size=100):
@@ -266,6 +283,12 @@ def queue_daily_digests(now=None):
 
 
 def _fresh(delivery):
+    if delivery.kind == 'company_update':
+        from .custom_notifications import company_event_context
+        return company_event_context(delivery)
+    if delivery.kind == 'daily_combined':
+        from .custom_notifications import combined_context
+        return combined_context(delivery)
     if not delivery.project_id or not delivery.recipient_id:
         return None
     project = Project.objects.filter(pk=delivery.project_id).first()
@@ -278,7 +301,11 @@ def _fresh(delivery):
         return None
     if '\r' in user.email or '\n' in user.email:
         return None
+    if delivery.kind == 'project_update':
+        return (user, project, None) if GovernanceAudit.objects.filter(pk=delivery.source_audit_id,project=project).exists() else None
     if delivery.kind == 'daily':
+        from .models import CompanyNotificationSettings
+        if CompanyNotificationSettings.objects.filter(company_id=project.company_id,combined_daily_enabled=True).exists():return None
         return (user, project, None) if (_visible_checklists(user, project).exists()
             or _visible_unstarted(user, project).exists()) else None
     if delivery.kind == 'assignment' and delivery.assignment_id is not None:
@@ -316,8 +343,15 @@ def _report_url(user, checklist, asset):
     return reverse('survey_processing_output', args=[checklist.pk, asset.pk, 0, 'pdf'])
 
 
-def _message(delivery, user, project, checklist):
+def _default_message(delivery, user, project, checklist):
     origin = _public_origin()
+    if delivery.kind == 'daily_combined':
+        from .custom_notifications import combined_message
+        return combined_message(delivery,user)
+    if delivery.kind == 'company_update':
+        return 'Company account or client change', '\n'.join(['A company administrative action was recorded.',f'Company: {_compact(delivery.company.name)}',f'Action: {_compact(delivery.source_audit.action)}','Open company records (sign-in required): '+origin+reverse('governance_home'),'This notification does not change permissions or approve engineering work.'])
+    if delivery.kind == 'project_update':
+        return 'Project or access change ? '+_compact(project.name,100), '\n'.join(['An administrative project action was recorded.',f'Project: {_compact(project.name)}',f'Action: {_compact(delivery.source_audit.action)}','Open permitted project records: '+origin+reverse('governance_home')+'?project='+str(project.pk),'This notification does not change permissions or approve engineering work.'])
     if delivery.kind == 'daily':
         rows = _visible_checklists(user, project)
         counts = {entry['status']: entry['n'] for entry in rows.values('status').annotate(n=Count('pk'))}
@@ -362,6 +396,12 @@ def _message(delivery, user, project, checklist):
                 body += ['', 'Approved checklist workbook:', origin + reverse('custom_checklist_download', args=[checklist.pk])]
     body += ['', 'This notification does not change or approve engineering work.']
     return title + ' — ' + _compact(checklist.site_id or checklist.pk, 100), '\n'.join(body)
+
+
+def _message(delivery,user,project,checklist):
+    from .custom_notifications import custom_message
+    subject,body=_default_message(delivery,user,project,checklist)
+    return custom_message(delivery,user,project,checklist,subject,body)
 
 
 def _finish(delivery, status, code=''):

@@ -21,11 +21,26 @@ def _owner(request):
         raise PermissionDenied('Only the platform owner can manage company onboarding.')
 
 
-def _context(**kwargs):
+def _context(request, **kwargs):
     application = kwargs.get('application')
     if application and application.invitation_id:
         kwargs['invitation_email_status'] = application.invitation.email_delivery_label
-    return {'active_view': 'administration', **kwargs}
+    return {'active_view': 'administration', 'desk_modal': _modal(request), **kwargs}
+
+
+def _modal(request):
+    return request.GET.get('desk_modal') == '1' or request.POST.get('desk_return') == 'companies'
+
+
+def _modal_return_error(request):
+    if 'desk_return' in request.POST and request.POST['desk_return'] != 'companies':
+        return HttpResponse('Unknown onboarding return context.', status=400)
+    return None
+
+
+def _detail_redirect(request, application):
+    url=reverse('company_onboarding_detail',args=[application.pk])
+    return redirect(url + ('?desk_modal=1' if _modal(request) else ''))
 
 
 @login_required
@@ -35,7 +50,7 @@ def index(request):
     _owner(request)
     applications = CompanyApplication.objects.select_related('industry', 'company', 'invitation')
     page = Paginator(applications, 30).get_page(request.GET.get('page'))
-    return render(request, 'onboarding/index.html', _context(page=page))
+    return render(request, 'onboarding/index.html', _context(request, page=page))
 
 
 @login_required
@@ -44,7 +59,9 @@ def index(request):
 @guarded_write
 def apply(request):
     _owner(request)
-    if request.method == 'POST' and set(request.POST) - {'csrfmiddlewaretoken', 'request_key', 'name', 'email', 'industry'}:
+    invalid_return=_modal_return_error(request)
+    if invalid_return is not None:return invalid_return
+    if request.method == 'POST' and set(request.POST) - {'csrfmiddlewaretoken', 'request_key', 'name', 'email', 'industry', 'desk_return'}:
         return HttpResponse('Application intake cannot set account or company authority.', status=400)
     form = CompanyApplicationForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -54,8 +71,8 @@ def apply(request):
             form.add_error(None, error)
         else:
             messages.success(request, 'Application recorded. Review it before provisioning a company.')
-            return redirect('company_onboarding_detail', application_id=application.pk)
-    return render(request, 'onboarding/apply.html', _context(form=form), status=400 if request.method == 'POST' else 200)
+            return _detail_redirect(request, application)
+    return render(request, 'onboarding/apply.html', _context(request, form=form), status=400 if request.method == 'POST' else 200)
 
 
 @login_required
@@ -64,7 +81,7 @@ def apply(request):
 def detail(request, application_id):
     _owner(request)
     application = get_object_or_404(CompanyApplication.objects.select_related('industry', 'company', 'invitation', 'reviewed_by'), pk=application_id)
-    return render(request, 'onboarding/detail.html', _context(application=application))
+    return render(request, 'onboarding/detail.html', _context(request, application=application))
 
 
 @login_required
@@ -73,8 +90,10 @@ def detail(request, application_id):
 @guarded_write
 def action(request, application_id):
     _owner(request)
+    invalid_return=_modal_return_error(request)
+    if invalid_return is not None:return invalid_return
     application = get_object_or_404(CompanyApplication, pk=application_id)
-    if set(request.POST) - {'csrfmiddlewaretoken', 'action', 'review_note'}:
+    if set(request.POST) - {'csrfmiddlewaretoken', 'action', 'review_note', 'desk_return'}:
         return HttpResponse('Onboarding authority comes from the saved application.', status=400)
     form = CompanyApplicationActionForm(request.POST)
     token = None
@@ -92,7 +111,7 @@ def action(request, application_id):
         else:
             if token:
                 invite_url = request.build_absolute_uri(reverse('governance_accept_invite', args=[token]))
-                return render(request, 'onboarding/detail.html', _context(application=application, invite_url=invite_url))
+                return render(request, 'onboarding/detail.html', _context(request, application=application, invite_url=invite_url))
             messages.success(request, 'Saved application status: ' + application.get_status_display() + '.')
-            return redirect('company_onboarding_detail', application_id=application.pk)
-    return render(request, 'onboarding/detail.html', _context(application=application, action_form=form), status=400)
+            return _detail_redirect(request, application)
+    return render(request, 'onboarding/detail.html', _context(request, application=application, action_form=form), status=400)

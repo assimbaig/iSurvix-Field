@@ -17,3 +17,6 @@ httpcore[asyncio]==1.0.9
 # Local PDF-to-page/text conversion. No hosted PDF/OCR service or API key.
 pypdf==6.21.4
 pypdfium2==5.14.0
+
+# Reproducible company notification business-day time zones (also on Windows).
+tzdata==2026.5

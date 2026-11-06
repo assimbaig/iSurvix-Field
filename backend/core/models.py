@@ -587,3 +587,5 @@ from .support_models import SupportCase, SupportEvent  # noqa: E402,F401
 from .invitation_email_models import InvitationEmailDelivery  # noqa: E402,F401
 from .workflow_email_models import WorkflowEmailDelivery  # noqa: E402,F401
 from .release_notice_models import ReleaseNoticeAcknowledgement  # noqa: E402,F401
+
+from .custom_notification_models import CompanyNotificationSettings  # noqa: E402,F401

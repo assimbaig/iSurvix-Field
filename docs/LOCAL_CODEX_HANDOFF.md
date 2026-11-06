@@ -12,7 +12,40 @@ When this is the owner's working PC, read `.local/hostinger-deploy/STATE.json`
 and `.local/ACTIVE_CODEX_STATE.json` for current private operational details.
 These ignored files and all credentials/backups must remain outside Git.
 
-## Current source and delivery
+## Current work: Super Admin desk and notification controls
+
+The owner selected the Company Management Desk and authorized implementation.
+Branch `feat/superadmin-company-desk-20261106`, draft PR #40, prepares V1.2 Beta.
+It reuses existing governance/onboarding services, real saved records and
+Company → Project → Site/task → Submission history navigation. Independent
+saved-record browser checks and security tests passed; consult the PR and local
+test receipts for final regression results rather than treating this note as
+proof that every release check passed.
+
+The owner subsequently requested company-customizable action messages and a
+combined end-of-day notification report. Its implementation is integrated into
+PR #40 from the separately developed commit a4ed24d. The additive migration 0064
+requires exact retained-data/schema verification;
+never bypass the trusted upgrade gate or apply operational migrations merely
+because a migration file exists.
+
+PR #39 is merged and live at source `8b39decc28638f19fc7ab584e6ebbe97238fb46a`.
+Its first deployment safely rolled back because the installed trusted helper
+lacked migration 0063 support. Reviewed helper/controller installation followed
+by the guarded retry passed; preserve its helper checkpoint and runtime proof.
+
+Email was explicitly enabled by the owner on 6 November 2026. Microsoft returns
+canonical text `True`/`False` for native scope checks; the protected operator now
+parses only those exact strings or booleans. Target-mailbox and outside-mailbox
+checks passed, the owner confirmed the controlled inbox test, live application
+authentication passed and the supervised worker was verified running. Private
+activation receipts are under `.local/private/email/`, with server configuration
+checkpoint `/var/lib/isurvix-delivery/email-activation-20261106`. Do not print
+credentials, recreate the valid grant or reopen administrator sign-in merely
+to inspect progress. Custom notification controls remain development work until
+their reviewed release is installed.
+
+## Previous source and delivery
 
 Current work branch: `feat/admin-company-overview-20261106`, based on merged
 PR36 commit `980d786`. The owner selected Company overview option A after three

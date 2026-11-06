@@ -1,6 +1,7 @@
 """The real shared shell exposes company AI administration only to its roles."""
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase
+from django.urls import reverse
 
 
 class AISettingsNavigationTests(SimpleTestCase):
@@ -9,8 +10,15 @@ class AISettingsNavigationTests(SimpleTestCase):
             with self.subTest(role=role):
                 html = render_to_string('dashboards/_primary_navigation.html', {
                     'role_design': {'role': role}, 'active_view': 'ai_settings'})
-                self.assertIn('>AI Settings</a>', html)
-                self.assertIn('aria-current="page">AI Settings', html)
+                if role=='ADMIN':
+                    self.assertIn('>AI Settings</a>', html)
+                    self.assertIn('aria-current="page">AI Settings', html)
+                else:
+                    self.assertIn('aria-current="page">System',html)
+                    self.assertIn('href="'+reverse('governance_home')+'?view=system"',html)
+                    system=render_to_string('dashboards/_superadmin_desk_system.html',{})
+                    self.assertIn('href="'+reverse('ai_settings_index')+'"',system)
+                    self.assertIn('AI Settings',system)
 
     def test_operational_roles_do_not_get_company_configuration_actions(self):
         for role in ('ENGINEER', 'QUALITY_ENGINEER', 'TEAM_LEAD', 'CLIENT'):

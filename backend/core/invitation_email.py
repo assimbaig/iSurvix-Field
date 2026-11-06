@@ -188,7 +188,9 @@ def process_next_email():
                 f'Create your account using this private, single-use link:\n{link}\n\n'
                 f'This invitation expires at {invitation.expires_at:%Y-%m-%d %H:%M UTC}.\n'
                 'If you did not expect this invitation, contact the person who invited you.')
-        GraphMailClient().send(invitation.email, 'Your iSurvix iField invitation', body)
+        from .custom_notifications import custom_invitation_message
+        subject,body=custom_invitation_message(delivery,invitation,'Your iSurvix iField invitation',body,link)
+        GraphMailClient().send(invitation.email, subject, body)
     except NotificationEmailError as error:
         status = 'uncertain' if error.uncertain else (
             'queued' if error.retryable and delivery.attempts < MAX_ATTEMPTS else 'failed')

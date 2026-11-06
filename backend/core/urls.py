@@ -9,6 +9,7 @@ from .private_files import checklist_file
 from .release_notice import acknowledge as acknowledge_release_notice
 
 urlpatterns = [
+    path('governance/notification-settings/', include('core.custom_notification_urls')),
     path('release-notices/ack/',acknowledge_release_notice,name='release_notice_acknowledge'),
     path('support/', include('core.support_urls')),
     path('ops/updates/', include('core.update_urls')),

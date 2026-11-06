@@ -137,10 +137,17 @@ class AuditPerformanceTests(TestCase):
         self.assertEqual(error.status_code,400)
         next_url=error.context['members_pagination']['next_url']
         self.assertTrue(next_url.startswith(reverse('governance_home')+'?'),next_url)
-        self.assertIn('view=dashboard',next_url)
-        self.assertEqual(self.client.get(next_url).status_code,200)
+        self.assertIn('view=system',next_url)
+        following=self.client.get(next_url)
+        self.assertEqual(following.status_code,200)
+        self.assertEqual(following.context['active_view'],'system')
+        self.assertEqual(following.context['members_page'].number,2)
+        self.assertFalse({member.pk for member in error.context['members']} &
+                         {member.pk for member in following.context['members']})
         self.assertContains(error,'action="'+reverse('governance_home')+'"',status_code=400)
-        self.assertContains(error,'name="view" value="dashboard"',status_code=400)
+        self.assertContains(error,'name="view" value="system"',status_code=400)
+        self.assertIn('email',error.context['invite_form'].errors)
+        self.assertContains(error,'Enter a valid email address.',status_code=400)
 
     def test_display_snapshot_does_not_replace_fresh_workflow_authority(self):
         from .workflow_service import workflow_stage
