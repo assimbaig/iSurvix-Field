@@ -585,8 +585,11 @@ def render_drawing_set(revision, payload, released=False, actor=None):
     for sheet in manifest.get('sheets', []):
         files.extend([sheet.get('dxf'), sheet.get('preview')])
     manifest['file_hashes'] = {str(path): hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in files if path and Path(path).is_file()}
-    return SurveyDrawingSet.objects.create(revision=revision, edition=edition, released=released,
-        review_digest=signature, geometry=geometry, manifest=manifest)
+    # Persist the output and its notification together; rendering/files remain
+    # outside this short writer transaction.
+    with transaction.atomic():
+        return SurveyDrawingSet.objects.create(revision=revision, edition=edition, released=released,
+            review_digest=signature, geometry=geometry, manifest=manifest)
 
 
 def process_next(*,configured_providers=False):

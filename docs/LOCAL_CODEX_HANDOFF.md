@@ -14,7 +14,50 @@ These ignored files and all credentials/backups must remain outside Git.
 
 ## Current source and delivery
 
-Current follow-up branch: `feat/hostinger-trusted-push-20261105`.
+Current work branch: `feat/invitation-email-20261105`, based on `bf3ca39`.
+PR35 is merged and the live app was verified at `bf3ca39`. This branch prepares
+Microsoft 365 invitation delivery from **ifield.notify@isurvix.com**; it is not
+deployed or activated. See `docs/development/INVITATION_EMAIL.md`.
+The shared mailbox and single-tenant registration exist. Private registration
+details/credentials are under `.local/private/email/`; do not print or commit them.
+Live Microsoft application authentication now passes with the replacement Value
+saved privately. Do not ask the owner to paste a secret into chat. The actual
+guarded Exchange administrator sign-in worked; a permission-binding conflict
+still needs read-only inspection and positive/negative mailbox-scope verification.
+Recorded partial progress is not proof that a tenant change did not occur.
+No real invitation email was sent during implementation. The owner approved
+EM-S1/EM-S2 and local setup-tool EM-S3 repairs; independent security retests passed.
+Earlier holds below remain separate. Private evidence and final-run status:
+`.local/email-configuration-20261105/STATE.json`.
+Baseline04dd local regression:1897 backend tests,1891 passed/6 platform skips;
+105 isolated Linux checks passed,21 frontend scripts passed with installed Edge,
+and12 independent saved-record/11 actual browser checks passed. Both approved
+Low findings were fixed and independently retested. Microsoft token
+authentication passes; inbox delivery is not verified. All four04dd GitHub checks
+passed. Those results do not cover newer uncommitted workflow-notification work.
+The two reviewed04dd trusted helpers were checkpointed and installed on the VPS;
+policy/runtime/application version remained unchanged. A private UID10001/0400
+credential is staged, with permitted/denied reader checks; mail remains disabled.
+
+The owner expanded notifications to task/reviewer assignment, submission,
+approval/rejection, daily summaries and authorized full-report links. Additive
+migration0061 and the shared background worker implement this extension. The first
+full Windows run passed1956 tests with6 platform skips; independent workflow QA
+passed23 checks and separate notification security review passed19 checks. A final
+combined run/CI must include those added security regressions. See
+`docs/development/WORKFLOW_EMAIL_NOTIFICATIONS.md`. The current operational local
+database is now0061 after a coherent-copy migration proof and strict retained-row
+verification. The new outbox is empty and local email remains disabled. All14,354
+policy-retained rows across76 tables matched before/after; excluded maintenance
+tables follow the documented retention policy. The pre0061 backup is private.
+Do not deploy this candidate before exact-source release verification and owner
+approval. Recovery checkpoint:
+`.local/backups/workflow-email-20261105T203601Z` (verified source bundle/coherent DB).
+Before a0061 hosted upgrade, install the reviewed candidate retention helper;
+the currently installed helper admits0060 only. Keep owner review, strict retained
+rows/permissions/evidence checks and the existing two-service runtime.
+
+Previous follow-up branch: `feat/hostinger-trusted-push-20261105`.
 PR #34 (https://github.com/assimbaig/iSurvix-Field/pull/34) is merged. Its
 application release `dab9c55` was installed by the actual approved GitHub/VPS
 delivery run, with trusted HTTPS/readiness and provenance confirmed.
@@ -46,6 +89,10 @@ Corporate shared-hosting publication is separate from VPS application delivery.
 ## Local records and recovery
 
 Local database is `.local/survey.sqlite3`; originals are `.local/media/`.
+This task added local migration0060 after a disposable-copy proof. All14,490
+existing rows across79 prior tables were retained; the new outbox is empty.
+Checkpoint: `.local/backups/email-configuration-20261105-182253` contains the
+verified pre-task database and source bundle. Original evidence was not changed.
 The existing database was upgraded from core0053 to0059 after a disposable-copy
 proof. All 14,434 prior rows/old column values across69 tables were retained.
 All 3,537 original media files were compared byte-for-byte by SHA256 against

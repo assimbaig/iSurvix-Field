@@ -197,3 +197,19 @@ LOGGING['handlers']['safe_server_console'] = {
 LOGGING['loggers']['django.server'] = {
     'handlers': ['safe_server_console'], 'level': 'INFO', 'propagate': False,
 }
+# Invitation email is explicitly enabled only after Microsoft 365 authorization.
+DEFAULT_FROM_EMAIL = 'iSurvix iField Notifications <ifield.notify@isurvix.com>'
+NOTIFICATION_EMAIL_ENABLED = os.environ.get('ISURVIX_NOTIFICATION_EMAIL_ENABLED', 'False') == 'True'
+NOTIFICATION_EMAIL_CREDENTIALS_FILE = os.environ.get('ISURVIX_NOTIFICATION_CREDENTIALS_FILE', '')
+NOTIFICATION_EMAIL_PUBLIC_ORIGIN = os.environ.get('ISURVIX_NOTIFICATION_PUBLIC_ORIGIN', 'https://app.isurvix.com')
+# The common mail switch controls invitations and workflow notifications together.
+# Operators can separately suspend workflow mail or the daily digest.
+WORKFLOW_NOTIFICATION_EMAIL_ENABLED = NOTIFICATION_EMAIL_ENABLED and os.environ.get('ISURVIX_WORKFLOW_NOTIFICATION_EMAIL_ENABLED', 'True') == 'True'
+WORKFLOW_EMAIL_DAILY_ENABLED = os.environ.get('ISURVIX_WORKFLOW_EMAIL_DAILY_ENABLED', 'True') == 'True'
+try:
+    WORKFLOW_EMAIL_DAILY_HOUR = int(os.environ.get('ISURVIX_WORKFLOW_EMAIL_DAILY_HOUR_UTC', '15'))
+    if not 0 <= WORKFLOW_EMAIL_DAILY_HOUR <= 23:
+        raise ValueError
+except ValueError:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured('ISURVIX_WORKFLOW_EMAIL_DAILY_HOUR_UTC must be an integer from 0 to 23') from None

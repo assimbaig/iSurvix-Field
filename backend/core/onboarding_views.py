@@ -22,6 +22,9 @@ def _owner(request):
 
 
 def _context(**kwargs):
+    application = kwargs.get('application')
+    if application and application.invitation_id:
+        kwargs['invitation_email_status'] = application.invitation.email_delivery_label
     return {'active_view': 'administration', **kwargs}
 
 

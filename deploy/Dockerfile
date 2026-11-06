@@ -25,4 +25,4 @@ USER 10001:10001
 ENV DJANGO_SETTINGS_MODULE=checklist.settings_staging ISURVIX_DATA_ROOT=/data ISURVIX_RELEASE_FILE=/app/RELEASE
 WORKDIR /app/backend
 EXPOSE 8000
-CMD ["gunicorn", "checklist.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--worker-class", "gthread", "--threads", "4", "--timeout", "120", "--worker-tmp-dir", "/tmp", "--access-logfile", "/dev/null", "--error-logfile", "-"]
+CMD ["python", "/app/deploy/web_runtime.py"]

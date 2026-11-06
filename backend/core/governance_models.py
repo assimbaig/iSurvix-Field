@@ -4,6 +4,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 class ProjectInvitation(models.Model):
+    @property
+    def email_delivery_label(self):
+        from .invitation_email import delivery_status
+        return delivery_status(self)
+
     company=models.ForeignKey('core.Company',null=True,blank=True,on_delete=models.PROTECT,related_name='administration_invitations')
     admin_industry=models.ForeignKey('core.IndustryCatalog',null=True,blank=True,on_delete=models.PROTECT,related_name='admin_invitations')
     token_hash=models.CharField(max_length=64,unique=True)

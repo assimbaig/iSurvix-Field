@@ -41,6 +41,7 @@ def guarded_write(view):
     return wrapped
 
 
+@transaction.atomic
 def audit(actor,action,project=None,**details):
     return GovernanceAudit.objects.create(actor=actor,actor_name=getattr(actor,'username',''),action=action,project=project,details=details)
 
@@ -211,7 +212,7 @@ def workspace_context(request,**extra):
     else:review_queue=Checklist.objects.none()
     invites=(ProjectInvitation.objects.all() if super_admin else ProjectInvitation.objects.filter(
         Q(company_id=company_id_for(actor))|Q(company__isnull=True),project__in=projects
-    )).select_related('project','company','created_by') if admin else ProjectInvitation.objects.none()
+    )).select_related('project','company','created_by','email_delivery') if admin else ProjectInvitation.objects.none()
     members=[]
     members_page=None
     members_pagination=None
@@ -431,7 +432,8 @@ def invite(request):
             return workspace_response(request,status=400,invite_form=form)
         data=form.cleaned_data
         issue_guard(request.user,data['project'],data['role'],data.get('company'),data.get('admin_industry'))
-        token=secrets.token_urlsafe(32)
+        from .invitation_email import prepare_invitation_token, queue_invitation_email
+        token,delivery_id=prepare_invitation_token()
         now=timezone.now()
         pending=ProjectInvitation.objects.filter(email__iexact=data['email'],project=data['project'],accepted_at__isnull=True,revoked_at__isnull=True)
         if not data['project']:pending=pending.filter(company=data.get('company'))
@@ -439,8 +441,10 @@ def invite(request):
         invitation=ProjectInvitation.objects.create(token_hash=hashlib.sha256(token.encode()).hexdigest(),email=data['email'],role=data['role'],admin_industry=data.get('admin_industry') if data['role']==Profile.Roles.ADMIN else None,company=data.get('company'),project=data['project'],created_by=request.user,expires_at=now+timedelta(hours=72))
         audit(request.user,'invitation_created',data['project'],invitation_id=invitation.pk,email=data['email'],role=data['role'],
               **change_details(request.user,'invitation',invitation.pk,None,snapshot_invitation(invitation),project=data['project'],company_id=invitation.company_id))
+        queue_invitation_email(invitation,delivery_id)
     # Raw bearer token is shown once, never persisted in session, messages or audit.
-    return workspace_response(request,invite_url=request.build_absolute_uri(reverse('governance_accept_invite',args=[token])))
+    return workspace_response(request,invite_url=request.build_absolute_uri(reverse('governance_accept_invite',args=[token])),
+        invitation_email_status=invitation.email_delivery_label)
 
 
 def invitation_for(token):

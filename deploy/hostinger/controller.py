@@ -388,6 +388,14 @@ def _health_body(raw,release):
 def validate_compose(config,environment=None):
     if not isinstance(config,dict) or set(config.get('services',{}))!={'web','proxy'}:raise DeliveryError('runtime_services_policy')
     allowed={'web':{'/data','/run/isurvix-config/ifield_settings.py'},'proxy':{'/etc/nginx/nginx.conf','/data/static','/tls'}}
+    mail_target='/run/private/ifield-notification.json'
+    mail_source='/etc/isurvix-staging/ifield-notification.json'
+    web_environment=config['services']['web'].get('environment',{})
+    if not isinstance(web_environment,dict):raise DeliveryError('runtime_environment_policy')
+    mail_enabled=web_environment.get('ISURVIX_NOTIFICATION_EMAIL_ENABLED')=='True'
+    if mail_enabled:
+        if web_environment.get('ISURVIX_NOTIFICATION_CREDENTIALS_FILE')!=mail_target:raise DeliveryError('runtime_mail_credential_policy')
+        allowed['web'].add(mail_target)
     for name,user in [('web','10001:10001'),('proxy','101:101')]:
         value=config['services'][name];consumer._image(value.get('image'))
         if value.get('user')!=user or value.get('read_only') is not True or set(value.get('cap_drop',[]))!={'ALL'} or not any(option in value.get('security_opt',[]) for option in ('no-new-privileges:true','no-new-privileges')) or value.get('privileged') or value.get('cap_add') or value.get('devices') or value.get('network_mode')=='host' or value.get('pid')=='host':raise DeliveryError('runtime_privilege_policy')
@@ -396,10 +404,12 @@ def validate_compose(config,environment=None):
         for volume in value.get('volumes',[]):
             if volume.get('type')!='bind' or volume.get('target') not in allowed[name] or volume['target'] in targets or (volume['target']!='/data' and volume.get('read_only') is not True):raise DeliveryError('runtime_mount_policy')
             targets.add(volume['target'])
+            if volume['target']==mail_target and volume.get('source')!=mail_source:raise DeliveryError('runtime_mail_credential_policy')
             if environment:
                 expected={'/data':environment['ISURVIX_DATA_DIRECTORY'],'/data/static':str(Path(environment['ISURVIX_DATA_DIRECTORY'])/'static'),'/tls':environment['ISURVIX_TLS_DIRECTORY'],'/etc/nginx/nginx.conf':environment['ISURVIX_NGINX_CONFIG']}.get(volume['target'])
                 if expected is not None and volume.get('source')!=expected:raise DeliveryError('runtime_mount_source_changed')
         if '/data' not in targets and name=='web' or name=='proxy' and targets!=allowed['proxy']:raise DeliveryError('runtime_required_mount_missing')
+        if name=='web' and mail_enabled and mail_target not in targets:raise DeliveryError('runtime_mail_credential_policy')
     ports=config['services']['proxy'].get('ports',[])
     actual={(p.get('host_ip'),str(p.get('published')),p.get('target'),p.get('protocol','tcp')) for p in ports}
     expected={('127.0.0.1','8080',8080,'tcp'),('127.0.0.1','8443',8443,'tcp'),('0.0.0.0','443',8443,'tcp')}
