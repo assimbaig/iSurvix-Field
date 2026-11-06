@@ -15,6 +15,8 @@ NOTES={
         'Company and application tables show saved records, current status and the next available administrative action.',
         'Company, project, site/task and submission history navigation keeps the selected record in context.',
         'The company onboarding wizard keeps application review, provisioning and Admin invitation as separate steps.',
+        'Company Admins can customize action-email subjects and messages using safe placeholders.',
+        'Combined daily notification reports support company time zones, configurable cut-off times and recovery of missed business days.',
         'Existing company boundaries, technical approval rules and administrative tools remain in place.',
     ),
 }

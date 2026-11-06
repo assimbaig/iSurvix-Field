@@ -23,9 +23,9 @@ test receipts for final regression results rather than treating this note as
 proof that every release check passed.
 
 The owner subsequently requested company-customizable action messages and a
-combined end-of-day notification report. That work is isolated in
-`.local/worktrees/custom-notifications-20261106` until integration into PR #40.
-Its additive migration 0064 requires exact retained-data/schema verification;
+combined end-of-day notification report. Its implementation is integrated into
+PR #40 from the separately developed commit a4ed24d. The additive migration 0064
+requires exact retained-data/schema verification;
 never bypass the trusted upgrade gate or apply operational migrations merely
 because a migration file exists.
 
