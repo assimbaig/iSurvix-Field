@@ -12,7 +12,31 @@ When this is the owner's working PC, read `.local/hostinger-deploy/STATE.json`
 and `.local/ACTIVE_CODEX_STATE.json` for current private operational details.
 These ignored files and all credentials/backups must remain outside Git.
 
-## Current work: approved R01 repair and V1.3.1 Beta release
+## Current work: verified artifact-attempt binding for V1.3.1 Beta
+
+PR45 is merged. The approved R01 controller and0067-compatible verifier are
+installed and independently hash-verified. The application remains on healthy
+PR42/source017fa1d; no PR45 operational migration or activation occurred.
+
+The first PR45 delivery stopped safely because the deployment metadata channel
+still named PR40/source17a699a. The actual completed PR42 journal, runtime health
+and receipt were checked, and the existing channel.from_receipt validator
+reconciled that channel at commit781bd16. Do not waive the supported-source gate.
+
+The same-source upgrade rehearsal then passed against017fa1d, but shared
+assembly selected an older candidate archive and a newer verification report
+from different attempts of the same run. Numeric artifact IDs are not reliable
+chronological ordering. Old artifacts and their evidence remain preserved.
+
+Continue in `.local/w46-artifact`, branch
+`release/verified-artifact-attempt-20261107`, based on merged0414c2d. The focused
+repair selects exact unique artifact IDs within the verified successful customer
+job attempt, preserving source/run bindings and existing content verification.
+No application feature, model, role, schema, controller or version change is
+needed; the unreleased target stays V1.3.1 Beta. Test and independently review
+this pipeline repair, then run fresh exact-source release gates before delivery.
+
+## Previous work: approved R01 repair and V1.3.1 Beta release
 
 The owner approved publishing the PR44 application and separately approved the
 High-severity R01 repair on7November2026. Continue in the dedicated
