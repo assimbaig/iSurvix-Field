@@ -228,3 +228,8 @@ No worker was started by the website/delivery task. Review native runtime and
 scoped worker credentials before starting inference. Private login details and
 exact live Compose paths are referenced only in the owner's ignored state and
 handover, never in public source.
+
+## Latest verification supplement
+
+- Second full backend run:2196 tests,6skips, only2 failing subchecks of AR-Q1. It started before the final AR-Q2 test additions/fix; after the approved logging fix,50affectedregressions and independent actual-handler checks passed. A new complete green run is still required after AR-Q1 approval/repair.
+- DraftPR44 contains application work only. PR42 is a separate documentation/audit PR describing recovery findingR01; do not merge either automatically or treat R01 as repaired. Review deployment applicability separately before any release.

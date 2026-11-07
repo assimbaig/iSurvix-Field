@@ -40,3 +40,11 @@ AR-Q1 Medium: per-IP-denied recovery requests can still consume the shared hourl
 ## Coverage boundaries
 
 These are curated permission-scoped Excel exports, not raw operational database backups. No passwords/tokens/provider configuration/private support-repair data or original evidence blobs are included. Platform-owner exports remain administrative; Client exports respect sharing/release restrictions and exclude raw mutable inventories/internal review history. Older releases are not invented to populate history.
+
+## Final review status before approval hold
+
+- Full backend run2196tests:6skips; only2subcheck failures in the one AR-Q1 regression. No other failures in that run. It preceded the final AR-Q2 logging changes;50affectedchecks passed afterward.
+- AR-Q2Medium was separately approved, fixed and independently verified using real configured file/console handlers and tracebacks. HTTP400/403/404, valid-link lifetime and useful errors remain intact.
+- AR-Q1Medium is still unapproved/unfixed. Its tracked failing test must block release. Finish this repair and repeat the final complete suite before promotion.
+- Existing navigation preserved; MyExports is in the account menu, with89additionaldesktop/mobile navigation/history checks passing across7roles.
+- DraftPR44, no merge/deployment. PR42 documents separate recovery findingR01; this feature does not resolve it.
