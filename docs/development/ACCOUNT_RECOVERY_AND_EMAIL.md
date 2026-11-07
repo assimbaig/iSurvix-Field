@@ -4,14 +4,14 @@
 
 The candidate adds migration `0065_account_recovery`, two private recovery tables, public CSRF-protected recovery forms and a reset queue in the existing email worker. No operational migration or live recovery release was performed by this implementation agent.
 
-The separate independent review identified **AR-Q1 Medium**: repeated requests from one IP can consume the global hourly recovery budget before the per-IP limit rejects them. The finding is reproduced in isolated data and remains held pending explicit owner approval. Do not treat this candidate as cleared for release while that finding is unresolved.
+The separate independent review identified **AR-Q1 Medium**: repeated requests from one IP consumed the global hourly recovery budget before the per-IP limit rejected them. The owner explicitly approved its repair on 7 November 2026. The repair checks existing IP/account windows under the existing transaction lock before reserving shared capacity; it does not allocate local keys ahead of global admission. Final release readiness still requires the exact-source regression and release checks, separate from this implementation record.
 
 ## Storage and controls
 
 - `AccountRecoveryRequest` stores an opaque UUID, keyed email/authentication fingerprints, a bearer-token fingerprint, expiry, use/invalidation timestamps and bounded delivery state. It stores neither the password nor the raw bearer token.
 - Link tokens use a dedicated HMAC purpose and the server secret. The registered email, password, last-login state, active flag and deliberate profile lock are rechecked. Ambiguous duplicate email addresses fail closed.
 - A new reset invalidates older outstanding requests. Successful consumption is transactional and writes only the password field, preserving concurrent account edits. Existing sessions fail Django's password-derived authentication hash; recovery does not authenticate the caller.
-- Recovery link lifetime is 30 minutes. Throttles use shared database state, a one-hour window, account limit3, IP limit10 and global limit100. Current-window throttle cardinality is bounded; expired throttle rows are reclaimed. See the held AR-Q1 ordering finding above.
+- Recovery link lifetime is 30 minutes. Throttles use shared database state, a one-hour window, account limit3, IP limit10 and global limit100. Requests already denied by an existing IP/account window do not consume shared capacity or create new throttle keys. Global admission bounds key allocation to at most201 keys per global window; separately timed local windows can overlap that boundary. Expired throttle rows are reclaimed. Admitted unknown addresses still consume capacity and receive the same generic response.
 - Forwarded-IP headers are ignored locally. The explicit `ACCOUNT_RECOVERY_TRUST_PROXY_IP` switch is enabled only behind the reviewed private-backend proxy, which overwrites `X-Real-IP`; invalid/multi-value input falls back to `REMOTE_ADDR`. Arbitrary `X-Forwarded-For` chains are never trusted.
 - No request-derived host or `next` redirect enters an email. The existing HTTPS/allowed-host public-origin validator controls links and logo URLs.
 - Production Nginx access formats exclude URI/query/bearers, and the supervised Gunicorn access log is disabled. Recovery responses use no-store and same-origin referrer policy.

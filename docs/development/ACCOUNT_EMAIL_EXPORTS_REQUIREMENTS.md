@@ -33,9 +33,9 @@ No feature is Verified until actual checks pass. No live deployment or merge is 
 - Fresh live Microsoft authentication passed withoutsending. Live outboxes contained no queued/failed records; this does not establish inboxdelivery or reproduce a current transport failure.
 - Full backend regression is running; do not claim final complete-suite success until actual results are recorded.
 
-## Held security finding
+## Approved AR-Q1 repair
 
-AR-Q1 Medium: per-IP-denied recovery requests can still consume the shared hourly request budget, temporarily denying recovery to unrelated users. Reproduced in disposable data. Owner approval requested separately; do not fix or deploy until that decision. This is not password disclosure. Other work remains reviewable but release readiness is blocked by this finding.
+AR-Q1 Medium was reproduced in disposable data: per-IP-denied recovery requests consumed the shared hourly request budget, temporarily denying recovery to unrelated users. The owner explicitly approved the fix on 7 November2026. Existing IP/account windows are now checked under the existing serialized transaction before the shared debit. No new local keys are allocated before shared admission, preserving bounded allocation (at most201 keys per global window; local windows can overlap). This repair does not authorize deployment or resolve the separate R01 recovery finding.
 
 ## Coverage boundaries
 
@@ -45,6 +45,6 @@ These are curated permission-scoped Excel exports, not raw operational database 
 
 - Full backend run2196tests:6skips; only2subcheck failures in the one AR-Q1 regression. No other failures in that run. It preceded the final AR-Q2 logging changes;50affectedchecks passed afterward.
 - AR-Q2Medium was separately approved, fixed and independently verified using real configured file/console handlers and tracebacks. HTTP400/403/404, valid-link lifetime and useful errors remain intact.
-- AR-Q1Medium is still unapproved/unfixed. Its tracked failing test must block release. Finish this repair and repeat the final complete suite before promotion.
+- AR-Q1Medium subsequently received explicit owner approval and a targeted repair. The original failing regression is unchanged; admission regressions also cover rotating IPs, global exhaustion, expiry, generic responses and concurrent callers. Repeat the final complete suite and independent review against the repaired code before promotion; the historical failing result above is not a current green result.
 - Existing navigation preserved; MyExports is in the account menu, with89additionaldesktop/mobile navigation/history checks passing across7roles.
 - DraftPR44, no merge/deployment. PR42 documents separate recovery findingR01; this feature does not resolve it.

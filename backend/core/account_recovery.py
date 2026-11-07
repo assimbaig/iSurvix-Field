@@ -86,12 +86,20 @@ def request_reset(email,ip):
     now=timezone.now()
     with transaction.atomic():
         _lock(now)
-        # Every syntactically valid request consumes the global/IP budget, even
-        # if it is unknown. At most201 current throttle rows can be created.
         AccountRecoveryThrottle.objects.exclude(key='global').filter(window_started_at__lte=now-WINDOW).delete()
+        local_limits={'ip:'+_fingerprint('ip.v1',ip):10,'account:'+_email_key(email):3}
+        # Check existing local windows before debiting shared capacity. A denied
+        # IP/account must not prevent unrelated users from requesting recovery.
+        # This read allocates no keys: moving _take(local) ahead of global would
+        # let rotating identifiers create unbounded rows after global exhaustion.
+        # The existing global write lock serializes these checks and reservations.
+        current=AccountRecoveryThrottle.objects.filter(key__in=local_limits,window_started_at__gt=now-WINDOW)
+        if any(row.hits>=local_limits[row.key] for row in current):return None
         if not _take('global',100,now):return None
-        if not _take('ip:'+_fingerprint('ip.v1',ip),10,now):return None
-        if not _take('account:'+_email_key(email),3,now):return None
+        for key,limit in local_limits.items():
+            if not _take(key,limit,now):return None
+        # Locally admitted unknown/blocked addresses still count, preserving the
+        # generic response and at most201 allocated keys per global window.
         users=list(get_user_model().objects.select_related('profile').filter(email__iexact=email)[:2])
         if len(users)!=1 or not _eligible_user(users[0]):return None
         if not getattr(settings,'NOTIFICATION_EMAIL_ENABLED',False):return None
