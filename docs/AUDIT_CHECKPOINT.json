@@ -183,7 +183,53 @@
       "kind": "initial_source_audit",
       "report_path": "docs/audits/2026-10-22-ifield-scope-audit.md",
       "production_checkpoint_advanced": false
+    },
+    {
+      "date": "2026-11-07",
+      "kind": "source_recovery_exception",
+      "report_path": "docs/audits/2026-11-07-recovery-exception.md",
+      "production_checkpoint_advanced": false
     }
   ],
-  "next_action": "Read this report and any unmerged documentation PR before deciding another audit is due. Keep monitoring; do not repeat unchanged blockers or initial source baseline."
+  "next_action": "Read this report and any unmerged documentation PR before deciding another audit is due. Keep monitoring; do not repeat unchanged blockers or initial source baseline.",
+  "exception_reports": [
+    {
+      "date": "2026-11-07",
+      "report_path": "docs/audits/2026-11-07-recovery-exception.md",
+      "issue": "https://github.com/assimbaig/iSurvix-Field/issues/41",
+      "report_commit": "1ba908ba2d8c09ad7ef6713dcb95c66d53397dd4",
+      "kind": "source_recovery_exception",
+      "finding": "R01",
+      "severity": "High",
+      "source": "17a699a98a9925b1095172b787af7ebedbd60919",
+      "integration_source": "7414975dc8a9afe6549a13a51e9a21a11fcde1ae",
+      "installed_host_controller": "unverified",
+      "production_checkpoint_advanced": false,
+      "documentation_pr": "https://github.com/assimbaig/iSurvix-Field/pull/42"
+    }
+  ],
+  "open_exception_findings": [
+    "R01"
+  ],
+  "latest_beta_observation": {
+    "date": "2026-11-07",
+    "classification": "protected_beta_not_qualified_production",
+    "metadata_source": "df2166721b26d258ad040496d4e3e295c64cd616",
+    "application_source": "17a699a98a9925b1095172b787af7ebedbd60919",
+    "intervening_application_sources": [
+      "972a71d141b86d8bc04f49d2154fd708dbbc344e",
+      "12d46ae805ab41bd53268da67772a512ffb4100f",
+      "d45db7a1dfe385b39a15ee1adf0c62c8937b6f3e",
+      "8b39decc28638f19fc7ab584e6ebbe97238fb46a",
+      "17a699a98a9925b1095172b787af7ebedbd60919"
+    ],
+    "delivery_runs": [
+      42207475930,
+      42228353040,
+      42238879614,
+      42250996899,
+      42274462978
+    ],
+    "qualifying_production_releases_not_asserted": true
+  }
 }

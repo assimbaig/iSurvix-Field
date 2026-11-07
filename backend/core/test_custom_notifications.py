@@ -40,19 +40,23 @@ class CustomNotificationTests(TestCase):
         self.assertIn('https://testserver',body)
     def test_end_of_business_day_combines_authorized_projects_once(self):
         from .workflow_email import queue_daily_digests,_message,_fresh
-        self.save()
-        self.submit()
-        delivery=WorkflowEmailDelivery.objects.filter(kind='submission',recipient=self.qa).get()
         day=datetime(2026,11,6,15,0,tzinfo=utc.utc)
-        WorkflowEmailDelivery.objects.filter(pk=delivery.pk).update(created_at=day.replace(hour=12))
-        self.assertEqual(queue_daily_digests(day.replace(hour=14)),0)
-        queue_daily_digests(day);queue_daily_digests(day)
-        digest=WorkflowEmailDelivery.objects.get(kind='daily_combined',recipient=self.qa)
-        self.assertIsNone(digest.project_id)
-        subject,body=_message(digest,*_fresh(digest))
-        self.assertIn(self.project.name,body)
-        self.assertIn('Submission',body)
-        self.assertEqual(WorkflowEmailDelivery.objects.filter(kind='daily_combined',recipient=self.qa).count(),1)
+        # Activation, evidence event and cutoffs share one controlled lifecycle;
+        # this cannot start failing merely because the real calendar advances.
+        with patch('core.custom_notifications.timezone.now',return_value=day.replace(hour=9)) as clock:
+            self.save()
+            clock.return_value=day.replace(hour=12)
+            self.submit()
+            clock.return_value=day.replace(hour=14)
+            self.assertEqual(queue_daily_digests(clock.return_value),0)
+            clock.return_value=day
+            queue_daily_digests(day);queue_daily_digests(day)
+            digest=WorkflowEmailDelivery.objects.get(kind='daily_combined',recipient=self.qa)
+            self.assertIsNone(digest.project_id)
+            subject,body=_message(digest,*_fresh(digest))
+            self.assertIn(self.project.name,body)
+            self.assertIn('Submission',body)
+            self.assertEqual(WorkflowEmailDelivery.objects.filter(kind='daily_combined',recipient=self.qa).count(),1)
     def test_generic_project_business_event_is_queued_without_engineering_acceptance(self):
         from .governance_views import audit
         audit(self.engineer,'project_client_assigned',self.project,client_organization_id=999)
