@@ -172,7 +172,7 @@ class ReleaseNoticeTests(TestCase):
     def test_local_fallback_is_stable_and_uses_no_git_or_network_process(self):
         with override_settings(ISURVIX_RELEASE_ID='unknown'),patch('subprocess.run',side_effect=AssertionError('No Git process')):
             first=self.notice()
-            self.assertEqual(first['release_id'],'local-account-recovery-exports-v1-3-beta')
+            self.assertEqual(first['release_id'],'local-account-recovery-exports-v1-3-1-beta')
             self.assertEqual(self.notice()['release_id'],first['release_id'])
             self.assertEqual(self.notice()['cache_nonce'],first['cache_nonce'])
 
