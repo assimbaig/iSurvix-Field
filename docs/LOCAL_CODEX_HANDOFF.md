@@ -12,7 +12,32 @@ When this is the owner's working PC, read `.local/hostinger-deploy/STATE.json`
 and `.local/ACTIVE_CODEX_STATE.json` for current private operational details.
 These ignored files and all credentials/backups must remain outside Git.
 
-## Current work: V1.3 Beta account recovery and exports, PR44
+## Current work: approved R01 repair and V1.3.1 Beta release
+
+The owner approved publishing the PR44 application and separately approved the
+High-severity R01 repair on7November2026. Continue in the dedicated
+`release/v1.3-live-readiness-20261107` worktree under `.local/w45-release`, based
+on merged PR44 commit53058ba. Preserve the older root checkout and w44 evidence.
+
+PR44's automatic delivery stopped before activation: its tested head81e0ac7
+lacks five PR42 documentation files present in the merge. Keep the exact-tree
+guard; use this up-to-date branch and fresh exact-source checks. Do not weaken
+the release gate, replay obsolete artifacts or relabel a merge as tested source.
+
+Read-only VPS checks confirmed R01 applies to the installed controller. The
+active journal was completed PR42/source017fa1d, with no stranded recovery or
+observed data loss. The installed upgrade verifier also lacks0065–0067 support.
+The reviewed0067 verifier is staged, not installed, alongside a protected copy
+of both older helpers. Consult the private release-preflight state for hashes
+and paths. Install only reviewed exact Git blob bytes after tests and preserve
+the trusted-helper checkpoint; do not mutate live records for verification.
+
+R01 implementation, separate security review and final exact-source verification
+are in progress. Release notes use V1.3.1 Beta with bullet highlights and no
+technical commit/PR identifier in the user-visible notice. Record actual final
+test, helper-installation and running-release receipts before claiming delivery.
+
+## Previous work: V1.3 Beta account recovery and exports, PR44
 
 Use the dedicated `feat/account-email-exports-20261107` worktree recorded in
 `.local/ACTIVE_CODEX_STATE.json`; the older root checkout contains retained work.

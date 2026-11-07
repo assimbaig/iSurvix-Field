@@ -11,7 +11,7 @@ class ReleaseDisplayTests(TestCase):
         user.profile.role=Profile.Roles.SUPER_ADMIN;user.profile.save()
         request=RequestFactory().get('/governance/');request.user=user;request.session={}
         notice=release_notice_context(request)['release_notice']
-        self.assertEqual(notice['version'],'V1.3 Beta')
+        self.assertEqual(notice['version'],'V1.3.1 Beta')
         self.assertEqual(notice['release_id'],'a'*40)
         self.assertTrue(notice['changes'])
 

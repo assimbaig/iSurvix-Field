@@ -122,7 +122,7 @@ class IndependentAccountEmailExportsQA(TestCase):
         notice = response.context['release_notice']
         self.assertTrue(notice['changes'])
         visible_text = re.sub(r'<[^>]*>', ' ', response.content.decode())
-        self.assertIn('V1.3 Beta', visible_text)
+        self.assertIn('V1.3.1 Beta', visible_text)
         self.assertNotIn('c'*40, visible_text)
         self.assertNotIn('ccccccc', visible_text)
 
