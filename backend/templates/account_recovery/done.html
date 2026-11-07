@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% load static %}{% block title %}Check your email · iField{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
+{% block body_class %} governance-page{% endblock %}
+{% block content %}<main class="gw-shell gw-narrow"><h1>Check your registered email</h1><p role="status">{{ notice }}</p><p>Sending may take a few minutes while the email worker processes the request. A queued email is not proof of inbox delivery.</p><a href="{% url 'login' %}">Back to sign in</a></main>{% endblock %}

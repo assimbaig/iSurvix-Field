@@ -589,3 +589,8 @@ from .workflow_email_models import WorkflowEmailDelivery  # noqa: E402,F401
 from .release_notice_models import ReleaseNoticeAcknowledgement  # noqa: E402,F401
 
 from .custom_notification_models import CompanyNotificationSettings  # noqa: E402,F401
+
+from .release_history_models import InstalledRelease  # noqa: E402,F401
+
+from .account_recovery_models import AccountRecoveryRequest, AccountRecoveryThrottle  # noqa: E402,F401
+from .export_models import DataExportJob, DataExportWorkerLease  # noqa: E402,F401

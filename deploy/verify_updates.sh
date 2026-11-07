@@ -131,7 +131,6 @@ result=json.load(open(sys.argv[1]));assert result['status']=='rolled_back' and r
 PY
 request="$(new_request "$work/success-request.private.json")"
 sudo /usr/bin/python3 "$updater" apply "${args[@]}" --target-runtime "$work/target-success" --request-id "$request" > "$work/success-result.json"
-sudo /usr/bin/python3 "$updater" apply "${args[@]}" --target-runtime "$work/target-success" --request-id "$request" > "$work/repeat-result.json"
 [[ -n "${ISURVIX_CI_CLIENT_NETWORK:-}" ]] || exit 2
 target_project="$(python - "$work/target-success" <<'PY'
 import hashlib,sys
@@ -161,14 +160,44 @@ engineer=login('synthetic_retained_engineer');original=engineer.get(url,timeout=
 anonymous=requests.Session();anonymous.trust_env=False;anonymous.verify='/run/fixture-ca.pem';assert anonymous.get(url,timeout=10,allow_redirects=False).status_code in (302,404)
 print(json.dumps({'release':os.environ['EXPECTED_RELEASE'],'tls_verified':True,'connection':'isolated proxy NIC; host listener verified separately','client_used_host_published_port':False,'update_history_persisted':True,'engineer_original_hash_matches':True,'owner_operational_access_denied':True,'anonymous_original_denied':True,'physical_customer_device_tested':False}))
 PY
-sudo /usr/bin/python3 - "$repository" "$work" "$output/package" "$baseline" "$target" <<'PY'
+# Successful client authentication legitimately writes release history. Verify
+# the signed terminal replay after those writes, then quiesce every target writer
+# before making a coherent, read-only post-activation comparison.
+sudo /usr/bin/python3 "$updater" apply "${args[@]}" --target-runtime "$work/target-success" --request-id "$request" > "$work/repeat-result.json"
+target_compose=(sudo docker compose --env-file "$work/target-success/customer.env" -p "$target_project" -f "$approved/$target/package/release/deploy/customer/compose.yaml" -f "$approved/$target/package/release/deploy/customer/compose.updates.yaml")
+"${target_compose[@]}" stop --timeout 60 proxy web > "$work/after-client-stop.log"
+"${target_compose[@]}" ps --all --format json > "$work/after-client-processes.json"
+python - "$work/after-client-processes.json" <<'PY'
+import json,sys
+raw=open(sys.argv[1]).read().strip()
+rows=json.loads(raw) if raw.startswith('[') else [json.loads(line) for line in raw.splitlines() if line]
+assert rows and all(row.get('State') in ('exited','stopped','dead','created') for row in rows), 'Rehearsal target writers were not quiesced.'
+PY
+sudo env ISURVIX_DISPOSABLE_REHEARSAL=yes /usr/bin/python3 - "$repository" "$work" "$output/package" "$baseline" "$target" "$journals" "$request" <<'PY'
+
 from pathlib import Path
 from contextlib import closing
 import hashlib,json,sqlite3,sys
-sys.path.insert(0,str(Path(sys.argv[1])/'deploy/customer'));import upgrade_fixture
+sys.path.insert(0,str(Path(sys.argv[1])/'deploy/customer'));import upgrade_fixture,customer,rehearsal_retention
 work,package=map(Path,sys.argv[2:4]);before=json.loads((work/'retained-before.private.json').read_text())
 source=upgrade_fixture.assert_retained(before,work/'runtime/data/database.sqlite3')
-target=upgrade_fixture.assert_retained(before,work/'target-success/data/database.sqlite3',source_database=work/'runtime/data/database.sqlite3')
+# Production assert_retained remains strict: it already ran on the real target
+# before activation. Bind its immutable recorded proof to the exact completed
+# request and the existing HMAC-verified terminal replay, not a success label.
+transaction=Path(sys.argv[6])/sys.argv[7]
+journal=json.loads((transaction/'journal.json').read_text())
+sealed=json.loads((transaction/'terminal-proof.json').read_text())['payload']
+assert journal['phase']=='completed' and journal['request']['payload']['request_id']==sys.argv[7]
+assert journal['request']['payload']['source_release']==sys.argv[4] and journal['request']['payload']['target_release']==sys.argv[5]
+assert sealed['phase']=='completed' and sealed['request_id']==sys.argv[7]
+for name in ('retention-proof.json','retained-records.json','backup/manifest.json'):
+    assert customer._digest(transaction/name)==sealed['artifacts'][name], 'Sealed retention evidence changed after terminal replay.'
+gate_before=json.loads((transaction/'retained-records.json').read_text())
+gate=json.loads((transaction/'retention-proof.json').read_text())
+notes=rehearsal_retention.load_release_notes(package/'release/backend/core/release_note_content.py')
+target=rehearsal_retention.verify_post_activation(before,work/'target-success/data/database.sqlite3',
+    source_database=transaction/'backup/database.sqlite3',preactivation_before=gate_before,preactivation_proof=gate,
+    expected_release=sys.argv[5],expected_notes=notes,scratch_directory=work)
 def schema(database):
     with closing(sqlite3.connect(database.absolute().as_uri()+'?mode=ro',uri=True)) as connection:
         row=connection.execute("select name from django_migrations where app='core' order by name desc limit 1").fetchone()

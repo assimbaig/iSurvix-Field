@@ -153,7 +153,11 @@ class WorkflowEmailSecurityTests(TestCase):
         self.assertEqual(len(records), 2)
         data = json.loads(records[-1]['raw'])
         content = data['message']['body']['content']
-        self.assertEqual(data['message']['body']['contentType'], 'Text')
+        # Owner-requested presentation is escaped HTML; all original privacy,
+        # recipient, link, no-attachment and human-decision checks remain below.
+        self.assertEqual(data['message']['body']['contentType'], 'HTML')
+        self.assertIn('/static/core/img/ifield-logo.webp',content)
+        self.assertNotIn('<script',content.lower())
         self.assertNotIn('attachments', data['message'])
         for private in ['PRIVATE-REVIEWER-REMARK', 'PRIVATE-AI-FINDING', SECRET,
                         'synthetic-access-token', '.local/', 'F:\\']:

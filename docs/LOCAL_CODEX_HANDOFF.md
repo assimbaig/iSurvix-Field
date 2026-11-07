@@ -12,7 +12,35 @@ When this is the owner's working PC, read `.local/hostinger-deploy/STATE.json`
 and `.local/ACTIVE_CODEX_STATE.json` for current private operational details.
 These ignored files and all credentials/backups must remain outside Git.
 
-## Current work: Super Admin desk and notification controls
+## Current work: V1.3 Beta account recovery and exports, PR44
+
+Use the dedicated `feat/account-email-exports-20261107` worktree recorded in
+`.local/ACTIVE_CODEX_STATE.json`; the older root checkout contains retained work.
+PR42 is merged, but its R01 recovery finding remains unresolved and outside this
+repair. No PR44 merge or operational deployment is authorized by this handoff.
+
+The owner explicitly approved AR-Q1 on7November2026. Its original HTTP security
+regression was rerun red before implementation. The repair checks existing
+IP/account limits before consuming shared capacity, under the existing write
+lock. New keys remain gated by global admission; request limits, generic
+responses, original reset records and human permissions remain intact.
+The targeted tests cover account/IP denials, rotating sources, the201-key bound
+within one global window,
+expiry and concurrent callers. Consult current exact-source CI and private
+independent-review/full-suite receipts for verified final results.
+The repair passed85affectedtests. Independent QA passed703actualHTTP assertions
+and the unchanged AR-Q1 regression, finding no new actionable security defect.
+The final full-suite and hosted release checks must still be checked against
+the exact candidate commit; these focused results do not replace them.
+
+Earlier package-check failures were fixed at9fc0322/879a187: migration-time
+retention proofs are distinct from legitimate post-login writes, and the CI-only
+helper receives an explicit disposable opt-in across sudo. Production updater
+and retention gates were unchanged. The879a187 customer-package, staging and
+Chromium checks passed; only AR-Q1 blocked its backend and candidate checks.
+Preserve the guards and original failing assertions; do not mask release checks.
+
+## Previous work: Super Admin desk and notification controls
 
 The owner selected the Company Management Desk and authorized implementation.
 Branch `feat/superadmin-company-desk-20261106`, draft PR #40, prepares V1.2 Beta.
@@ -228,3 +256,8 @@ No worker was started by the website/delivery task. Review native runtime and
 scoped worker credentials before starting inference. Private login details and
 exact live Compose paths are referenced only in the owner's ignored state and
 handover, never in public source.
+
+## Latest verification supplement
+
+- Second full backend run:2196 tests,6skips, only2 failing subchecks of AR-Q1. It started before the final AR-Q2 test additions/fix; after the approved logging fix,50affectedregressions and independent actual-handler checks passed. A new complete green run is still required after AR-Q1 approval/repair.
+- DraftPR44 contains application work only. PR42 is a separate documentation/audit PR describing recovery findingR01; do not merge either automatically or treat R01 as repaired. Review deployment applicability separately before any release.

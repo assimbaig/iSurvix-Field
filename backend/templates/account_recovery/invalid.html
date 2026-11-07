@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% load static %}{% block title %}Reset link unavailable · iField{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
+{% block body_class %} governance-page{% endblock %}
+{% block content %}<main class="gw-shell gw-narrow"><h1>Reset link unavailable</h1><p>This link may have expired, already been used, or been replaced. Your password was not changed by this request.</p><a href="{% url 'account_password_reset' %}">Request another reset link</a></main>{% endblock %}

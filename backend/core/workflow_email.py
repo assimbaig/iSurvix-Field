@@ -474,7 +474,7 @@ def process_next_workflow_email():
                 raise NotificationEmailError('recipient_changed', retryable=True)
             latest_subject, latest_body = _message(job, latest_user, latest_project, latest_checklist)
             return latest_user.email, latest_subject, latest_body
-        GraphMailClient().send(user.email, subject, body, before_send=before_send)
+        GraphMailClient().send(user.email, subject, body, before_send=before_send,branded=True)
     except RecipientUnavailable:
         _finish(job, 'cancelled', 'recipient_unavailable')
     except (Http404, PermissionDenied, ValidationError):

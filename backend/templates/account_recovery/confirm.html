@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% load static %}{% block title %}Choose a new password · iField{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
+{% block body_class %} governance-page{% endblock %}
+{% block content %}<main class="gw-shell gw-narrow"><h1>Choose a new password</h1><section class="gw-card"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="gw-primary" type="submit">Save new password</button></form></section><p>This link works once. You will sign in again after saving.</p></main>{% endblock %}

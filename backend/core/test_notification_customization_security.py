@@ -104,7 +104,8 @@ class NotificationCustomizationSecurityTests(TestCase):
         from .workflow_email import process_next_workflow_email
         digest=self.digest()
         WorkflowEmailDelivery.objects.exclude(pk=digest.pk).update(status='accepted')
-        def interrupt(recipient,subject,body,*,before_send):
+        def interrupt(recipient,subject,body,*,before_send,branded):
+            self.assertTrue(branded)
             self.qa.profile.is_locked=True;self.qa.profile.save()
             return before_send()
         with patch('core.workflow_email.GraphMailClient') as client:

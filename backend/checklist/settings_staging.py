@@ -104,3 +104,6 @@ LOGGING={
     'loggers':{name:{'handlers':['console'],'level':'WARNING' if name=='django.request' else 'INFO','propagate':False}
                for name in ['django','django.request','django.server']},
 }
+
+# Web is private behind Nginx, which overwrites X-Real-IP.
+ACCOUNT_RECOVERY_TRUST_PROXY_IP = True

@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% load static %}{% block title %}Password changed · iField{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
+{% block body_class %} governance-page{% endblock %}
+{% block content %}<main class="gw-shell gw-narrow"><h1>Password changed</h1><p>Your new password is saved. Sign in to continue.</p><a href="{% url 'login' %}">Sign in</a></main>{% endblock %}

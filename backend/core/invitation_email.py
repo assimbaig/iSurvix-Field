@@ -183,14 +183,19 @@ def process_next_email():
             return True
         link = _public_origin() + reverse('governance_accept_invite', args=[token])
         company = invitation.company.name if invitation.company_id else 'your project'
-        body = (f'You have been invited to iSurvix iField for {company}.\n'
+        onboarding=invitation.role=='ADMIN' and not invitation.project_id
+        intro=(f'Your company workspace for {company} is ready. Activate your company administrator account.'
+               if onboarding else f'You have been invited to join {company} in iField.')
+        project_note=(f'Project: {invitation.project.name}.\n' if invitation.project_id else '')
+        body = (intro+'\n'+project_note+
                 f'Assigned role: {invitation.get_role_display()}.\n\n'
                 f'Create your account using this private, single-use link:\n{link}\n\n'
                 f'This invitation expires at {invitation.expires_at:%Y-%m-%d %H:%M UTC}.\n'
                 'If you did not expect this invitation, contact the person who invited you.')
         from .custom_notifications import custom_invitation_message
-        subject,body=custom_invitation_message(delivery,invitation,'Your iSurvix iField invitation',body,link)
-        GraphMailClient().send(invitation.email, subject, body)
+        default_subject='Activate your iField company administrator account' if onboarding else 'Your iField project invitation'
+        subject,body=custom_invitation_message(delivery,invitation,default_subject,body,link)
+        GraphMailClient().send(invitation.email, subject, body,branded=True)
     except NotificationEmailError as error:
         status = 'uncertain' if error.uncertain else (
             'queued' if error.retryable and delivery.attempts < MAX_ATTEMPTS else 'failed')
