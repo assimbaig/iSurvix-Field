@@ -55,19 +55,22 @@ class NotificationCustomizationSecurityTests(TestCase):
 
     def test_digest_rechecks_role_company_and_project_access(self):
         from .workflow_email import queue_daily_digests,_fresh,_message
-        self.config();self.submit()
         instant=datetime(2026,11,6,19,tzinfo=utc.utc)
-        WorkflowEmailDelivery.objects.filter(kind='submission').update(created_at=instant.replace(hour=12))
-        queue_daily_digests(instant);queue_daily_digests(instant)
-        digest=WorkflowEmailDelivery.objects.get(kind='daily_combined',recipient=self.qa)
-        self.assertIsNotNone(_fresh(digest))
-        self.assertEqual(WorkflowEmailDelivery.objects.filter(kind='daily_combined',recipient=self.qa).count(),1)
-        self.qa.profile.project=None;self.qa.profile.save()
-        self.assertIsNone(_fresh(digest))
-        self.qa.profile.project=self.project;self.qa.profile.role=Profile.Roles.ENGINEER;self.qa.profile.save()
-        self.assertIsNone(_fresh(digest))
-        self.qa.profile.role=Profile.Roles.QUALITY_ENGINEER;self.qa.profile.company=self.foreign;self.qa.profile.save()
-        self.assertIsNone(_fresh(digest))
+        with patch('core.custom_notifications.timezone.now',return_value=instant.replace(hour=9)) as clock:
+            self.config()
+            clock.return_value=instant.replace(hour=12)
+            self.submit()
+            clock.return_value=instant
+            queue_daily_digests(instant);queue_daily_digests(instant)
+            digest=WorkflowEmailDelivery.objects.get(kind='daily_combined',recipient=self.qa)
+            self.assertIsNotNone(_fresh(digest))
+            self.assertEqual(WorkflowEmailDelivery.objects.filter(kind='daily_combined',recipient=self.qa).count(),1)
+            self.qa.profile.project=None;self.qa.profile.save()
+            self.assertIsNone(_fresh(digest))
+            self.qa.profile.project=self.project;self.qa.profile.role=Profile.Roles.ENGINEER;self.qa.profile.save()
+            self.assertIsNone(_fresh(digest))
+            self.qa.profile.role=Profile.Roles.QUALITY_ENGINEER;self.qa.profile.company=self.foreign;self.qa.profile.save()
+            self.assertIsNone(_fresh(digest))
 
     def test_dst_windows_have_real_23_and_25_hour_utc_durations(self):
         from .custom_notifications import business_window
