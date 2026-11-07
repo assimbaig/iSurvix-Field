@@ -297,10 +297,24 @@ def receive(policy,stream,dispatch,*,body_timeout=10):
     with lock(policy['root']):return dispatch(read_request(stream,body_timeout=body_timeout))
 
 
+# A diagnostic phase is not a reversal of the public-write boundary. Preserve
+# this bit in both durable records before any candidate/recovery listener opens.
+PUBLIC_WRITE_PHASES=frozenset({'public_opening','completed','rollback_public_opening','rolled_back','operator_recovery_required'})
+
+
+def public_writes_possible(state):
+    # Legacy journals lack the bit; failure_phase retains their earlier boundary.
+    # A false/malformed bit cannot override durable evidence of possible writes.
+    return (state.get('public_writes_possible',False) is not False
+            or state.get('phase') in PUBLIC_WRITE_PHASES
+            or state.get('failure_phase') in PUBLIC_WRITE_PHASES)
+
+
 class Engine:
     def __init__(self,root,environment,host,*,hook=None,authority_check=None):
         self.root=consumer._no_links(root);self.environment=consumer._no_links(environment);self.host=host;self.hook=hook;self.authority_check=authority_check
     def phase(self,state,name):
+        state['public_writes_possible']=public_writes_possible(state) or name in PUBLIC_WRITE_PHASES
         state['phase']=name;state['updated_utc']=datetime.now(timezone.utc).isoformat()
         atomic(Path(state['transaction'])/'journal.json',state);atomic(self.root/'active.json',state)
         if self.hook:self.hook(name,state)
@@ -315,10 +329,31 @@ class Engine:
         except sqlite3.DatabaseError:
             if status!='operator_recovery_required':raise
         return {'format':'isurvix-hostinger-receipt-v1','status':status,'pr':state['pr'],'source_release':state['previous_env']['ISURVIX_RELEASE_ID'],'release':current['ISURVIX_RELEASE_ID'],'head_sha':state['head_sha'],'merge_sha':state['merge_sha'],'manifest_sha256':state['manifest_sha256'],'artifact_id':state.get('artifact_id'),'artifact_sha256':state.get('artifact_sha256'),'images':{'app':current['ISURVIX_APP_IMAGE'],'nginx':current['ISURVIX_NGINX_IMAGE']},'core_schema':schema}
+    def recovery_boundary(self,state):
+        # journal.json is replaced before active.json. Either may therefore
+        # contain the durable public marker after an interrupted pair of writes.
+        try:
+            journal=consumer._json(Path(state['transaction'])/'journal.json')
+            bindings=('transaction','pr','head_sha','merge_sha','manifest_sha256','target_env','previous_env')
+            if not isinstance(journal,dict) or any(journal.get(key)!=state.get(key) for key in bindings):
+                state['public_writes_possible']=True;return True
+        except (ValueError,OSError,KeyError,TypeError):
+            # Missing/corrupt recovery evidence is never permission to rewind.
+            state['public_writes_possible']=True;return True
+        possible=public_writes_possible(state) or public_writes_possible(journal)
+        state['public_writes_possible']=possible
+        if possible:
+            for key in ('failure_phase','failure_type'):
+                if key not in state and isinstance(journal.get(key),str):state[key]=journal[key]
+        return possible and state.get('phase')!=journal.get('phase')
     def freeze(self,state):
-        self.host.stop();self.phase(state,'operator_recovery_required')
+        # Persist the fail-closed state before a failing stop can interrupt us;
+        # still attempt the stop if journaling itself fails.
+        try:self.phase(state,'operator_recovery_required')
+        finally:self.host.stop()
         return self.result(state,'operator_recovery_required')
     def rollback(self,state):
+        if public_writes_possible(state):return self.freeze(state)
         self.phase(state,'rollback_started');self.host.stop()
         previous=dict(state['previous_env'])
         if state.get('backup_complete'):
@@ -330,7 +365,8 @@ class Engine:
                 consumer._json(Path(state['transaction'])/'retained-records.json'), restored/'database.sqlite3',
                 source_database=Path(state['backup'])/'database.sqlite3')
             previous['ISURVIX_DATA_DIRECTORY']=str(restored)
-        self.write_env(previous);self.host.static_and_check(previous);self.host.start_private(previous);self.host.private_health(previous);self.host.open_public(previous);self.host.public_health(previous)
+        self.write_env(previous);self.host.static_and_check(previous);self.host.start_private(previous);self.host.private_health(previous)
+        self.phase(state,'rollback_public_opening');self.host.open_public(previous);self.host.public_health(previous)
         state['recovered_env']=previous;self.phase(state,'rolled_back')
         return self.result(state,'rolled_back')
     def run(self,candidate,*,lock_held=False):
@@ -338,13 +374,17 @@ class Engine:
             current=read_env(self.environment);active=self.root/'active.json'
             if active.exists():
                 saved=consumer._json(active)
-                if saved['phase']=='operator_recovery_required':raise DeliveryError('operator_recovery_required')
+                if saved['phase']=='operator_recovery_required':
+                    self.host.stop();raise DeliveryError('operator_recovery_required')
+                conflicting_boundary=self.recovery_boundary(saved)
                 if saved['phase']=='completed' and saved['pr']==candidate['pr'] and saved['head_sha']==candidate['head_sha']:
                     if current!=saved['target_env'] or saved['merge_sha']!=candidate['merge_sha'] or saved['manifest_sha256']!=candidate['manifest_sha256'] or saved.get('artifact_id')!=candidate.get('artifact_id') or saved.get('artifact_sha256')!=candidate.get('artifact_sha256') or candidate['images']!={'app':current['ISURVIX_APP_IMAGE'],'nginx':current['ISURVIX_NGINX_IMAGE']}:raise DeliveryError('completed_replay_binding')
+                    if conflicting_boundary:return self.freeze(saved)
                     self.host.running_health(current)
                     return self.result(saved,'already_running')
+                if conflicting_boundary:return self.freeze(saved)
                 if saved['phase'] not in ('completed','rolled_back'):
-                    if saved['phase']=='public_opening':return self.freeze(saved)
+                    if public_writes_possible(saved):return self.freeze(saved)
                     try:self.rollback(saved)
                     except (ValueError,OSError,sqlite3.DatabaseError):return self.freeze(saved)
                     return self.result(saved,'recovered')
@@ -385,8 +425,10 @@ class Engine:
                 failed_phase=state['phase']
                 state['failure_phase']=failed_phase
                 state['failure_type']=type(error).__name__
-                self.phase(state,'failure_recorded')
-                if failed_phase in ('public_opening','completed'):return self.freeze(state)
+                try:self.phase(state,'failure_recorded')
+                finally:
+                    if public_writes_possible(state):self.host.stop()
+                if public_writes_possible(state):return self.freeze(state)
                 try:return self.rollback(state)
                 except (ValueError,OSError,subprocess.SubprocessError,sqlite3.DatabaseError):return self.freeze(state)
 
