@@ -82,6 +82,20 @@ def _support_metadata_additions(before, after, database):
         'companynotificationsettings': ('core_companynotificationsettings','company notification settings', {
             'id','version','templates','combined_daily_enabled','daily_time','timezone_name','digest_started_at','last_digest_day','last_digest_end','updated_at','company_id','updated_by_id'}),
     }))
+
+    groups.extend([
+        ({'0065_account_recovery'}, {
+            'accountrecoveryrequest':('core_accountrecoveryrequest','account recovery request',{'id','email_fingerprint','auth_fingerprint','token_fingerprint','expires_at','used_at','invalidated_at','status','attempts','available_at','lease_id','lease_expires_at','error_code','accepted_at','created_at','updated_at','user_id'}),
+            'accountrecoverythrottle':('core_accountrecoverythrottle','account recovery throttle',{'key','window_started_at','hits'}),
+        }),
+        ({'0066_data_exports'}, {
+            'dataexportjob':('core_dataexportjob','data export job',{'id','section','request_key','parameters','principal','status','schema_version','row_count','source_digest','file_name','sha256','byte_count','error','attempts','lease_token','lease_until','created_at','completed_at','expires_at','company_id','owner_id'}),
+            'dataexportworkerlease':('core_dataexportworkerlease','data export worker lease',{'key','token','expires_at'}),
+        }),
+        ({'0067_installed_release_history'}, {
+            'installedrelease':('core_installedrelease','installed release',{'id','release_key','version','title','release_date','changes','first_seen_at'}),
+        }),
+    ])
     models = {}
     required_migrations = set()
     for migrations, definitions in groups:
@@ -91,7 +105,7 @@ def _support_metadata_additions(before, after, database):
             continue
         for model, (table, label, columns) in definitions.items():
             value = after[table]
-            if value['primary'] != ['id'] or set(value['columns']) != columns or value['rows']:
+            if value['primary'] != (['key'] if model in {'accountrecoverythrottle','dataexportworkerlease'} else ['id']) or set(value['columns']) != columns or value['rows']:
                 return {}
             models[model] = label
         required_migrations.update(migrations)
@@ -252,6 +266,265 @@ def _validate_new_notification_settings(before,after,database,source_database=No
     return True
 
 
+
+# Exact SQLite contracts from reviewed CreateModel migrations0065?0067.
+# These literals travel with the trusted helper, not with untrusted package data.
+ACCOUNT_EXPORT_CONTRACTS = {'core_accountrecoveryrequest': {'index_sql': {'core_accountrecoveryrequest_user_id_e1e4bb26': 'CREATE INDEX '
+                                                                                               '"core_accountrecoveryrequest_user_id_e1e4bb26" '
+                                                                                               'ON '
+                                                                                               '"core_accountrecoveryrequest" '
+                                                                                               '("user_id")',
+                                               'recovery_mail_ready_idx': 'CREATE INDEX "recovery_mail_ready_idx" ON '
+                                                                          '"core_accountrecoveryrequest" ("status", '
+                                                                          '"available_at")',
+                                               'sqlite_autoindex_core_accountrecoveryrequest_1': None},
+                                 'index_xinfo': {'core_accountrecoveryrequest_user_id_e1e4bb26': [(0,
+                                                                                                   16,
+                                                                                                   'user_id',
+                                                                                                   0,
+                                                                                                   'BINARY',
+                                                                                                   1),
+                                                                                                  (1,
+                                                                                                   -1,
+                                                                                                   None,
+                                                                                                   0,
+                                                                                                   'BINARY',
+                                                                                                   0)],
+                                                 'recovery_mail_ready_idx': [(0, 7, 'status', 0, 'BINARY', 1),
+                                                                             (1, 9, 'available_at', 0, 'BINARY', 1),
+                                                                             (2, -1, None, 0, 'BINARY', 0)],
+                                                 'sqlite_autoindex_core_accountrecoveryrequest_1': [(0,
+                                                                                                     0,
+                                                                                                     'id',
+                                                                                                     0,
+                                                                                                     'BINARY',
+                                                                                                     1),
+                                                                                                    (1,
+                                                                                                     -1,
+                                                                                                     None,
+                                                                                                     0,
+                                                                                                     'BINARY',
+                                                                                                     0)]},
+                                 'indexes': [{'columns': [('status', False), ('available_at', False)],
+                                              'name': 'recovery_mail_ready_idx',
+                                              'origin': 'c',
+                                              'partial': False,
+                                              'unique': False},
+                                             {'columns': [('user_id', False)],
+                                              'name': 'core_accountrecoveryrequest_user_id_e1e4bb26',
+                                              'origin': 'c',
+                                              'partial': False,
+                                              'unique': False},
+                                             {'columns': [('id', False)],
+                                              'name': 'sqlite_autoindex_core_accountrecoveryrequest_1',
+                                              'origin': 'pk',
+                                              'partial': False,
+                                              'unique': True}],
+                                 'sql': 'CREATE TABLE "core_accountrecoveryrequest" ("id" char(32) NOT NULL PRIMARY '
+                                        'KEY, "email_fingerprint" varchar(64) NOT NULL, "auth_fingerprint" varchar(64) '
+                                        'NOT NULL, "token_fingerprint" varchar(64) NOT NULL, "expires_at" datetime NOT '
+                                        'NULL, "used_at" datetime NULL, "invalidated_at" datetime NULL, "status" '
+                                        'varchar(12) NOT NULL, "attempts" smallint unsigned NOT NULL CHECK ("attempts" '
+                                        '>= 0), "available_at" datetime NOT NULL, "lease_id" char(32) NULL, '
+                                        '"lease_expires_at" datetime NULL, "error_code" varchar(64) NOT NULL, '
+                                        '"accepted_at" datetime NULL, "created_at" datetime NOT NULL, "updated_at" '
+                                        'datetime NOT NULL, "user_id" integer NOT NULL REFERENCES "auth_user" ("id") '
+                                        'DEFERRABLE INITIALLY DEFERRED)'},
+ 'core_accountrecoverythrottle': {'index_sql': {'sqlite_autoindex_core_accountrecoverythrottle_1': None},
+                                  'index_xinfo': {'sqlite_autoindex_core_accountrecoverythrottle_1': [(0,
+                                                                                                       0,
+                                                                                                       'key',
+                                                                                                       0,
+                                                                                                       'BINARY',
+                                                                                                       1),
+                                                                                                      (1,
+                                                                                                       -1,
+                                                                                                       None,
+                                                                                                       0,
+                                                                                                       'BINARY',
+                                                                                                       0)]},
+                                  'indexes': [{'columns': [('key', False)],
+                                               'name': 'sqlite_autoindex_core_accountrecoverythrottle_1',
+                                               'origin': 'pk',
+                                               'partial': False,
+                                               'unique': True}],
+                                  'sql': 'CREATE TABLE "core_accountrecoverythrottle" ("key" varchar(80) NOT NULL '
+                                         'PRIMARY KEY, "window_started_at" datetime NOT NULL, "hits" integer unsigned '
+                                         'NOT NULL CHECK ("hits" >= 0))'},
+ 'core_dataexportjob': {'index_sql': {'core_dataexportjob_company_id_8cd14486': 'CREATE INDEX '
+                                                                                '"core_dataexportjob_company_id_8cd14486" '
+                                                                                'ON "core_dataexportjob" '
+                                                                                '("company_id")',
+                                      'core_dataexportjob_owner_id_4ccee091': 'CREATE INDEX '
+                                                                              '"core_dataexportjob_owner_id_4ccee091" '
+                                                                              'ON "core_dataexportjob" ("owner_id")',
+                                      'export_owner_history': 'CREATE INDEX "export_owner_history" ON '
+                                                              '"core_dataexportjob" ("owner_id", "created_at" DESC)',
+                                      'export_status_queue': 'CREATE INDEX "export_status_queue" ON '
+                                                             '"core_dataexportjob" ("status", "created_at")',
+                                      'sqlite_autoindex_core_dataexportjob_1': None,
+                                      'sqlite_autoindex_core_dataexportjob_2': None},
+                        'index_xinfo': {'core_dataexportjob_company_id_8cd14486': [(0,
+                                                                                    19,
+                                                                                    'company_id',
+                                                                                    0,
+                                                                                    'BINARY',
+                                                                                    1),
+                                                                                   (1, -1, None, 0, 'BINARY', 0)],
+                                        'core_dataexportjob_owner_id_4ccee091': [(0, 20, 'owner_id', 0, 'BINARY', 1),
+                                                                                 (1, -1, None, 0, 'BINARY', 0)],
+                                        'export_owner_history': [(0, 20, 'owner_id', 0, 'BINARY', 1),
+                                                                 (1, 16, 'created_at', 1, 'BINARY', 1),
+                                                                 (2, -1, None, 0, 'BINARY', 0)],
+                                        'export_status_queue': [(0, 5, 'status', 0, 'BINARY', 1),
+                                                                (1, 16, 'created_at', 0, 'BINARY', 1),
+                                                                (2, -1, None, 0, 'BINARY', 0)],
+                                        'sqlite_autoindex_core_dataexportjob_1': [(0, 0, 'id', 0, 'BINARY', 1),
+                                                                                  (1, -1, None, 0, 'BINARY', 0)],
+                                        'sqlite_autoindex_core_dataexportjob_2': [(0, 20, 'owner_id', 0, 'BINARY', 1),
+                                                                                  (1, 2, 'request_key', 0, 'BINARY', 1),
+                                                                                  (2, -1, None, 0, 'BINARY', 0)]},
+                        'indexes': [{'columns': [('owner_id', False), ('created_at', True)],
+                                     'name': 'export_owner_history',
+                                     'origin': 'c',
+                                     'partial': False,
+                                     'unique': False},
+                                    {'columns': [('status', False), ('created_at', False)],
+                                     'name': 'export_status_queue',
+                                     'origin': 'c',
+                                     'partial': False,
+                                     'unique': False},
+                                    {'columns': [('owner_id', False)],
+                                     'name': 'core_dataexportjob_owner_id_4ccee091',
+                                     'origin': 'c',
+                                     'partial': False,
+                                     'unique': False},
+                                    {'columns': [('company_id', False)],
+                                     'name': 'core_dataexportjob_company_id_8cd14486',
+                                     'origin': 'c',
+                                     'partial': False,
+                                     'unique': False},
+                                    {'columns': [('owner_id', False), ('request_key', False)],
+                                     'name': 'sqlite_autoindex_core_dataexportjob_2',
+                                     'origin': 'u',
+                                     'partial': False,
+                                     'unique': True},
+                                    {'columns': [('id', False)],
+                                     'name': 'sqlite_autoindex_core_dataexportjob_1',
+                                     'origin': 'pk',
+                                     'partial': False,
+                                     'unique': True}],
+                        'sql': 'CREATE TABLE "core_dataexportjob" ("id" char(32) NOT NULL PRIMARY KEY, "section" '
+                               'varchar(32) NOT NULL, "request_key" char(32) NOT NULL, "parameters" text NOT NULL '
+                               'CHECK ((JSON_VALID("parameters") OR "parameters" IS NULL)), "principal" text NOT NULL '
+                               'CHECK ((JSON_VALID("principal") OR "principal" IS NULL)), "status" varchar(12) NOT '
+                               'NULL, "schema_version" smallint unsigned NOT NULL CHECK ("schema_version" >= 0), '
+                               '"row_count" integer unsigned NOT NULL CHECK ("row_count" >= 0), "source_digest" '
+                               'varchar(64) NOT NULL, "file_name" varchar(120) NOT NULL, "sha256" varchar(64) NOT '
+                               'NULL, "byte_count" bigint unsigned NOT NULL CHECK ("byte_count" >= 0), "error" '
+                               'varchar(240) NOT NULL, "attempts" smallint unsigned NOT NULL CHECK ("attempts" >= 0), '
+                               '"lease_token" char(32) NULL, "lease_until" datetime NULL, "created_at" datetime NOT '
+                               'NULL, "completed_at" datetime NULL, "expires_at" datetime NOT NULL, "company_id" '
+                               'bigint NULL REFERENCES "core_company" ("id") DEFERRABLE INITIALLY DEFERRED, "owner_id" '
+                               'integer NOT NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED, '
+                               'CONSTRAINT "unique_actor_export_request" UNIQUE ("owner_id", "request_key"))'},
+ 'core_dataexportworkerlease': {'index_sql': {'sqlite_autoindex_core_dataexportworkerlease_1': None},
+                                'index_xinfo': {'sqlite_autoindex_core_dataexportworkerlease_1': [(0,
+                                                                                                   0,
+                                                                                                   'key',
+                                                                                                   0,
+                                                                                                   'BINARY',
+                                                                                                   1),
+                                                                                                  (1,
+                                                                                                   -1,
+                                                                                                   None,
+                                                                                                   0,
+                                                                                                   'BINARY',
+                                                                                                   0)]},
+                                'indexes': [{'columns': [('key', False)],
+                                             'name': 'sqlite_autoindex_core_dataexportworkerlease_1',
+                                             'origin': 'pk',
+                                             'partial': False,
+                                             'unique': True}],
+                                'sql': 'CREATE TABLE "core_dataexportworkerlease" ("key" varchar(24) NOT NULL PRIMARY '
+                                       'KEY, "token" char(32) NULL, "expires_at" datetime NULL)'},
+ 'core_installedrelease': {'index_sql': {'sqlite_autoindex_core_installedrelease_1': None},
+                           'index_xinfo': {'sqlite_autoindex_core_installedrelease_1': [(0,
+                                                                                         1,
+                                                                                         'release_key',
+                                                                                         0,
+                                                                                         'BINARY',
+                                                                                         1),
+                                                                                        (1, -1, None, 0, 'BINARY', 0)]},
+                           'indexes': [{'columns': [('release_key', False)],
+                                        'name': 'sqlite_autoindex_core_installedrelease_1',
+                                        'origin': 'u',
+                                        'partial': False,
+                                        'unique': True}],
+                           'sql': 'CREATE TABLE "core_installedrelease" ("id" integer NOT NULL PRIMARY KEY '
+                                  'AUTOINCREMENT, "release_key" varchar(80) NOT NULL UNIQUE, "version" varchar(32) NOT '
+                                  'NULL, "title" varchar(180) NOT NULL, "release_date" date NOT NULL, "changes" text '
+                                  'NOT NULL CHECK ((JSON_VALID("changes") OR "changes" IS NULL)), "first_seen_at" '
+                                  'datetime NOT NULL)'}}
+
+
+def _validate_account_export_tables(before,after,database,source_database=None):
+    """Validate additive0065?0067 tables, all default metadata and exact SQL/indexes."""
+    records={
+        'core_accountrecoveryrequest':('accountrecoveryrequest','account recovery request','0065_account_recovery'),
+        'core_accountrecoverythrottle':('accountrecoverythrottle','account recovery throttle','0065_account_recovery'),
+        'core_dataexportjob':('dataexportjob','data export job','0066_data_exports'),
+        'core_dataexportworkerlease':('dataexportworkerlease','data export worker lease','0066_data_exports'),
+        'core_installedrelease':('installedrelease','installed release','0067_installed_release_history'),
+    }
+    def named(snapshot,table):
+        value=snapshot.get(table,{})
+        return [dict(zip(value.get('columns',[]),row)) for row in value.get('rows',[])]
+    def canonical(sql):return re.sub(r'\s+',' ',sql).strip().upper()
+    added=False
+    with closing(sqlite3.connect(Path(database).absolute().as_uri()+'?mode=ro',uri=True)) as db:
+        try:applied={r[0] for r in db.execute("select name from django_migrations where app='core'")}
+        except sqlite3.Error:
+            if any(table in after for table in records):raise ValueError('Account/export migration evidence is unavailable.') from None
+            return False
+        for table,(model,label,migration) in records.items():
+            if table in before:continue
+            types=[row for row in named(after,'django_content_type') if row.get('app_label')=='core' and row.get('model')==model]
+            if table not in after and migration not in applied:
+                if not types:continue
+                # Older migration fixtures may retain future ContentType rows.
+                # Permit only exact old metadata with two-sided migration proof.
+                old=[row for row in named(before,'django_content_type') if row.get('app_label')=='core' and row.get('model')==model]
+                ids={row.get('id') for row in old}
+                old_permissions=[row for row in named(before,'auth_permission') if row.get('content_type_id') in ids]
+                permissions=[row for row in named(after,'auth_permission') if row.get('content_type_id') in ids]
+                if source_database is None or old!=types or old_permissions!=permissions:raise ValueError('Preexisting account/export metadata cannot be verified unchanged.')
+                with closing(sqlite3.connect(Path(source_database).absolute().as_uri()+'?mode=ro',uri=True)) as source:
+                    marker=source.execute("select 1 from django_migrations where app='core' and name=?",(migration,)).fetchone()
+                    exists=source.execute("select 1 from sqlite_master where type='table' and name=?",(table,)).fetchone()
+                if marker or exists:raise ValueError('Account/export source schema and migration state are inconsistent.')
+                continue
+            current=after.get(table)
+            if migration not in applied or not current or current['rows']:raise ValueError('Account/export additions must be migrated, present and empty.')
+            rule=ACCOUNT_EXPORT_CONTRACTS[table]
+            sql=db.execute("select sql from sqlite_master where type='table' and name=?",(table,)).fetchone()
+            if not sql or canonical(sql[0])!=canonical(rule['sql']):raise ValueError('Account/export table schema differs from the exact reviewed contract.')
+            actual=_application_indexes(database,table)
+            order=lambda rows:sorted(rows,key=lambda row:row['name'])
+            if order(actual)!=order(rule['indexes']):raise ValueError('Account/export indexes differ from the exact reviewed contract.')
+            index_sql={row[0]:row[1] for row in db.execute("SELECT name,sql FROM sqlite_master WHERE type='index' AND tbl_name=?",(table,))}
+            normalized=lambda values:{name:canonical(sql) if sql else None for name,sql in values.items()}
+            if normalized(index_sql)!=normalized(rule['index_sql']):raise ValueError('Account/export index SQL differs from the reviewed contract.')
+            for name,expected_info in rule['index_xinfo'].items():
+                if db.execute('pragma index_xinfo('+_identifier(name)+')').fetchall()!=expected_info:raise ValueError('Account/export index ordering or collation differs from the reviewed contract.')
+            if len(types)!=1 or type(types[0].get('id')) is not int or types[0]['id']<=0:raise ValueError('Account/export content type is missing or invalid.')
+            permissions=[row for row in named(after,'auth_permission') if row.get('content_type_id')==types[0]['id']]
+            expected={(f'Can {action} {label}',f'{action}_{model}') for action in ('add','change','delete','view')}
+            if len(permissions)!=4 or any(type(row.get('id')) is not int or row['id']<=0 for row in permissions) or {(row.get('name'),row.get('codename')) for row in permissions}!=expected:raise ValueError('Account/export default permissions are missing or invalid.')
+            added=True
+    return added
+
+
 def _validate_checklist_template_company_scope(before, after, database):
     """Allow only migration 0063's additive owner field and deterministic backfill."""
     table = 'core_checklisttemplate'
@@ -403,8 +676,9 @@ def assert_retained(before, database, *, source_database=None):
     after = snapshot(database)
     _validate_new_notice_table(before, after, database)
     notification_settings_added=_validate_new_notification_settings(before,after,database,source_database=source_database)
+    account_export_added=_validate_account_export_tables(before,after,database,source_database=source_database)
     company_scope = _validate_checklist_template_company_scope(before, after, database)
-    if company_scope is not None or notification_settings_added:
+    if company_scope is not None or notification_settings_added or account_export_added:
         if source_database is None:
             raise ValueError('Source database is required to verify reviewed migration index changes.')
         _validate_application_indexes(source_database, database)

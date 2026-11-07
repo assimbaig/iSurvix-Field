@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block content %}
+<main class="container"><header><h1>Release history</h1><p>Saved version notes. First observed records the first authenticated login or explicit registration after installation.</p><a href="{% url 'governance_home' %}?view=system">Back to System</a></header>
+<div style="overflow:auto"><table><thead><tr><th>Version</th><th>Release date</th><th>First observed</th><th>Changes</th><th>Technical identity (administrators)</th></tr></thead><tbody>{% for release in releases %}<tr><td>V{{ release.version }} Beta</td><td>{{ release.release_date }}</td><td>{{ release.first_seen_at }}</td><td><ul>{% for change in release.changes %}<li>{{ change }}</li>{% endfor %}</ul></td><td><code>{{ release.release_key }}</code></td></tr>{% empty %}<tr><td colspan="5">No release has been registered yet. Previous versions are not fabricated.</td></tr>{% endfor %}</tbody></table></div>
+{% if releases.has_previous %}<a href="?page={{ releases.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ releases.number }} / {{ releases.paginator.num_pages }}</span>{% if releases.has_next %}<a href="?page={{ releases.next_page_number }}">Next</a>{% endif %}
+</main>
+{% endblock %}

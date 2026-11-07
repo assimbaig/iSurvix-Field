@@ -8,7 +8,12 @@ from .legacy_routes import protected_legacy
 from .private_files import checklist_file
 from .release_notice import acknowledge as acknowledge_release_notice
 
+from .release_history import release_history
+
 urlpatterns = [
+    path("",include("core.account_recovery_urls")),
+    path("exports/",include("core.export_urls")),
+    path("governance/releases/",release_history,name="release_history"),
     path('governance/notification-settings/', include('core.custom_notification_urls')),
     path('release-notices/ack/',acknowledge_release_notice,name='release_notice_acknowledge'),
     path('support/', include('core.support_urls')),

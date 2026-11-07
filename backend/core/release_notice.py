@@ -78,7 +78,7 @@ def release_notice_context(request):
         request.session[SESSION_KEY]={**state,'dismissed':True,'remembered':True}
         return {'release_notice':None}
     return {'release_notice':{**NOTES,'changes':list(NOTES['changes']),'release_id':key,
-        'version':key[:7] if key!=LOCAL_RELEASE_KEY else 'Local development',
+        'version':'V'+NOTES['version']+' Beta',
         'ack_url':ack_url,'cache_nonce':state['nonce'],
         'actor_key':state['actor_key'],'storage_available':available}}
 

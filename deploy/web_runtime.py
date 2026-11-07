@@ -31,6 +31,7 @@ WEB_COMMAND = ['gunicorn', 'checklist.wsgi:application', '--bind', '0.0.0.0:8000
     '--workers', '1', '--worker-class', 'gthread', '--threads', '4', '--timeout', '120',
     '--worker-tmp-dir', '/tmp', '--access-logfile', '/dev/null', '--error-logfile', '-']
 MAIL_COMMAND = [sys.executable, 'manage.py', 'run_invitation_email_worker']
+EXPORT_COMMAND = [sys.executable, 'manage.py', 'run_data_export_worker']
 
 
 def public_release_ready(environment=None):
@@ -56,6 +57,15 @@ def public_release_ready(environment=None):
         return isinstance(result, dict) and result.get('status') == 'ready' and result.get('release') == release
     except (ValueError, TypeError, RequestError):
         return False
+
+
+def public_export_ready():
+    environment=dict(os.environ)
+    if not environment.get('ISURVIX_NOTIFICATION_PUBLIC_ORIGIN'):
+        origins=[v.strip() for v in environment.get('DJANGO_CSRF_TRUSTED_ORIGINS','').split(',') if v.strip()]
+        if len(origins)!=1:return False
+        environment['ISURVIX_NOTIFICATION_PUBLIC_ORIGIN']=origins[0]
+    return public_release_ready(environment)
 
 
 def _signal_process(process, hard=False):
@@ -89,6 +99,7 @@ def _stop_children(children, timeout):
 
 
 def supervise(web_command, mail_command=None, *, mail_enabled=False,
+              export_command=None, export_enabled=False, export_readiness=None,
               readiness=public_release_ready, poll_interval=0.25, retry_interval=30,
               shutdown_timeout=50, spawn=subprocess.Popen, stop_event=None):
     """Preserve web availability; optional worker failure never restarts the web."""
@@ -107,6 +118,8 @@ def supervise(web_command, mail_command=None, *, mail_enabled=False,
         children.append(web)
         mail = None
         next_mail_attempt = 0.0
+        exporter = None
+        next_export_attempt = 0.0
         while not stop.is_set():
             exited = web.poll()
             if exited is not None:
@@ -133,6 +146,20 @@ def supervise(web_command, mail_command=None, *, mail_enabled=False,
                     except OSError:
                         # Report neither command arguments nor secret paths.
                         print('Invitation email worker could not start; queued invitations retained.', file=sys.stderr)
+            if exporter is not None and exporter.poll() is not None:
+                _signal_process(exporter);_signal_process(exporter,hard=True)
+                children.remove(exporter);exporter=None
+                next_export_attempt=time.monotonic()+retry_interval
+            if export_enabled and export_command and exporter is None and time.monotonic()>=next_export_attempt:
+                next_export_attempt=time.monotonic()+retry_interval
+                try:active=(export_readiness or readiness)()
+                except Exception:active=False
+                if active:
+                    try:
+                        exporter=spawn(export_command,start_new_session=os.name=='posix')
+                        children.append(exporter)
+                    except OSError:
+                        print('Data export worker could not start; queued exports retained.',file=sys.stderr)
             stop.wait(poll_interval)
     except OSError:
         print('Application runtime could not start.', file=sys.stderr)
@@ -146,7 +173,8 @@ def supervise(web_command, mail_command=None, *, mail_enabled=False,
 
 def main():
     return supervise(WEB_COMMAND, MAIL_COMMAND,
-                     mail_enabled=os.environ.get('ISURVIX_NOTIFICATION_EMAIL_ENABLED') == 'True')
+                     mail_enabled=os.environ.get('ISURVIX_NOTIFICATION_EMAIL_ENABLED') == 'True',
+                     export_command=EXPORT_COMMAND,export_enabled=True,export_readiness=public_export_ready)
 
 
 if __name__ == '__main__':

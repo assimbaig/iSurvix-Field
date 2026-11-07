@@ -7,6 +7,7 @@ from core.invitation_email import process_next_email, retry_failed_emails
 from core.notification_email import load_config, NotificationEmailError
 from core.workflow_email import (process_next_workflow_email, queue_daily_digests,
                                  retry_failed_workflow_emails)
+from core.account_recovery import process_next_reset_email,retry_failed_reset_emails
 
 
 class Command(BaseCommand):
@@ -29,7 +30,8 @@ class Command(BaseCommand):
         if options['retry_failed']:
             self.stdout.write(f'Requeued {retry_failed_emails()} definite failures. Uncertain sends retained.')
             self.stdout.write(f'Requeued {retry_failed_workflow_emails()} workflow failures. Uncertain sends retained.')
-        prefer_workflow = False
+            self.stdout.write(f'Requeued {retry_failed_reset_emails()} valid password reset failures. Uncertain sends retained.')
+        queue_offset = 0
         next_digest_check = 0
         try:
             while True:
@@ -37,18 +39,17 @@ class Command(BaseCommand):
                 if time.monotonic() >= next_digest_check:
                     queue_daily_digests()
                     next_digest_check = time.monotonic() + 60
-                queues = [('workflow', process_next_workflow_email), ('invitation', process_next_email)]
-                if not prefer_workflow:
-                    queues.reverse()
+                queues = [('invitation', process_next_email), ('recovery',process_next_reset_email), ('workflow', process_next_workflow_email)]
+                queues=queues[queue_offset:]+queues[:queue_offset]
                 processed = False
                 processed_kind = None
                 for kind, process in queues:
                     if process():
                         processed, processed_kind = True, kind
                         break
-                prefer_workflow = not prefer_workflow
+                queue_offset=(queue_offset+1)%len(queues)
                 if options['once']:
-                    self.stdout.write(('Processed one invitation.' if processed_kind == 'invitation' else 'Processed one workflow email.')
+                    self.stdout.write(({'invitation':'Processed one invitation.','recovery':'Processed one password reset email.'}.get(processed_kind,'Processed one workflow email.'))
                                       if processed else 'No eligible invitation or workflow emails.')
                     return
                 if not processed:

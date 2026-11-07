@@ -169,7 +169,7 @@ class GraphMailClient:
         except (ValueError, TypeError, UnicodeError):
             raise NotificationEmailError('authentication_invalid_response') from None
 
-    def send(self, recipient, subject, body, *, before_send=None):
+    def send(self, recipient, subject, body, *, before_send=None, branded=False):
         try:
             if not isinstance(recipient, str) or len(recipient) > 254 or any(c in recipient for c in '\r\n\x00'):
                 raise ValueError
@@ -198,10 +198,20 @@ class GraphMailClient:
                         raise ValueError
                 except (ValueError, TypeError, ValidationError, UnicodeError):
                     raise NotificationEmailError('message_invalid') from None
+        content_type='Text'
+        if branded:
+            from .email_presentation import present_email
+            try:
+                _,body=present_email(subject,body)
+                if len(body.encode('utf-8'))>_MAX_BODY_BYTES:
+                    raise ValueError
+            except (ValueError,TypeError,UnicodeError):
+                raise NotificationEmailError('message_invalid') from None
+            content_type='HTML'
         payload = {'message': {
             'from': {'emailAddress': {'address': SENDER, 'name': DISPLAY_NAME}},
             'toRecipients': [{'emailAddress': {'address': recipient}}],
-            'subject': subject, 'body': {'contentType': 'Text', 'content': body},
+            'subject': subject, 'body': {'contentType': content_type, 'content': body},
         }, 'saveToSentItems': True}
         try:
             response = bounded_request('POST', SEND_MAIL_URL, json=payload,

@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% load static %}{% block title %}Reset password · iField{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/governance.css' %}">{% endblock %}
+{% block body_class %} governance-page{% endblock %}
+{% block content %}<main class="gw-shell gw-narrow"><h1>Reset your password</h1><p>Enter the email registered to your account. Passwords are never sent by email.</p><section class="gw-card"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="gw-primary" type="submit">Request reset link</button></form></section><p><a href="{% url 'login' %}">Back to sign in</a></p></main>{% endblock %}

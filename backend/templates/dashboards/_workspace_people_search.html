@@ -4,3 +4,5 @@
 <input id="workspace-people-search" type="search" name="people_q" value="{{ members_search }}" maxlength="200" placeholder="Name, username or email">
 <button type="submit">Search</button>
 </form>
+
+<a href="{% url 'data_exports' %}?section=people">Prepare people Excel export</a>
