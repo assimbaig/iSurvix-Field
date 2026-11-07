@@ -13,3 +13,9 @@ The existing manual paths are preserved at version1.7 dated22 October2026, with1
 All static preview versions1–7 have individual successful publish receipts and are excluded from functional production counting. Production baseline/count remain null and unverified; no production checkpoint advances. Read AUDIT_CHECKPOINT.json, this report and open documentation PRs before another audit. An unmerged PR with report evidence is not a missing audit. Continue daily monitoring; do not repeat this initial audit or unchanged verification blockers.
 
 The existing detailed LOCAL_CODEX_HANDOFF.md is left unchanged. This journey intentionally records only the audit evidence and policy needed for continuation.
+
+## 7 November 2026 recovery exception
+
+A [targeted supplement](audits/2026-11-07-recovery-exception.md) records new High finding R01, tracked by [issue41](https://github.com/assimbaig/iSurvix-Field/issues/41). The actual Engine.run method at17a699a selected rollback for a synthetic failure_recorded journal carrying failure_phase=public_opening, where the original public_opening state selected freeze. No operational data-loss experiment was performed; installed root-controller applicability remains unverified. Owner review is required before a fix or deployment. Preserve all targets/backups and earlier findings.
+
+Five intervening protected-beta transitions PR36–40 and their attempts/source/schema receipts were inspected. They are not a five-production-release batch; production baseline/count remain null/unverified and no covered checkpoint advances. Existing audit/manual versions remain unchanged. No initial or whole-app audit is duplicated. The supplement and evidence are delivered persistently in this documentation branch pending human review.
