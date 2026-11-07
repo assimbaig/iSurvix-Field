@@ -26,23 +26,28 @@ jobs:
         run: python deploy/release_gate.py check --repository "$GITHUB_REPOSITORY" --release-id "$RELEASE_SHA" --output "$RUNNER_TEMP/gate.json" --wait-seconds 1500
       - name: Select the already-built immutable candidate
         id: source
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
+          python deploy/release_gate.py artifacts --repository "$GITHUB_REPOSITORY" --gate "$RUNNER_TEMP/gate.json" --output "$RUNNER_TEMP/artifacts.json"
           python - <<'PY'
           import json,os
           from pathlib import Path
-          gate=json.loads((Path(os.environ['RUNNER_TEMP'])/'gate.json').read_text())
+          artifacts=json.loads((Path(os.environ['RUNNER_TEMP'])/'artifacts.json').read_text())
           with open(os.environ['GITHUB_OUTPUT'],'a') as output:
-              output.write('run_id='+str(gate['customer_run_id'])+'\n')
+              for key,value in artifacts.items():output.write(key+'='+str(value)+'\n')
           PY
       - uses: actions/download-artifact@v4
         with:
-          name: customer-server-DRAFT-candidate
+          artifact-ids: ${{ steps.source.outputs.candidate_artifact_id }}
+          merge-multiple: true
           run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/shared/package
       - uses: actions/download-artifact@v4
         with:
-          name: customer-server-verification
+          artifact-ids: ${{ steps.source.outputs.verification_artifact_id }}
+          merge-multiple: true
           run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/proof

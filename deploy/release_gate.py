@@ -220,6 +220,86 @@ def fetch_verified(repository, release_id, token):
     raise ValueError('Too many workflow records to establish complete release provenance.')
 
 
+
+def _artifact_time(value):
+    try:
+        result=datetime.fromisoformat(value.replace('Z','+00:00'))
+        if result.tzinfo is None:raise ValueError()
+        return result
+    except (AttributeError,TypeError,ValueError):
+        raise ValueError('Artifact attempt has no reliable UTC time.') from None
+
+
+def select_attempt_artifacts(run,jobs,artifacts,*,repository,release_id,run_id,run_attempt):
+    """IDs are opaque; only immutable creation inside the verified job binds an attempt."""
+    _sha(release_id)
+    if (not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repository)
+            or any(type(v) is not int or v<1 for v in (run_id,run_attempt))):
+        raise ValueError('Invalid artifact source identity.')
+    if (not isinstance(run,dict) or run.get('id')!=run_id or run.get('run_attempt')!=run_attempt
+            or run.get('head_sha')!=release_id or run.get('path')!=REQUIRED_WORKFLOWS[2]
+            or run.get('status')!='completed' or run.get('conclusion')!='success'):
+        raise ValueError('Artifact attempt is not the verified successful customer run.')
+    repository_ids=[]
+    for key in ('repository','head_repository'):
+        value=run.get(key)
+        if (not isinstance(value,dict) or value.get('full_name')!=repository
+                or type(value.get('id')) is not int or value['id']<1):
+            raise ValueError('Artifact attempt repository differs.')
+        repository_ids.append(value['id'])
+    if not isinstance(jobs,list) or not isinstance(artifacts,list):
+        raise ValueError('Artifact listing is incomplete.')
+    matching=[]
+    for job in jobs:
+        if not isinstance(job,dict):raise ValueError('Invalid artifact job record.')
+        if job.get('name')!='disposable-linux':continue
+        if (job.get('run_id')!=run_id or job.get('run_attempt')!=run_attempt
+                or job.get('head_sha')!=release_id or job.get('status')!='completed'
+                or job.get('conclusion')!='success'):
+            raise ValueError('Artifact job does not belong to the successful attempt.')
+        matching.append(job)
+    if len(matching)!=1:raise ValueError('Artifact job window is missing or ambiguous.')
+    start=_artifact_time(matching[0].get('started_at'));end=_artifact_time(matching[0].get('completed_at'))
+    if end<start:raise ValueError('Artifact job time window is invalid.')
+    names={'customer-server-DRAFT-candidate':'candidate_artifact_id','customer-server-verification':'verification_artifact_id'}
+    selected={};seen=set()
+    for artifact in artifacts:
+        if not isinstance(artifact,dict):raise ValueError('Invalid artifact record.')
+        if artifact.get('name') not in names:continue
+        created=_artifact_time(artifact.get('created_at'))
+        if not start<=created<=end:continue
+        identity=artifact.get('id');source=artifact.get('workflow_run')
+        if (type(identity) is not int or identity<1 or identity in seen or artifact.get('expired') is not False
+                or not isinstance(source,dict) or source.get('id')!=run_id or source.get('head_sha')!=release_id
+                or source.get('repository_id')!=repository_ids[0] or source.get('head_repository_id')!=repository_ids[1]):
+            raise ValueError('Artifact provenance or availability differs.')
+        key=names[artifact['name']]
+        if key in selected:raise ValueError('Artifact name is ambiguous within the verified attempt.')
+        seen.add(identity);selected[key]=identity
+    if set(selected)!=set(names.values()):raise ValueError('Verified attempt artifacts are missing; publication remains blocked.')
+    return selected
+
+
+def fetch_attempt_artifacts(repository,release_id,run_id,run_attempt,token):
+    _sha(release_id)
+    if (not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repository)
+            or any(type(v) is not int or v<1 for v in (run_id,run_attempt))):
+        raise ValueError('Invalid artifact source identity.')
+    base=f'/repos/{repository}/actions/runs/{run_id}'
+    run=_api(base+f'/attempts/{run_attempt}',token)
+    def pages(path,key):
+        values=[]
+        for page in range(1,11):
+            payload=_api(path+f'?per_page=100&page={page}',token)
+            batch=payload.get(key) if isinstance(payload,dict) else None
+            if not isinstance(batch,list):raise ValueError('Invalid complete artifact listing.')
+            values.extend(batch)
+            if len(batch)<100:return values
+        raise ValueError('Too many artifact records to establish complete provenance.')
+    jobs=pages(base+f'/attempts/{run_attempt}/jobs','jobs')
+    artifacts=pages(base+'/artifacts','artifacts')
+    return select_attempt_artifacts(run,jobs,artifacts,repository=repository,release_id=release_id,run_id=run_id,run_attempt=run_attempt)
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -228,6 +308,10 @@ def main(argv=None):
     check.add_argument('--release-id', required=True)
     check.add_argument('--output', type=Path, required=True)
     check.add_argument('--wait-seconds', type=int, default=0)
+    artifacts = commands.add_parser('artifacts')
+    artifacts.add_argument('--repository', required=True)
+    artifacts.add_argument('--gate', type=Path, required=True)
+    artifacts.add_argument('--output', type=Path, required=True)
     record = commands.add_parser('record')
     for name in ('package', 'gate', 'fresh-gate', 'verification', 'output'):
         record.add_argument('--' + name, type=Path, required=True)
@@ -251,6 +335,14 @@ def main(argv=None):
             with args.output.open('x', encoding='utf-8') as stream:
                 json.dump(result, stream, indent=2)
             print(json.dumps({'eligible': True, 'customer_run_id': result['customer_run_id']}))
+        elif args.command == 'artifacts':
+            gate = json.loads(args.gate.read_text(encoding='utf-8'))
+            _checks(gate['required_checks'], gate['source_commit'])
+            customer = gate['required_checks'][REQUIRED_WORKFLOWS[2]]
+            if gate['customer_run_id'] != customer['run_id']:raise ValueError('Customer run binding differs.')
+            result = fetch_attempt_artifacts(args.repository, gate['source_commit'], customer['run_id'], customer['run_attempt'], os.environ.get('GITHUB_TOKEN', ''))
+            result['run_id'] = customer['run_id']
+            with args.output.open('x', encoding='utf-8') as stream:json.dump(result, stream, indent=2)
         else:
             spec = importlib.util.spec_from_file_location('installed_customer_verifier', Path(__file__).parent / 'customer/customer.py')
             customer = importlib.util.module_from_spec(spec)
