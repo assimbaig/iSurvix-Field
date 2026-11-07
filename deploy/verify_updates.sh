@@ -173,7 +173,7 @@ raw=open(sys.argv[1]).read().strip()
 rows=json.loads(raw) if raw.startswith('[') else [json.loads(line) for line in raw.splitlines() if line]
 assert rows and all(row.get('State') in ('exited','stopped','dead','created') for row in rows), 'Rehearsal target writers were not quiesced.'
 PY
-sudo /usr/bin/python3 - "$repository" "$work" "$output/package" "$baseline" "$target" "$journals" "$request" <<'PY'
+sudo env ISURVIX_DISPOSABLE_REHEARSAL=yes /usr/bin/python3 - "$repository" "$work" "$output/package" "$baseline" "$target" "$journals" "$request" <<'PY'
 
 from pathlib import Path
 from contextlib import closing
